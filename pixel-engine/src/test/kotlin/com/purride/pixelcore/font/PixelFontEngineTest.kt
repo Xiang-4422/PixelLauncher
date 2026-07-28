@@ -225,8 +225,8 @@ class PixelFontEngineTest {
             ),
         )
 
-        val narrowGlyph = source.findGlyph('A', appLabelStyle)
-        val wideGlyph = source.findGlyph('A', appLabelStyle.copy(narrowAdvanceWidth = 4))
+        val narrowGlyph = source.findGlyph('A'.code, appLabelStyle)
+        val wideGlyph = source.findGlyph('A'.code, appLabelStyle.copy(narrowAdvanceWidth = 4))
 
         assertEquals(false, narrowGlyph?.metrics?.isWideGlyph)
         assertEquals(true, wideGlyph?.metrics?.isWideGlyph)
@@ -236,14 +236,14 @@ class PixelFontEngineTest {
     fun compositeGlyphProviderFallsBackAcrossSourcesThenToEmptyGlyph() {
         val provider = CompositeGlyphProvider(
             sources = listOf(
-                FixedGlyphSource(character = 'A', width = 8),
-                FixedGlyphSource(character = 'B', width = 7),
+                FixedGlyphSource(codePoint = 'A'.code, width = 8),
+                FixedGlyphSource(codePoint = 'B'.code, width = 7),
             ),
         )
 
-        val firstSourceGlyph = provider.rasterizeGlyph('A', appLabelStyle)
-        val secondSourceGlyph = provider.rasterizeGlyph('B', appLabelStyle)
-        val emptyFallbackGlyph = provider.rasterizeGlyph('C', appLabelStyle)
+        val firstSourceGlyph = provider.rasterizeGlyph('A'.code, appLabelStyle)
+        val secondSourceGlyph = provider.rasterizeGlyph('B'.code, appLabelStyle)
+        val emptyFallbackGlyph = provider.rasterizeGlyph('C'.code, appLabelStyle)
 
         assertEquals(8, firstSourceGlyph.metrics.advanceWidth)
         assertEquals(7, secondSourceGlyph.metrics.advanceWidth)
@@ -255,11 +255,11 @@ class PixelFontEngineTest {
         var rasterizeCount: Int = 0
             private set
 
-        override fun rasterizeGlyph(character: Char, style: GlyphStyle): GlyphBitmap {
+        override fun rasterizeGlyph(codePoint: Int, style: GlyphStyle): GlyphBitmap {
             rasterizeCount += 1
-            val isWideGlyph = character.code !in 32..126
+            val isWideGlyph = codePoint !in 32..126
             val width = if (isWideGlyph) style.wideAdvanceWidth else style.narrowAdvanceWidth
-            val isBlankGlyph = character == ' '
+            val isBlankGlyph = codePoint == ' '.code
 
             return GlyphBitmap(
                 width = width,
@@ -269,7 +269,7 @@ class PixelFontEngineTest {
                     advanceWidth = width,
                     baselineOffset = style.cellHeight - 2,
                     isWideGlyph = isWideGlyph,
-                    requiresVisualGapProtection = isWideGlyph || character.code !in 32..126,
+                    requiresVisualGapProtection = isWideGlyph || codePoint !in 32..126,
                     inkLeft = if (isBlankGlyph) width else 0,
                     inkRight = if (isBlankGlyph) -1 else width - 1,
                 ),
@@ -278,11 +278,11 @@ class PixelFontEngineTest {
     }
 
     private class FixedGlyphSource(
-        private val character: Char,
+        private val codePoint: Int,
         private val width: Int,
     ) : GlyphSource {
-        override fun findGlyph(character: Char, style: GlyphStyle): GlyphBitmap? {
-            if (this.character != character) return null
+        override fun findGlyph(codePoint: Int, style: GlyphStyle): GlyphBitmap? {
+            if (this.codePoint != codePoint) return null
             return GlyphBitmap(
                 width = width,
                 height = style.cellHeight,

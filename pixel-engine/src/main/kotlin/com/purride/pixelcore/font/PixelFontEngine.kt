@@ -93,26 +93,13 @@ public data class GlyphBitmap(
 /** 可选字形来源；找不到 Unicode code point 时返回 null 让下一个来源兜底。 */
 public interface GlyphSource {
     /**
-     * 查找一个旧版 BMP `Char` 对应的字形 bitmap。
-     *
-     * 此入口为已有消费者保留；引擎主链路调用 [findGlyph] 的 code-point overload。
-     */
-    public fun findGlyph(character: Char, style: GlyphStyle): GlyphBitmap?
-
-    /**
      * 查找一个 Unicode scalar value 对应的字形 bitmap。
      *
-     * 旧实现没有此方法时，默认只把非 surrogate BMP 值转回冻结的 `Char` SPI；supplementary
-     * code point 返回 `null`，让后续 code-point-aware source 或最终 fallback 处理。
+     * [codePoint] 必须是合法 scalar（0..0x10FFFF 且非 surrogate），实现需要按完整标量查表，
+     * 不能把 supplementary code point 截断成 UTF-16 码元。找不到时返回 `null`，交给下一个
+     * source 或最终 provider 兜底。
      */
-    public fun findGlyph(codePoint: Int, style: GlyphStyle): GlyphBitmap? {
-        requireUnicodeScalar(codePoint)
-        return if (codePoint <= Char.MAX_VALUE.code) {
-            findGlyph(codePoint.toChar(), style)
-        } else {
-            null
-        }
-    }
+    public fun findGlyph(codePoint: Int, style: GlyphStyle): GlyphBitmap?
 
     /** 清理来源内部缓存。 */
     public fun clearCache(): Unit = Unit
@@ -121,28 +108,13 @@ public interface GlyphSource {
 /** 必须能为任意 Unicode code point 返回字形的最终提供器。 */
 public interface GlyphProvider {
     /**
-     * 栅格化一个旧版 BMP `Char`；找不到真实字形时应返回兜底字形。
+     * 栅格化一个 Unicode scalar value；找不到真实字形时必须返回兜底字形。
      *
-     * 此入口保持已有自定义 provider 的 JVM 描述符。
+     * [codePoint] 必须是合法 scalar（0..0x10FFFF 且非 surrogate），否则抛
+     * `IllegalArgumentException`。supplementary code point 与 BMP 一视同仁，实现不得把它
+     * 降级成替换字符。
      */
-    public fun rasterizeGlyph(character: Char, style: GlyphStyle): GlyphBitmap
-
-    /**
-     * 栅格化一个 Unicode scalar value。
-     *
-     * 旧 provider 默认继续处理非 surrogate BMP；supplementary 输入映射为一次 U+FFFD 请求，
-     * 避免拆成两个 surrogate glyph。Code-point-aware provider 应覆盖此方法以提供真实字形。
-     */
-    public fun rasterizeGlyph(codePoint: Int, style: GlyphStyle): GlyphBitmap {
-        requireUnicodeScalar(codePoint)
-        /** BMP compatibility value or one replacement request for an unsupported supplementary scalar. */
-        val compatibilityCharacter = if (codePoint <= Char.MAX_VALUE.code) {
-            codePoint.toChar()
-        } else {
-            REPLACEMENT_CODE_POINT.toChar()
-        }
-        return rasterizeGlyph(compatibilityCharacter, style)
-    }
+    public fun rasterizeGlyph(codePoint: Int, style: GlyphStyle): GlyphBitmap
 
     /** 清理提供器内部缓存。 */
     public fun clearCache(): Unit = Unit
@@ -157,11 +129,6 @@ public class CompositeGlyphProvider(
     /** Ordered code-point sources queried before the deterministic fallback. */
     private val sources: List<GlyphSource>,
 ) : GlyphProvider {
-
-    /** Preserves the frozen BMP entry point while using the code-point pipeline. */
-    override fun rasterizeGlyph(character: Char, style: GlyphStyle): GlyphBitmap {
-        return rasterizeGlyph(character.code, style)
-    }
 
     /** Resolves a scalar without narrowing supplementary values to UTF-16 code units. */
     override fun rasterizeGlyph(codePoint: Int, style: GlyphStyle): GlyphBitmap {
@@ -226,11 +193,6 @@ public class BitmapGlyphSource(
 
     /** Unpacked bitmap cache keyed by full scalar value and style-sensitive metrics. */
     private val unpackedGlyphCache = mutableMapOf<GlyphCacheKey, GlyphBitmap>()
-
-    /** Preserves the old BMP SPI and delegates to the scalar lookup. */
-    override fun findGlyph(character: Char, style: GlyphStyle): GlyphBitmap? {
-        return findGlyph(character.code, style)
-    }
 
     /** Looks up a complete scalar key, including supplementary glyph-pack records. */
     override fun findGlyph(codePoint: Int, style: GlyphStyle): GlyphBitmap? {
@@ -406,12 +368,12 @@ public class PixelFontEngine(
         /** 已进入的片段序号，最多扫描 first/second 两轮。 */
         var segmentIndex = 0
         while (true) {
-            /** 按完整标量或单个异常旧码元推进的 UTF-16 源偏移。 */
+            /** 按完整标量或单个畸形 UTF-16 码元推进的源偏移。 */
             var sourceOffset = 0
             while (sourceOffset < segment.length) {
                 /** 原始解码值；孤立代理项只在字形查询时映射为兜底值。 */
                 val decodedValue = Character.codePointAt(segment, sourceOffset)
-                /** 有效标量键，异常旧输入则使用确定性的替换字符键。 */
+                /** 有效标量键；畸形 UTF-16 输入使用确定性的替换字符键。 */
                 val codePoint = decodedValue.toGlyphCodePoint()
                 /** 按完整标量值寻址的缓存位图。 */
                 val glyph = glyphFor(codePoint, style)
@@ -439,12 +401,12 @@ public class PixelFontEngine(
         var previousGlyph: GlyphBitmap? = null
         /** UTF-16 source offset of the next scalar candidate. */
         var sourceOffset = 0
-        /** UTF-16 boundary after the last accepted complete scalar. */
+        /** 最后一个被接受的完整标量之后的 UTF-16 边界。 */
         var acceptedEndOffset = 0
         while (sourceOffset < text.length) {
-            /** Raw decoded value preserving whether the source consumes one or two code units. */
+            /** 原始解码值，保留该源位置占一个还是两个 UTF-16 码元的信息。 */
             val decodedValue = Character.codePointAt(text, sourceOffset)
-            /** Valid lookup scalar or replacement for one malformed legacy code unit. */
+            /** 合法查表标量；遇到畸形 UTF-16 码元时为确定性替换标量。 */
             val codePoint = decodedValue.toGlyphCodePoint()
             /** Candidate glyph measured as one scalar rather than one surrogate half. */
             val glyph = glyphFor(codePoint, style)
@@ -525,12 +487,12 @@ public class PixelFontEngine(
         val renderableText = trimToWidth(text, style, maxWidth)
         /** Horizontal draw cursor advanced by scalar glyph metrics. */
         var cursorX = startX
-        /** UTF-16 source offset of the scalar currently being drawn. */
+        /** 当前正在绘制的标量在源串中的 UTF-16 偏移。 */
         var sourceOffset = 0
         while (sourceOffset < renderableText.length) {
-            /** Raw decoded value whose UTF-16 width determines the next source boundary. */
+            /** 原始解码值，其 UTF-16 宽度决定下一个源边界位置。 */
             val decodedValue = Character.codePointAt(renderableText, sourceOffset)
-            /** Complete scalar glyph, or one replacement glyph for malformed legacy state. */
+            /** 完整标量字形；畸形 UTF-16 状态下为一个替换字形。 */
             val glyph = glyphFor(decodedValue.toGlyphCodePoint(), style)
             drawGlyph(
                 buffer = buffer,
@@ -717,11 +679,16 @@ private fun requireUnicodeScalar(codePoint: Int) {
 /** Printable ASCII values use the configured narrow fallback cell. */
 private val ASCII_PRINTABLE_RANGE: IntRange = 32..126
 
-/** Complete Unicode code-point range before surrogate exclusion. */
+/** 排除代理项之前的完整 Unicode 码位区间。 */
 private val UNICODE_CODE_POINT_RANGE: IntRange = 0x0000..0x10FFFF
 
-/** UTF-16 surrogate values are not Unicode scalar values. */
+/** UTF-16 代理项取值不属于 Unicode scalar value。 */
 private val SURROGATE_CODE_POINT_RANGE: IntRange = 0xD800..0xDFFF
 
-/** Single fallback scalar used for malformed legacy units and old supplementary providers. */
+/**
+ * 畸形 UTF-16 输入的确定性替换标量。
+ *
+ * 这是健壮性契约，不是历史 API 兼容：调用方传入孤立 surrogate 码元时，引擎用 U+FFFD 给出可
+ * 预测的渲染结果，而不是崩溃或产生随机字形。
+ */
 private const val REPLACEMENT_CODE_POINT: Int = 0xFFFD

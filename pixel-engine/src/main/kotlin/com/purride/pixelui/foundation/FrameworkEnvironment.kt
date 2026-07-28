@@ -20,8 +20,8 @@ public enum class TextDirection {
  *
  * Immutable logical viewport data exposed by [MediaQuery].
  *
- * Host capabilities intentionally live in the additive [HostCapabilities] scope so this data
- * class keeps its pre-1.0 constructor, `copy`, and component ABI.
+ * 宿主环境能力（locale、文字缩放、对比度、动效、密度、刷新率、显示特性）属于
+ * [HostCapabilities]，与这里的逻辑视口度量是两类独立关注点，不会合并进本数据类。
  *
  * @property logicalWidth Available logical pixel columns.
  * @property logicalHeight Available logical pixel rows.
@@ -160,7 +160,7 @@ public class Directionality(
 
         /** 执行 `FrameworkEnvironment` 的 `of` 公开行为；具体参数、返回和副作用见下文。
  *
- * Returns the nearest direction and preserves LTR as the legacy scope-less fallback.
+ * 返回最近的阅读方向；没有 [Directionality] 作用域时回到确定的 LTR 默认值。
  */
         public fun of(context: BuildContext): TextDirection {
             return maybeOf(context) ?: TextDirection.LTR
@@ -224,8 +224,8 @@ public class DefaultTextRasterizer(
  *
  * Inherited logical viewport metrics for layout consumers.
  *
- * Host environment signals that are not viewport insets remain in [HostCapabilities]; additive
- * companion accessors expose that scope without altering [MediaQueryData]'s binary shape.
+ * 这里只承载逻辑视口尺寸与 inset；locale、文字缩放、对比度、动效等宿主环境信号属于
+ * [HostCapabilities]，请直接从那里读取。
  *
  * @property data Logical metrics supplied to descendants.
  * @property child Descendant widget receiving the metrics.
@@ -239,14 +239,14 @@ public class MediaQuery(
     child = child,
     key = key,
 ) {
-    /** Notifies dependents only when the immutable viewport snapshot changes. */
+    /** 仅当不可变视口快照发生变化时才通知依赖方。 */
     override fun updateShouldNotify(oldWidget: InheritedWidget): Boolean {
         return data != (oldWidget as? MediaQuery)?.data
     }
 
     /** 集中提供 `FrameworkEnvironment` 的 `<companion>` 共享入口。
  *
- * Viewport and additive Host-capability lookup helpers.
+ * Logical viewport lookup helpers.
  */
     public companion object {
         /** 执行 `FrameworkEnvironment` 的 `maybeOf` 公开行为；具体参数、返回和副作用见下文。
@@ -264,26 +264,6 @@ public class MediaQuery(
         public fun of(context: BuildContext): MediaQueryData {
             return maybeOf(context)
                 ?: error("当前上下文里没有 MediaQuery，宿主需要先包一层 MediaQuery。")
-        }
-
-        /**
- * 执行 `FrameworkEnvironment` 的 `maybeCapabilitiesOf` 公开行为；具体参数、返回和副作用见下文。
- *
-         * Returns the nearest additive Host capability snapshot, or `null` outside a Host scope.
-         *
-         * This lookup does not add fields to [MediaQueryData], preserving its existing data-class
-         * constructor and `copy` ABI.
-         */
-        public fun maybeCapabilitiesOf(context: BuildContext): HostCapabilitiesData? {
-            return HostCapabilities.maybeOf(context)
-        }
-
-        /** 执行 `FrameworkEnvironment` 的 `capabilitiesOf` 公开行为；具体参数、返回和副作用见下文。
- *
- * Returns the nearest Host capability snapshot or the documented scope-less default.
- */
-        public fun capabilitiesOf(context: BuildContext): HostCapabilitiesData {
-            return HostCapabilities.of(context)
         }
     }
 }

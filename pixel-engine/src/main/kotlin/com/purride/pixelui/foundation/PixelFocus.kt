@@ -10,9 +10,8 @@ import com.purride.pixelui.state.PixelListState
  *
  * Platform-independent key understood by PixelUI focus and standard-control dispatch.
  *
- * Exact text entry uses [PixelTextInputEvent]. [PixelKeyEvent.character] remains the compatibility
- * representation for one non-surrogate BMP character; this enum otherwise describes navigation
- * and activation meaning used by the widget tree.
+ * 本枚举只表达导航、激活和取消语义。任何可打印文本（BMP、supplementary、组合簇、
+ * 多 code point 的 IME 提交）都只通过 [PixelTextInputEvent] 投递，不会出现在这里。
  */
 public enum class PixelKey {
     /** Moves focus to the next eligible control. */
@@ -35,8 +34,6 @@ public enum class PixelKey {
     BACK,
     /** Escape action used to dismiss the top modal presentation. */
     ESCAPE,
-    /** Legacy BMP character whose value is carried by [PixelKeyEvent.character]. */
-    CHARACTER,
     /** Key that could not be mapped to a supported PixelUI action. */
     UNKNOWN,
 }
@@ -44,16 +41,15 @@ public enum class PixelKey {
 /**
  * 表示 `PixelFocus` 的 `PixelKeyEvent` 稳定结果或事件分支。
  *
- * Normalized navigation, activation, or legacy character event dispatched through a focus owner.
+ * Normalized navigation, activation, or dismissal event dispatched through a focus owner.
  *
- * @param key Navigation, activation, dismissal, or text category of this event.
- * @param character Printable value for [PixelKey.CHARACTER], otherwise `null`.
+ * 该事件不携带文本；可打印输入统一由 [PixelTextInputEvent] 表达。
+ *
+ * @param key Navigation, activation, or dismissal category of this event.
  */
 public data class PixelKeyEvent(
-    /** Navigation, activation, dismissal, or text category of this event. */
+    /** 本事件所属的导航、激活或取消类别。 */
     val key: PixelKey,
-    /** Printable value for [PixelKey.CHARACTER], otherwise `null`. */
-    val character: Char? = null,
 )
 
 /**
@@ -274,10 +270,10 @@ public class FocusNode(
     /**
  * 保存 `PixelFocus` 在 `onTextInput` 时调用的事件回调。
  *
-     * Application text handler evaluated before the legacy [onKeyEvent] character fallback.
+     * Application text handler receiving the exact payload committed by the input source.
      *
-     * Returning `true` consumes the complete payload. Returning `false` allows bubbling to an
-     * enclosing focus node and, for exactly one non-surrogate BMP character, the legacy key path.
+     * 返回 `true` 表示整段文本被消费；返回 `false` 会继续冒泡到外层 Focus 节点。文本永远
+     * 不会退化成 [onKeyEvent]：两条链路语义互不重叠。
      */
     public var onTextInput: ((PixelTextInputEvent) -> Boolean)? = null
 
@@ -315,38 +311,35 @@ public class FocusNode(
     /** Nearest enclosing Focus node used to bubble application shortcuts before component actions. */
     internal var parentNode: FocusNode? = null
 
-    /** Whether a previous runtime mount requires this node to be remounted before requesting focus. */
-    private var requiresMountedScope: Boolean = false
-
     /** Identity of the standard component that installed [defaultKeyHandler]. */
     private var defaultKeyHandlerOwner: Any? = null
 
-    /** Standard component fallback invoked after the caller's [onKeyEvent]. */
+    /** 在调用方 [onKeyEvent] 之后触发的标准组件兜底处理器。 */
     private var defaultKeyHandler: ((PixelKeyEvent) -> Boolean)? = null
 
-    /** Automatic standard control exclusively represented by this focus node, when present. */
+    /** 由本焦点节点独占代表的自动标准控件（若存在）。 */
     private var automaticControlOwner: Any? = null
 
     /** 执行 `PixelFocus` 的 `requestFocus` 公开行为；具体参数、返回和副作用见下文。
  *
  * Requests primary focus from the runtime that owns this node.
+ *
+ * 未挂载到任何 scope 的节点没有 runtime 归属，直接返回 `false`，不会影响其它 runtime。
  */
     public fun requestFocus(): Boolean {
-        /** Mounted scope used to route the request to the correct runtime owner. */
-        val attachedScope = scope
-        if (attachedScope != null) return attachedScope.requestFocus(this)
-        if (requiresMountedScope) return false
-        return PixelFocusManager.rootScope.requestFocus(this)
+        /** 用于把请求路由到正确 runtime owner 的已挂载 scope。 */
+        val attachedScope = scope ?: return false
+        return attachedScope.requestFocus(this)
     }
 
     /** 执行 `PixelFocus` 的 `unfocus` 公开行为；具体参数、返回和副作用见下文。
  *
  * Releases focus without affecting another runtime or an unrelated node.
+ *
+ * 未挂载节点没有可释放的焦点状态，此调用是安全的空操作。
  */
     public fun unfocus() {
-        /** Mounted scope whose owner may currently retain this node as primary focus. */
-        val attachedScope = scope
-        if (attachedScope != null) attachedScope.clearFocus(this) else PixelFocusManager.clearFocus(this)
+        scope?.clearFocus(this)
     }
 
     /** Updates the observable focus bit after an owner-level transition. */
@@ -426,16 +419,6 @@ public class FocusNode(
 
     /** Dispatches only the standard component fallback after every ancestor shortcut declined. */
     internal fun dispatchDefaultKeyEvent(event: PixelKeyEvent): Boolean = defaultKeyHandler?.invoke(event) == true
-
-    /** Records a successful retained mount so the attached scope may serve focus requests. */
-    internal fun markMounted() {
-        requiresMountedScope = false
-    }
-
-    /** Prevents an unmounted runtime node from silently migrating into the legacy focus tree. */
-    internal fun markDetachedFromRuntime() {
-        requiresMountedScope = true
-    }
 }
 
 /**
@@ -491,21 +474,19 @@ public class FocusScopeNode(
         /** Scope that retained [node] before this attachment, if any. */
         val previousScope = node.scope
         if (previousScope != null && previousScope !== this) {
-            /** Runtime that owns the previous attachment. */
+            /** 持有上一次挂载关系的 runtime。 */
             val previousOwner = previousScope.owner
-            /** Runtime that will own [node] after this attachment. */
+            /** 本次挂载完成后将持有 [node] 的 runtime。 */
             val nextOwner = owner
-            check(previousOwner == null || nextOwner != null || previousOwner === PixelFocusManager.legacyOwner) {
-                "A mounted Host FocusNode cannot be moved into an unmounted legacy scope"
+            check(previousOwner == null || nextOwner != null) {
+                "A mounted FocusNode cannot be moved into a scope without a PixelUiRuntime owner"
             }
             check(previousOwner == null || nextOwner == null || previousOwner === nextOwner) {
                 "FocusNode ${node.debugLabel ?: "<unnamed>"} cannot be mounted in two PixelUiRuntime owners"
             }
             previousScope.detach(node)
         }
-        if (owner == null) bindOwner(PixelFocusManager.legacyOwner, PixelFocusManager.rootScope)
         node.scope = this
-        node.markMounted()
         nodes += node
         owner?.handleNodeAttached(node, this)
         notifyListeners()
@@ -517,14 +498,12 @@ public class FocusScopeNode(
  */
     public fun detach(node: FocusNode) {
         if (nodes.remove(node)) {
-            /** Whether a detached node must not fall back into the process-wide legacy owner. */
-            val detachedFromRuntime = owner != null && owner !== PixelFocusManager.legacyOwner
             if (node.isFocused) {
                 node.setFocused(false)
                 owner?.clearFocus(node)
             }
+            // 清空 scope 后节点即为未挂载状态，requestFocus 会安全返回 false。
             if (node.scope === this) node.scope = null
-            if (detachedFromRuntime) node.markDetachedFromRuntime()
             completePendingUnbindIfEmpty()
             notifyListeners()
         }
@@ -533,12 +512,16 @@ public class FocusScopeNode(
     /** 执行 `PixelFocus` 的 `requestFocus` 公开行为；具体参数、返回和副作用见下文。
  *
  * Requests focus through the scope's runtime owner.
+ *
+ * 未绑定 runtime 的 scope 无法产生 primary focus，直接返回 `false`。
  */
     public fun requestFocus(node: FocusNode): Boolean {
         if (!node.canRequestFocus || hasBlockedAncestor()) return false
+        /** 承载本 scope primary focus 所必需的 runtime owner。 */
+        val focusOwner = owner ?: return false
         if (node !in nodes) attach(node)
-        /** Whether the runtime owner accepted [node] as its new primary focus. */
-        val focused = (owner ?: PixelFocusManager.legacyOwner).requestFocus(node, this)
+        /** runtime owner 是否接受 [node] 成为新的 primary focus。 */
+        val focused = focusOwner.requestFocus(node, this)
         if (focused) notifyListeners()
         return focused
     }
@@ -548,15 +531,17 @@ public class FocusScopeNode(
  * Clears either one node or every directly attached node.
  */
     public fun clearFocus(node: FocusNode? = null) {
-        /** Direct nodes whose observable focused state must be cleared. */
+        /** 需要清除可观察聚焦状态的直接子节点集合。 */
         val targets = if (node == null) nodes.toList() else listOf(node)
         targets.filter { it.isFocused }.forEach { it.setFocused(false) }
-        /** Runtime owner whose primary-focus reference must be updated. */
-        val focusOwner = owner ?: PixelFocusManager.legacyOwner
-        if (node != null) {
-            focusOwner.clearFocus(node)
-        } else if (focusOwner.primaryFocus?.scope?.isDescendantOf(this) == true) {
-            focusOwner.clearFocus()
+        /** 本 scope 若已绑定 runtime owner，则需要同步更新其 primary-focus 引用。 */
+        val focusOwner = owner
+        if (focusOwner != null) {
+            if (node != null) {
+                focusOwner.clearFocus(node)
+            } else if (focusOwner.primaryFocus?.scope?.isDescendantOf(this) == true) {
+                focusOwner.clearFocus()
+            }
         }
         notifyListeners()
     }
@@ -791,7 +776,7 @@ internal class PixelFocusOwner(
         val focusChain = focusedNodeChain()
         if (focusChain.any { node -> node.dispatchAppKeyEvent(event) }) return true
         if (focusChain.any { node -> node.dispatchDefaultKeyEvent(event) }) return true
-        /** Traversal direction represented by [event], or `null` for non-navigation input. */
+        /** [event] 对应的遍历方向；非导航输入时为 `null`。 */
         val direction = when (event.key) {
             PixelKey.TAB -> PixelFocusDirection.NEXT
             PixelKey.SHIFT_TAB -> PixelFocusDirection.PREVIOUS
@@ -806,32 +791,22 @@ internal class PixelFocusOwner(
             return focusAcrossScopes(direction) || topModal != null
         }
         if (focused == null) return focusInitial(direction) || topModal != null
-        /** Whether directional traversal selected and focused a sibling node. */
+        /** 方向遍历是否选中并聚焦了一个兄弟节点。 */
         val moved = (focused.scope ?: rootScope).focusInDirection(direction)
         return moved || topModal != null
     }
 
     /**
-     * Dispatches exact text through focused-to-root handlers before the compatible Char fallback.
+     * Dispatches exact text through focused-to-root handlers in bubbling order.
      *
-     * Supplementary-plane and multi-code-point payloads are never decomposed into surrogate or
-     * per-code-point key events. The fallback is deliberately limited to the complete legacy
-     * representable domain: one non-surrogate BMP [Char].
+     * 文本永远保持一次事件：supplementary code point、组合簇和多 code point 的 IME 提交都不会被
+     * 拆分，也不会退化到 [dispatchKeyEvent]。没有节点消费时返回 `false`。
      */
     override fun dispatchTextInputEvent(event: PixelTextInputEvent): Boolean {
         if (disposed) return false
-        /** Focused-to-root chain receiving the exact String payload in bubbling order. */
+        /** 按冒泡顺序接收精确 String 载荷的“聚焦节点到根”链。 */
         val focusChain = focusedNodeChain()
-        if (focusChain.any { node -> node.dispatchAppTextInput(event) }) return true
-        /** Single legacy-compatible UTF-16 unit, or `null` when narrowing would lose information. */
-        val fallbackCharacter = event.text.singleOrNull()?.takeUnless(Char::isSurrogate)
-            ?: return false
-        return dispatchKeyEvent(
-            PixelKeyEvent(
-                key = PixelKey.CHARACTER,
-                character = fallbackCharacter,
-            ),
-        )
+        return focusChain.any { node -> node.dispatchAppTextInput(event) }
     }
 
     /** Builds the focused-to-root node chain while defending against malformed ancestry cycles. */
@@ -1362,91 +1337,19 @@ private data class PixelModalFocusEntry(
     val openerScope: FocusScopeNode?,
     /** Callback consumed by Escape or gamepad Back while this entry is topmost. */
     val onDismissRequest: (() -> Unit)?,
-    /** Whether a modal with no callback still traps Escape/Back inside the focus owner. */
+    /** 没有回调的 modal 是否仍在 focus owner 内部捕获 Escape/Back。 */
     val consumeUnhandledDismissRequest: Boolean,
-    /** Whether this modal has already accepted its first explicit autofocus descendant. */
+    /** 该 modal 是否已经接受了它的第一个显式 autofocus 后代。 */
     val autofocusChosen: Boolean = false,
 )
-
-/**
- * 集中提供 `PixelFocus` 的 `PixelFocusManager` 共享入口。
- *
- * Compatibility facade for detached focus nodes and legacy single-tree integrations.
- *
- * Nodes mounted below a Host or `PixelTester` use their own runtime-local [PixelFocusOwner]; this
- * facade deliberately does not expose or switch between those owners. Prefer [FocusNode] methods
- * for code that may run inside a mounted widget tree.
- */
-public object PixelFocusManager {
-    /** Compatibility owner for detached nodes and legacy single-tree integrations. */
-    internal val legacyOwner: PixelFocusOwner = PixelFocusOwner()
-
-    /** 公开 `PixelFocus` 的 `rootScope` 配置或运行值。
- *
- * Legacy detached root; Host and PixelTester input no longer dispatch through it.
- */
-    public val rootScope: FocusScopeNode = legacyOwner.rootScope
-
-    /** 公开 `PixelFocus` 的 `primaryFocus` 配置或运行值。
- *
- * Legacy detached primary focus; mounted Hosts retain independent primary focus.
- */
-    @set:JvmName("setLegacyPrimaryFocus")
-    public var primaryFocus: FocusNode?
-        get() = legacyOwner.primaryFocus
-        private set(value) {
-            if (value == null) legacyOwner.clearFocus() else setPrimaryFocus(value)
-        }
-
-    /** 更新 `PixelFocus` 的 `setPrimaryFocus` 状态并保持派生数据一致。
- *
- * Focuses [node] through its mounted runtime, or through the legacy owner when detached.
- */
-    public fun setPrimaryFocus(node: FocusNode) {
-        /** Mounted scope, or the compatibility root used for a genuinely detached node. */
-        val scope = node.scope ?: rootScope
-        (scope.owner ?: legacyOwner).requestFocus(node, scope)
-    }
-
-    /** 从 `PixelFocus` 释放 `clearFocus` 内容并收敛相关所有权。
- *
- * Clears the owner selected by [node], or only the legacy owner when no node is supplied.
- */
-    public fun clearFocus(node: FocusNode? = null) {
-        /** Runtime responsible for the supplied node's primary-focus state. */
-        val owner = node?.scope?.owner ?: legacyOwner
-        owner.clearFocus(node)
-    }
-
-    /** 执行 `PixelFocus` 的 `dispatchKeyEvent` 公开行为；具体参数、返回和副作用见下文。
- *
- * Dispatches only to the legacy detached tree; use a Host or PixelTester for mounted UI.
- */
-    public fun dispatchKeyEvent(event: PixelKeyEvent): Boolean {
-        return legacyOwner.dispatchKeyEvent(event)
-    }
-
-    /**
- * 执行 `PixelFocus` 的 `dispatchTextInputEvent` 公开行为；具体参数、返回和副作用见下文。
- *
-     * Dispatches exact text only to the legacy detached tree.
-     *
-     * Mounted UI should use its `PixelHostView` or `PixelTester` instance so simultaneous runtimes
-     * cannot observe each other's input.
-     */
-    public fun dispatchTextInputEvent(event: PixelTextInputEvent): Boolean {
-        return legacyOwner.dispatchTextInputEvent(event)
-    }
-}
 
 /**
  * 执行 `PixelFocus` 的 `FocusScope` 公开行为；具体参数、返回和副作用见下文。
  *
  * Creates a retained focus scope for [child].
  *
- * When [node] is `null`, widget State owns one stable scope across rebuilds. Passing the legacy
- * [PixelFocusManager.rootScope] inside a mounted runtime resolves to that runtime's own root, so a
- * shared compatibility sentinel cannot merge independent Hosts.
+ * When [node] is `null`, widget State owns one stable scope across rebuilds. 显式传入的 scope 会绑定
+ * 到最近的 runtime（Host 或 `PixelTester`），不同 runtime 之间的焦点状态互不可见。
  *
  * @param child Widget subtree whose directly mounted Focus widgets join the resolved scope.
  * @param node Optional caller-retained scope; `null` creates a State-owned scope.
@@ -1500,12 +1403,17 @@ public fun FocusTraversalGroup(
  * standard-control activation. If [node] is omitted, widget State owns a stable node rather than
  * allocating one on every rebuild.
  *
+ * [onKeyEvent] 只处理导航、激活和取消等非文本快捷键；所有可打印文本（含 supplementary、
+ * 组合簇和多 code point 的 IME 提交）都通过 [onTextInput] 以完整 String 投递。两条链路各自
+ * 独立冒泡，不存在互相回落。
+ *
  * @param child Widget subtree represented by the resolved focus node.
  * @param node Optional caller-retained node; `null` creates a stable State-owned node.
  * @param autofocus Requests initial focus when the owner is empty. Inside a hosted overlay route,
  * the first eligible candidate may supersede lower content according to canonical route order.
  * @param canRequestFocus Caller-controlled focusability combined with component enabled gates.
- * @param onKeyEvent Optional application shortcut handler; return `true` to consume the event.
+ * @param onKeyEvent Optional non-text shortcut handler; return `true` to consume the event.
+ * @param onTextInput Optional exact-text handler; return `true` to consume the complete payload.
  * @param scrollTarget Optional list item kept visible whenever this node gains focus.
  * @param key Optional retained identity for the Focus widget and inherited node boundary.
  */
@@ -1515,49 +1423,9 @@ public fun Focus(
     autofocus: Boolean = false,
     canRequestFocus: Boolean = true,
     onKeyEvent: ((PixelKeyEvent) -> Boolean)? = null,
+    onTextInput: ((PixelTextInputEvent) -> Boolean)? = null,
     scrollTarget: PixelFocusScrollTarget? = null,
     key: Any? = null,
-): Widget {
-    return FocusWidget(
-        node = node,
-        autofocus = autofocus,
-        canRequestFocus = canRequestFocus,
-        onKeyEvent = onKeyEvent,
-        onTextInput = null,
-        scrollTarget = scrollTarget,
-        child = child,
-        key = key,
-    )
-}
-
-/**
- * 执行 `PixelFocus` 的 `Focus` 公开行为；具体参数、返回和副作用见下文。
- *
- * Publishes one retained [FocusNode] with an exact-text input handler to [child].
- *
- * This overload is additive: the pre-existing [Focus] method and its Kotlin default bridge keep
- * their original JVM descriptors. [onTextInput] receives supplementary-plane and multi-code-point
- * text before [onKeyEvent]. When it declines a single non-surrogate BMP character, dispatch falls
- * back to [PixelKey.CHARACTER] for source and binary compatibility.
- *
- * @param child Widget subtree represented by the resolved focus node.
- * @param node Optional caller-retained node; `null` creates a stable State-owned node.
- * @param autofocus Requests initial focus when the owner is empty.
- * @param canRequestFocus Caller-controlled focusability combined with component enabled gates.
- * @param onKeyEvent Optional compatibility shortcut handler invoked after eligible text fallback.
- * @param scrollTarget Optional list item kept visible whenever this node gains focus.
- * @param key Optional retained identity for the Focus widget and inherited node boundary.
- * @param onTextInput Exact-text handler; return `true` to consume the complete payload.
- */
-public fun Focus(
-    child: Widget,
-    node: FocusNode? = null,
-    autofocus: Boolean = false,
-    canRequestFocus: Boolean = true,
-    onKeyEvent: ((PixelKeyEvent) -> Boolean)? = null,
-    scrollTarget: PixelFocusScrollTarget? = null,
-    key: Any? = null,
-    onTextInput: (PixelTextInputEvent) -> Boolean,
 ): Widget {
     return FocusWidget(
         node = node,
@@ -1591,25 +1459,18 @@ private class FocusScopeHostState : State<FocusScopeHostWidget>() {
     /** Default scope retained when the caller omits an explicit node. */
     private val ownedNode: FocusScopeNode = FocusScopeNode()
 
-    /** Scope currently bound by this State. */
+    /** 当前由该 State 绑定的 scope。 */
     private var boundNode: FocusScopeNode? = null
 
-    /** Runtime owner currently bound by this State. */
+    /** 当前由该 State 绑定的 runtime owner。 */
     private var boundOwner: PixelFocusOwner? = null
 
-    /** Resolves the owner/root compatibility sentinel and publishes the inherited scope. */
+    /** 把调用方持有或 State 持有的 scope 绑定到外层 runtime，并向下发布。 */
     override fun build(context: BuildContext): Widget {
-        /** Nearest runtime owner, falling back only for detached legacy trees. */
-        val owner = context.getInheritedWidgetOfExactType<PixelFocusOwnerScope>()?.owner
-            ?: PixelFocusManager.legacyOwner
-        /** Explicit scope requested by the caller, before resolving compatibility sentinels. */
-        val requestedNode = widget.node
-        /** Stable scope that will be bound and exposed during this build. */
-        val node = when {
-            requestedNode == null -> ownedNode
-            requestedNode === PixelFocusManager.rootScope && owner !== PixelFocusManager.legacyOwner -> owner.rootScope
-            else -> requestedNode
-        }
+        /** 由外层 Host、PixelTester 或 retained build runtime 注入的 runtime owner。 */
+        val owner = context.requirePixelFocusOwner()
+        /** 本次 build 中将被绑定并向下发布的稳定 scope。 */
+        val node = widget.node ?: ownedNode
         /** Nearest explicitly inherited parent scope, if one encloses this boundary. */
         val inheritedParent = context.getInheritedWidgetOfExactType<FocusScopeWidget>()?.node
         /** Parent used for modal ancestry without making the runtime root its own parent. */
@@ -1685,11 +1546,11 @@ private class FocusWidget(
     val node: FocusNode?,
     /** Whether this node requests initial focus or explicit hosted-overlay autofocus. */
     val autofocus: Boolean,
-    /** Whether traversal and direct requests may focus this node. */
+    /** 遍历和直接请求是否可以聚焦该节点。 */
     val canRequestFocus: Boolean,
-    /** Caller shortcut handler evaluated before standard component defaults. */
+    /** 在标准组件默认行为之前求值的调用方快捷键处理器。 */
     val onKeyEvent: ((PixelKeyEvent) -> Boolean)?,
-    /** Caller exact-text handler evaluated before the legacy character-key fallback. */
+    /** 接收完整提交载荷的调用方精确文本处理器。 */
     val onTextInput: ((PixelTextInputEvent) -> Boolean)?,
     /** Optional list item kept visible after focus moves here. */
     val scrollTarget: PixelFocusScrollTarget?,
@@ -1779,19 +1640,18 @@ private class FocusWidgetState : State<FocusWidget>() {
 
     /** Links this node to the nearest enclosing Focus without creating self-referential cycles. */
     private fun configureParentNode() {
-        /** Active node whose shortcut-bubbling parent is refreshed. */
+        /** 需要刷新其快捷键冒泡父节点的活跃节点。 */
         val node = activeNode
         node.parentNode = context.getInheritedWidgetOfExactType<FocusNodeScope>()
             ?.node
             ?.takeUnless { parent -> parent === node }
     }
 
-    /** Attaches the node to the nearest scope or this runtime's unique root scope. */
+    /** 把节点挂载到最近的 scope，或本 runtime 唯一的根 scope。 */
     private fun attachToScope() {
-        /** Nearest explicit scope, runtime root, or detached compatibility root. */
+        /** 最近的显式 scope；没有时使用本 runtime 自己的根 scope。 */
         val scope = context.getInheritedWidgetOfExactType<FocusScopeWidget>()?.node
-            ?: context.getInheritedWidgetOfExactType<PixelFocusOwnerScope>()?.owner?.rootScope
-            ?: PixelFocusManager.rootScope
+            ?: context.requirePixelFocusOwner().rootScope
         if (attachedScope === scope) return
         /** Active node moved between scopes only when the resolved scope changes. */
         val node = activeNode
@@ -1802,11 +1662,11 @@ private class FocusWidgetState : State<FocusWidget>() {
 
     /** Honors the first eligible autofocus candidate for the runtime or a hosted overlay route. */
     private fun requestAutofocusIfAvailable() {
-        /** Active node proposed as this widget's autofocus candidate. */
+        /** 作为该 widget autofocus 候选提交的活跃节点。 */
         val node = activeNode
-        /** Mounted scope used to find the correct runtime and modal entry. */
+        /** 用于定位正确 runtime 与 modal 条目的已挂载 scope。 */
         val scope = attachedScope ?: return
-        if (widget.autofocus) (scope.owner ?: PixelFocusManager.legacyOwner).requestAutofocus(node, scope)
+        if (widget.autofocus) scope.owner?.requestAutofocus(node, scope)
     }
 
     /** Scrolls a newly focused list item into its viewport at most once per target. */
@@ -1936,11 +1796,10 @@ private class OverlayFocusScopeState : State<OverlayFocusScopeWidget>() {
     /** Exact focus-layer registration removed on logical close or disposal. */
     private var activationToken: PixelOverlayFocusToken? = null
 
-    /** Registers active route order before descendant focus widgets resolve their scope. */
+    /** 在后代焦点 widget 解析其 scope 之前，先登记当前 route 的层级顺序。 */
     override fun build(context: BuildContext): Widget {
-        /** Runtime owner isolating focus state from every sibling Host or test runtime. */
-        val owner = context.getInheritedWidgetOfExactType<PixelFocusOwnerScope>()?.owner
-            ?: PixelFocusManager.legacyOwner
+        /** 把焦点状态与其它 Host 或测试 runtime 隔离开的 runtime owner。 */
+        val owner = context.requirePixelFocusOwner()
         /** Parent scope containing the route opener and application fallback controls. */
         val parentScope = context.getInheritedWidgetOfExactType<FocusScopeWidget>()?.node
             ?: owner.rootScope
@@ -2038,17 +1897,16 @@ private class OverlayDismissKeyHandlerWidget(
 
 /** Retains one Host normalized dismiss handler and removes it at every inactive boundary. */
 private class OverlayDismissKeyHandlerState : State<OverlayDismissKeyHandlerWidget>() {
-    /** Nearest runtime owner retained even while controller policy temporarily disables input. */
+    /** 最近的 runtime owner；即使控制器策略临时禁用输入也继续持有。 */
     private var currentOwner: PixelFocusOwner? = null
 
-    /** Exact runtime-local token removed on disable, owner change, or disposal. */
+    /** 在禁用、owner 变更或释放时被移除的 runtime 局部精确 token。 */
     private var registrationToken: PixelDismissKeyHandlerToken? = null
 
-    /** Rebinds when this subtree moves between a Host, tester, or detached legacy runtime. */
+    /** 该子树在 Host 与测试 runtime 之间迁移时重新绑定。 */
     override fun didChangeDependencies() {
-        /** Nearest runtime-local focus owner receiving normalized Host key dispatch. */
-        val owner = context.getInheritedWidgetOfExactType<PixelFocusOwnerScope>()?.owner
-            ?: PixelFocusManager.legacyOwner
+        /** 接收归一化 Host 按键分发的最近 runtime 局部焦点 owner。 */
+        val owner = context.requirePixelFocusOwner()
         syncRegistration(owner)
     }
 
@@ -2228,11 +2086,10 @@ private class ModalFocusScopeState : State<ModalFocusScopeWidget>() {
     /** Exact modal activation restored on logical close or disposal. */
     private var activationToken: PixelModalFocusToken? = null
 
-    /** Activates or deactivates focus before descendants build for the current frame. */
+    /** 在后代构建当前帧之前，激活或停用该 modal 的焦点。 */
     override fun build(context: BuildContext): Widget {
-        /** Runtime owner that must isolate this modal stack from every sibling runtime. */
-        val owner = context.getInheritedWidgetOfExactType<PixelFocusOwnerScope>()?.owner
-            ?: PixelFocusManager.legacyOwner
+        /** 必须把该 modal 栈与其它 runtime 隔离开的 runtime owner。 */
+        val owner = context.requirePixelFocusOwner()
         /** Scope containing the opener and serving as this modal scope's ancestry parent. */
         val parentScope = context.getInheritedWidgetOfExactType<FocusScopeWidget>()?.node
             ?: owner.rootScope
@@ -2335,12 +2192,25 @@ internal class PixelFocusOwnerScope(
     val owner: PixelFocusOwner,
     /** Declarative root retained below this owner boundary. */
     override val child: Widget,
-    /** Stable boundary identity. */
+    /** 该边界的稳定身份标识。 */
     override val key: Any? = null,
 ) : InheritedWidget(child = child, key = key) {
-    /** Notifies descendants only when a different runtime owner replaces this boundary. */
+    /** 仅当另一个 runtime owner 替换该边界时才通知后代。 */
     override fun updateShouldNotify(oldWidget: InheritedWidget): Boolean {
         return (oldWidget as? PixelFocusOwnerScope)?.owner !== owner
+    }
+}
+
+/**
+ * 解析当前 build context 所属的 runtime-local 焦点 owner。
+ *
+ * 每个 retained build runtime 都会在根部注入 [PixelFocusOwnerScope]，因此挂载中的 widget 必然
+ * 能解析到唯一 owner。缺失时说明该子树没有经由 runtime 挂载，此时直接失败，而不是回退到某个
+ * 进程级共享 owner——那样会让两个 Host 互相看到对方的焦点。
+ */
+internal fun BuildContext.requirePixelFocusOwner(): PixelFocusOwner {
+    return checkNotNull(getInheritedWidgetOfExactType<PixelFocusOwnerScope>()?.owner) {
+        "Focus widgets must be mounted inside a PixelUiRuntime that installs PixelFocusOwnerScope"
     }
 }
 

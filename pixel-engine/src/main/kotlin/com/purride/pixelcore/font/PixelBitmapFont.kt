@@ -183,7 +183,16 @@ public class PixelBitmapFont(
 
         private val glyphCache = mutableMapOf<Char, GlyphBitmap>()
 
-        override fun findGlyph(character: Char, style: GlyphStyle): GlyphBitmap? {
+        /**
+         * 按完整 Unicode scalar 查内置 5x7 字模。
+         *
+         * 内置字模只覆盖 ASCII，因此 BMP 之外的 scalar 直接返回 `null` 交给下一个 source；
+         * 这里的 `Char` 只是内部查表键，不是对外 SPI。
+         */
+        override fun findGlyph(codePoint: Int, style: GlyphStyle): GlyphBitmap? {
+            if (codePoint > Char.MAX_VALUE.code) return null
+            /** 内置 ASCII 字模表的内部 BMP 查表键。 */
+            val character = codePoint.toChar()
             val normalizedCharacter = when {
                 character == ' ' -> ' '
                 character.isLowerCase() -> character.uppercaseChar()

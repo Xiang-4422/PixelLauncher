@@ -44,6 +44,37 @@ First public stable release of the Android-first Pixel Engine SDK.
   `PixelHostSetupConfig.profilePreference` are removed in favor of
   `PixelHostProfilePolicy.AdaptivePixels`, and `PixelHostView.screenProfile` becomes a read-only
   value derived from the policy; pinning a grid now uses `PixelHostProfilePolicy.Fixed(profile)`.
+- Focus has exactly one owner model: the runtime-local `PixelFocusOwner` held by each
+  `PixelHostView` and `PixelTester`. The process-global `PixelFocusManager` facade (`rootScope`,
+  `primaryFocus`, `setPrimaryFocus`, `clearFocus`, `dispatchKeyEvent`, `dispatchTextInputEvent`)
+  is removed together with the detached legacy focus tree, the root-scope sentinel rebinding in
+  `FocusScope`, and every `legacyOwner` fallback in `FocusNode` / `FocusScopeNode` / `Focus`.
+  A `FocusNode` that is not mounted in a runtime returns `false` from `requestFocus()` and
+  treats `unfocus()` as a no-op, so focus can never cross runtimes. `Focus(...)` is now a single
+  canonical declaration whose `onTextInput` is an optional parameter instead of a second overload.
+- Input events are exactly two disjoint kinds. `PixelKey.CHARACTER` and `PixelKeyEvent.character`
+  are removed, so `PixelKeyEvent` expresses only navigation, activation, and dismissal, and
+  `PixelTester.pressKey` no longer takes a character. Every printable payload — BMP,
+  supplementary, combining sequence, or multi-code-point IME commit — travels as one
+  `PixelTextInputEvent`. Text that no handler consumes no longer falls back to the key path, and
+  the Android mapper reports `PixelKey.UNKNOWN` for key codes without a non-text meaning. DPAD,
+  gamepad, hardware-keyboard, IME composition, surrogate, and grapheme behavior are unchanged,
+  as are the Android API-level branches that back them.
+- The glyph SPI is Unicode-scalar only: `GlyphSource.findGlyph(codePoint, style)` and
+  `GlyphProvider.rasterizeGlyph(codePoint, style)`. The `Char` entry points, the default
+  `rasterizeGlyph(Int, ...)` projection onto them, and the supplementary → U+FFFD compatibility
+  fallback are removed; `CompositeGlyphProvider` and `BitmapGlyphSource` no longer bridge through
+  `Char`. Both entry points still reject non-scalar keys, and malformed UTF-16 input still maps to
+  one deterministic U+FFFD lookup while preserving source offsets — that is a robustness contract,
+  not provider compatibility.
+- Frame scheduling has exactly one contract: `PixelFrameScheduler.scheduleFrame` returns a
+  `PixelFrameCallbackRegistration` that must physically remove a pending callback. The additive
+  `PixelCancellableFrameScheduler` interface and the `scheduleCancellableFrame` extension with its
+  guarded logical-cancellation fallback for old scheduler implementations are removed.
+- `MediaQuery` carries only logical viewport metrics. `MediaQuery.capabilitiesOf` and
+  `maybeCapabilitiesOf`, added to avoid widening `MediaQueryData`'s constructor/copy ABI, are
+  removed in favor of `HostCapabilities.of` / `maybeOf`. `HostCapabilities.of` keeps its
+  documented headless default for off-screen rendering and embedded hosts.
 - Concise component APIs (`OutlinedButton`, `TextButton`, `Checkbox`, `Switch`, `ListTile`,
   `Dialog`, `BottomSheet`, `ConfirmDialog`, `ModalBarrier`, `Toast`, `Snackbar`, `ProgressBar`,
   `PixelLoadingBar`, `AnimatedPixelLoadingBar`, `Badge`, `Divider`, `AppScaffold`, `EmptyState`,
@@ -188,7 +219,7 @@ Internal 0.x SDK baseline for `pixel-engine`.
   Controller operations, exact `PixelTextInputEvent`, `PixelTester.pressText`, and the
   `PixelTextEditingSession` / `PixelTextEditingValue` composition contract. See
   `pixel-engine/docs/guides/migration.md`.
-- Additive code-point `Int` glyph source/provider overloads, full-scalar glyph-pack/cache lookup,
+- Unicode scalar `Int` glyph source/provider entry points, full-scalar glyph-pack/cache lookup,
   `PixelClusterTextRasterizer`, grapheme-cluster paragraph units, and fixed Unicode 17.0.0 UAX #9
   revision 51 visual ordering. See
   `pixel-engine/docs/guides/migration.md`.
@@ -226,20 +257,20 @@ Internal 0.x SDK baseline for `pixel-engine`.
   failed or nested batches, target switching, Shift selection anchors, composition-aware surrounding
   deletion, reversed ranges, and API 33/34 attributed operations have explicit production tests on
   API 24 and API 37.
-- Explicit custom `EditText` injection remains source/binary compatible but is documented as a weak
-  compatibility path without full selection-only/composition-only or InputConnection guarantees.
-- `PixelKeyEvent.character` remains limited to one non-surrogate BMP character; supplementary and
-  multi-code-point commits use the additive String event path and are never split into surrogate
-  events.
+- The engine-owned hidden editor is the only supported contract. Injecting an arbitrary `EditText`
+  is no longer possible, because such an editor cannot guarantee selection-only/composition-only
+  write-back or grapheme-normalized InputConnection commands.
+- Printable input is delivered only as exact `PixelTextInputEvent` text; supplementary and
+  multi-code-point commits are never split into surrogate events.
 
 ### Unicode paragraph and Bidi behavior changes
 
 - `Text`, `RichText`, and `TextField` now share extended-grapheme layout units for wrap, ellipsis,
   letter spacing, caret, pointer hit testing, selection/composition rectangles, handles, and
   Accessibility character locations.
-- `GlyphSource` and `GlyphProvider` retain their frozen `Char` entry points while the engine and
-  glyph packs use complete scalar `Int` keys. Old providers receive one U+FFFD request for an
-  unsupported supplementary scalar instead of two surrogate requests.
+- `GlyphSource` and `GlyphProvider` are keyed by complete Unicode scalar `Int` values throughout
+  the engine and glyph packs, so a supplementary scalar is one lookup rather than two surrogate
+  requests.
 - Multi-code-point clusters are passed through only to a `PixelClusterTextRasterizer` that claims
   exact atomic support. Other rasterizers receive one deterministic U+FFFD fallback; clusters made
   only of default-ignorables remain zero-width and unpainted.
@@ -286,9 +317,9 @@ Internal 0.x SDK baseline for `pixel-engine`.
   disposes the old scope/provider and does not migrate running animations.
 - `PixelHostView.dispose()` now explicitly means the same irreversible terminal transition as
   `destroy()`; `PixelHostSetup.dispose()` also hides its default input bridge.
-- The original `PixelFrameScheduler.scheduleFrame(...): Unit`, `PixelTickerProvider` constructor,
-  and `PixelTicker` JVM constructor remain intact; cancellable scheduling and diagnostics are
-  additive APIs.
+- `PixelFrameScheduler.scheduleFrame(...)` returns a `PixelFrameCallbackRegistration`, so real
+  cancellation is part of the single scheduler contract rather than an optional capability. The
+  `PixelTickerProvider` and `PixelTicker` JVM constructors are unchanged.
 
 ### Animation controller behavior changes
 

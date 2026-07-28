@@ -522,10 +522,12 @@ widget 树，无论是否存在 `PixelTheme` provider；缺少 provider 时二�
 - scalar 兜底字形按 ASCII / 非 ASCII 选择 `narrowAdvanceWidth` 或 `wideAdvanceWidth`；普通缺字会绘制可见方框，空白和控制字符只保留 advance、不绘制墨迹。段落层的多 code-point cluster fallback 另见下文。
 - SDK 不在字体层自动读取 `PixelResourceCatalog.fonts`；catalog 只提供索引，调用方仍需要用 `PixelGlyphPackAssetLoader` 或自定义加载器创建 `PixelGlyphPack`。
 
-`GlyphSource.findGlyph(Int, ...)` 和 `GlyphProvider.rasterizeGlyph(Int, ...)` 是 1.0 主路径；冻结的
-`Char` 方法继续保留给旧源码和旧二进制消费者。只实现旧入口的 source 对 supplementary scalar
-返回缺字，只实现旧入口的 provider 会收到一次 U+FFFD 请求，不会收到两个 surrogate。公开 `Int`
-入口只接受 Unicode scalar，拒绝负数、U+10FFFF 以上及 surrogate 范围。
+`GlyphSource.findGlyph(codePoint, style)` 和 `GlyphProvider.rasterizeGlyph(codePoint, style)` 是唯一的
+字形 SPI，不存在 `Char` 重载。两个入口都只接受 Unicode scalar，拒绝负数、U+10FFFF 以上及
+surrogate 范围。supplementary code point 与 BMP 一视同仁地交给实现，不会降级成 U+FFFD。
+
+调用方传入的 UTF-16 文本若含孤立 surrogate，引擎按健壮性契约把该码元映射为一次确定的
+U+FFFD 查询，同时保持源字符串偏移不变——这与字形 SPI 的合法性校验是两件事。
 
 多 code-point grapheme 只有在 rasterizer 实现 `PixelClusterTextRasterizer` 且
 `canRasterizeCluster(exactCluster)` 返回 `true` 时才按原始 cluster 测量和绘制。内置
@@ -1510,8 +1512,8 @@ selection、composition 或 IME target。
 | `PixelAdaptiveLayoutData` / `AdaptiveBuilder` | 自适应布局快照与依赖 builder | px/dp/logical size、class、orientation、insets、features |
 | `PixelHostLifecycleDiagnostics` | Host 生命周期快照 | attachment、owner、interactive、transition 计数 |
 | `PixelHostFrameScope` | 自定义宿主的 frame/ticker 所有权边界 | pause、resume、dispose、diagnostics |
-| `PixelFrameScheduler` | 上游一次性帧源 | `scheduleFrame` |
-| `PixelCancellableFrameScheduler` | 可移除 pending callback 的 additive capability | `scheduleCancellableFrame` |
+| `PixelFrameScheduler` | 上游一次性帧源，注册即可取消 | `scheduleFrame` |
+| `PixelFrameCallbackRegistration` | 单个待交付回调的取消句柄 | `isPending`、`cancel` |
 | `PixelHostCapabilitySet` / `PixelHostServices` | 组合并在 widget 树读取聚焦平台能力 | Unsupported / Failed / success 明确分支 |
 | `PixelTypedSystemAction` | 封闭的类型安全系统动作 | URI、back、app settings、permission |
 | `PixelErrorEvent` / `PixelErrorReporter` | 实例级结构化错误通道 | cause、phase、context、recovery、timestamp |
@@ -1728,15 +1730,15 @@ SwipeRefreshScaffold(
 | `FocusNode` | 单点焦点 | `requestFocus`、`unfocus` |
 | `FocusScope` / `FocusScopeNode` | 焦点域 | 方向遍历、IME next |
 | `FocusTraversalGroup` | 局部焦点遍历策略域 | `child`、`traversalPolicy`、`node` |
-| `PixelFocusManager` | 旧版 detached/single-tree 兼容入口 | 新 Host 代码改用实例级分发 |
 
 `FocusTraversalGroup` 适合给一块控件设置局部遍历策略；默认内部持有 `FocusScopeNode`，
 需要跨页面保存焦点状态时再把 node 提升到业务层。`ShortcutHint` 只展示快捷键提示，
 实际按键处理仍放在 `Focus(onKeyEvent = ...)` 或宿主级分发里。
 
-每个 `PixelHostView` 和 `PixelTester` 现在各自拥有独立 focus owner。Android 自定义桥接应调用
-`PixelHostView.dispatchPixelKeyEvent(event)`，测试应调用 `PixelTester.pressKey(...)`；
-`PixelFocusManager` 只保留给尚未挂载到 Runtime 的旧版单树代码，不能用它选择“当前 Host”。
+每个 `PixelHostView` 和 `PixelTester` 各自拥有独立 focus owner，不存在进程级共享焦点树。
+Android 自定义桥接调用 `PixelHostView.dispatchPixelKeyEvent(event)`，测试调用
+`PixelTester.pressKey(...)`。焦点只能通过挂载中的 widget 树建立：未挂载（或已卸载）的
+`FocusNode` 调用 `requestFocus()` 直接返回 `false`，`unfocus()` 是空操作，都不会影响任何 runtime。
 
 标准交互组件自动创建独立 FocusNode；一个祖先 `Focus` 包住多个控件时，每个控件仍是独立
 Tab stop，disabled 子项不会阻断兄弟控件。应用快捷键会沿当前节点向祖先冒泡，并在任何组件
@@ -1807,9 +1809,13 @@ fun normalizeVisibleSelection(text: String, start: Int, end: Int): PixelUtf16Ran
 CRLF 都只能整体编辑。已有非配对 surrogate 会作为隔离恢复单元原样保留；新的平台 commit 不允许
 制造孤立 surrogate，code-point surrounding delete 遇到 malformed traversal 时 no-op。
 
-补充平面和多 code-point 输入使用 `PixelTextInputEvent(text)`、`Focus(onTextInput = ...)`、
-`PixelHostView.dispatchPixelTextInput` 或 `PixelTester.pressText`。旧 `PixelKeyEvent.character` 只为
-一个非 surrogate BMP `Char` 保留，不能承载 emoji surrogate pair。
+所有可打印文本——BMP、supplementary、组合簇、多 code-point 的 IME 提交——统一使用
+`PixelTextInputEvent(text)`、`Focus(onTextInput = ...)`、`PixelHostView.dispatchPixelTextInput`
+或 `PixelTester.pressText`，且始终保持为一次事件。
+
+`PixelKeyEvent` 只表达导航、激活和取消语义，不携带任何字符：`PixelKey` 没有 `CHARACTER`，
+`PixelKeyEvent` 没有 `character` 字段。未被 `onTextInput` 消费的文本不会退化成按键事件，
+非文本键也不会进入 `onTextInput`；两条链路各自独立冒泡。
 
 详细兼容边界和旧实现调整见[统一迁移指南](guides/migration.md)。字体、段落和 Bidi 已使用
 同一 cluster 边界，但编辑安全、Bidi 排序和真实 glyph/shaping 覆盖仍是三个独立能力。

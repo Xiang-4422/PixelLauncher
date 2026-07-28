@@ -105,7 +105,6 @@ com.purride.pixelcore public fun drawRect(
 com.purride.pixelcore public fun drawText(
 com.purride.pixelcore public fun drawText(
 com.purride.pixelcore public fun fillRect(
-com.purride.pixelcore public fun findGlyph(character: Char, style: GlyphStyle): GlyphBitmap?
 com.purride.pixelcore public fun findGlyph(codePoint: Int, style: GlyphStyle): GlyphBitmap?
 com.purride.pixelcore public fun fontMetrics(text: String = " "): PixelFontMetrics
 com.purride.pixelcore public fun fontMetrics(text: String = " ", style: GlyphStyle): PixelFontMetrics
@@ -170,7 +169,6 @@ com.purride.pixelcore public fun pixelAt(x: Int, y: Int): Int
 com.purride.pixelcore public fun prefetchBitmap(
 com.purride.pixelcore public fun prefetchGlyphPack(
 com.purride.pixelcore public fun prefetchSpriteSheet(
-com.purride.pixelcore public fun rasterizeGlyph(character: Char, style: GlyphStyle): GlyphBitmap
 com.purride.pixelcore public fun rasterizeGlyph(codePoint: Int, style: GlyphStyle): GlyphBitmap
 com.purride.pixelcore public fun record(stage: String, durationNs: Long)
 com.purride.pixelcore public fun release(buffer: PixelBuffer)
@@ -698,7 +696,6 @@ com.purride.pixelui public fun Expanded(
 com.purride.pixelui public fun FittedBox(
 com.purride.pixelui public fun Flexible(
 com.purride.pixelui public fun Focus(
-com.purride.pixelui public fun Focus(
 com.purride.pixelui public fun FocusScope(
 com.purride.pixelui public fun FocusTraversalGroup(
 com.purride.pixelui public fun Form(
@@ -847,7 +844,6 @@ com.purride.pixelui public fun cancel(
 com.purride.pixelui public fun cancel(
 com.purride.pixelui public fun cancel()
 com.purride.pixelui public fun cancelPredictiveBack()
-com.purride.pixelui public fun capabilitiesOf(context: BuildContext): HostCapabilitiesData
 com.purride.pixelui public fun capabilitySet(): Set<PixelSemanticsAction> = buildSet
 com.purride.pixelui public fun ceil(offset: Int): Int
 com.purride.pixelui public fun circle(
@@ -856,7 +852,6 @@ com.purride.pixelui public fun clear()
 com.purride.pixelui public fun clear()
 com.purride.pixelui public fun clear()
 com.purride.pixelui public fun clear(animated: Boolean = true): Boolean
-com.purride.pixelui public fun clearFocus(node: FocusNode? = null)
 com.purride.pixelui public fun clearFocus(node: FocusNode? = null)
 com.purride.pixelui public fun clearFocusedTextInput()
 com.purride.pixelui public fun clearSubmitState()
@@ -882,12 +877,10 @@ com.purride.pixelui public fun dismissCurrent(): Boolean
 com.purride.pixelui public fun dismissCurrent(): Boolean
 com.purride.pixelui public fun dismissTop(): Boolean
 com.purride.pixelui public fun dispatch(action: PixelTypedSystemAction): PixelCapabilityResult
-com.purride.pixelui public fun dispatchKeyEvent(event: PixelKeyEvent): Boolean
 com.purride.pixelui public fun dispatchPixelKeyEvent(event: PixelKeyEvent): Boolean
 com.purride.pixelui public fun dispatchPixelTextInput(event: PixelTextInputEvent): Boolean
 com.purride.pixelui public fun dispatchSystemAction(
 com.purride.pixelui public fun dispatchSystemAction(action: PixelTypedSystemAction): PixelCapabilityResult
-com.purride.pixelui public fun dispatchTextInputEvent(event: PixelTextInputEvent): Boolean
 com.purride.pixelui public fun dispose()
 com.purride.pixelui public fun dispose()
 com.purride.pixelui public fun dispose()
@@ -967,7 +960,6 @@ com.purride.pixelui public fun load(locale: PixelLocale): PixelLocalizationBundl
 com.purride.pixelui public fun localeOf(context: BuildContext): PixelLocale
 com.purride.pixelui public fun matches(link: PixelDeepLink): Boolean
 com.purride.pixelui public fun matches(link: PixelDeepLink): Boolean = matcher.matches(link)
-com.purride.pixelui public fun maybeCapabilitiesOf(context: BuildContext): HostCapabilitiesData?
 com.purride.pixelui public fun maybeLocaleOf(context: BuildContext): PixelLocale?
 com.purride.pixelui public fun maybeOf(context: BuildContext): HostCapabilitiesData?
 com.purride.pixelui public fun maybeOf(context: BuildContext): MediaQueryData?
@@ -1076,7 +1068,6 @@ com.purride.pixelui public fun selectStack(
 com.purride.pixelui public fun setContent(provider: RootWidgetProvider)
 com.purride.pixelui public fun setPixel(
 com.purride.pixelui public fun setPixelGapRatio(ratio: Float)
-com.purride.pixelui public fun setPrimaryFocus(node: FocusNode)
 com.purride.pixelui public fun setValue(value: T)
 com.purride.pixelui public fun setViewInsets(
 com.purride.pixelui public fun setWindowInsets(
@@ -1134,7 +1125,6 @@ com.purride.pixelui public lateinit var context: BuildContext
 com.purride.pixelui public lateinit var widget: T
 com.purride.pixelui public object Handled : PixelCapabilityResult
 com.purride.pixelui public object Loading : PixelAsyncSnapshot<Nothing>()
-com.purride.pixelui public object PixelFocusManager
 com.purride.pixelui public object PixelHapticFeedback
 com.purride.pixelui public object PixelHostServices
 com.purride.pixelui public object PixelNavigateBackAction : PixelTypedSystemAction
@@ -1714,7 +1704,6 @@ com.purride.pixelui public val right: Float,
 com.purride.pixelui public val role: PixelMotionRole = PixelMotionRole.Spatial,
 com.purride.pixelui public val role: PixelMotionRole,
 com.purride.pixelui public val role: PixelSemanticRole,
-com.purride.pixelui public val rootScope: FocusScopeNode = legacyOwner.rootScope
 com.purride.pixelui public val route: PixelMotionSpec = PixelMotionSpec(
 com.purride.pixelui public val rowCount: Int,
 com.purride.pixelui public val rowIndex: Int,
@@ -1888,7 +1877,6 @@ com.purride.pixelui public var onTextInput: ((PixelTextInputEvent) -> Boolean)? 
 com.purride.pixelui public var onUnhandledBack: (() -> Boolean)? = null
 com.purride.pixelui public var outcome: PixelRouteOutcome<R>? = null
 com.purride.pixelui public var pagerGesturePolicy: PagerGesturePolicy = PagerGesturePolicy.Default
-com.purride.pixelui public var primaryFocus: FocusNode?
 com.purride.pixelui public var profilePolicy: PixelHostProfilePolicy = PixelHostProfilePolicy.Fixed(screenProfile)
 com.purride.pixelui public var screenProfile: ScreenProfile = ScreenProfile(
 com.purride.pixelui public var scrollPhysics: PixelScrollPhysics = PixelScrollPhysics.Default
@@ -2029,13 +2017,12 @@ com.purride.pixelui.gesture public open fun shouldHandOffListToPager(
 com.purride.pixelui.gesture public open fun shouldStartDrag(
 com.purride.pixelui.gesture public val Default: NestedScrollGesturePolicy = NestedScrollGesturePolicy()
 com.purride.pixelui.gesture public val Default: PagerGesturePolicy = PagerGesturePolicy()
-com.purride.pixelui.host public class ManualFrameScheduler : PixelCancellableFrameScheduler
+com.purride.pixelui.host public class ManualFrameScheduler : PixelFrameScheduler
 com.purride.pixelui.host public class PixelHostFrameScope private constructor(
 com.purride.pixelui.host public companion object
 com.purride.pixelui.host public constructor(
 com.purride.pixelui.host public constructor(sourceScheduler: PixelFrameScheduler) : this(
 com.purride.pixelui.host public data class PixelHostFrameScopeDiagnostics(
-com.purride.pixelui.host public fun PixelFrameScheduler.scheduleCancellableFrame(
 com.purride.pixelui.host public fun addFrameListener(
 com.purride.pixelui.host public fun advanceFrame(frameTimeNanos: Long)
 com.purride.pixelui.host public fun cancel(): Boolean
@@ -2045,9 +2032,7 @@ com.purride.pixelui.host public fun dispose()
 com.purride.pixelui.host public fun dispose()
 com.purride.pixelui.host public fun pause()
 com.purride.pixelui.host public fun resume()
-com.purride.pixelui.host public fun scheduleCancellableFrame(
-com.purride.pixelui.host public fun scheduleFrame(callback: (frameTimeNanos: Long) -> Unit)
-com.purride.pixelui.host public interface PixelCancellableFrameScheduler : PixelFrameScheduler
+com.purride.pixelui.host public fun scheduleFrame(
 com.purride.pixelui.host public interface PixelFrameCallbackRegistration
 com.purride.pixelui.host public interface PixelFrameListenerRegistration
 com.purride.pixelui.host public interface PixelFrameScheduler
@@ -2251,7 +2236,7 @@ com.purride.pixelui.testing public fun nth(index: Int): PixelFinder
 com.purride.pixelui.testing public fun performSemanticsAction(
 com.purride.pixelui.testing public fun performTextEditAction(
 com.purride.pixelui.testing public fun pixelAt(x: Int, y: Int): PixelColor
-com.purride.pixelui.testing public fun pressKey(key: PixelKey, character: Char? = null): Boolean
+com.purride.pixelui.testing public fun pressKey(key: PixelKey): Boolean
 com.purride.pixelui.testing public fun pressText(text: String): Boolean
 com.purride.pixelui.testing public fun pumpAndSettle(maxFrames: Int = 60)
 com.purride.pixelui.testing public fun pumpFrame(deltaMs: Long)

@@ -7,20 +7,18 @@ import com.purride.pixelui.PixelKeyEvent
 import com.purride.pixelui.PixelTextInputEvent
 
 /**
- * Maps one Android key code to the legacy navigation/activation/Char event model.
+ * 把一个 Android key code 映射为导航/激活/取消语义的 [PixelKeyEvent]。
  *
- * Supplementary-plane [unicodeChar] values intentionally map to [PixelKey.UNKNOWN] because
- * narrowing them to [Char] would truncate the scalar. Call
- * [mapAndroidKeyCodeToPixelTextInputEvent] first when exact text delivery is available.
+ * 本函数只负责非文本键：硬件键盘、DPAD 和游戏手柄按键都在这里归一化。任何可打印输入都不
+ * 经过这里，调用方应先用 [mapAndroidKeyCodeToPixelTextInputEvent] 取出精确文本；没有对应
+ * 非文本语义的 key code 一律返回 [PixelKey.UNKNOWN]。
  *
- * @param keyCode Android key code identifying navigation, activation, or a printable key.
+ * @param keyCode Android key code identifying navigation, activation, or dismissal.
  * @param isShiftPressed Whether Shift modifies Tab into reverse traversal.
- * @param unicodeChar Unicode scalar reported by Android, or zero when no printable value exists.
  */
 internal fun mapAndroidKeyCodeToPixelKeyEvent(
     keyCode: Int,
     isShiftPressed: Boolean = false,
-    unicodeChar: Int = 0,
 ): PixelKeyEvent {
     return when (keyCode) {
         KeyEvent.KEYCODE_TAB -> PixelKeyEvent(if (isShiftPressed) PixelKey.SHIFT_TAB else PixelKey.TAB)
@@ -41,25 +39,18 @@ internal fun mapAndroidKeyCodeToPixelKeyEvent(
         KeyEvent.KEYCODE_BUTTON_MODE,
         -> PixelKeyEvent(PixelKey.BACK)
         KeyEvent.KEYCODE_ESCAPE -> PixelKeyEvent(PixelKey.ESCAPE)
-        else -> {
-            /** Scalar with Android's dead-key marker removed while retaining the combining accent. */
-            val normalizedUnicodeChar = unicodeChar.withoutAndroidCombiningAccentFlag()
-            /** Legacy-compatible scalar that fits exactly in one non-surrogate UTF-16 unit. */
-            val char = normalizedUnicodeChar
-                .takeIf(::isLegacyCompatibleBmpScalar)
-                ?.toChar()
-            if (char != null) PixelKeyEvent(PixelKey.CHARACTER, char) else PixelKeyEvent(PixelKey.UNKNOWN)
-        }
+        else -> PixelKeyEvent(PixelKey.UNKNOWN)
     }
 }
 
 /**
- * Maps printable Android input to the exact String event used by the additive text path.
+ * 把可打印的 Android 输入映射为 canonical 文本链路使用的精确 String 事件。
  *
- * Key codes already assigned navigation, activation, or dismissal semantics return `null`, even if
- * Android also reports a printable value. Valid supplementary-plane scalars are encoded as one
- * well-formed surrogate pair inside [PixelTextInputEvent.text]. Invalid scalars and isolated UTF-16
- * surrogate values are rejected instead of manufacturing malformed text.
+ * Maps printable Android input to the exact String event used by the canonical text path.
+ *
+ * 已经拥有导航、激活或取消语义的 key code 一律返回 `null`，即使 Android 同时报告了可打印值。
+ * 合法的 supplementary code point 会被编码成一对完整代理项写入 [PixelTextInputEvent.text]；
+ * 非法标量和孤立的 UTF-16 代理项会被拒绝，而不是拼出畸形文本。
  *
  * @param keyCode Android key code whose dedicated non-text meaning takes precedence.
  * @param unicodeChar Unicode scalar reported by Android, or zero when no text is available.
@@ -70,7 +61,7 @@ internal fun mapAndroidKeyCodeToPixelTextInputEvent(
     unicodeChar: Int = 0,
 ): PixelTextInputEvent? {
     if (keyCode.hasDedicatedPixelKeyMeaning()) return null
-    /** Scalar with Android's dead-key marker removed while retaining the combining accent. */
+    /** 去掉 Android 死键标记位、但保留组合音标本身的标量。 */
     val normalizedUnicodeChar = unicodeChar.withoutAndroidCombiningAccentFlag()
     if (
         !Character.isValidCodePoint(normalizedUnicodeChar) ||
@@ -79,12 +70,12 @@ internal fun mapAndroidKeyCodeToPixelTextInputEvent(
     ) {
         return null
     }
-    /** Exact UTF-16 encoding of one validated Unicode scalar, including supplementary pairs. */
+    /** 一个已校验 Unicode 标量的精确 UTF-16 编码，包含 supplementary 代理对。 */
     val text = String(Character.toChars(normalizedUnicodeChar))
     return PixelTextInputEvent(text)
 }
 
-/** Removes Android's dead-key bit while preserving the actual combining-accent scalar. */
+/** 清除 Android 的死键标记位，同时保留真正的组合音标标量。 */
 private fun Int.withoutAndroidCombiningAccentFlag(): Int {
     return if (this and KeyCharacterMap.COMBINING_ACCENT != 0) {
         this and KeyCharacterMap.COMBINING_ACCENT_MASK
@@ -93,7 +84,7 @@ private fun Int.withoutAndroidCombiningAccentFlag(): Int {
     }
 }
 
-/** Returns whether this key code already represents a non-text Pixel key. */
+/** 判断该 key code 是否已经代表一个非文本的 Pixel 按键。 */
 private fun Int.hasDedicatedPixelKeyMeaning(): Boolean {
     return when (this) {
         KeyEvent.KEYCODE_TAB,
@@ -117,22 +108,11 @@ private fun Int.hasDedicatedPixelKeyMeaning(): Boolean {
     }
 }
 
-/** Returns whether this Unicode scalar can be represented losslessly by the legacy Char API. */
-private fun isLegacyCompatibleBmpScalar(codePoint: Int): Boolean {
-    return codePoint in MIN_BMP_TEXT_CODE_POINT..MAX_BMP_CODE_POINT && !codePoint.isSurrogateCodePoint()
-}
-
-/** Returns whether this integer occupies the reserved UTF-16 surrogate code-point interval. */
+/** 判断该整数是否落在 UTF-16 保留的代理项码位区间内。 */
 private fun Int.isSurrogateCodePoint(): Boolean = this in MIN_SURROGATE_CODE_POINT..MAX_SURROGATE_CODE_POINT
 
-/** Lowest non-zero BMP scalar considered printable input by the mapper. */
-private const val MIN_BMP_TEXT_CODE_POINT: Int = 0x0001
-
-/** Highest scalar encoded by exactly one UTF-16 code unit. */
-private const val MAX_BMP_CODE_POINT: Int = 0xFFFF
-
-/** First scalar reserved for UTF-16 high-surrogate code units. */
+/** UTF-16 高位代理项码元的起始标量。 */
 private const val MIN_SURROGATE_CODE_POINT: Int = 0xD800
 
-/** Last scalar reserved for UTF-16 low-surrogate code units. */
+/** UTF-16 低位代理项码元的结束标量。 */
 private const val MAX_SURROGATE_CODE_POINT: Int = 0xDFFF

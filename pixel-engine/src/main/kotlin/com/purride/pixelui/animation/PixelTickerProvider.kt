@@ -2,7 +2,6 @@ package com.purride.pixelui.animation
 
 import com.purride.pixelui.host.PixelFrameCallbackRegistration
 import com.purride.pixelui.host.PixelFrameScheduler
-import com.purride.pixelui.host.scheduleCancellableFrame
 
 /**
  * 定义 `PixelTickerProviderDiagnostics` 在 `PixelTickerProvider` 中承担的数据与行为边界。
@@ -203,7 +202,7 @@ public class PixelTickerProvider(
         if (activeTickers.isEmpty()) cancelScheduledFrame()
     }
 
-    /** Releases provider ownership after one ticker reaches terminal disposal. */
+    /** 某个 ticker 终态释放后，解除 provider 对它的持有。 */
     internal fun unregister(ticker: PixelTicker) {
         if (liveTickers.remove(ticker)) {
             disposedTickerCount += 1L
@@ -212,7 +211,7 @@ public class PixelTickerProvider(
         if (activeTickers.isEmpty()) cancelScheduledFrame()
     }
 
-    /** Schedules one cancellable source callback when active work requires it. */
+    /** 在存在活跃工作时注册一次可取消的上游帧回调。 */
     private fun scheduleIfNeeded() {
         if (
             isDisposed ||
@@ -222,7 +221,7 @@ public class PixelTickerProvider(
         ) {
             return
         }
-        scheduledFrame = frameScheduler.scheduleCancellableFrame(::dispatchFrame)
+        scheduledFrame = frameScheduler.scheduleFrame(::dispatchFrame)
     }
 
     /** Dispatches one source frame using pause-excluding active time. */

@@ -135,7 +135,7 @@ class PixelHostFrameScopeTest {
         scope.pause()
         // Callback registration remains pending without touching the source queue.
         var receivedTime: Long? = null
-        val registration: PixelFrameCallbackRegistration = scope.scheduleCancellableFrame { time ->
+        val registration: PixelFrameCallbackRegistration = scope.scheduleFrame { time ->
             receivedTime = time
         }
 

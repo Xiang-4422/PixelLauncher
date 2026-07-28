@@ -846,14 +846,13 @@ public class PixelHostView @JvmOverloads constructor(
     /**
  * 执行 `PixelHostView` 的 `dispatchPixelKeyEvent` 公开行为；具体参数、返回和副作用见下文。
  *
-     * Dispatches a normalized key to this Host's runtime-local focus tree.
+     * Dispatches a normalized non-text key to this Host's runtime-local focus tree.
      *
-     * Custom Android bridges and tests should use this instance API instead of the legacy
-     * process-global [PixelFocusManager.dispatchKeyEvent].
+     * 每个 Host 只驱动自己的焦点树；可打印文本请改用 [dispatchPixelTextInput]。
      */
     public fun dispatchPixelKeyEvent(event: PixelKeyEvent): Boolean {
         if (!lifecycleCoordinator.isInteractive) return false
-        /** Whether this Host's focused node chain consumed the normalized key. */
+        /** 本 Host 的聚焦节点链是否消费了该归一化按键。 */
         val handled = renderCoordinator.focusOwner.dispatchKeyEvent(event)
         if (handled) invalidate()
         return handled
@@ -864,12 +863,11 @@ public class PixelHostView @JvmOverloads constructor(
  *
      * Dispatches exact text to this Host's runtime-local focused node chain.
      *
-     * The String payload is delivered before the legacy character-key path. Supplementary-plane
-     * and multi-code-point input remains one event; only an unconsumed single non-surrogate BMP
-     * character can fall back to [PixelKeyEvent].
+     * Supplementary-plane、组合簇和多 code point 的 IME 提交都保持为一次事件，不会被拆分，也
+     * 不会退化成 [PixelKeyEvent]。
      *
      * @param event Exact text payload produced by an IME, hardware key, or custom Host bridge.
-     * @return `true` when a text handler or compatible legacy character handler consumed it.
+     * @return `true` when a focused text handler consumed the complete payload.
      */
     public fun dispatchPixelTextInput(event: PixelTextInputEvent): Boolean {
         if (!lifecycleCoordinator.isInteractive) return false
@@ -2060,18 +2058,17 @@ private data class GapBackgroundKey(
     val dotInset: Float,
     /** Physical painted dot extent. */
     val dotSize: Float,
-    /** Shape rendered for every logical dot. */
+    /** 每个逻辑像素点渲染使用的形状。 */
     val pixelShape: PixelShape,
-    /** ARGB background color between shaped dots. */
+    /** 像素点之间的 ARGB 背景色。 */
     val pixelGridArgb: Int,
 )
 
-/** Converts one Android key into the frozen navigation/activation/legacy-Char event model. */
+/** 把一个 Android 按键转换为 canonical 的导航/激活/取消事件模型。 */
 private fun android.view.KeyEvent.toPixelKeyEvent(): PixelKeyEvent {
     return mapAndroidKeyCodeToPixelKeyEvent(
         keyCode = keyCode,
         isShiftPressed = isShiftPressed,
-        unicodeChar = unicodeChar,
     )
 }
 

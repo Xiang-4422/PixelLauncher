@@ -47,6 +47,28 @@ import 需要改写为根包 import。其余公开 package import 保持不变�
   改用 `PixelHostProfilePolicy.AdaptivePixels(dotSizePx, pixelShape)`；
   `PixelHostView.screenProfile` 变为只读派生值，原先的直接赋值改为
   `profilePolicy = PixelHostProfilePolicy.Fixed(profile)`。
+- 焦点只有 runtime-local owner 一个模型。`PixelFocusManager` 及其 `rootScope`、`primaryFocus`、
+  `setPrimaryFocus`、`clearFocus`、`dispatchKeyEvent`、`dispatchTextInputEvent` 全部删除：
+  改用 `PixelHostView.dispatchPixelKeyEvent` / `dispatchPixelTextInput` 或 `PixelTester.pressKey`
+  / `pressText`。detached legacy focus tree、root scope sentinel 重绑定和跨 runtime 回落一并移除；
+  未挂载的 `FocusNode.requestFocus()` 返回 `false`，`unfocus()` 为空操作。
+- `Focus(...)` 只有一个 canonical 声明，`onTextInput` 是可选参数（原先的双 overload 合并）。
+  参数顺序为 `child`、`node`、`autofocus`、`canRequestFocus`、`onKeyEvent`、`onTextInput`、
+  `scrollTarget`、`key`；使用具名实参的调用点无需改动。
+- 输入事件按“文本 / 非文本”彻底二分。`PixelKey.CHARACTER` 与 `PixelKeyEvent.character` 删除，
+  `PixelTester.pressKey` 不再接受 `character` 参数。所有可打印文本（BMP、supplementary、
+  组合簇、多 code-point IME 提交）只走 `PixelTextInputEvent`；未被 `onTextInput` 消费的文本
+  不再回落到 `onKeyEvent`。Android mapper 对无非文本语义的 key code 返回 `PixelKey.UNKNOWN`。
+- 字形 SPI 只保留 Unicode scalar 入口。`GlyphSource.findGlyph(Char, ...)` 和
+  `GlyphProvider.rasterizeGlyph(Char, ...)` 删除，`rasterizeGlyph(Int, ...)` 不再有默认实现，
+  supplementary → U+FFFD 的兼容投影也一并移除；自定义 source/provider 改为实现
+  `findGlyph(codePoint: Int, style)` / `rasterizeGlyph(codePoint: Int, style)`。孤立 surrogate 输入
+  仍按健壮性契约映射为确定的 U+FFFD 查询。
+- 帧调度只有 `PixelFrameScheduler` 一个契约。`PixelCancellableFrameScheduler` 接口和
+  `PixelFrameScheduler.scheduleCancellableFrame` 扩展（含仅为旧实现保留的逻辑取消回落）删除；
+  `scheduleFrame` 现在返回 `PixelFrameCallbackRegistration`，实现方必须支持真实取消。
+- `MediaQuery` 只承载逻辑视口。`MediaQuery.capabilitiesOf` / `maybeCapabilitiesOf` 这两个
+  为避免扩展 `MediaQueryData` ABI 而添加的投影删除，改用 `HostCapabilities.of` / `maybeOf`。
 - 主题使用语义 token 与组件状态集合，不复制旧固定颜色。
 - 路由使用 typed destination/request/entry/outcome 和版本化 snapshot adapter。
 - 文本 offset 对外保持 UTF-16，但 selection、caret、编辑和 hit test 必须落在 grapheme 边界。

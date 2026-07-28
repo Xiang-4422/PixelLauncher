@@ -82,7 +82,7 @@ public class PixelHostFrameScope private constructor(
     tickerProviderFactory: PixelTickerProviderFactory,
     /** 仅用于区分公开兼容构造器与内部主构造器。 */
     @Suppress("UNUSED_PARAMETER") constructorMarker: Unit,
-) : PixelCancellableFrameScheduler {
+) : PixelFrameScheduler {
     /** 使用默认 ticker 工厂创建 Host 私有帧边界，保留历史构造器描述符。 */
     public constructor(sourceScheduler: PixelFrameScheduler) : this(
         sourceScheduler = sourceScheduler,
@@ -161,13 +161,8 @@ public class PixelHostFrameScope private constructor(
  */
     public val tickerProvider: PixelTickerProvider = tickerProviderFactory.create(this)
 
-    /** Preserves [PixelFrameScheduler]'s historical fire-and-forget API. */
-    override fun scheduleFrame(callback: (Long) -> Unit) {
-        scheduleCancellableFrame(callback)
-    }
-
-    /** Queues one callback without requesting an upstream frame while paused. */
-    override fun scheduleCancellableFrame(
+    /** 排入一个回调；暂停期间不会向上游请求帧。 */
+    override fun scheduleFrame(
         callback: (Long) -> Unit,
     ): PixelFrameCallbackRegistration {
         if (isDisposed) return InactiveFrameCallbackRegistration
@@ -263,7 +258,7 @@ public class PixelHostFrameScope private constructor(
         )
     }
 
-    /** Requests one upstream frame only while active work exists. */
+    /** 仅在存在活跃工作时才向上游请求一帧。 */
     private fun scheduleSourceFrameIfNeeded() {
         if (
             isDisposed ||
@@ -273,7 +268,7 @@ public class PixelHostFrameScope private constructor(
         ) {
             return
         }
-        sourceFrameRegistration = sourceScheduler.scheduleCancellableFrame(::dispatchSourceFrame)
+        sourceFrameRegistration = sourceScheduler.scheduleFrame(::dispatchSourceFrame)
         scheduledSourceFrameCount += 1L
     }
 

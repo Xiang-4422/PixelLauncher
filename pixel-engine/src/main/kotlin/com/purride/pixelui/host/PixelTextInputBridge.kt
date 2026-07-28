@@ -91,7 +91,6 @@ public class PixelTextInputBridge(
                         mapAndroidKeyCodeToPixelKeyEvent(
                             keyCode = keyCode,
                             isShiftPressed = event.isShiftPressed,
-                            unicodeChar = event.unicodeChar,
                         ),
                     )
                 }

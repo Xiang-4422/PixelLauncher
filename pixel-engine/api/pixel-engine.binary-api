@@ -46,13 +46,11 @@ public final class com.purride.pixelcore.AxisMotionState {
 }
 public final class com.purride.pixelcore.BitmapGlyphSource implements com.purride.pixelcore.GlyphSource {
   public com.purride.pixelcore.BitmapGlyphSource(java.util.List<com.purride.pixelcore.PixelGlyphPack>);
-  public com.purride.pixelcore.GlyphBitmap findGlyph(char, com.purride.pixelcore.GlyphStyle);
   public com.purride.pixelcore.GlyphBitmap findGlyph(int, com.purride.pixelcore.GlyphStyle);
   public void clearCache();
 }
 public final class com.purride.pixelcore.CompositeGlyphProvider implements com.purride.pixelcore.GlyphProvider {
   public com.purride.pixelcore.CompositeGlyphProvider(java.util.List<? extends com.purride.pixelcore.GlyphSource>);
-  public com.purride.pixelcore.GlyphBitmap rasterizeGlyph(char, com.purride.pixelcore.GlyphStyle);
   public com.purride.pixelcore.GlyphBitmap rasterizeGlyph(int, com.purride.pixelcore.GlyphStyle);
   public void clearCache();
 }
@@ -134,21 +132,17 @@ public final class com.purride.pixelcore.GlyphMetrics {
   public boolean equals(java.lang.Object);
 }
 public interface com.purride.pixelcore.GlyphProvider {
-  public abstract com.purride.pixelcore.GlyphBitmap rasterizeGlyph(char, com.purride.pixelcore.GlyphStyle);
-  public default com.purride.pixelcore.GlyphBitmap rasterizeGlyph(int, com.purride.pixelcore.GlyphStyle);
+  public abstract com.purride.pixelcore.GlyphBitmap rasterizeGlyph(int, com.purride.pixelcore.GlyphStyle);
   public default void clearCache();
 }
 public final class com.purride.pixelcore.GlyphProvider$DefaultImpls {
-  public static com.purride.pixelcore.GlyphBitmap rasterizeGlyph(com.purride.pixelcore.GlyphProvider, int, com.purride.pixelcore.GlyphStyle);
   public static void clearCache(com.purride.pixelcore.GlyphProvider);
 }
 public interface com.purride.pixelcore.GlyphSource {
-  public abstract com.purride.pixelcore.GlyphBitmap findGlyph(char, com.purride.pixelcore.GlyphStyle);
-  public default com.purride.pixelcore.GlyphBitmap findGlyph(int, com.purride.pixelcore.GlyphStyle);
+  public abstract com.purride.pixelcore.GlyphBitmap findGlyph(int, com.purride.pixelcore.GlyphStyle);
   public default void clearCache();
 }
 public final class com.purride.pixelcore.GlyphSource$DefaultImpls {
-  public static com.purride.pixelcore.GlyphBitmap findGlyph(com.purride.pixelcore.GlyphSource, int, com.purride.pixelcore.GlyphStyle);
   public static void clearCache(com.purride.pixelcore.GlyphSource);
 }
 public final class com.purride.pixelcore.GlyphStyle {
@@ -1510,8 +1504,6 @@ public final class com.purride.pixelui.MediaQuery extends com.purride.pixelui.In
 public final class com.purride.pixelui.MediaQuery$Companion {
   public final com.purride.pixelui.MediaQueryData maybeOf(com.purride.pixelui.BuildContext);
   public final com.purride.pixelui.MediaQueryData of(com.purride.pixelui.BuildContext);
-  public final com.purride.pixelui.HostCapabilitiesData maybeCapabilitiesOf(com.purride.pixelui.BuildContext);
-  public final com.purride.pixelui.HostCapabilitiesData capabilitiesOf(com.purride.pixelui.BuildContext);
   public com.purride.pixelui.MediaQuery$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
 }
 public final class com.purride.pixelui.MediaQueryData {
@@ -2379,20 +2371,9 @@ public final class com.purride.pixelui.PixelFocusKt {
   public static com.purride.pixelui.Widget FocusScope$default(com.purride.pixelui.Widget, com.purride.pixelui.FocusScopeNode, com.purride.pixelui.FocusTraversalPolicy, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget FocusTraversalGroup(com.purride.pixelui.Widget, com.purride.pixelui.FocusTraversalPolicy, com.purride.pixelui.FocusScopeNode, java.lang.Object);
   public static com.purride.pixelui.Widget FocusTraversalGroup$default(com.purride.pixelui.Widget, com.purride.pixelui.FocusTraversalPolicy, com.purride.pixelui.FocusScopeNode, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget Focus(com.purride.pixelui.Widget, com.purride.pixelui.FocusNode, boolean, boolean, kotlin.jvm.functions.Function1<? super com.purride.pixelui.PixelKeyEvent, java.lang.Boolean>, com.purride.pixelui.PixelFocusScrollTarget, java.lang.Object);
-  public static com.purride.pixelui.Widget Focus$default(com.purride.pixelui.Widget, com.purride.pixelui.FocusNode, boolean, boolean, kotlin.jvm.functions.Function1, com.purride.pixelui.PixelFocusScrollTarget, java.lang.Object, int, java.lang.Object);
-  public static final com.purride.pixelui.Widget Focus(com.purride.pixelui.Widget, com.purride.pixelui.FocusNode, boolean, boolean, kotlin.jvm.functions.Function1<? super com.purride.pixelui.PixelKeyEvent, java.lang.Boolean>, com.purride.pixelui.PixelFocusScrollTarget, java.lang.Object, kotlin.jvm.functions.Function1<? super com.purride.pixelui.PixelTextInputEvent, java.lang.Boolean>);
-  public static com.purride.pixelui.Widget Focus$default(com.purride.pixelui.Widget, com.purride.pixelui.FocusNode, boolean, boolean, kotlin.jvm.functions.Function1, com.purride.pixelui.PixelFocusScrollTarget, java.lang.Object, kotlin.jvm.functions.Function1, int, java.lang.Object);
-}
-public final class com.purride.pixelui.PixelFocusManager {
-  public static final com.purride.pixelui.PixelFocusManager INSTANCE;
-  public final com.purride.pixelui.FocusScopeNode getRootScope();
-  public final com.purride.pixelui.FocusNode getPrimaryFocus();
-  public final void setPrimaryFocus(com.purride.pixelui.FocusNode);
-  public final void clearFocus(com.purride.pixelui.FocusNode);
-  public static void clearFocus$default(com.purride.pixelui.PixelFocusManager, com.purride.pixelui.FocusNode, int, java.lang.Object);
-  public final boolean dispatchKeyEvent(com.purride.pixelui.PixelKeyEvent);
-  public final boolean dispatchTextInputEvent(com.purride.pixelui.PixelTextInputEvent);
+  public static final com.purride.pixelui.Widget Focus(com.purride.pixelui.Widget, com.purride.pixelui.FocusNode, boolean, boolean, kotlin.jvm.functions.Function1<? super com.purride.pixelui.PixelKeyEvent, java.lang.Boolean>, kotlin.jvm.functions.Function1<? super com.purride.pixelui.PixelTextInputEvent, java.lang.Boolean>, com.purride.pixelui.PixelFocusScrollTarget, java.lang.Object);
+  public static com.purride.pixelui.Widget Focus$default(com.purride.pixelui.Widget, com.purride.pixelui.FocusNode, boolean, boolean, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, com.purride.pixelui.PixelFocusScrollTarget, java.lang.Object, int, java.lang.Object);
+  public static final com.purride.pixelui.PixelFocusOwner requirePixelFocusOwner(com.purride.pixelui.BuildContext);
 }
 public final class com.purride.pixelui.PixelFocusScrollTarget {
   public com.purride.pixelui.PixelFocusScrollTarget(com.purride.pixelui.state.PixelListState, com.purride.pixelui.state.PixelListController, int, java.lang.Integer);
@@ -3093,21 +3074,17 @@ public final class com.purride.pixelui.PixelKey extends java.lang.Enum<com.purri
   public static final com.purride.pixelui.PixelKey SPACE;
   public static final com.purride.pixelui.PixelKey BACK;
   public static final com.purride.pixelui.PixelKey ESCAPE;
-  public static final com.purride.pixelui.PixelKey CHARACTER;
   public static final com.purride.pixelui.PixelKey UNKNOWN;
   public static com.purride.pixelui.PixelKey[] values();
   public static com.purride.pixelui.PixelKey valueOf(java.lang.String);
   public static kotlin.enums.EnumEntries<com.purride.pixelui.PixelKey> getEntries();
 }
 public final class com.purride.pixelui.PixelKeyEvent {
-  public com.purride.pixelui.PixelKeyEvent(com.purride.pixelui.PixelKey, java.lang.Character);
-  public com.purride.pixelui.PixelKeyEvent(com.purride.pixelui.PixelKey, java.lang.Character, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public com.purride.pixelui.PixelKeyEvent(com.purride.pixelui.PixelKey);
   public final com.purride.pixelui.PixelKey getKey();
-  public final java.lang.Character getCharacter();
   public final com.purride.pixelui.PixelKey component1();
-  public final java.lang.Character component2();
-  public final com.purride.pixelui.PixelKeyEvent copy(com.purride.pixelui.PixelKey, java.lang.Character);
-  public static com.purride.pixelui.PixelKeyEvent copy$default(com.purride.pixelui.PixelKeyEvent, com.purride.pixelui.PixelKey, java.lang.Character, int, java.lang.Object);
+  public final com.purride.pixelui.PixelKeyEvent copy(com.purride.pixelui.PixelKey);
+  public static com.purride.pixelui.PixelKeyEvent copy$default(com.purride.pixelui.PixelKeyEvent, com.purride.pixelui.PixelKey, int, java.lang.Object);
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);
@@ -6275,19 +6252,12 @@ public class com.purride.pixelui.gesture.PagerGesturePolicy {
 public final class com.purride.pixelui.gesture.PagerGesturePolicy$Companion {
   public com.purride.pixelui.gesture.PagerGesturePolicy$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
 }
-public final class com.purride.pixelui.host.ManualFrameScheduler implements com.purride.pixelui.host.PixelCancellableFrameScheduler {
+public final class com.purride.pixelui.host.ManualFrameScheduler implements com.purride.pixelui.host.PixelFrameScheduler {
   public com.purride.pixelui.host.ManualFrameScheduler();
-  public void scheduleFrame(kotlin.jvm.functions.Function1<? super java.lang.Long, kotlin.Unit>);
-  public com.purride.pixelui.host.PixelFrameCallbackRegistration scheduleCancellableFrame(kotlin.jvm.functions.Function1<? super java.lang.Long, kotlin.Unit>);
+  public com.purride.pixelui.host.PixelFrameCallbackRegistration scheduleFrame(kotlin.jvm.functions.Function1<? super java.lang.Long, kotlin.Unit>);
   public final void advanceFrame(long);
   public final int getPendingCount();
   public final void clear();
-}
-public interface com.purride.pixelui.host.PixelCancellableFrameScheduler extends com.purride.pixelui.host.PixelFrameScheduler {
-  public abstract com.purride.pixelui.host.PixelFrameCallbackRegistration scheduleCancellableFrame(kotlin.jvm.functions.Function1<? super java.lang.Long, kotlin.Unit>);
-}
-public final class com.purride.pixelui.host.PixelCancellableFrameSchedulerKt {
-  public static final com.purride.pixelui.host.PixelFrameCallbackRegistration scheduleCancellableFrame(com.purride.pixelui.host.PixelFrameScheduler, kotlin.jvm.functions.Function1<? super java.lang.Long, kotlin.Unit>);
 }
 public interface com.purride.pixelui.host.PixelFrameCallbackRegistration {
   public abstract boolean isPending();
@@ -6299,19 +6269,18 @@ public interface com.purride.pixelui.host.PixelFrameListenerRegistration {
 }
 public interface com.purride.pixelui.host.PixelFrameScheduler {
   public static final com.purride.pixelui.host.PixelFrameScheduler$Companion Companion;
-  public abstract void scheduleFrame(kotlin.jvm.functions.Function1<? super java.lang.Long, kotlin.Unit>);
+  public abstract com.purride.pixelui.host.PixelFrameCallbackRegistration scheduleFrame(kotlin.jvm.functions.Function1<? super java.lang.Long, kotlin.Unit>);
 }
 public final class com.purride.pixelui.host.PixelFrameScheduler$Companion {
   public final com.purride.pixelui.host.PixelFrameScheduler getDefault();
 }
-public final class com.purride.pixelui.host.PixelHostFrameScope implements com.purride.pixelui.host.PixelCancellableFrameScheduler {
+public final class com.purride.pixelui.host.PixelHostFrameScope implements com.purride.pixelui.host.PixelFrameScheduler {
   public com.purride.pixelui.host.PixelHostFrameScope(com.purride.pixelui.host.PixelFrameScheduler);
   public com.purride.pixelui.host.PixelHostFrameScope(com.purride.pixelui.host.PixelFrameScheduler, com.purride.pixelui.animation.PixelTickerProviderFactory);
   public final boolean isPaused();
   public final boolean isDisposed();
   public final com.purride.pixelui.animation.PixelTickerProvider getTickerProvider();
-  public void scheduleFrame(kotlin.jvm.functions.Function1<? super java.lang.Long, kotlin.Unit>);
-  public com.purride.pixelui.host.PixelFrameCallbackRegistration scheduleCancellableFrame(kotlin.jvm.functions.Function1<? super java.lang.Long, kotlin.Unit>);
+  public com.purride.pixelui.host.PixelFrameCallbackRegistration scheduleFrame(kotlin.jvm.functions.Function1<? super java.lang.Long, kotlin.Unit>);
   public final com.purride.pixelui.host.PixelFrameListenerRegistration addFrameListener(kotlin.jvm.functions.Function1<? super java.lang.Long, kotlin.Unit>);
   public final void pause();
   public final void resume();
@@ -6793,8 +6762,7 @@ public final class com.purride.pixelui.testing.PixelTester {
   public final void submitTextInput();
   public final boolean performTextEditAction(com.purride.pixelui.testing.PixelFinder, com.purride.pixelui.PixelTextEditAction, java.lang.String);
   public static boolean performTextEditAction$default(com.purride.pixelui.testing.PixelTester, com.purride.pixelui.testing.PixelFinder, com.purride.pixelui.PixelTextEditAction, java.lang.String, int, java.lang.Object);
-  public final boolean pressKey(com.purride.pixelui.PixelKey, java.lang.Character);
-  public static boolean pressKey$default(com.purride.pixelui.testing.PixelTester, com.purride.pixelui.PixelKey, java.lang.Character, int, java.lang.Object);
+  public final boolean pressKey(com.purride.pixelui.PixelKey);
   public final boolean pressText(java.lang.String);
   public final void composeText(com.purride.pixelui.testing.PixelFinder, java.lang.String);
   public final void updateComposition(com.purride.pixelui.testing.PixelFinder, int, int);

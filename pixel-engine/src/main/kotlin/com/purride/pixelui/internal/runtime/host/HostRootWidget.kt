@@ -35,8 +35,6 @@ internal data class HostRootWidget(
     val physicalWidthPx: Int = 0,
     /** Current physical Host height used for dp size classes. */
     val physicalHeightPx: Int = 0,
-    /** Host text direction inherited by direction-aware widgets. */
-    val textDirection: TextDirection = TextDirection.LTR,
     /** Host default bitmap text rasterizer. */
     val textRasterizer: PixelTextRasterizer,
     /** Stable system-bar padding in logical pixels. */
@@ -47,20 +45,15 @@ internal data class HostRootWidget(
     val hostServices: PixelHostCapabilitySet = PixelHostCapabilitySet.Empty,
     /** 当前 Engine 注入根树的主题 token；null 保留历史无显式 Theme 包装行为。 */
     val themeTokens: PixelThemeTokens? = null,
-    /** Lifecycle-bound ticker provider inherited by motion-aware widgets. */
+    /** 绑定生命周期的 ticker provider，由动效相关 widget 继承。 */
     val motionVsync: PixelTickerProvider? = null,
-    /** Effective platform or explicitly overridden motion settings. */
-    val motionSettings: PixelMotionSettings = PixelMotionSettings.Default,
     /**
      * Atomic Host environment snapshot used by every capability-aware root provider.
      *
-     * The compatibility default derives the direction and motion fields from the legacy
-     * parameters above, while new Host callers pass their already-resolved snapshot directly.
+     * 布局方向、文字缩放、对比度和动效偏好全部来自这一份快照；Host 在渲染前已经解析好它，
+     * 离屏渲染与直接 render 测试则使用 headless 默认值。
      */
-    val capabilities: HostCapabilitiesData = HostCapabilitiesData.Default.copy(
-        layoutDirection = textDirection,
-        motionSettings = motionSettings,
-    ),
+    val capabilities: HostCapabilitiesData = HostCapabilitiesData.Default,
     /** Application widget subtree receiving the complete Host environment. */
     val child: Widget,
     override val key: Any? = null,

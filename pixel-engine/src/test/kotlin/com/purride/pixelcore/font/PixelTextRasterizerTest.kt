@@ -53,7 +53,7 @@ class PixelTextRasterizerTest {
     }
 
     private class FillGlyphProvider : GlyphProvider {
-        override fun rasterizeGlyph(character: Char, style: GlyphStyle): GlyphBitmap {
+        override fun rasterizeGlyph(codePoint: Int, style: GlyphStyle): GlyphBitmap {
             return GlyphBitmap(
                 width = style.narrowAdvanceWidth,
                 height = style.cellHeight,

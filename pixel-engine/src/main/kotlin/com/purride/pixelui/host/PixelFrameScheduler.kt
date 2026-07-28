@@ -23,16 +23,20 @@ public interface PixelFrameScheduler {
      *
      * 实现方需保证回调在 Android 主线程被触发（生产实现）或者
      * 在调用线程同步触发（manual 测试实现）。
+     *
+     * 返回的 [PixelFrameCallbackRegistration] 必须能真正把尚未交付的回调从底层队列移除，
+     * 这样 Host 生命周期在暂停或销毁时不会再收到一帧迟到的回调。
      */
-    public fun scheduleFrame(callback: (frameTimeNanos: Long) -> Unit)
+    public fun scheduleFrame(
+        callback: (frameTimeNanos: Long) -> Unit,
+    ): PixelFrameCallbackRegistration
 
     /** 集中提供 `PixelFrameScheduler` 共享的工厂、常量或无状态辅助入口。 */
     public companion object {
         /**
-         * 解析 pixel-engine 内置的默认 Android 帧调度器。
+         * pixel-engine 内置的默认 Android 帧调度器，直接委托系统 `Choreographer`。
          *
-         * 测试和非 Android 宿主应注入 [ManualFrameScheduler] 或自定义实现。通过类名解析
-         * 保留已经冻结的 `Default` JVM 描述符。
+         * 测试和非 Android 宿主应注入 [ManualFrameScheduler] 或自定义实现。
          */
         public val Default: PixelFrameScheduler
             get() = ChoreographerFrameScheduler
@@ -53,17 +57,12 @@ public interface PixelFrameScheduler {
  * // 此时 scheduleFrame 注册的所有回调按序执行
  * ```
  */
-public class ManualFrameScheduler : PixelCancellableFrameScheduler {
-    /** Pending registrations retained in FIFO order. */
+public class ManualFrameScheduler : PixelFrameScheduler {
+    /** 按 FIFO 顺序保留的待触发注册。 */
     private val pending: ArrayDeque<ManualFrameCallbackRegistration> = ArrayDeque()
 
-    /** Preserves the historical fire-and-forget scheduling entry point. */
-    override fun scheduleFrame(callback: (Long) -> Unit) {
-        scheduleCancellableFrame(callback)
-    }
-
-    /** Adds one physically removable callback to the manual FIFO queue. */
-    override fun scheduleCancellableFrame(
+    /** 把一个可被真正移除的回调加入手动 FIFO 队列。 */
+    override fun scheduleFrame(
         callback: (Long) -> Unit,
     ): PixelFrameCallbackRegistration {
         val registration = ManualFrameCallbackRegistration(callback)
@@ -99,16 +98,16 @@ public class ManualFrameScheduler : PixelCancellableFrameScheduler {
         registrations.forEach(ManualFrameCallbackRegistration::cancelAfterRemoval)
     }
 
-    /** One physically removable callback owned by this manual scheduler. */
+    /** 由本手动调度器持有、可被真正移除的单个回调。 */
     private inner class ManualFrameCallbackRegistration(
-        /** Consumer callback delivered at most once. */
+        /** 最多交付一次的消费者回调。 */
         private val callback: (Long) -> Unit,
     ) : PixelFrameCallbackRegistration {
-        /** Whether this callback remains queued or eligible in the current dispatch snapshot. */
+        /** 回调是否仍在队列中，或仍在本次分发快照里具备交付资格。 */
         override var isPending: Boolean = true
             private set
 
-        /** Removes this callback from the pending queue when it has not fired. */
+        /** 回调尚未触发时，把它从待触发队列中移除。 */
         override fun cancel(): Boolean {
             if (!isPending) return false
             isPending = false
@@ -116,12 +115,12 @@ public class ManualFrameScheduler : PixelCancellableFrameScheduler {
             return true
         }
 
-        /** Marks a callback cancelled after its queue has already been cleared in bulk. */
+        /** 队列被整体清空后，把该回调标记为已取消。 */
         fun cancelAfterRemoval() {
             isPending = false
         }
 
-        /** Claims and delivers one callback from an [advanceFrame] snapshot. */
+        /** 从一次 [advanceFrame] 快照中取得交付权并执行该回调。 */
         fun dispatch(frameTimeNanos: Long) {
             if (!isPending) return
             isPending = false

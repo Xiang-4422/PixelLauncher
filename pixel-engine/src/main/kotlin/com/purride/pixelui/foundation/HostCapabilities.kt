@@ -416,8 +416,8 @@ public class HostCapabilitiesData(
  * Provides a [HostCapabilitiesData] snapshot to a retained widget subtree.
  *
  * Equal snapshots do not notify inherited dependents, while any changed capability value does.
- * Components that intentionally support a scope-less legacy path can call [of] and receive
- * [HostCapabilitiesData.Default]; [maybeOf] distinguishes that fallback from explicit injection.
+ * 没有宿主作用域时（离屏渲染、直接 render 测试、未注入能力的嵌入宿主），[of] 返回确定的
+ * [HostCapabilitiesData.Default]；需要区分“真的没有作用域”与“显式注入了默认值”时用 [maybeOf]。
  *
  * @property data Immutable host capability snapshot inherited by descendants.
  * @property child Descendant widget subtree receiving the snapshot.
@@ -428,14 +428,14 @@ public class HostCapabilities(
     override val child: Widget,
     override val key: Any? = null,
 ) : InheritedWidget(child = child, key = key) {
-    /** Notifies dependents only when the complete immutable snapshot changes by value. */
+    /** 仅当整份不可变快照的值发生变化时才通知依赖方。 */
     override fun updateShouldNotify(oldWidget: InheritedWidget): Boolean {
         return data != (oldWidget as? HostCapabilities)?.data
     }
 
     /** 集中提供 `HostCapabilities` 的 `<companion>` 共享入口。
  *
- * Reads the nearest inherited capability snapshot with optional legacy fallback behavior.
+ * Reads the nearest inherited capability snapshot, with an explicit headless fallback.
  */
     public companion object {
         /** 执行 `HostCapabilities` 的 `maybeOf` 公开行为；具体参数、返回和副作用见下文。
@@ -448,7 +448,7 @@ public class HostCapabilities(
 
         /** 执行 `HostCapabilities` 的 `of` 公开行为；具体参数、返回和副作用见下文。
  *
- * Returns the nearest capability snapshot or the documented scope-less default.
+ * Returns the nearest capability snapshot, or the documented headless default.
  */
         public fun of(context: BuildContext): HostCapabilitiesData {
             return maybeOf(context) ?: HostCapabilitiesData.Default

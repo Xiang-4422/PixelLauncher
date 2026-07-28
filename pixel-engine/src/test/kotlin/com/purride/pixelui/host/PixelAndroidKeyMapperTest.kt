@@ -8,9 +8,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** Verifies Android key normalization for navigation, activation, exact text, and legacy Char input. */
+/** 验证 Android 按键在导航、激活与精确文本输入三条路径上的归一化结果。 */
 class PixelAndroidKeyMapperTest {
-    /** Tab and DPAD codes retain their platform-independent focus traversal meanings. */
+    /** Tab 与 DPAD 键码保持平台无关的焦点遍历语义。 */
     @Test
     fun dpadAndTabKeysMapToFocusTraversalKeys() {
         assertEquals(PixelKey.TAB, mapAndroidKeyCodeToPixelKeyEvent(KeyEvent.KEYCODE_TAB).key)
@@ -21,7 +21,7 @@ class PixelAndroidKeyMapperTest {
         assertEquals(PixelKey.ARROW_RIGHT, mapAndroidKeyCodeToPixelKeyEvent(KeyEvent.KEYCODE_DPAD_RIGHT).key)
     }
 
-    /** Gamepad confirmation and cancellation buttons retain their standard Pixel key meanings. */
+    /** 手柄的确认与取消按键保持标准 Pixel 按键语义。 */
     @Test
     fun gamepadConfirmAndCancelButtonsMapToEnterAndBack() {
         assertEquals(PixelKey.ENTER, mapAndroidKeyCodeToPixelKeyEvent(KeyEvent.KEYCODE_BUTTON_A).key)
@@ -32,80 +32,56 @@ class PixelAndroidKeyMapperTest {
         assertEquals(PixelKey.BACK, mapAndroidKeyCodeToPixelKeyEvent(KeyEvent.KEYCODE_BUTTON_MODE).key)
     }
 
-    /** Space remains a logical activation key instead of degrading into a printable character. */
+    /** 空格保持为逻辑激活键，不会退化成可打印字符。 */
     @Test
     fun spaceMapsToDedicatedActivationKey() {
         assertEquals(PixelKey.SPACE, mapAndroidKeyCodeToPixelKeyEvent(KeyEvent.KEYCODE_SPACE).key)
     }
 
-    /** One representable printable scalar remains available through the frozen Char event. */
+    /** 可打印的硬件键盘输入只产生精确文本，不会产生按键事件。 */
     @Test
-    fun printableCharactersStillUseUnicodeChar() {
-        /** Legacy printable event produced from one exact BMP scalar. */
-        val event = mapAndroidKeyCodeToPixelKeyEvent(KeyEvent.KEYCODE_A, unicodeChar = 'a'.code)
-        assertEquals(PixelKey.CHARACTER, event.key)
-        assertEquals('a', event.character)
-    }
-
-    /** Supplementary-plane scalars remain one exact String instead of truncating through Char. */
-    @Test
-    fun supplementaryUnicodeCharMapsToExactTextEvent() {
-        /** Exact additive event produced from U+1F600 GRINNING FACE. */
+    fun printableCharactersOnlyProduceTextEvents() {
+        /** 由一个可打印 BMP 标量产生的精确 String 事件。 */
         val textEvent = mapAndroidKeyCodeToPixelTextInputEvent(
-            keyCode = KeyEvent.KEYCODE_UNKNOWN,
-            unicodeChar = GRINNING_FACE_CODE_POINT,
-        )
-        /** Legacy event that must refuse lossy supplementary-plane narrowing. */
-        val legacyEvent = mapAndroidKeyCodeToPixelKeyEvent(
-            keyCode = KeyEvent.KEYCODE_UNKNOWN,
-            unicodeChar = GRINNING_FACE_CODE_POINT,
-        )
-
-        assertEquals("\uD83D\uDE00", textEvent?.text)
-        assertEquals(PixelKey.UNKNOWN, legacyEvent.key)
-        assertNull(legacyEvent.character)
-    }
-
-    /** Printable BMP input is available to exact-text dispatch while preserving old key mapping. */
-    @Test
-    fun bmpUnicodeCharSupportsTextFirstAndLegacyFallback() {
-        /** Exact String event used by the new dispatch phase. */
-        val textEvent = mapAndroidKeyCodeToPixelTextInputEvent(
-            keyCode = KeyEvent.KEYCODE_A,
-            unicodeChar = 'a'.code,
-        )
-        /** Legacy Char event retained for an unconsumed String payload. */
-        val legacyEvent = mapAndroidKeyCodeToPixelKeyEvent(
             keyCode = KeyEvent.KEYCODE_A,
             unicodeChar = 'a'.code,
         )
 
         assertEquals("a", textEvent?.text)
-        assertEquals(PixelKey.CHARACTER, legacyEvent.key)
-        assertEquals('a', legacyEvent.character)
+        assertEquals(PixelKey.UNKNOWN, mapAndroidKeyCodeToPixelKeyEvent(KeyEvent.KEYCODE_A).key)
     }
 
-    /** Android's dead-key marker is removed without discarding its combining-accent scalar. */
+    /** 补充平面标量保持为一个完整 String，不会被截断成 Char。 */
+    @Test
+    fun supplementaryUnicodeCharMapsToExactTextEvent() {
+        /** 由 U+1F600 GRINNING FACE 产生的精确事件。 */
+        val textEvent = mapAndroidKeyCodeToPixelTextInputEvent(
+            keyCode = KeyEvent.KEYCODE_UNKNOWN,
+            unicodeChar = GRINNING_FACE_CODE_POINT,
+        )
+
+        assertEquals("\uD83D\uDE00", textEvent?.text)
+        assertEquals(
+            PixelKey.UNKNOWN,
+            mapAndroidKeyCodeToPixelKeyEvent(KeyEvent.KEYCODE_UNKNOWN).key,
+        )
+    }
+
+    /** 去掉 Android 死键标记位的同时，不丢弃其组合音标标量。 */
     @Test
     fun combiningAccentFlagPreservesExactAccentText() {
-        /** Android-encoded dead acute accent with the high combining marker bit set. */
+        /** 带组合标记高位的 Android 死键锐音符编码值。 */
         val encodedAccent = KeyCharacterMap.COMBINING_ACCENT or COMBINING_ACUTE_ACCENT_CODE_POINT
-        /** Exact text event containing the combining mark without Android's transport flag. */
+        /** 只含组合标记、不含 Android 传输标记位的精确文本事件。 */
         val textEvent = mapAndroidKeyCodeToPixelTextInputEvent(
-            keyCode = KeyEvent.KEYCODE_APOSTROPHE,
-            unicodeChar = encodedAccent,
-        )
-        /** Legacy Char event preserving the same BMP combining mark for compatibility. */
-        val legacyEvent = mapAndroidKeyCodeToPixelKeyEvent(
             keyCode = KeyEvent.KEYCODE_APOSTROPHE,
             unicodeChar = encodedAccent,
         )
 
         assertEquals("\u0301", textEvent?.text)
-        assertEquals('\u0301', legacyEvent.character)
     }
 
-    /** Dedicated keys and malformed scalar values never masquerade as printable text. */
+    /** 专用按键和畸形标量值都不会被伪装成可打印文本。 */
     @Test
     fun nonTextAndInvalidUnicodeValuesDoNotCreateTextEvents() {
         assertNull(
@@ -129,18 +105,18 @@ class PixelAndroidKeyMapperTest {
         )
     }
 
-    /** Stable scalar constants keep malformed and supplementary test intent explicit. */
+    /** 稳定的标量常量，让畸形输入与补充平面用例的意图保持显式。 */
     private companion object {
-        /** U+1F600 GRINNING FACE, represented by a surrogate pair in UTF-16. */
+        /** U+1F600 GRINNING FACE，在 UTF-16 中由一对代理项表示。 */
         const val GRINNING_FACE_CODE_POINT: Int = 0x1F600
 
-        /** First UTF-16 high-surrogate code point, invalid as an independent Unicode scalar. */
+        /** UTF-16 首个高位代理项码位，作为独立 Unicode 标量非法。 */
         const val HIGH_SURROGATE_CODE_POINT: Int = 0xD800
 
-        /** First integer above Unicode's maximum scalar U+10FFFF. */
+        /** 超出 Unicode 最大标量 U+10FFFF 的第一个整数。 */
         const val INVALID_CODE_POINT: Int = 0x110000
 
-        /** U+0301 COMBINING ACUTE ACCENT used for Android dead-key transport coverage. */
+        /** U+0301 COMBINING ACUTE ACCENT，用于覆盖 Android 死键传输路径。 */
         const val COMBINING_ACUTE_ACCENT_CODE_POINT: Int = 0x0301
     }
 }

@@ -8,14 +8,9 @@ import android.view.Choreographer
  * 实现由统一 `pixel-engine` 持有，并直接委托给系统 [Choreographer]，从而同步
  * 60/90/120Hz 等不同屏幕帧节拍。
  */
-internal object ChoreographerFrameScheduler : PixelCancellableFrameScheduler {
-    /** 保留历史上的一次性、不可取消调度入口。 */
-    override fun scheduleFrame(callback: (Long) -> Unit) {
-        scheduleCancellableFrame(callback)
-    }
-
+internal object ChoreographerFrameScheduler : PixelFrameScheduler {
     /** 注册可由 Host 生命周期实际移除的 Choreographer 回调。 */
-    override fun scheduleCancellableFrame(
+    override fun scheduleFrame(
         callback: (Long) -> Unit,
     ): PixelFrameCallbackRegistration {
         /** 当前主线程关联的系统 Choreographer。 */

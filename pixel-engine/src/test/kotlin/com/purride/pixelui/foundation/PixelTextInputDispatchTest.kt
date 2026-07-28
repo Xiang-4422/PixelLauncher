@@ -8,38 +8,35 @@ import com.purride.pixelui.PixelTextInputEvent
 import com.purride.pixelui.Text
 import com.purride.pixelui.Widget
 import com.purride.pixelui.testing.PixelTester
-import java.lang.reflect.Constructor
-import java.lang.reflect.Method
-import java.lang.reflect.Modifier
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Verifies exact-text focus dispatch, legacy fallback, runtime isolation, and frozen key-event ABI. */
+/** 验证 exact-text 分发、文本与按键链路的彻底分离，以及多 runtime 隔离。 */
 class PixelTextInputDispatchTest {
-    /** The public event retains exact UTF-16 content and ordinary immutable data-class semantics. */
+    /** 公开事件保留精确的 UTF-16 内容，并具备普通不可变 data class 语义。 */
     @Test
     fun publicTextInputEventPreservesExactPayload() {
-        /** Event containing one supplementary scalar plus a combining sequence without normalization. */
-        val event = PixelTextInputEvent("\uD83D\uDE00e\u0301")
-        /** Independent copy proving the public copy contract retains every original code unit. */
+        /** 同时包含一个 supplementary 标量和一段组合序列、且未被规范化的事件。 */
+        val event = PixelTextInputEvent("😀é")
+        /** 用于证明公开 copy 契约保留全部原始码元的独立副本。 */
         val copied = event.copy()
 
-        assertEquals("\uD83D\uDE00e\u0301", event.text)
+        assertEquals("😀é", event.text)
         assertEquals(event, copied)
     }
 
-    /** Focused text handlers bubble toward ancestors and stop immediately after one consumes input. */
+    /** 聚焦节点的文本处理器向祖先冒泡，一旦某一层消费就立即停止。 */
     @Test
     fun textInputBubblesFromFocusedNodeToParentUntilConsumed() {
-        /** Ordered trace proving both bubbling direction and exact payload preservation. */
+        /** 用于验证冒泡方向和载荷精确性的有序轨迹。 */
         val trace = mutableListOf<String>()
-        /** Parent focus node that consumes the payload after its child declines it. */
+        /** 在子节点拒绝后消费该载荷的父焦点节点。 */
         val parentNode = FocusNode("parent")
-        /** Initially focused child node where text dispatch begins. */
+        /** 初始获得焦点、作为文本分发起点的子节点。 */
         val childNode = FocusNode("child")
-        /** Off-screen runtime used to exercise the public declarative Focus overload. */
+        /** 用于驱动 canonical 声明式 Focus 工厂的离屏 runtime。 */
         val tester = PixelTester()
         try {
             tester.pumpWidget(
@@ -63,66 +60,34 @@ class PixelTextInputDispatchTest {
                 logicalHeight = 12,
             )
 
-            assertTrue(tester.pressText("\uD83D\uDE00"))
-            assertEquals(listOf("child:\uD83D\uDE00", "parent:\uD83D\uDE00"), trace)
+            assertTrue(tester.pressText("😀"))
+            assertEquals(listOf("child:😀", "parent:😀"), trace)
         } finally {
             tester.dispose()
         }
     }
 
-    /** The String handler runs first and an unconsumed BMP scalar reaches the legacy Char handler. */
+    /** 未被消费的文本不会退化成按键事件，哪怕它只是一个可用 Char 表示的 BMP 标量。 */
     @Test
-    fun unconsumedSingleBmpTextFallsBackToCharacterKeyInOrder() {
-        /** Ordered trace distinguishing the additive String phase from the compatibility key phase. */
+    fun unconsumedBmpTextNeverReachesTheKeyHandler() {
+        /** 用于区分文本阶段与非文本按键阶段的有序轨迹。 */
         val trace = mutableListOf<String>()
-        /** Focus node configured with both the new and legacy handlers. */
-        val node = FocusNode("fallback")
-        /** Off-screen runtime driving exact text through the public tester API. */
+        /** 同时配置了文本处理器和按键处理器的焦点节点。 */
+        val node = FocusNode("no-fallback")
+        /** 通过公开 tester API 投递精确文本的离屏 runtime。 */
         val tester = PixelTester()
         try {
             tester.pumpWidget(
                 widget = Focus(
                     node = node,
                     autofocus = true,
-                    child = Text("FALLBACK"),
+                    child = Text("NO-FALLBACK"),
                     onTextInput = { event ->
                         trace += "text:${event.text}"
                         false
                     },
                     onKeyEvent = { event ->
-                        trace += "key:${event.character}"
-                        event.key == PixelKey.CHARACTER
-                    },
-                ),
-                logicalWidth = 32,
-                logicalHeight = 12,
-            )
-
-            assertTrue(tester.pressText("A"))
-            assertEquals(listOf("text:A", "key:A"), trace)
-        } finally {
-            tester.dispose()
-        }
-    }
-
-    /** A consumed String payload never duplicates delivery through the old CHARACTER event. */
-    @Test
-    fun consumedTextSuppressesLegacyCharacterFallback() {
-        /** Number of legacy character callbacks that must remain zero. */
-        var legacyDispatchCount = 0
-        /** Focus node whose exact-text handler consumes the BMP payload. */
-        val node = FocusNode("consumed")
-        /** Off-screen runtime driving the input event. */
-        val tester = PixelTester()
-        try {
-            tester.pumpWidget(
-                widget = Focus(
-                    node = node,
-                    autofocus = true,
-                    child = Text("CONSUMED"),
-                    onTextInput = { true },
-                    onKeyEvent = { event ->
-                        if (event.key == PixelKey.CHARACTER) legacyDispatchCount += 1
+                        trace += "key:${event.key}"
                         true
                     },
                 ),
@@ -130,23 +95,59 @@ class PixelTextInputDispatchTest {
                 logicalHeight = 12,
             )
 
-            assertTrue(tester.pressText("A"))
-            assertEquals(0, legacyDispatchCount)
+            assertFalse(tester.pressText("A"))
+            assertEquals(listOf("text:A"), trace)
         } finally {
             tester.dispose()
         }
     }
 
-    /** Supplementary and multi-code-point text stays exact and never becomes surrogate key events. */
+    /** 文本链路和按键链路互不重叠：非文本键只到 onKeyEvent，不会到 onTextInput。 */
     @Test
-    fun supplementaryAndMultiCodePointTextNeverNarrowsToCharFallback() {
-        /** Exact String payloads observed by the additive handler. */
+    fun nonTextKeysNeverReachTheTextHandler() {
+        /** 用于验证每个分发阶段只到达各自处理器的有序轨迹。 */
+        val trace = mutableListOf<String>()
+        /** 同时观察两个分发阶段的焦点节点。 */
+        val node = FocusNode("separated")
+        /** 依次投递一个导航按键和一段文本载荷的离屏 runtime。 */
+        val tester = PixelTester()
+        try {
+            tester.pumpWidget(
+                widget = Focus(
+                    node = node,
+                    autofocus = true,
+                    child = Text("SEPARATED"),
+                    onTextInput = { event ->
+                        trace += "text:${event.text}"
+                        true
+                    },
+                    onKeyEvent = { event ->
+                        trace += "key:${event.key}"
+                        true
+                    },
+                ),
+                logicalWidth = 32,
+                logicalHeight = 12,
+            )
+
+            assertTrue(tester.pressKey(PixelKey.ENTER))
+            assertTrue(tester.pressText("A"))
+            assertEquals(listOf("key:${PixelKey.ENTER}", "text:A"), trace)
+        } finally {
+            tester.dispose()
+        }
+    }
+
+    /** supplementary 和多 code point 文本保持精确，不会退化成逐码元的按键事件。 */
+    @Test
+    fun supplementaryAndMultiCodePointTextStaysExact() {
+        /** 文本处理器观察到的精确 String 载荷。 */
         val textPayloads = mutableListOf<String>()
-        /** Legacy characters that must stay empty for non-representable payloads. */
-        val legacyCharacters = mutableListOf<Char?>()
-        /** Focus node declining exact text so the fallback eligibility rule is exercised. */
+        /** 必须保持为空的按键事件列表；文本永远不会回落到按键链路。 */
+        val keyEvents = mutableListOf<PixelKeyEvent>()
+        /** 拒绝精确文本的焦点节点，便于暴露任何残留回落。 */
         val node = FocusNode("unicode")
-        /** Off-screen runtime dispatching supplementary and combining sequences. */
+        /** 投递 supplementary 与组合序列的离屏 runtime。 */
         val tester = PixelTester()
         try {
             tester.pumpWidget(
@@ -159,7 +160,7 @@ class PixelTextInputDispatchTest {
                         false
                     },
                     onKeyEvent = { event ->
-                        legacyCharacters += event.character
+                        keyEvents += event
                         true
                     },
                 ),
@@ -167,117 +168,74 @@ class PixelTextInputDispatchTest {
                 logicalHeight = 12,
             )
 
-            assertFalse(tester.pressText("\uD83D\uDE00"))
-            assertFalse(tester.pressText("e\u0301"))
-            assertEquals(listOf("\uD83D\uDE00", "e\u0301"), textPayloads)
-            assertTrue(legacyCharacters.isEmpty())
+            assertFalse(tester.pressText("😀"))
+            assertFalse(tester.pressText("é"))
+            assertFalse(tester.pressText("😀😁"))
+            assertEquals(
+                listOf("😀", "é", "😀😁"),
+                textPayloads,
+            )
+            assertTrue(keyEvents.isEmpty())
         } finally {
             tester.dispose()
         }
     }
 
-    /** Simultaneous tester runtimes deliver exact text only to their own primary focus chain. */
+    /** 并存的 tester runtime 只把精确文本投递给各自的 primary focus 链。 */
     @Test
     fun simultaneousRuntimesKeepTextInputIsolated() {
-        /** Payloads observed by the first runtime. */
+        /** 第一个 runtime 观察到的载荷。 */
         val firstPayloads = mutableListOf<String>()
-        /** Payloads observed by the second runtime. */
+        /** 第二个 runtime 观察到的载荷。 */
         val secondPayloads = mutableListOf<String>()
-        /** First independently retained test runtime. */
+        /** 第一个独立保留的测试 runtime。 */
         val firstTester = PixelTester()
-        /** Second independently retained test runtime. */
+        /** 第二个独立保留的测试 runtime。 */
         val secondTester = PixelTester()
         try {
             firstTester.pumpWidget(textFocus("first", firstPayloads), 24, 12)
             secondTester.pumpWidget(textFocus("second", secondPayloads), 24, 12)
 
-            assertTrue(firstTester.pressText("\uD83D\uDE00"))
-            assertEquals(listOf("\uD83D\uDE00"), firstPayloads)
+            assertTrue(firstTester.pressText("😀"))
+            assertEquals(listOf("😀"), firstPayloads)
             assertTrue(secondPayloads.isEmpty())
 
-            assertTrue(secondTester.pressText("e\u0301"))
-            assertEquals(listOf("\uD83D\uDE00"), firstPayloads)
-            assertEquals(listOf("e\u0301"), secondPayloads)
+            assertTrue(secondTester.pressText("é"))
+            assertEquals(listOf("😀"), firstPayloads)
+            assertEquals(listOf("é"), secondPayloads)
         } finally {
             firstTester.dispose()
             secondTester.dispose()
         }
     }
 
-    /** The legacy pressKey Char behavior remains available independently of exact-text dispatch. */
+    /** 一个 tester 释放后，另一个 runtime 的文本分发完全不受影响。 */
     @Test
-    fun legacyPressKeyCharacterBehaviorRemainsUnchanged() {
-        /** Legacy event captured by the focused node. */
-        var captured: PixelKeyEvent? = null
-        /** Focus node retaining the pre-existing key handler API. */
-        val node = FocusNode("legacy")
-        /** Off-screen runtime driving the original tester method. */
-        val tester = PixelTester()
+    fun disposingOneRuntimeLeavesTheOtherTextChainIntact() {
+        /** 保持挂载的 runtime 观察到的载荷。 */
+        val survivingPayloads = mutableListOf<String>()
+        /** 测试中途被释放的 runtime 观察到的载荷。 */
+        val disposedPayloads = mutableListOf<String>()
+        /** 在整个测试期间保持挂载的 runtime。 */
+        val survivingTester = PixelTester()
+        /** 在另一个 runtime 继续分发文本时被释放的 runtime。 */
+        val disposedTester = PixelTester()
         try {
-            tester.pumpWidget(
-                widget = Focus(
-                    node = node,
-                    autofocus = true,
-                    child = Text("LEGACY"),
-                    onKeyEvent = { event ->
-                        captured = event
-                        true
-                    },
-                ),
-                logicalWidth = 32,
-                logicalHeight = 12,
-            )
+            survivingTester.pumpWidget(textFocus("surviving", survivingPayloads), 24, 12)
+            disposedTester.pumpWidget(textFocus("disposed", disposedPayloads), 24, 12)
+            disposedTester.dispose()
 
-            assertTrue(tester.pressKey(PixelKey.CHARACTER, 'Z'))
-            assertEquals(PixelKeyEvent(PixelKey.CHARACTER, 'Z'), captured)
+            assertTrue(survivingTester.pressText("A"))
+            assertEquals(listOf("A"), survivingPayloads)
+            assertTrue(disposedPayloads.isEmpty())
         } finally {
-            tester.dispose()
+            survivingTester.dispose()
         }
     }
 
-    /** PixelKeyEvent keeps its two-field data-class constructor, copy, component, and default ABI. */
-    @Test
-    fun pixelKeyEventRetainsFrozenJvmDescriptors() {
-        /** Runtime class whose externally linked descriptors must remain unchanged. */
-        val eventClass = PixelKeyEvent::class.java
-        /** Exact constructor descriptors emitted for the original two-field primary constructor. */
-        val constructorDescriptors = eventClass.declaredConstructors.map(::constructorDescriptor).toSet()
-        /** Exact descriptors for data-class methods referenced by old Kotlin and Java consumers. */
-        val methodDescriptors = eventClass.declaredMethods
-            .filter { method -> method.name in FROZEN_PIXEL_KEY_EVENT_METHOD_NAMES }
-            .associate { method -> method.name to methodDescriptor(method) }
-        /** Instance fields proving no third component was inserted into the frozen data class. */
-        val instanceFieldNames = eventClass.declaredFields
-            .filterNot { field -> Modifier.isStatic(field.modifiers) }
-            .map { field -> field.name }
-            .toSet()
-
-        assertEquals(FROZEN_PIXEL_KEY_EVENT_CONSTRUCTORS, constructorDescriptors)
-        assertEquals(FROZEN_PIXEL_KEY_EVENT_METHODS, methodDescriptors)
-        assertEquals(setOf("key", "character"), instanceFieldNames)
-    }
-
-    /** The original Focus facade and Kotlin default bridge remain alongside the additive overload. */
-    @Test
-    fun focusFacadeRetainsLegacyJvmDescriptors() {
-        /** Generated top-level facade containing both legacy and additive Focus overloads. */
-        val facade = Class.forName("com.purride.pixelui.PixelFocusKt")
-        /** Every emitted Focus descriptor, including Kotlin default bridges. */
-        val descriptors = facade.declaredMethods
-            .filter { method -> method.name == "Focus" || method.name == "Focus\$default" }
-            .map { method -> method.name to methodDescriptor(method) }
-            .toSet()
-
-        assertTrue(descriptors.contains(LEGACY_FOCUS_DESCRIPTOR))
-        assertTrue(descriptors.contains(LEGACY_FOCUS_DEFAULT_DESCRIPTOR))
-        assertTrue(descriptors.any { (name, descriptor) ->
-            name == "Focus" && descriptor.endsWith("Lkotlin/jvm/functions/Function1;)Lcom/purride/pixelui/Widget;")
-        })
-    }
-
-    /** Builds one independently focused widget whose String handler records exact payloads. */
+    /** 构造一个独立自动聚焦的 widget，其 String 处理器记录精确载荷。 */
     private fun textFocus(label: String, payloads: MutableList<String>): Widget {
-        /** Stable node owned only by the tester rendering this widget. */
+        /** 仅由渲染该 widget 的 tester 持有的稳定节点。 */
         val node = FocusNode(label)
         return Focus(
             node = node,
@@ -288,70 +246,5 @@ class PixelTextInputDispatchTest {
                 true
             },
         )
-    }
-
-    /** Encodes one constructor using JVM field-descriptor syntax. */
-    private fun constructorDescriptor(constructor: Constructor<*>): String {
-        /** Ordered encoded parameter types accepted by this constructor. */
-        val parameters = constructor.parameterTypes.joinToString(separator = "") { type -> typeDescriptor(type) }
-        return "($parameters)V"
-    }
-
-    /** Encodes one reflected method using JVM field-descriptor syntax. */
-    private fun methodDescriptor(method: Method): String {
-        /** Ordered encoded parameter types accepted by this method. */
-        val parameters = method.parameterTypes.joinToString(separator = "") { type -> typeDescriptor(type) }
-        return "($parameters)${typeDescriptor(method.returnType)}"
-    }
-
-    /** Encodes one Java reflection type as a JVM primitive, array, or reference descriptor. */
-    private fun typeDescriptor(type: Class<*>): String {
-        return when {
-            type.isArray -> type.name.replace('.', '/')
-            !type.isPrimitive -> "L${type.name.replace('.', '/')};"
-            type == Boolean::class.javaPrimitiveType -> "Z"
-            type == Byte::class.javaPrimitiveType -> "B"
-            type == Char::class.javaPrimitiveType -> "C"
-            type == Short::class.javaPrimitiveType -> "S"
-            type == Int::class.javaPrimitiveType -> "I"
-            type == Long::class.javaPrimitiveType -> "J"
-            type == Float::class.javaPrimitiveType -> "F"
-            type == Double::class.javaPrimitiveType -> "D"
-            type == Void.TYPE -> "V"
-            else -> error("Unsupported primitive descriptor for ${type.name}")
-        }
-    }
-
-    /** Frozen data-class method names whose exact descriptors old binaries invoke. */
-    private companion object {
-        /** Constructor descriptors for the primary constructor and Kotlin default-argument bridge. */
-        val FROZEN_PIXEL_KEY_EVENT_CONSTRUCTORS: Set<String> = setOf(
-            "(Lcom/purride/pixelui/PixelKey;Ljava/lang/Character;)V",
-            "(Lcom/purride/pixelui/PixelKey;Ljava/lang/Character;ILkotlin/jvm/internal/DefaultConstructorMarker;)V",
-        )
-
-        /** Data-class method names that must retain their original arity and JVM types. */
-        val FROZEN_PIXEL_KEY_EVENT_METHOD_NAMES: Set<String> = setOf(
-            "component1",
-            "component2",
-            "copy",
-            "copy\$default",
-        )
-
-        /** Exact descriptors of the original two components and copy methods. */
-        val FROZEN_PIXEL_KEY_EVENT_METHODS: Map<String, String> = mapOf(
-            "component1" to "()Lcom/purride/pixelui/PixelKey;",
-            "component2" to "()Ljava/lang/Character;",
-            "copy" to "(Lcom/purride/pixelui/PixelKey;Ljava/lang/Character;)Lcom/purride/pixelui/PixelKeyEvent;",
-            "copy\$default" to "(Lcom/purride/pixelui/PixelKeyEvent;Lcom/purride/pixelui/PixelKey;Ljava/lang/Character;ILjava/lang/Object;)Lcom/purride/pixelui/PixelKeyEvent;",
-        )
-
-        /** Original public Focus method descriptor preserved for previously compiled callers. */
-        val LEGACY_FOCUS_DESCRIPTOR: Pair<String, String> = "Focus" to
-            "(Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/FocusNode;ZZLkotlin/jvm/functions/Function1;Lcom/purride/pixelui/PixelFocusScrollTarget;Ljava/lang/Object;)Lcom/purride/pixelui/Widget;"
-
-        /** Original Kotlin default bridge descriptor preserved for previously compiled callers. */
-        val LEGACY_FOCUS_DEFAULT_DESCRIPTOR: Pair<String, String> = "Focus\$default" to
-            "(Lcom/purride/pixelui/Widget;Lcom/purride/pixelui/FocusNode;ZZLkotlin/jvm/functions/Function1;Lcom/purride/pixelui/PixelFocusScrollTarget;Ljava/lang/Object;ILjava/lang/Object;)Lcom/purride/pixelui/Widget;"
     }
 }

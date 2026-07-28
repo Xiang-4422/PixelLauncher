@@ -88,7 +88,6 @@ class PixelHapticFeedbackTest {
     ): Widget {
         return HostRootWidget(
             screenProfile = ScreenProfile(logicalWidth = 4, logicalHeight = 4, dotSizePx = 8),
-            textDirection = TextDirection.LTR,
             textRasterizer = PixelBitmapFont.Default,
             windowInsets = PixelWindowInsets.Zero,
             viewInsets = PixelWindowInsets.Zero,

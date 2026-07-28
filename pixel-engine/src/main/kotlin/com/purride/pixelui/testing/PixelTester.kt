@@ -318,11 +318,13 @@ public class PixelTester {
     }
 
     /**
-     * 向当前 focus tree 发送按键。
+     * 向当前 focus tree 发送一个非文本按键（导航、激活或取消）。
+     *
+     * 可打印文本请改用 [pressText]，两者语义不重叠。
      */
-    public fun pressKey(key: PixelKey, character: Char? = null): Boolean {
-        /** Whether this tester's focused node chain consumed the normalized legacy key event. */
-        val handled = runtime.focusOwner.dispatchKeyEvent(PixelKeyEvent(key = key, character = character))
+    public fun pressKey(key: PixelKey): Boolean {
+        /** 本 tester 的聚焦节点链是否消费了这个归一化非文本按键事件。 */
+        val handled = runtime.focusOwner.dispatchKeyEvent(PixelKeyEvent(key = key))
         if (handled) {
             needsRender = true
             render()
@@ -335,11 +337,11 @@ public class PixelTester {
  *
      * Sends one exact text payload to this tester's runtime-local focused node chain.
      *
-     * Supplementary-plane and multi-code-point text remains one event. An unconsumed payload falls
-     * back to [pressKey] semantics only when it consists of exactly one non-surrogate BMP [Char].
+     * Supplementary-plane、组合簇和多 code point 文本都保持为一次事件，不会拆分，也不会退化
+     * 到 [pressKey]。
      *
      * @param text Exact UTF-16 text supplied by the simulated input source.
-     * @return `true` when a text handler or compatible legacy character handler consumed it.
+     * @return `true` when a focused text handler consumed the complete payload.
      */
     public fun pressText(text: String): Boolean {
         /** Exact platform-independent event retained as one unit throughout focus dispatch. */

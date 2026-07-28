@@ -210,7 +210,6 @@ import com.purride.pixelui.PixelFrameWorkload
 import com.purride.pixelui.PixelHostFrameDiagnostics
 import com.purride.pixelui.HostCapabilities
 import com.purride.pixelui.HostCapabilitiesData
-import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.PixelLabelTokens
 import com.purride.pixelui.PixelLocale
 import com.purride.pixelui.PixelLocalizationBundle
@@ -354,7 +353,7 @@ class PixelTesterConsumerTest {
             density = 2.75f,
             refreshRateHz = 120f,
         )
-        /** Snapshot observed through the additive MediaQuery compatibility accessor. */
+        /** Snapshot observed through the canonical HostCapabilities scope accessor. */
         var observedCapabilities: HostCapabilitiesData? = null
         /** External off-screen harness proving runtime linkage against the published AAR. */
         val tester = PixelTester()
@@ -363,7 +362,7 @@ class PixelTesterConsumerTest {
             widget = HostCapabilities(
                 data = capabilities,
                 child = Builder { context ->
-                    observedCapabilities = MediaQuery.capabilitiesOf(context)
+                    observedCapabilities = HostCapabilities.of(context)
                     Text("HOST OK")
                 },
             ),
@@ -498,13 +497,8 @@ class PixelTesterConsumerTest {
             narrowFontFamily = PixelFontFamily.MONOSPACE,
             wideFontFamily = PixelFontFamily.DEFAULT,
         )
-        /** Consumer provider implementing both compatibility and complete-scalar entry points. */
+        /** Consumer provider implementing the canonical Unicode scalar entry point. */
         val provider = object : GlyphProvider {
-            /** Preserves the required frozen BMP method for old callers. */
-            override fun rasterizeGlyph(character: Char, style: GlyphStyle): GlyphBitmap {
-                return rasterizeGlyph(character.code, style)
-            }
-
             /** Records the complete scalar without narrowing it to a surrogate Char. */
             override fun rasterizeGlyph(codePoint: Int, style: GlyphStyle): GlyphBitmap {
                 scalarRequests += codePoint
@@ -618,12 +612,12 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
 
-/** Verifies Java source compatibility for frozen Char and additive cluster font contracts. */
+/** Verifies Java source compatibility for the scalar glyph SPI and cluster font contracts. */
 public final class UnicodeFontJavaConsumerTest {
-    /** Exercises Kotlin interface default methods and the cluster capability from Java. */
+    /** Exercises the scalar glyph SPI and the cluster capability from Java. */
     @Test
     public void canUsePublishedUnicodeFontContractsFromJava() {
-        /** Distinguishable public style passed through both old and additive source methods. */
+        /** Distinguishable public style passed through the scalar source method. */
         final GlyphStyle style = new GlyphStyle(
                 4,
                 3,
@@ -639,13 +633,14 @@ public final class UnicodeFontJavaConsumerTest {
                 PixelFontFamily.DEFAULT,
                 0
         );
-        /** Char-only source representing Java code written before the scalar overload existed. */
-        final LegacyCharSource source = new LegacyCharSource();
+        /** Scalar source proving Java sees complete code points, including supplementary ones. */
+        final RecordingScalarSource source = new RecordingScalarSource();
 
         assertNull(source.findGlyph((int) 'A', style));
-        assertEquals(Character.valueOf('A'), source.requests.get(0));
+        assertEquals(Integer.valueOf('A'), source.requests.get(0));
         assertNull(source.findGlyph(0x1F642, style));
-        assertEquals(1, source.requests.size());
+        assertEquals(Integer.valueOf(0x1F642), source.requests.get(1));
+        assertEquals(2, source.requests.size());
 
         /** Published implementation consumed through the additive cluster interface from Java. */
         final PixelClusterTextRasterizer rasterizer = new PixelStyledTextRasterizer(
@@ -657,24 +652,24 @@ public final class UnicodeFontJavaConsumerTest {
         assertFalse(rasterizer.canRasterizeCluster("e\u0301"));
     }
 
-    /** Frozen Char-only source whose inherited scalar method supplies compatibility behavior. */
-    private static final class LegacyCharSource implements GlyphSource {
-        /** BMP characters forwarded by the inherited scalar compatibility method. */
-        private final List<Character> requests = new ArrayList<>();
+    /** Scalar source recording every complete Unicode code point requested by the engine. */
+    private static final class RecordingScalarSource implements GlyphSource {
+        /** Complete scalars observed through the canonical code-point method. */
+        private final List<Integer> requests = new ArrayList<>();
 
-        /** Records one compatible BMP lookup and deliberately reports a missing glyph. */
+        /** Records one scalar lookup and deliberately reports a missing glyph. */
         @Override
-        public GlyphBitmap findGlyph(char character, GlyphStyle style) {
-            requests.add(character);
+        public GlyphBitmap findGlyph(int codePoint, GlyphStyle style) {
+            requests.add(codePoint);
             return null;
         }
     }
 
     /** Minimal Java provider used only to construct the published styled rasterizer. */
     private static final class MinimalGlyphProvider implements GlyphProvider {
-        /** Returns one deterministic one-column bitmap for any compatible BMP request. */
+        /** Returns one deterministic one-column bitmap for any requested scalar. */
         @Override
-        public GlyphBitmap rasterizeGlyph(char character, GlyphStyle style) {
+        public GlyphBitmap rasterizeGlyph(int codePoint, GlyphStyle style) {
             /** One-column blank bitmap with valid public metrics. */
             final byte[] pixels = new byte[style.getCellHeight()];
             return new GlyphBitmap(

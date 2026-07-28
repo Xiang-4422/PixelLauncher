@@ -251,7 +251,6 @@ class RetainedWidgetRuntimeTest {
         val result = runtime.render(
             root = HostRootWidget(
                 screenProfile = screenProfile,
-                textDirection = TextDirection.LTR,
                 textRasterizer = PixelBitmapFont.Default,
                 windowInsets = PixelWindowInsets(left = 1, top = 2, right = 0, bottom = 1),
                 viewInsets = PixelWindowInsets(bottom = 4),

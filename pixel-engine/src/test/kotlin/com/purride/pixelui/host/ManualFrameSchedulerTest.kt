@@ -72,14 +72,14 @@ class ManualFrameSchedulerTest {
         assertTrue("Cleared callbacks must not fire", !fired)
     }
 
-    /** Cancellable registrations are physically removed from the manual queue. */
+    /** 取消一个尚未交付的回调时，它会真正从队列里移除，而不是只被逻辑屏蔽。 */
     @Test
-    fun cancellableCallbackIsRemovedBeforeAdvance() {
-        // Explicit capability type proves the additive scheduler interface is consumable.
-        val scheduler: PixelCancellableFrameScheduler = ManualFrameScheduler()
-        // Delivery flag must remain false after cancellation and source advancement.
+    fun cancelledCallbackIsPhysicallyRemovedBeforeAdvance() {
+        // 使用 canonical 调度器类型：任何实现都必须支持真实取消。
+        val scheduler: PixelFrameScheduler = ManualFrameScheduler()
+        // 取消并推进源帧后，该交付标记必须保持为 false。
         var fired = false
-        val registration: PixelFrameCallbackRegistration = scheduler.scheduleCancellableFrame {
+        val registration: PixelFrameCallbackRegistration = scheduler.scheduleFrame {
             fired = true
         }
 
@@ -93,36 +93,21 @@ class ManualFrameSchedulerTest {
         assertFalse(fired)
     }
 
-    /** Third-party legacy schedulers receive logical cancellation without an ABI change. */
+    /** 已交付的回调不能被追溯取消，cancel 必须是幂等的。 */
     @Test
-    fun legacySchedulerFallbackSuppressesCancelledCallback() {
-        // Minimal scheduler implements only the original Unit-returning method.
-        val scheduler = LegacyTestFrameScheduler()
-        // Extension registration guards the old callback when physical removal is unavailable.
-        var fired = false
-        val registration: PixelFrameCallbackRegistration =
-            scheduler.scheduleCancellableFrame { fired = true }
+    fun deliveredCallbackCannotBeCancelledRetroactively() {
+        // 驱动一次立即交付的手动调度器。
+        val scheduler = ManualFrameScheduler()
+        // 交付次数，用于证明回调恰好执行了一次。
+        var deliveries = 0
+        val registration = scheduler.scheduleFrame { deliveries += 1 }
 
-        assertTrue(registration.cancel())
-        scheduler.fire(2L)
-        assertFalse(fired)
-    }
+        scheduler.advanceFrame(1L)
 
-    /** Test scheduler representing an existing third-party implementation of the old interface. */
-    private class LegacyTestFrameScheduler : PixelFrameScheduler {
-        /** Single callback retained by this minimal compatibility fixture. */
-        private var callback: ((Long) -> Unit)? = null
-
-        /** Implements the unchanged historical scheduler method. */
-        override fun scheduleFrame(callback: (Long) -> Unit) {
-            this.callback = callback
-        }
-
-        /** Delivers the retained callback once. */
-        fun fire(frameTimeNanos: Long) {
-            val pendingCallback = callback
-            callback = null
-            pendingCallback?.invoke(frameTimeNanos)
-        }
+        assertEquals(1, deliveries)
+        assertFalse(registration.isPending)
+        assertFalse(registration.cancel())
+        scheduler.advanceFrame(2L)
+        assertEquals(1, deliveries)
     }
 }

@@ -336,7 +336,6 @@ class EngineFuzzTest {
                     runtime.render(
                         root = HostRootWidget(
                             screenProfile = ScreenProfile(logicalWidth = 12, logicalHeight = 8, dotSizePx = 4),
-                            textDirection = TextDirection.LTR,
                             textRasterizer = PixelBitmapFont.Default,
                             windowInsets = windowInsets,
                             viewInsets = viewInsets,
