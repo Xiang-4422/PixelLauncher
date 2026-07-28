@@ -15,11 +15,16 @@ class SmsDeliverReceiver : BroadcastReceiver() {
         val appContext = context.applicationContext
         Thread {
             try {
-                val entry = AndroidComponentDependencies.smsRepository(appContext)
-                    .storeIncomingFromIntent(intent)
+                val repository = AndroidComponentDependencies.smsRepository(appContext)
+                val entry = repository.storeIncomingFromIntent(intent)
                 if (entry != null) {
+                    // 取该线程最近未读用于通知堆叠；入库失败（threadId <= 0）时自然为空。
+                    val recentUnread = repository.recentUnreadInboxMessages(
+                        threadId = entry.threadId,
+                        limit = 5,
+                    )
                     AndroidComponentDependencies.smsNotificationHelper(appContext)
-                        .showIncomingMessage(entry)
+                        .showIncomingMessage(entry, recentUnread)
                     pendingResult.resultCode = Telephony.Sms.Intents.RESULT_SMS_HANDLED
                 }
             } finally {

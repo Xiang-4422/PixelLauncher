@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.Person
 import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
 import com.purride.pixellauncherv2.R
@@ -21,7 +22,11 @@ class SmsNotificationHelper(
     private val context: Context,
 ) {
 
-    fun showIncomingMessage(entry: SmsMessageEntry) {
+    /**
+     * 来信通知。[recentUnread] 为该线程最近的未读消息（时间升序），
+     * 用 MessagingStyle 堆叠显示，后一条不再顶掉前一条的内容。
+     */
+    fun showIncomingMessage(entry: SmsMessageEntry, recentUnread: List<SmsMessageEntry> = emptyList()) {
         ensureChannel()
         val launchIntent = Intent(context, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -34,13 +39,21 @@ class SmsNotificationHelper(
             launchIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+        val title = entry.conversationTitle.ifBlank { entry.address }.ifBlank { "SMS" }
+        val sender = Person.Builder().setName(title).build()
+        val style = NotificationCompat.MessagingStyle(Person.Builder().setName("ME").build())
+        val stacked = recentUnread.ifEmpty { listOf(entry) }.takeLast(MAX_STACKED_MESSAGES)
+        stacked.forEach { message ->
+            style.addMessage(message.body.ifBlank { "(EMPTY)" }, message.dateMillis, sender)
+        }
         val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_stat_sms)
-            .setContentTitle(entry.conversationTitle.ifBlank { entry.address }.ifBlank { "SMS" })
+            .setContentTitle(title)
             .setContentText(entry.body.ifBlank { "(EMPTY)" })
-            .setStyle(NotificationCompat.BigTextStyle().bigText(entry.body.ifBlank { "(EMPTY)" }))
+            .setStyle(style)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
+            .setGroup(GROUP_KEY_SMS)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
         if (entry.threadId > 0L) {
             // 服务号会话只读，不提供回复入口；个人会话支持通知栏直接回复。
@@ -49,13 +62,34 @@ class SmsNotificationHelper(
             }
             builder.addAction(buildMarkReadAction(entry))
         }
-        val notification = builder.build()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
+        if (!canPostNotifications()) {
             return
         }
-        NotificationManagerCompat.from(context).notify(entry.threadId.toInt(), notification)
+        NotificationManagerCompat.from(context).notify(entry.threadId.toInt(), builder.build())
+        showGroupSummary()
+    }
+
+    /** 多会话通知的分组摘要；点按打开应用（由宿主决定落点）。 */
+    private fun showGroupSummary() {
+        val launchIntent = Intent(context, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            GROUP_SUMMARY_NOTIFICATION_ID,
+            launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val summary = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(R.drawable.ic_stat_sms)
+            .setContentTitle("SMS")
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setGroup(GROUP_KEY_SMS)
+            .setGroupSummary(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+        NotificationManagerCompat.from(context).notify(GROUP_SUMMARY_NOTIFICATION_ID, summary)
     }
 
     /**
@@ -83,6 +117,25 @@ class SmsNotificationHelper(
     /** 会话被打开或标记已读后，撤下它挂着的通知（通知 id 与 threadId 一一对应）。 */
     fun cancelForThread(threadId: Long) {
         NotificationManagerCompat.from(context).cancel(threadId.toInt())
+        cancelSummaryIfAlone()
+    }
+
+    /** 组内最后一个会话通知被撤下后，孤儿摘要也要一并清掉。 */
+    private fun cancelSummaryIfAlone() {
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        val active = runCatching { manager.activeNotifications }.getOrNull() ?: return
+        val hasThreadNotification = active.any {
+            it.notification.group == GROUP_KEY_SMS && it.id != GROUP_SUMMARY_NOTIFICATION_ID
+        }
+        if (!hasThreadNotification) {
+            NotificationManagerCompat.from(context).cancel(GROUP_SUMMARY_NOTIFICATION_ID)
+        }
+    }
+
+    private fun canPostNotifications(): Boolean {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
     }
 
     /** 快捷回复（通话中“以短信回复”）发送失败时提示；点按进入对应会话补发。 */
@@ -180,5 +233,8 @@ class SmsNotificationHelper(
         const val channelId = "sms_incoming"
         const val SEND_FAILURE_TAG = "sms_send_failure"
         const val UNSUPPORTED_MMS_TAG = "mms_unsupported"
+        const val GROUP_KEY_SMS = "sms_incoming_group"
+        const val GROUP_SUMMARY_NOTIFICATION_ID = 7999
+        const val MAX_STACKED_MESSAGES = 5
     }
 }

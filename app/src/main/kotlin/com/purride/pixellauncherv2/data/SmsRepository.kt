@@ -182,6 +182,65 @@ class SmsRepository(
         }
     }
 
+    /**
+     * 定向取某线程最近 [limit] 条未读收件消息（通知堆叠用），按时间升序返回。
+     * 不走全表扫描；无权限或线程无效时返回空。
+     */
+    fun recentUnreadInboxMessages(threadId: Long, limit: Int): List<SmsMessageEntry> {
+        if (threadId <= 0L || limit <= 0 || !hasReadSmsPermission()) {
+            return emptyList()
+        }
+        val cursor = try {
+            contentResolver.query(
+                Telephony.Sms.CONTENT_URI,
+                arrayOf(
+                    Telephony.Sms._ID,
+                    Telephony.Sms.THREAD_ID,
+                    Telephony.Sms.ADDRESS,
+                    Telephony.Sms.BODY,
+                    Telephony.Sms.DATE,
+                    Telephony.Sms.READ,
+                    Telephony.Sms.TYPE,
+                    Telephony.Sms.STATUS,
+                    Telephony.Sms.SUBSCRIPTION_ID,
+                ),
+                "${Telephony.Sms.THREAD_ID} = ? AND ${Telephony.Sms.READ} = 0 " +
+                    "AND ${Telephony.Sms.TYPE} = ${Telephony.Sms.MESSAGE_TYPE_INBOX}",
+                arrayOf(threadId.toString()),
+                "${Telephony.Sms.DATE} DESC",
+            )
+        } catch (_: SecurityException) {
+            null
+        } ?: return emptyList()
+
+        cursor.use { queryCursor ->
+            val idMessage = queryCursor.getColumnIndexOrThrow(Telephony.Sms._ID)
+            val idThread = queryCursor.getColumnIndexOrThrow(Telephony.Sms.THREAD_ID)
+            val idAddress = queryCursor.getColumnIndexOrThrow(Telephony.Sms.ADDRESS)
+            val idBody = queryCursor.getColumnIndexOrThrow(Telephony.Sms.BODY)
+            val idDate = queryCursor.getColumnIndexOrThrow(Telephony.Sms.DATE)
+            val idRead = queryCursor.getColumnIndexOrThrow(Telephony.Sms.READ)
+            val idType = queryCursor.getColumnIndexOrThrow(Telephony.Sms.TYPE)
+            val idStatus = queryCursor.getColumnIndexOrThrow(Telephony.Sms.STATUS)
+            val idSubscription = queryCursor.getColumnIndexOrThrow(Telephony.Sms.SUBSCRIPTION_ID)
+            val messages = ArrayList<SmsMessageEntry>(limit)
+            while (queryCursor.moveToNext() && messages.size < limit) {
+                messages += buildMessageEntry(
+                    messageId = queryCursor.getLong(idMessage),
+                    threadId = queryCursor.getLong(idThread),
+                    address = queryCursor.getString(idAddress).orEmpty(),
+                    body = queryCursor.getString(idBody).orEmpty(),
+                    dateMillis = queryCursor.getLong(idDate),
+                    type = queryCursor.getInt(idType),
+                    isRead = queryCursor.getInt(idRead) != 0,
+                    deliveryStatus = queryCursor.getInt(idStatus),
+                    subscriptionId = queryCursor.getInt(idSubscription),
+                )
+            }
+            return messages.sortedBy(SmsMessageEntry::dateMillis)
+        }
+    }
+
     fun conversationForAddress(address: String): SmsConversationIdentity {
         return SmsConversationModel.identify(
             address = address,
