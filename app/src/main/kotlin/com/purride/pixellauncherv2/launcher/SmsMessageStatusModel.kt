@@ -21,6 +21,17 @@ object SmsMessageStatusModel {
     /** 发送失败，可重发。 */
     fun isFailed(type: Int): Boolean = type == TYPE_FAILED
 
+    /**
+     * 会话流中可展示的消息类型：收件 + 全部发出方向。
+     * 草稿（MESSAGE_TYPE_DRAFT = 3）与未知类型一律过滤，否则历史遗留的
+     * 草稿记录会被当成对方来信渲染并计入未读。
+     */
+    val conversationTypes: List<Int> =
+        listOf(TYPE_INBOX, TYPE_SENT, TYPE_OUTBOX, TYPE_FAILED, TYPE_QUEUED)
+
+    /** android.provider.Telephony.Sms.MESSAGE_TYPE_INBOX = 1 */
+    private const val TYPE_INBOX = 1
+
     /** android.provider.Telephony.Sms.MESSAGE_TYPE_SENT = 2 */
     private const val TYPE_SENT = 2
 

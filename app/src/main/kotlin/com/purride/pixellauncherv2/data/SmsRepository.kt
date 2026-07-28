@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat
 import com.purride.pixellauncherv2.app.SmsSendResultReceiver
 import com.purride.pixellauncherv2.launcher.SmsConversationIdentity
 import com.purride.pixellauncherv2.launcher.SmsConversationModel
+import com.purride.pixellauncherv2.launcher.SmsMessageStatusModel
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.model.SmsSendRequest
@@ -126,6 +127,8 @@ class SmsRepository(
         if (!hasReadSmsPermission()) {
             return emptyList()
         }
+        // 只取会话流可展示的类型（收件 + 发出方向），过滤历史遗留的草稿等记录。
+        val visibleTypes = SmsMessageStatusModel.conversationTypes
         val cursor = try {
             contentResolver.query(
                 Telephony.Sms.CONTENT_URI,
@@ -138,8 +141,8 @@ class SmsRepository(
                     Telephony.Sms.READ,
                     Telephony.Sms.TYPE,
                 ),
-                null,
-                null,
+                "${Telephony.Sms.TYPE} IN (${visibleTypes.joinToString(",") { "?" }})",
+                visibleTypes.map(Int::toString).toTypedArray(),
                 "${Telephony.Sms.DATE} DESC",
             )
         } catch (_: SecurityException) {
@@ -212,10 +215,11 @@ class SmsRepository(
             put(Telephony.Sms.SEEN, 1)
         }
         return try {
+            // 只把收件消息置为已读，与首页未读角标的统计口径（收件箱 READ=0）一致。
             val updatedRows = contentResolver.update(
                 Telephony.Sms.CONTENT_URI,
                 values,
-                "${Telephony.Sms.READ} = 0",
+                "${Telephony.Sms.READ} = 0 AND ${Telephony.Sms.TYPE} = ${Telephony.Sms.MESSAGE_TYPE_INBOX}",
                 null,
             )
             Log.d(LOG_TAG, "markAllRead updatedRows=$updatedRows")

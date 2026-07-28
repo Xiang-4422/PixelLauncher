@@ -36,6 +36,17 @@ class SmsMessageStatusModelTest {
     }
 
     @Test
+    fun conversationTypesExcludeDraftAndUnknown() {
+        assertTrue(SmsMessageStatusModel.conversationTypes.contains(TYPE_INBOX))
+        assertTrue(SmsMessageStatusModel.conversationTypes.contains(TYPE_SENT))
+        assertTrue(SmsMessageStatusModel.conversationTypes.contains(TYPE_OUTBOX))
+        assertTrue(SmsMessageStatusModel.conversationTypes.contains(TYPE_FAILED))
+        assertTrue(SmsMessageStatusModel.conversationTypes.contains(TYPE_QUEUED))
+        assertFalse(SmsMessageStatusModel.conversationTypes.contains(TYPE_DRAFT))
+        assertFalse(SmsMessageStatusModel.conversationTypes.contains(TYPE_UNKNOWN))
+    }
+
+    @Test
     fun failedCoversFailedTypeOnly() {
         assertTrue(SmsMessageStatusModel.isFailed(TYPE_FAILED))
         assertFalse(SmsMessageStatusModel.isFailed(TYPE_SENT))
@@ -49,6 +60,9 @@ class SmsMessageStatusModelTest {
 
         /** android.provider.Telephony.Sms.MESSAGE_TYPE_SENT = 2 */
         const val TYPE_SENT = 2
+
+        /** android.provider.Telephony.Sms.MESSAGE_TYPE_DRAFT = 3 */
+        const val TYPE_DRAFT = 3
 
         /** android.provider.Telephony.Sms.MESSAGE_TYPE_OUTBOX = 4 */
         const val TYPE_OUTBOX = 4
