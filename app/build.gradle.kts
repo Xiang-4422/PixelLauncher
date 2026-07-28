@@ -125,7 +125,16 @@ val checkPixelFontCatalog by tasks.registering(Exec::class) {
     commandLine("python3", rootProject.file("tools/generate_pixel_font_catalog.py"), "--check")
 }
 
+/** 校验所有内置 pack 均可达且与 catalog/摘要锁一致。 */
+val checkPixelFontAssets by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Checks generated glyph-pack manifests, reachability and hashes."
+    workingDir(rootProject.projectDir)
+    commandLine("python3", rootProject.file("tools/check_pixel_font_assets.py"))
+}
+
 /** App 的标准检查必须阻止字体声明与生成代码漂移。 */
 tasks.named("check") {
     dependsOn(checkPixelFontCatalog)
+    dependsOn(checkPixelFontAssets)
 }

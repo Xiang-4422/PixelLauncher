@@ -1,0 +1,141 @@
+{
+  "catalogSha256": "d248fcb07d89adacf4ab220db3a78028221714e6ae9f389ffb33b555dc730c89",
+  "packs": {
+    "ark_pixel_10px_monospaced_zh_cn": {
+      "glyphsSha256": "a61faf124e766a3e111987538cf0bf9a51b3a5d6b05c0c6d243ddf37ecf04731",
+      "manifestSha256": "7aff4357543b938717960ec9ee72a98f75142675b0bce91d7958f1aa1711411c"
+    },
+    "ark_pixel_10px_proportional_zh_cn": {
+      "glyphsSha256": "b11e6393fba6b932abd7b73b6cd8bfb2a54622c23ba74ba4eea58f06edf357c1",
+      "manifestSha256": "70b4cc65e9307b42661c5b6754699f5e4fcfe2eda46e064ba3813d333d63cae4"
+    },
+    "ark_pixel_12px_monospaced_zh_cn": {
+      "glyphsSha256": "47db8ab45114285d96eceb744d663da203be5d3809bc762f65aee56a4da4e1c6",
+      "manifestSha256": "dfc143baaa73d8eb1fbbe36036af5058df74da11f22ffa4cbbe1885d6ad1b4de"
+    },
+    "ark_pixel_12px_proportional_zh_cn": {
+      "glyphsSha256": "3deb9b3d5b6d7d6b5a586a45833d6025e4af189f452434a3025b84b0e5e86b1b",
+      "manifestSha256": "09b346f9a1b68ff7dcc1394bea7b86281b153a9141096820a1c7574f13b0a24a"
+    },
+    "ark_pixel_16px_monospaced_zh_cn": {
+      "glyphsSha256": "c8a380459c1d6d28d2f2ca591f1f2c8bcf98ea43ac6a6ed0e85b3a293b171f14",
+      "manifestSha256": "db9099a367d78227a78bf797b3bb58cf32afc24a119d6a89d800321a88e9a272"
+    },
+    "ark_pixel_16px_proportional_zh_cn": {
+      "glyphsSha256": "dd452b15daf0c3b4015db01f2f707739f34698ea72a07ccd417d29f250632ff3",
+      "manifestSha256": "9e488a7a8815ffcee5a68dad53f6f7437620645a9dc592788dd46f6873b6802c"
+    },
+    "boutique_7_10px_proportional": {
+      "glyphsSha256": "faa83d4f42aaa5956c36daed368e5b4751d8d8b2f91175cf4ebe12d03e0377f0",
+      "manifestSha256": "9eccd1181b68598a131c89f9326ee2783b11bdb03c2a623e007242dadc7ad442"
+    },
+    "boutique_7_7px_proportional": {
+      "glyphsSha256": "62d932b42912426c9f7a5ceb8e829251cd93dadf53ece918f24fe7f03d8ae3eb",
+      "manifestSha256": "8bff6cafb6d954067b802c55cb84b6cb568b1ef1f1f41a4ae381cc63f9d657e8"
+    },
+    "boutique_9_10px_proportional": {
+      "glyphsSha256": "b84c694e3e0bdebe3238b687b2e82aa65df9cfcc87054440d03b065d29bab125",
+      "manifestSha256": "1d82852506ad96c3f507d32cf22760eba28dd4b2f07b5f8fac157e3be5ed5639"
+    },
+    "boutique_9_9px_proportional": {
+      "glyphsSha256": "23bf9ab1d2b4b5ae66355fd6d04520b7da2823de1f1eaddc6f35a04b45c1018f",
+      "manifestSha256": "01d132b0fe2d4b558f2fd894e01d16fb9250bbd4b26db3ed1e9d642b5d46efbc"
+    },
+    "cubic_11_10px_proportional": {
+      "glyphsSha256": "7a43b0ef34b03712e203c8eb77219a1a8e42a17368117688e8bfe09adb40276a",
+      "manifestSha256": "1a112902a79ff7d0ff43c465e0259e50bd7c4253282652f1ac4324c90a02901f"
+    },
+    "cubic_11_11px_proportional": {
+      "glyphsSha256": "6b4838d9c7b3ad028a32fadc05f9b2cf30ef77940dbad3b23a587e348f0f2e82",
+      "manifestSha256": "a0e8a7e4d8c5c05df538d9650d7c0f0a701470b242f0210f5d3ef82d1b80365c"
+    },
+    "dotted_circle_10px_proportional": {
+      "glyphsSha256": "de2a92764e3f864592d52a118e98dfe3402b511dea75c78751ed3ecb5a0c8c2d",
+      "manifestSha256": "8c9f19fe5b87a902fde955a088e8a1583da05de615c88b2c1350efc32e1ee42b"
+    },
+    "dotted_circle_16px_proportional": {
+      "glyphsSha256": "1e9b708d6a83f4293ea551545d1e25248f71e4f78bce8a4267fa4e3d3d090c54",
+      "manifestSha256": "12ffed8dc3118f57c10d74bcb188c3c2c2a83733445d941d666e62c046587247"
+    },
+    "dotted_diamond_10px_proportional": {
+      "glyphsSha256": "3d9da4c24dda5e45f91dbc7bce0d88db3f5793f94d7ec241157eea42a9429508",
+      "manifestSha256": "4a41203a24b1c72851b946b5e27f5c3520eb33682d5c21176cbfb19f60552a9b"
+    },
+    "dotted_diamond_16px_proportional": {
+      "glyphsSha256": "8e07d49c85efc3caa1ebb9e26594a08262ff816945324283ca344e747f630518",
+      "manifestSha256": "28530b54ea6bcb33b8bbba910552aa9645d26bf04f07c7dad41d7a9e0e21ed1e"
+    },
+    "dotted_square_10px_proportional": {
+      "glyphsSha256": "0b973db8dcb4b5a565d628341c9fed9d06ec2ffa477a36f2606726f59825a871",
+      "manifestSha256": "fc466c0df90f9227dc2e2110b91ce6f422e04ec16f90b43fa4465dbd95532f3e"
+    },
+    "dotted_square_16px_proportional": {
+      "glyphsSha256": "ff624b5253c030587e2831c415519e0b47fecc70a514e5ef0433b2fefd07295b",
+      "manifestSha256": "82e7912e811c6afedadd8d44d788c2e8374daac97931b8c9e48c648c6b89ea82"
+    },
+    "fusion_pixel_10px_monospaced_latin": {
+      "glyphsSha256": "0f77517aff0646603fcd77071745996d2c376dc21de24124fc88440ac1cc7a9c",
+      "manifestSha256": "59679e1acaf4bccd7d0164b043efbf68c374b3f5890d831ae6f693afd2b4a8d3"
+    },
+    "fusion_pixel_10px_monospaced_zh_hans": {
+      "glyphsSha256": "d399ac66be5ee79167cc8a2aeaf9eac49830acd9ae938bc4dd02c7c766983577",
+      "manifestSha256": "16d23ac8ac79cc731ce92a31d36d5b4ce1ced93753fb4dc9b849f2d9e0f5aa94"
+    },
+    "fusion_pixel_10px_proportional_latin": {
+      "glyphsSha256": "e381b09baac3896dc54d1db34d3b35155d2a422771c2a1d691072726ff0298d7",
+      "manifestSha256": "827976fe797ab37825ffdd4dda186c77375a145e5184e9ba41a502dbfb1153c0"
+    },
+    "fusion_pixel_10px_proportional_zh_hans": {
+      "glyphsSha256": "23ca59fe6530146e558b15dae4398a29148f10ef6596bcd424ef3d6198f296d0",
+      "manifestSha256": "6ffd452fab8881ef7c052e453d2cb4ea08c36060157febade1b8bd544559c07b"
+    },
+    "fusion_pixel_12px_monospaced_latin": {
+      "glyphsSha256": "0f7659fef05cded4d64c7c0d01c08b1d8a533cbbb4d89f8098e056f8dbcd5bb6",
+      "manifestSha256": "c03a65f4d7464634c87d334086faae62590158b45ee409684b3b4bc576bba8da"
+    },
+    "fusion_pixel_12px_monospaced_zh_hans": {
+      "glyphsSha256": "2409e6651dd71bef348357441ebd19a30b64f2fcb0ee1dd42a71c2fa02a0daf7",
+      "manifestSha256": "f0f91585135fe4814c14f96b5300d3379e3649c756a0ca49f911989ec17e95b2"
+    },
+    "fusion_pixel_12px_proportional_latin": {
+      "glyphsSha256": "d02898bc687465beaf20121e0773c5bf0cbbf1ccf91afddf517a78daee60489f",
+      "manifestSha256": "a8ef6529acfa0d9ff0c5897b8667f8f820945976b379819edcb9c4eb91d36f8e"
+    },
+    "fusion_pixel_12px_proportional_zh_hans": {
+      "glyphsSha256": "7116b21e507163841deb4e6460d58c5200a1150e9db99f518401a48d470e49d9",
+      "manifestSha256": "fe303d7075f6acef811083560a3a0326f1ea5a6f1ed6c7b0ce1236b1ed257d61"
+    },
+    "fusion_pixel_8px_monospaced_latin": {
+      "glyphsSha256": "c970d357b133382ce02a69e7ef526d5b513aeb4d32a63e31b960853774cd1153",
+      "manifestSha256": "0e0fbc6064fde8d992669bc740ca9fb7c013437aa863e330ecf531b023b23c70"
+    },
+    "fusion_pixel_8px_monospaced_zh_hans": {
+      "glyphsSha256": "df5eb6b24cd2f92a78097bcfae8e5cc1d3f50eba9c4f12a5382ce3becba54146",
+      "manifestSha256": "b9aeda5769fbda3ec69e18fd97f3320dc9c6327c613b6a57802f9d1bed70a0bc"
+    },
+    "fusion_pixel_8px_proportional_latin": {
+      "glyphsSha256": "7e5939cfde0a7d927b32c17c49d626f5ca32ea4caa59b48d22b0a53549c31608",
+      "manifestSha256": "6bcea3de05cbb2ff0e9caef8ac0f8f1cd18f62f418e98ccc1119e687646e0dbf"
+    },
+    "fusion_pixel_8px_proportional_zh_hans": {
+      "glyphsSha256": "366fe442f600247d17bace6eb25057d484694668819513d5150b3529778e76c0",
+      "manifestSha256": "408ea69ae68a4898f59eff4a97f44fd80b1fdf830810add17d7f35b9b8b233da"
+    },
+    "gnu_unifont_10px_monospaced": {
+      "glyphsSha256": "3e0f5e45bc12985c94f62fc77ea6d25fb9e0c1f52e9e45438ec3275ab7aac2b5",
+      "manifestSha256": "4ffd613ddc748721474fa9d8941bbec4345b0943e85854eb050a57c73c1770ca"
+    },
+    "gnu_unifont_16px_monospaced": {
+      "glyphsSha256": "60fc2517f0207a48284809de5ed763f73b11a281e60b855934d0a96df8f988aa",
+      "manifestSha256": "64ae7a72090d23c74217ccc0d9c29e5b878d0d435cfdef4c9a03696bc734952d"
+    },
+    "pix32_10px_monospaced": {
+      "glyphsSha256": "2db663ab659dd3cba7cc546174680f6c829d7507d941128e4f6d7a500f22b6a6",
+      "manifestSha256": "75ca4fe2b19e0ac01eefe0fdc545e0b1d38ace734b6f1a709fde276da8735b21"
+    },
+    "pix32_12px_monospaced": {
+      "glyphsSha256": "435bfd8c789513802cfdc0c319628a94982f00d57b84d7e8f7456cc9d221229d",
+      "manifestSha256": "fbc6ceaaaeaae07a17f97ec73b4f14514905c8e72162b09c74df902e9ac4212e"
+    }
+  }
+}

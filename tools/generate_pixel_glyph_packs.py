@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import gzip
+import hashlib
 import json
 import struct
 from dataclasses import dataclass
@@ -64,6 +65,10 @@ class TtfPackSpec:
     default_advance: int
     supported_ranges: list[RangeSpec]
     cell_height: int | None = None
+    # MONO 允许拉丁窄格和 CJK 宽格，不应错误要求全部 Unicode advance 相同。
+    allowed_advances: tuple[int, ...] | None = None
+    # 仅在 catalog 明确声明时把负 bearing 字形整体移入 v1 bitmap。
+    shift_negative_bearing: bool = False
 
 
 @dataclass(frozen=True)
@@ -88,6 +93,15 @@ class BdfGlyph:
     x_offset: int
     y_offset: int
     bitmap_rows: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class RenderedTtfGlyph:
+    """保存按字体逻辑原点栅格化后的位图和真实 advance。"""
+
+    pixels: bytes
+    width: int
+    advance_width: int
 
 
 FUSION_PACKS = [
@@ -396,11 +410,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     args = parser.parse_args(argv)
     if args.input is None:
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-        for pack in FUSION_PACKS:
+        ttf_packs, bdf_packs = load_catalog_pack_specs()
+        for pack in ttf_packs:
             generate_ttf_builtin_pack(pack)
-        for pack in ADDITIONAL_TTF_PACKS:
-            generate_ttf_builtin_pack(pack)
-        for pack in ARK_PACKS + ADDITIONAL_BDF_PACKS:
+        for pack in bdf_packs:
             generate_bdf_builtin_pack(pack)
         return
 
@@ -427,7 +440,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     suffix = input_path.suffix.lower()
     if suffix in {".ttf", ".otf"}:
         generate_ttf_pack(font_size=args.font_size or args.cell_height, **common)
-    elif suffix == ".bdf":
+    elif suffix == ".bdf" or input_path.name.lower().endswith(".bdf.gz"):
         generate_bdf_pack(**common)
     else:
         parser.error(f"unsupported font extension '{suffix}'; expected .ttf, .otf, or .bdf")
@@ -493,7 +506,58 @@ def generate_ttf_builtin_pack(spec: TtfPackSpec) -> None:
         baseline=spec.baseline,
         default_advance=spec.default_advance,
         supported_ranges=spec.supported_ranges,
+        allowed_advances=spec.allowed_advances,
+        shift_negative_bearing=spec.shift_negative_bearing,
     )
+
+
+def load_catalog_pack_specs() -> tuple[list[TtfPackSpec], list[BdfPackSpec]]:
+    """从唯一字体目录展开全部内置 pack，并校验字体源摘要。"""
+
+    catalog_path = ROOT_DIR / "fonts" / "font_catalog.json"
+    catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+    range_sets = {
+        key: [parse_range_label(label) for label in labels]
+        for key, labels in catalog["rangeSets"].items()
+    }
+    ttf_packs: list[TtfPackSpec] = []
+    bdf_packs: list[BdfPackSpec] = []
+    for family in catalog["families"]:
+        for face in family["faces"]:
+            allowed_advances = tuple(face["allowedAdvances"]) if "allowedAdvances" in face else None
+            for pack in face["packs"]:
+                source = ROOT_DIR / pack["source"]
+                digest = hashlib.sha256(source.read_bytes()).hexdigest()
+                if digest != pack["sourceSha256"]:
+                    raise ValueError(f"font source checksum mismatch: {pack['id']}")
+                common = {
+                    "pack_id": pack["id"],
+                    "display_name": f"{family['label']} {face['size']}px {face['width'].title()}",
+                    "font_path": source,
+                    "cell_height": face["cellHeight"],
+                    "baseline": face["baseline"],
+                    "default_advance": pack["defaultAdvance"],
+                    "supported_ranges": range_sets[pack["rangeSet"]],
+                }
+                if pack["type"] in {"ttf", "otf"}:
+                    ttf_packs.append(
+                        TtfPackSpec(
+                            font_size=pack["fontSize"],
+                            allowed_advances=allowed_advances,
+                            shift_negative_bearing=family.get("negativeBearingPolicy") == "shift",
+                            **common,
+                        ),
+                    )
+                else:
+                    bdf_packs.append(BdfPackSpec(**common))
+    return ttf_packs, bdf_packs
+
+
+def parse_range_label(label: str) -> RangeSpec:
+    """把 catalog 的十六进制范围文本转换为生成器范围对象。"""
+
+    bounds = label.split("-", maxsplit=1)
+    return RangeSpec(start=int(bounds[0], 16), end=int(bounds[-1], 16))
 
 
 def generate_bdf_builtin_pack(spec: BdfPackSpec) -> None:
@@ -521,6 +585,8 @@ def generate_ttf_pack(
     baseline: int,
     default_advance: int,
     supported_ranges: list[RangeSpec],
+    allowed_advances: tuple[int, ...] | None = None,
+    shift_negative_bearing: bool = False,
 ) -> None:
     from PIL import ImageFont
     from fontTools.ttLib import TTFont
@@ -543,27 +609,30 @@ def generate_ttf_pack(
         if code_point not in source_code_points:
             continue
         character = chr(code_point)
-        glyph_pixels = render_font_glyph(
+        rendered = render_font_glyph(
             font=font,
             character=character,
             cell_height=cell_height,
             baseline=baseline,
+            shift_negative_bearing=shift_negative_bearing,
         )
-        if glyph_pixels is None:
+        if rendered is None:
             continue
-        if not any(glyph_pixels) and not character.isspace():
+        if not any(rendered.pixels) and not character.isspace():
             continue
 
-        width = detect_glyph_width(glyph_pixels, cell_height, cell_height)
-        if width <= 0:
-            width = default_advance
+        if allowed_advances is not None and rendered.advance_width not in allowed_advances:
+            raise ValueError(
+                f"{pack_id} U+{code_point:04X} advance {rendered.advance_width} "
+                f"is outside declared mono grid {allowed_advances}",
+            )
 
         records.append(
             (
                 code_point,
-                width,
-                width,
-                pack_bits(crop_glyph_pixels(glyph_pixels, cell_height, cell_height, width)),
+                rendered.advance_width,
+                rendered.width,
+                pack_bits(rendered.pixels),
             ),
         )
 
@@ -702,26 +771,37 @@ def render_font_glyph(
     character: str,
     cell_height: int,
     baseline: int,
-) -> bytes | None:
+    shift_negative_bearing: bool = False,
+) -> RenderedTtfGlyph | None:
     from PIL import Image, ImageDraw
-
-    image = Image.new("1", (cell_height, cell_height), 0)
-    draw = ImageDraw.Draw(image)
-    draw.fontmode = "1"
 
     try:
         ascent, _ = font.getmetrics()
         draw_y = baseline - ascent
-        bbox = draw.textbbox((0, draw_y), character, font=font)
+        measure_image = Image.new("1", (1, 1), 0)
+        measure_draw = ImageDraw.Draw(measure_image)
+        measure_draw.fontmode = "1"
+        bbox = measure_draw.textbbox((0, draw_y), character, font=font)
         if bbox is None:
             return None
-        glyph_width = bbox[2] - bbox[0]
-        x = ((cell_height - glyph_width) // 2) - bbox[0]
-        draw.text((x, draw_y), character, font=font, fill=1)
+        if bbox[0] < 0 and not shift_negative_bearing:
+            raise ValueError(f"negative left bearing {bbox[0]} for U+{ord(character):04X}")
+        draw_x = -bbox[0] if bbox[0] < 0 else 0
+        advance_width = max(1, int(round(float(font.getlength(character)))))
+        bitmap_width = max(1, advance_width, bbox[2] + draw_x)
+        image = Image.new("1", (bitmap_width, cell_height), 0)
+        draw = ImageDraw.Draw(image)
+        draw.fontmode = "1"
+        draw.text((draw_x, draw_y), character, font=font, fill=1)
     except OSError:
         return None
 
-    return bytes(1 if image.getpixel((x, y)) else 0 for y in range(cell_height) for x in range(cell_height))
+    pixels = bytes(
+        1 if image.getpixel((x, y)) else 0
+        for y in range(cell_height)
+        for x in range(bitmap_width)
+    )
+    return RenderedTtfGlyph(pixels=pixels, width=bitmap_width, advance_width=advance_width)
 
 
 def detect_glyph_width(pixels: bytes, canvas_width: int, canvas_height: int) -> int:
@@ -795,6 +875,8 @@ def write_pack(
     supported_ranges: list[str],
     records: list[tuple[int, int, int, bytes]],
 ) -> None:
+    # 固定按完整 Unicode scalar 排序，供 indexed loader 二分检索并保证输出确定性。
+    records = sorted(records, key=lambda record: record[0])
     pack_dir = output_dir / pack_id
     pack_dir.mkdir(parents=True, exist_ok=True)
 

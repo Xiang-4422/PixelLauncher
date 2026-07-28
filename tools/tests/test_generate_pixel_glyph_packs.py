@@ -115,6 +115,50 @@ class GlyphPackConverterTest(unittest.TestCase):
             self.assertEqual(65, glyphs[0].code_point)
             self.assertEqual(6, glyphs[0].advance_width)
 
+    def test_ttf_render_preserves_real_advance_and_origin(self) -> None:
+        """TTF 字形不能再被居中，也不能把墨迹宽度误当 advance。"""
+
+        from PIL import ImageFont
+
+        font = ImageFont.truetype(
+            "app/src/main/assets/fonts/fusion-pixel-8px-monospaced-latin.ttf",
+            size=8,
+            layout_engine=ImageFont.Layout.BASIC,
+        )
+        rendered = converter.render_font_glyph(font, "i", cell_height=8, baseline=7)
+
+        self.assertIsNotNone(rendered)
+        assert rendered is not None
+        self.assertEqual(4, rendered.advance_width)
+        self.assertEqual(4, rendered.width)
+        self.assertTrue(any(rendered.pixels))
+        self.assertTrue(
+            any(rendered.pixels[row * rendered.width] for row in range(8)),
+            "logical origin column should retain the glyph's left-side ink",
+        )
+
+    def test_negative_bearing_requires_explicit_catalog_policy(self) -> None:
+        """负 bearing 默认失败，显式 shift 策略才允许写入 v1 bitmap。"""
+
+        from PIL import ImageFont
+
+        font = ImageFont.truetype(
+            "tools/font_sources/cubic_11/1.500/Cubic_11.ttf",
+            size=10,
+            layout_engine=ImageFont.Layout.BASIC,
+        )
+        with self.assertRaisesRegex(ValueError, "negative left bearing"):
+            converter.render_font_glyph(font, "+", cell_height=10, baseline=8)
+
+        shifted = converter.render_font_glyph(
+            font,
+            "+",
+            cell_height=10,
+            baseline=8,
+            shift_negative_bearing=True,
+        )
+        self.assertIsNotNone(shifted)
+
 
 def unpack_bits(packed: bytes, pixel_count: int) -> str:
     return "".join(

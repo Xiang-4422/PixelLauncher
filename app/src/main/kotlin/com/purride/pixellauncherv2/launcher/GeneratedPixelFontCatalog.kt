@@ -132,7 +132,7 @@ internal object GeneratedPixelFontCatalog {
                         size = PixelFontSize(8),
                         cellHeight = 8,
                         baseline = 7,
-                        narrowAdvanceWidth = 8,
+                        narrowAdvanceWidth = 4,
                         wideAdvanceWidth = 8,
                     ),
                     packs = listOf(
@@ -166,7 +166,7 @@ internal object GeneratedPixelFontCatalog {
                         size = PixelFontSize(10),
                         cellHeight = 10,
                         baseline = 9,
-                        narrowAdvanceWidth = 10,
+                        narrowAdvanceWidth = 5,
                         wideAdvanceWidth = 10,
                     ),
                     packs = listOf(
@@ -200,7 +200,7 @@ internal object GeneratedPixelFontCatalog {
                         size = PixelFontSize(12),
                         cellHeight = 12,
                         baseline = 10,
-                        narrowAdvanceWidth = 12,
+                        narrowAdvanceWidth = 6,
                         wideAdvanceWidth = 12,
                     ),
                     packs = listOf(

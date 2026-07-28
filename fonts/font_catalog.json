@@ -21,15 +21,15 @@
           {"id": "fusion_pixel_12px_proportional_latin", "type": "ttf", "source": "app/src/main/assets/fonts/fusion-pixel-12px-proportional-latin.ttf", "sourceSha256": "5d6490677cc68e2fb7c6efe76552a9884981d7dc4a480c02385ebcce3a662a4c", "fontSize": 12, "defaultAdvance": 8, "rangeSet": "standard"},
           {"id": "fusion_pixel_12px_proportional_zh_hans", "type": "ttf", "source": "app/src/main/assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf", "sourceSha256": "2e36bb4b1ee5399394b50b59b91c5864a46b615ec2b28b9d2b6a7ca4de091fa7", "fontSize": 12, "defaultAdvance": 12, "rangeSet": "standard"}
         ]},
-        {"width": "monospaced", "size": 8, "settingsVisible": true, "roles": [], "cellHeight": 8, "baseline": 7, "narrowAdvance": 8, "wideAdvance": 8, "packs": [
+        {"width": "monospaced", "size": 8, "settingsVisible": true, "roles": [], "cellHeight": 8, "baseline": 7, "narrowAdvance": 4, "wideAdvance": 8, "packs": [
           {"id": "fusion_pixel_8px_monospaced_latin", "type": "ttf", "source": "app/src/main/assets/fonts/fusion-pixel-8px-monospaced-latin.ttf", "sourceSha256": "82bda18bde6f82eb112d3544aef59139fe3f376f38a6fe279e02579ef2c1bab1", "fontSize": 8, "defaultAdvance": 8, "rangeSet": "standard"},
           {"id": "fusion_pixel_8px_monospaced_zh_hans", "type": "ttf", "source": "app/src/main/assets/fonts/fusion-pixel-8px-monospaced-zh_hans.ttf", "sourceSha256": "e71e80e58b2555e8cd419cae31c51aa0ec563d4af38cf93ba25c1aec19ca26fc", "fontSize": 8, "defaultAdvance": 8, "rangeSet": "standard"}
         ]},
-        {"width": "monospaced", "size": 10, "settingsVisible": true, "roles": ["chrome"], "cellHeight": 10, "baseline": 9, "narrowAdvance": 10, "wideAdvance": 10, "packs": [
+        {"width": "monospaced", "size": 10, "settingsVisible": true, "roles": ["chrome"], "cellHeight": 10, "baseline": 9, "narrowAdvance": 5, "wideAdvance": 10, "packs": [
           {"id": "fusion_pixel_10px_monospaced_latin", "type": "ttf", "source": "app/src/main/assets/fonts/fusion-pixel-10px-monospaced-latin.ttf", "sourceSha256": "b0d279285883fad030509c8ae9abff22d312ae0fe872b88622e24754dcc30368", "fontSize": 10, "defaultAdvance": 10, "rangeSet": "standard"},
           {"id": "fusion_pixel_10px_monospaced_zh_hans", "type": "ttf", "source": "app/src/main/assets/fonts/fusion-pixel-10px-monospaced-zh_hans.ttf", "sourceSha256": "825178fc7f5dcbdaabcd4787076b5a77e59685bef6516b04db22cc014b4c3f22", "fontSize": 10, "defaultAdvance": 10, "rangeSet": "standard"}
         ]},
-        {"width": "monospaced", "size": 12, "settingsVisible": true, "roles": [], "cellHeight": 12, "baseline": 10, "narrowAdvance": 12, "wideAdvance": 12, "packs": [
+        {"width": "monospaced", "size": 12, "settingsVisible": true, "roles": [], "cellHeight": 12, "baseline": 10, "narrowAdvance": 6, "wideAdvance": 12, "packs": [
           {"id": "fusion_pixel_12px_monospaced_latin", "type": "ttf", "source": "app/src/main/assets/fonts/fusion-pixel-12px-monospaced-latin.ttf", "sourceSha256": "53b7ece5e922df0b1e647be390ee2601fc74bc8da4922ddb22344c5529319a49", "fontSize": 12, "defaultAdvance": 12, "rangeSet": "standard"},
           {"id": "fusion_pixel_12px_monospaced_zh_hans", "type": "ttf", "source": "app/src/main/assets/fonts/fusion-pixel-12px-monospaced-zh_hans.ttf", "sourceSha256": "0582247a2d5e5240ac8ccb2e18de2253eab59a0764ac807420eb2fdfb6910b42", "fontSize": 12, "defaultAdvance": 12, "rangeSet": "standard"}
         ]}
@@ -48,28 +48,28 @@
       ]
     },
     {
-      "id": "cubic_11", "constant": "CUBIC_11", "label": "CUBIC 11", "assetFamilyId": "cubic_11", "sourceVersion": "1.500", "licenseId": "OFL-1.1", "defaultWidth": "proportional", "defaultSize": 11,
+      "id": "cubic_11", "constant": "CUBIC_11", "label": "CUBIC 11", "assetFamilyId": "cubic_11", "sourceVersion": "1.500", "licenseId": "OFL-1.1", "negativeBearingPolicy": "shift", "defaultWidth": "proportional", "defaultSize": 11,
       "faces": [
         {"width": "proportional", "size": 10, "settingsVisible": false, "roles": ["chrome"], "cellHeight": 10, "baseline": 8, "narrowAdvance": 7, "wideAdvance": 10, "packs": [{"id": "cubic_11_10px_proportional", "type": "ttf", "source": "tools/font_sources/cubic_11/1.500/Cubic_11.ttf", "sourceSha256": "0193f5f033612496df6b45ee92ac3b335bc6a5a24ff95da55ca87b33e57dcf62", "fontSize": 10, "defaultAdvance": 7, "rangeSet": "bmp"}]},
         {"width": "proportional", "size": 11, "settingsVisible": true, "roles": [], "cellHeight": 14, "baseline": 10, "narrowAdvance": 8, "wideAdvance": 12, "packs": [{"id": "cubic_11_11px_proportional", "type": "ttf", "source": "tools/font_sources/cubic_11/1.500/Cubic_11.ttf", "sourceSha256": "0193f5f033612496df6b45ee92ac3b335bc6a5a24ff95da55ca87b33e57dcf62", "fontSize": 11, "defaultAdvance": 8, "rangeSet": "bmp"}]}
       ]
     },
     {
-      "id": "boutique_7", "constant": "BOUTIQUE_7", "label": "BOUTIQUE 7", "assetFamilyId": "boutique_7", "sourceVersion": "2026.03.30", "licenseId": "OFL-1.1", "defaultWidth": "proportional", "defaultSize": 7,
+      "id": "boutique_7", "constant": "BOUTIQUE_7", "label": "BOUTIQUE 7", "assetFamilyId": "boutique_7", "sourceVersion": "2026.03.30", "licenseId": "OFL-1.1", "negativeBearingPolicy": "shift", "defaultWidth": "proportional", "defaultSize": 7,
       "faces": [
         {"width": "proportional", "size": 7, "settingsVisible": true, "roles": [], "cellHeight": 8, "baseline": 6, "narrowAdvance": 4, "wideAdvance": 7, "packs": [{"id": "boutique_7_7px_proportional", "type": "ttf", "source": "tools/font_sources/boutique_bitmap_7/current-2026.03.30/BoutiqueBitmap7x7.ttf", "sourceSha256": "25b76e6e0545ca46f3be26b8fc179e0a6af40367ded75aeada3b56a61fa3cda1", "fontSize": 7, "defaultAdvance": 4, "rangeSet": "bmp"}]},
         {"width": "proportional", "size": 10, "settingsVisible": false, "roles": ["chrome"], "cellHeight": 10, "baseline": 8, "narrowAdvance": 6, "wideAdvance": 10, "packs": [{"id": "boutique_7_10px_proportional", "type": "ttf", "source": "tools/font_sources/boutique_bitmap_7/current-2026.03.30/BoutiqueBitmap7x7.ttf", "sourceSha256": "25b76e6e0545ca46f3be26b8fc179e0a6af40367ded75aeada3b56a61fa3cda1", "fontSize": 10, "defaultAdvance": 6, "rangeSet": "bmp"}]}
       ]
     },
     {
-      "id": "boutique_9", "constant": "BOUTIQUE_9", "label": "BOUTIQUE 9", "assetFamilyId": "boutique_9", "sourceVersion": "1.93", "licenseId": "OFL-1.1", "defaultWidth": "proportional", "defaultSize": 9,
+      "id": "boutique_9", "constant": "BOUTIQUE_9", "label": "BOUTIQUE 9", "assetFamilyId": "boutique_9", "sourceVersion": "1.93", "licenseId": "OFL-1.1", "negativeBearingPolicy": "shift", "defaultWidth": "proportional", "defaultSize": 9,
       "faces": [
         {"width": "proportional", "size": 9, "settingsVisible": true, "roles": [], "cellHeight": 11, "baseline": 8, "narrowAdvance": 6, "wideAdvance": 9, "packs": [{"id": "boutique_9_9px_proportional", "type": "ttf", "source": "tools/font_sources/boutique_bitmap_9/1.93/BoutiqueBitmap9x9_1.93.ttf", "sourceSha256": "7210391e4252471fbd9b62f65d86f1f7bcdc7f8beb4fc1feeb3ad8b65a0e85e8", "fontSize": 9, "defaultAdvance": 6, "rangeSet": "bmp"}]},
         {"width": "proportional", "size": 10, "settingsVisible": false, "roles": ["chrome"], "cellHeight": 10, "baseline": 7, "narrowAdvance": 6, "wideAdvance": 10, "packs": [{"id": "boutique_9_10px_proportional", "type": "ttf", "source": "tools/font_sources/boutique_bitmap_9/1.93/BoutiqueBitmap9x9_1.93.ttf", "sourceSha256": "7210391e4252471fbd9b62f65d86f1f7bcdc7f8beb4fc1feeb3ad8b65a0e85e8", "fontSize": 10, "defaultAdvance": 6, "rangeSet": "bmp"}]}
       ]
     },
     {
-      "id": "dotted_circle", "constant": "DOTTED_CIRCLE", "label": "DOTTED O", "assetFamilyId": "dotted_circle", "sourceVersion": "0.1", "licenseId": "OFL-1.1", "defaultWidth": "proportional", "defaultSize": 16,
+      "id": "dotted_circle", "constant": "DOTTED_CIRCLE", "label": "DOTTED O", "assetFamilyId": "dotted_circle", "sourceVersion": "0.1", "licenseId": "OFL-1.1", "negativeBearingPolicy": "shift", "defaultWidth": "proportional", "defaultSize": 16,
       "faces": [
         {"width": "proportional", "size": 10, "settingsVisible": false, "roles": ["chrome"], "cellHeight": 10, "baseline": 7, "narrowAdvance": 7, "wideAdvance": 10, "packs": [{"id": "dotted_circle_10px_proportional", "type": "otf", "source": "tools/font_sources/dotted_songti/0.1/DottedSongtiCircleRegular.otf", "sourceSha256": "7b2c41e821d7091bed42df0158c130d62aeabdda7fde31b2754b1b7017cfb2d1", "fontSize": 10, "defaultAdvance": 7, "rangeSet": "bmp"}]},
         {"width": "proportional", "size": 16, "settingsVisible": true, "roles": [], "cellHeight": 18, "baseline": 13, "narrowAdvance": 11, "wideAdvance": 16, "packs": [{"id": "dotted_circle_16px_proportional", "type": "otf", "source": "tools/font_sources/dotted_songti/0.1/DottedSongtiCircleRegular.otf", "sourceSha256": "7b2c41e821d7091bed42df0158c130d62aeabdda7fde31b2754b1b7017cfb2d1", "fontSize": 16, "defaultAdvance": 11, "rangeSet": "bmp"}]}
@@ -90,14 +90,14 @@
       ]
     },
     {
-      "id": "gnu_unifont", "constant": "GNU_UNIFONT", "label": "UNIFONT", "assetFamilyId": "gnu_unifont", "sourceVersion": "17.0.04", "licenseId": "GPL-2.0+", "defaultWidth": "monospaced", "defaultSize": 16,
+      "id": "gnu_unifont", "constant": "GNU_UNIFONT", "label": "UNIFONT", "assetFamilyId": "gnu_unifont", "sourceVersion": "17.0.04", "licenseId": "GPL-2.0+", "negativeBearingPolicy": "shift", "defaultWidth": "monospaced", "defaultSize": 16,
       "faces": [
         {"width": "monospaced", "size": 10, "settingsVisible": false, "roles": ["chrome"], "cellHeight": 10, "baseline": 8, "narrowAdvance": 5, "wideAdvance": 10, "packs": [{"id": "gnu_unifont_10px_monospaced", "type": "otf", "source": "tools/font_sources/gnu_unifont/17.0.04/unifont-17.0.04.otf", "sourceSha256": "d1f664a9753b9c6b7ff357128749e32b5d3eee90c7c03618363fabd43a39b5b7", "fontSize": 10, "defaultAdvance": 5, "rangeSet": "bmp"}]},
         {"width": "monospaced", "size": 16, "settingsVisible": true, "roles": [], "cellHeight": 16, "baseline": 14, "narrowAdvance": 8, "wideAdvance": 16, "packs": [{"id": "gnu_unifont_16px_monospaced", "type": "bdf", "source": "tools/font_sources/gnu_unifont/17.0.04/unifont-17.0.04.bdf.gz", "sourceSha256": "9a2de4826388242771121c7fe00e412523c318318b8ee38e6be6cd454e7ec802", "fontSize": 16, "defaultAdvance": 8, "rangeSet": "bmp"}]}
       ]
     },
     {
-      "id": "pix32", "constant": "PIX32", "label": "PIX32", "assetFamilyId": "pix32", "sourceVersion": "1.9.7", "licenseId": "commercial-purchased-user-declared", "defaultWidth": "monospaced", "defaultSize": 12,
+      "id": "pix32", "constant": "PIX32", "label": "PIX32", "assetFamilyId": "pix32", "sourceVersion": "1.9.7", "licenseId": "commercial-purchased-user-declared", "negativeBearingPolicy": "shift", "defaultWidth": "monospaced", "defaultSize": 12,
       "faces": [
         {"width": "monospaced", "size": 10, "settingsVisible": false, "roles": ["chrome"], "cellHeight": 10, "baseline": 8, "narrowAdvance": 5, "wideAdvance": 10, "packs": [{"id": "pix32_10px_monospaced", "type": "ttf", "source": "tools/font_sources/pix32/1.9.7/Pixel32.v1.9.7.ttf", "sourceSha256": "06a8a1714f77ca598177e2ac1d3b4af14f4c04c1acf101f1fcbc2af2a136c451", "fontSize": 10, "defaultAdvance": 5, "rangeSet": "bmp"}]},
         {"width": "monospaced", "size": 12, "settingsVisible": true, "roles": [], "cellHeight": 14, "baseline": 11, "narrowAdvance": 6, "wideAdvance": 12, "packs": [{"id": "pix32_12px_monospaced", "type": "ttf", "source": "tools/font_sources/pix32/1.9.7/Pixel32.v1.9.7.ttf", "sourceSha256": "06a8a1714f77ca598177e2ac1d3b4af14f4c04c1acf101f1fcbc2af2a136c451", "fontSize": 12, "defaultAdvance": 6, "rangeSet": "bmp"}]}
