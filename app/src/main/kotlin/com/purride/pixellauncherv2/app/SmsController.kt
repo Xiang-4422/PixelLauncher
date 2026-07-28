@@ -293,6 +293,10 @@ internal class SmsController(
             ensureReadAccessAndRole()
             return
         }
+        // 主线程先捕获会话快照：后台 lambda 不得直接读 host.state（跨线程读可变状态），
+        // 且发送期间用户可能切换会话，回调时需要校验是否仍停留在原会话。
+        val conversationKey = host.state.smsCurrentConversationKey
+        val threadId = host.state.smsCurrentThreadId
         host.state = LauncherStateTransitions.updateSmsSendStatusText(
             state = host.state,
             smsSendStatusText = SMS_STATUS_SENDING,
@@ -303,40 +307,62 @@ internal class SmsController(
                 SmsSendRequest(
                     address = address,
                     body = draft,
-                    threadId = host.state.smsCurrentThreadId,
+                    threadId = threadId,
                 ),
             )
             mainHandler.post {
                 if (!host.isActive()) {
                     return@post
                 }
+                val stillInConversation = host.state.smsCurrentConversationKey == conversationKey
                 result.onSuccess { sentEntry ->
-                    val nextMessages = host.state.smsMessages + sentEntry
-                    host.state = LauncherStateTransitions.updateSmsAllMessages(
-                        state = LauncherStateTransitions.updateSmsMessages(
-                            state = LauncherStateTransitions.updateSmsSendStatusText(
-                                state = LauncherStateTransitions.updateSmsDraftText(
-                                    state = host.state,
-                                    smsDraftText = "",
+                    if (stillInConversation) {
+                        val nextMessages = host.state.smsMessages + sentEntry
+                        host.state = LauncherStateTransitions.updateSmsAllMessages(
+                            state = LauncherStateTransitions.updateSmsMessages(
+                                state = LauncherStateTransitions.updateSmsSendStatusText(
+                                    state = LauncherStateTransitions.updateSmsDraftText(
+                                        state = host.state,
+                                        smsDraftText = "",
+                                    ),
+                                    smsSendStatusText = "",
                                 ),
+                                threadId = sentEntry.threadId.takeIf { it > 0L } ?: host.state.smsCurrentThreadId,
+                                address = sentEntry.address,
+                                messages = nextMessages,
+                            ),
+                            messages = listOf(sentEntry) + host.state.smsAllMessages,
+                        )
+                        host.render()
+                        refreshSmsData(render = false)
+                    } else {
+                        // 已离开原会话：不并入当前消息流、不动草稿，清掉残留的 SENDING
+                        // 后把消息汇入全量列表并整体刷新（消息已在提供者里，刷新自然归位）。
+                        host.state = LauncherStateTransitions.updateSmsAllMessages(
+                            state = LauncherStateTransitions.updateSmsSendStatusText(
+                                state = host.state,
                                 smsSendStatusText = "",
                             ),
-                            threadId = sentEntry.threadId.takeIf { it > 0L } ?: host.state.smsCurrentThreadId,
-                            address = sentEntry.address,
-                            messages = nextMessages,
-                        ),
-                        messages = listOf(sentEntry) + host.state.smsAllMessages,
-                    )
-                    host.render()
-                    refreshSmsData(render = false)
+                            messages = listOf(sentEntry) + host.state.smsAllMessages,
+                        )
+                        refreshSmsData(render = true)
+                    }
                     host.refreshCommunicationStatus(render = false)
                 }
                 result.onFailure {
-                    host.state = LauncherStateTransitions.updateSmsSendStatusText(
-                        state = host.state,
-                        smsSendStatusText = SMS_STATUS_FAILED,
-                    )
-                    host.render()
+                    if (stillInConversation) {
+                        host.state = LauncherStateTransitions.updateSmsSendStatusText(
+                            state = host.state,
+                            smsSendStatusText = SMS_STATUS_FAILED,
+                        )
+                        host.render()
+                    } else {
+                        host.state = LauncherStateTransitions.updateSmsSendStatusText(
+                            state = host.state,
+                            smsSendStatusText = "",
+                        )
+                        refreshSmsData(render = true)
+                    }
                 }
             }
         }
@@ -498,8 +524,12 @@ internal class SmsController(
             "openSmsConversation key=$conversationKey threadId=$threadId address=$address beforeMode=${host.state.mode}",
         )
         host.state = LauncherStateTransitions.showSmsThreadDetail(
+            // 进入会话时清掉上一个会话残留的状态文案（SENDING/FAILED/COPIED）。
             state = LauncherStateTransitions.updateSmsDraftText(
-                state = host.state,
+                state = LauncherStateTransitions.updateSmsSendStatusText(
+                    state = host.state,
+                    smsSendStatusText = "",
+                ),
                 smsDraftText = prefilledDraft,
             ),
             conversationKey = conversationKey,

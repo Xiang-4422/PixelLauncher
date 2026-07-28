@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.database.ContentObserver
+import android.os.Handler
 import android.provider.CallLog
 import android.provider.Telephony
 import androidx.core.content.ContextCompat
@@ -15,6 +16,8 @@ data class CommunicationStatus(
 
 class CommunicationStatusRepository(
     private val context: Context,
+    /** 状态回调的投递线程：回调方会读写主线程持有的 Launcher 状态。 */
+    private val mainHandler: Handler,
 ) {
 
     private val contentResolver = context.contentResolver
@@ -42,10 +45,13 @@ class CommunicationStatusRepository(
      */
     fun start(onStatusChanged: (CommunicationStatus) -> Unit) {
         stop()
+        // 观察者保留 null Handler：onChange 在 Binder 线程执行 readStatus 的跨进程查询，
+        // 不占主线程；只把读好的结果投递回主线程，避免回调方跨线程写状态。
         if (hasCallLogPermission()) {
             val observer = object : ContentObserver(null) {
                 override fun onChange(selfChange: Boolean) {
-                    onStatusChanged(readStatus())
+                    val status = readStatus()
+                    mainHandler.post { onStatusChanged(status) }
                 }
             }
             callObserver = observer
@@ -58,7 +64,8 @@ class CommunicationStatusRepository(
         if (hasSmsPermission()) {
             val observer = object : ContentObserver(null) {
                 override fun onChange(selfChange: Boolean) {
-                    onStatusChanged(readStatus())
+                    val status = readStatus()
+                    mainHandler.post { onStatusChanged(status) }
                 }
             }
             smsObserver = observer

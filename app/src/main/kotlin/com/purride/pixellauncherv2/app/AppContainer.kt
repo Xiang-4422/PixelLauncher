@@ -66,8 +66,11 @@ internal class AppContainer(
     /** 屏幕使用时长统计仓库。 */
     val screenUsageRepository = ScreenUsageRepository(appContext)
 
-    /** 未接来电/未读短信等通信状态仓库。 */
-    val communicationStatusRepository = CommunicationStatusRepository(appContext)
+    /** 未接来电/未读短信等通信状态仓库，状态回调需要投递回主线程。 */
+    val communicationStatusRepository = CommunicationStatusRepository(
+        context = appContext,
+        mainHandler = mainHandler,
+    )
 
     /** 系统通知摘要仓库（进程内共享状态，无需 Context）。 */
     val notificationSummaryRepository = NotificationSummaryRepository()

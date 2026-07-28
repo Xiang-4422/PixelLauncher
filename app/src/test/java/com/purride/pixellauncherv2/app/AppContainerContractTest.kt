@@ -80,7 +80,8 @@ class AppContainerContractTest {
             "DeviceStatusRepository(appContext)",
             "NextAlarmRepository(appContext)",
             "ScreenUsageRepository(appContext)",
-            "CommunicationStatusRepository(appContext)",
+            // 通信状态仓库需要主线程 Handler 投递回调，采用多行具名参数构造。
+            "CommunicationStatusRepository(",
             "NotificationSummaryRepository()",
             "NotificationSummarySettingsRepository(appContext)",
             "MediaPlaybackRepository(",

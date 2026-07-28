@@ -11,6 +11,8 @@ import android.content.pm.PackageManager
 import android.database.ContentObserver
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.Telephony
 import android.telephony.SmsManager
 import android.util.Log
@@ -99,7 +101,9 @@ class SmsRepository(
             onChanged()
             return
         }
-        val observer = object : ContentObserver(null) {
+        // 回调统一投递到主线程：onChanged 会读写主线程持有的 Launcher 状态，
+        // 传 null Handler 时 onChange 在 Binder 线程回调，存在丢更新竞态。
+        val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean) {
                 onChanged()
             }

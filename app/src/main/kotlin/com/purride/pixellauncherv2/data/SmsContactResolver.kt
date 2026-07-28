@@ -6,11 +6,13 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.ContactsContract
 import androidx.core.content.ContextCompat
+import java.util.concurrent.ConcurrentHashMap
 
 class SmsContactResolver(
     private val context: Context,
 ) {
-    private val cache = mutableMapOf<String, String>()
+    // 来信接收器（主线程）与后台刷新线程会并发读写，必须用并发容器。
+    private val cache = ConcurrentHashMap<String, String>()
 
     fun displayName(address: String): String {
         val normalized = normalizeAddress(address)
