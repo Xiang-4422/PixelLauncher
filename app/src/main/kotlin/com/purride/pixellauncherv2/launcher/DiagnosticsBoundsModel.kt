@@ -24,7 +24,7 @@ object DiagnosticsBoundsModel {
         val bodyHeight = (screenProfile.logicalHeight - statusBarHeight - LauncherSpacing.CONTENT_VERTICAL * 2)
             .coerceAtLeast(0)
         val rowPitch = (
-            PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSize).cellHeight +
+            PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSelection).cellHeight +
                 LauncherSpacing.ROW_SPACING
             ).coerceAtLeast(1)
         val visibleRows = bodyHeight / rowPitch

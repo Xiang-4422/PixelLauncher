@@ -1,399 +1,331 @@
 package com.purride.pixellauncherv2.launcher
 
-import kotlin.math.abs
-
-/** Launcher 可由设置页显式选择的字体家族。 */
-enum class LauncherFontFamily(
-    /** 设置页和诊断页展示的稳定名称。 */
-    val displayLabel: String,
-    /** 单包字体在 assets 目录中使用的稳定前缀。 */
-    val assetFamilyId: String,
+/** 跨版本持久化使用的稳定字体家族 ID。 */
+@JvmInline
+value class LauncherFontFamily(
+    /** `fonts/font_catalog.json` 中声明的稳定小写 ID。 */
+    val id: String,
 ) {
-    /** 当前覆盖最完整的 Fusion Pixel 字体。 */
-    FUSION(displayLabel = "FUSION", assetFamilyId = "fusion_pixel"),
+    init {
+        require(id.isNotBlank()) { "font family id must not be blank" }
+    }
 
-    /** 独立绘制、字符覆盖仍在增长中的 Ark Pixel 字体。 */
-    ARK(displayLabel = "ARK", assetFamilyId = "ark_pixel"),
+    /** 兼容旧设置迁移使用的历史枚举名称。 */
+    val name: String
+        get() = PixelFontCatalog.familyDescriptor(this)?.constantName ?: id.uppercase()
 
-    /** 11×11 繁简中文点阵字体。 */
-    CUBIC_11(displayLabel = "CUBIC 11", assetFamilyId = "cubic_11"),
+    /** 设置页和诊断页展示名称。 */
+    val displayLabel: String
+        get() = PixelFontCatalog.familyDescriptor(this)?.displayLabel ?: id.uppercase()
 
-    /** 精品点阵体 7×7。 */
-    BOUTIQUE_7(displayLabel = "BOUTIQUE 7", assetFamilyId = "boutique_7"),
+    /** 单包资源使用的稳定前缀。 */
+    val assetFamilyId: String
+        get() = PixelFontCatalog.familyDescriptor(this)?.assetFamilyId ?: id
 
-    /** 精品点阵体 9×9。 */
-    BOUTIQUE_9(displayLabel = "BOUTIQUE 9", assetFamilyId = "boutique_9"),
+    /** 提供现有调用点可读的稳定家族常量。 */
+    companion object {
+        val FUSION: LauncherFontFamily = LauncherFontFamily("fusion")
+        val ARK: LauncherFontFamily = LauncherFontFamily("ark")
+        val CUBIC_11: LauncherFontFamily = LauncherFontFamily("cubic_11")
+        val BOUTIQUE_7: LauncherFontFamily = LauncherFontFamily("boutique_7")
+        val BOUTIQUE_9: LauncherFontFamily = LauncherFontFamily("boutique_9")
+        val DOTTED_CIRCLE: LauncherFontFamily = LauncherFontFamily("dotted_circle")
+        val DOTTED_SQUARE: LauncherFontFamily = LauncherFontFamily("dotted_square")
+        val DOTTED_DIAMOND: LauncherFontFamily = LauncherFontFamily("dotted_diamond")
+        val GNU_UNIFONT: LauncherFontFamily = LauncherFontFamily("gnu_unifont")
+        val PIX32: LauncherFontFamily = LauncherFontFamily("pix32")
 
-    /** 点点像素圆点宋体。 */
-    DOTTED_CIRCLE(displayLabel = "DOTTED O", assetFamilyId = "dotted_circle"),
-
-    /** 点点像素方点宋体。 */
-    DOTTED_SQUARE(displayLabel = "DOTTED []", assetFamilyId = "dotted_square"),
-
-    /** 点点像素菱形宋体。 */
-    DOTTED_DIAMOND(displayLabel = "DOTTED <>", assetFamilyId = "dotted_diamond"),
-
-    /** 覆盖整个 Unicode BMP 的 GNU 点阵字体。 */
-    GNU_UNIFONT(displayLabel = "UNIFONT", assetFamilyId = "gnu_unifont"),
-
-    /** 用户已购买授权的中日韩 12px 点阵字体。 */
-    PIX32(displayLabel = "PIX32", assetFamilyId = "pix32"),
+        /** 按 catalog 顺序返回全部内置字体家族。 */
+        val entries: List<LauncherFontFamily>
+            get() = PixelFontCatalog.fontFamilyOptions()
+    }
 }
+
+/** 对外强调家族值是稳定 ID，而不是可持久化枚举名称。 */
+typealias FontFamilyId = LauncherFontFamily
 
 /** 字体字符的水平宽度模式，与字体家族保持正交。 */
 enum class LauncherFontWidthMode(
     /** 设置页使用的紧凑显示名称。 */
     val displayLabel: String,
-    /** 字形包目录使用的稳定名称片段。 */
+    /** catalog 和资源目录使用的稳定 ID。 */
     val assetStyleName: String,
 ) {
-    /** 字符按照自身墨迹和排版度量使用不同比例宽度。 */
+    /** 字符使用字体自身的比例前进宽度。 */
     PROPORTIONAL(displayLabel = "PROP", assetStyleName = "proportional"),
 
-    /** 使用字体官方的固定网格宽度；宽字符可占两个拉丁单元。 */
+    /** 字体官方固定网格宽度模式。 */
     MONOSPACED(displayLabel = "MONO", assetStyleName = "monospaced"),
 }
 
-/** 渲染层可明确选择的原生字体像素尺寸。 */
-enum class PixelFontSize(
+/** 可由 catalog 任意扩展的正整数像素字号。 */
+@JvmInline
+value class PixelFontSize(
     /** 字体发布方标注的原生像素字号。 */
     val px: Int,
-) {
-    /** 7px 原生点阵字号。 */
-    PX_7(7),
+) : Comparable<PixelFontSize> {
+    init {
+        require(px > 0) { "font size must be > 0" }
+    }
 
-    /** 8px 原生点阵字号。 */
-    PX_8(8),
+    /** 兼容旧版枚举名称的迁移文本。 */
+    val name: String
+        get() = "PX_$px"
 
-    /** 9px 原生点阵字号。 */
-    PX_9(9),
+    /** 按像素值排序字号。 */
+    override fun compareTo(other: PixelFontSize): Int = px.compareTo(other.px)
 
-    /** 10px 原生点阵字号。 */
-    PX_10(10),
+    /** 保留现有组件可读的常用字号常量。 */
+    companion object {
+        val PX_7 = PixelFontSize(7)
+        val PX_8 = PixelFontSize(8)
+        val PX_9 = PixelFontSize(9)
+        val PX_10 = PixelFontSize(10)
+        val PX_11 = PixelFontSize(11)
+        val PX_12 = PixelFontSize(12)
+        val PX_16 = PixelFontSize(16)
 
-    /** 11px 原生点阵字号。 */
-    PX_11(11),
-
-    /** 12px 原生点阵字号。 */
-    PX_12(12),
-
-    /** 16px 原生点阵字号。 */
-    PX_16(16),
+        /** 返回 catalog 实际声明的全部字号。 */
+        val entries: List<PixelFontSize>
+            get() = PixelFontCatalog.fontSizeOptions()
+    }
 }
 
-/** 一次完整、无隐式字体家族回退的 Launcher 字体选择。 */
+/** Launcher 组件可声明的字体资源角色。 */
+enum class LauncherTextRole {
+    /** 继承用户当前选择的原生字号。 */
+    DEFAULT,
+
+    /** 状态栏和紧凑控件统一使用的同家族 10px 字号。 */
+    CHROME_10,
+}
+
+/** 精确标识一个字体家族、宽度模式和字号。 */
+data class FontFaceKey(
+    /** 字体家族稳定 ID。 */
+    val family: LauncherFontFamily,
+    /** 字符宽度模式。 */
+    val widthMode: LauncherFontWidthMode,
+    /** 标称像素字号。 */
+    val size: PixelFontSize,
+)
+
+/** 一次完整、无跨家族回退的 Launcher 字体选择。 */
 data class LauncherFontSelection(
     /** 被唯一查询的字体家族。 */
     val family: LauncherFontFamily,
     /** 当前字体家族的字符宽度模式。 */
     val widthMode: LauncherFontWidthMode,
-    /** 未被 UI 文本样式覆盖时使用的默认字号。 */
+    /** 默认文本字号。 */
     val size: PixelFontSize,
-)
+) {
+    /** 转换为 catalog 精确 face key。 */
+    fun toFaceKey(): FontFaceKey = FontFaceKey(family, widthMode, size)
+}
 
-/** Launcher 布局估算使用的字体像素度量。 */
+/** Launcher 布局和缺字单元使用的字体像素度量。 */
 data class PixelFontMetrics(
-    /** 度量所属的原生字号。 */
+    /** 度量所属标称字号。 */
     val size: PixelFontSize,
     /** 字形单元高度。 */
     val cellHeight: Int,
     /** 从字形单元顶部计算的基线。 */
     val baseline: Int,
-    /** 窄字符或缺失的 ASCII 字形使用的默认前进宽度。 */
+    /** 缺失 ASCII 字形使用的默认前进宽度。 */
     val narrowAdvanceWidth: Int,
-    /** 宽字符使用的默认前进宽度。 */
+    /** 缺失宽字符使用的默认前进宽度。 */
     val wideAdvanceWidth: Int,
 )
 
-/** 集中声明字体能力矩阵、资源路径和排版度量。 */
+/** 一个生成字形包的资源与来源描述。 */
+data class FontPackDescriptor(
+    /** manifest 和目录共同使用的稳定 pack ID。 */
+    val id: String,
+    /** Android assets 相对目录。 */
+    val assetDirectory: String,
+    /** ttf、otf 或 bdf 源类型。 */
+    val sourceType: String,
+    /** 仓库根目录下的字体源路径。 */
+    val sourcePath: String,
+    /** 字体源 SHA-256。 */
+    val sourceSha256: String,
+    /** catalog 中引用的 Unicode 范围集合。 */
+    val rangeSet: String,
+)
+
+/** 一个精确可渲染 face 的能力、度量和资源。 */
+data class FontFaceDescriptor(
+    /** face 唯一键。 */
+    val key: FontFaceKey,
+    /** 是否允许在设置页作为默认字号选择。 */
+    val settingsVisible: Boolean,
+    /** 该 face 承担的组件角色。 */
+    val roles: Set<LauncherTextRole>,
+    /** 字形单元真实度量。 */
+    val metrics: PixelFontMetrics,
+    /** 严格属于同一家族的有序资源包。 */
+    val packs: List<FontPackDescriptor>,
+)
+
+/** 一个字体家族的展示、来源、默认值和全部精确 face。 */
+data class FontFamilyDescriptor(
+    /** 字体家族稳定 ID。 */
+    val id: LauncherFontFamily,
+    /** 旧枚举兼容和诊断使用的常量名称。 */
+    val constantName: String,
+    /** 设置页显示名称。 */
+    val displayLabel: String,
+    /** 单包目录前缀。 */
+    val assetFamilyId: String,
+    /** 内置源版本。 */
+    val sourceVersion: String,
+    /** 授权类型或用户声明。 */
+    val licenseId: String,
+    /** 无历史设置时使用的默认 face。 */
+    val defaultKey: FontFaceKey,
+    /** 当前家族所有设置和组件 face。 */
+    val faces: List<FontFaceDescriptor>,
+)
+
+/** 从生成目录提供精确字体能力、资源和排版度量。 */
 object PixelFontCatalog {
+    /** 生成目录的家族顺序索引。 */
+    private val families: List<FontFamilyDescriptor>
+        get() = GeneratedPixelFontCatalog.families
 
-    /** 设置缺失或旧版本升级时使用的默认字体选择。 */
-    val defaultUiFontSelection: LauncherFontSelection = LauncherFontSelection(
-        family = LauncherFontFamily.FUSION,
-        widthMode = LauncherFontWidthMode.PROPORTIONAL,
-        size = PixelFontSize.PX_10,
-    )
-
-    /** 兼容仍只需要默认字号的布局常量。 */
-    val defaultUiFontSize: PixelFontSize = defaultUiFontSelection.size
-
-    /** 返回设置页允许循环选择的字体家族。 */
-    fun fontFamilyOptions(): List<LauncherFontFamily> = LauncherFontFamily.entries
-
-    /** 返回指定字体家族真实支持的宽度模式。 */
-    fun widthModeOptions(family: LauncherFontFamily): List<LauncherFontWidthMode> {
-        return supportedSelections
-            .asSequence()
-            .filter { selection -> selection.family == family }
-            .map { selection -> selection.widthMode }
-            .distinct()
-            .toList()
+    /** 全部 face 的精确键索引。 */
+    private val facesByKey: Map<FontFaceKey, FontFaceDescriptor> by lazy {
+        families.flatMap(FontFamilyDescriptor::faces).associateBy(FontFaceDescriptor::key)
     }
 
-    /** 返回指定字体家族和宽度模式真实支持的字号。 */
+    /** 设置缺失或旧版本升级时使用的默认字体选择。 */
+    val defaultUiFontSelection: LauncherFontSelection
+        get() = selectionOf(requireNotNull(familyDescriptor(LauncherFontFamily.FUSION)).defaultKey)
+
+    /** 兼容只需要默认字号的布局入口。 */
+    val defaultUiFontSize: PixelFontSize
+        get() = defaultUiFontSelection.size
+
+    /** 返回设置页字体家族顺序。 */
+    fun fontFamilyOptions(): List<LauncherFontFamily> = families.map(FontFamilyDescriptor::id)
+
+    /** 返回指定家族描述，不存在时返回 null。 */
+    fun familyDescriptor(family: LauncherFontFamily): FontFamilyDescriptor? =
+        families.firstOrNull { descriptor -> descriptor.id == family }
+
+    /** 返回指定家族真实支持的设置宽度模式。 */
+    fun widthModeOptions(family: LauncherFontFamily): List<LauncherFontWidthMode> =
+        familyDescriptor(family)?.faces
+            .orEmpty()
+            .asSequence()
+            .filter(FontFaceDescriptor::settingsVisible)
+            .map { face -> face.key.widthMode }
+            .distinct()
+            .toList()
+
+    /** 返回指定家族与宽度模式可在设置页选择的字号。 */
     fun fontSizeOptions(
         family: LauncherFontFamily,
         widthMode: LauncherFontWidthMode,
-    ): List<PixelFontSize> {
-        return supportedSelections
-            .asSequence()
-            .filter { selection -> selection.family == family && selection.widthMode == widthMode }
-            .map { selection -> selection.size }
-            .distinct()
-            .toList()
+    ): List<PixelFontSize> = familyDescriptor(family)?.faces
+        .orEmpty()
+        .asSequence()
+        .filter { face -> face.settingsVisible && face.key.widthMode == widthMode }
+        .map { face -> face.key.size }
+        .sorted()
+        .toList()
+
+    /** 返回 catalog 声明的全部不重复字号。 */
+    fun fontSizeOptions(): List<PixelFontSize> = families
+        .flatMap(FontFamilyDescriptor::faces)
+        .map { face -> face.key.size }
+        .distinct()
+        .sorted()
+
+    /** 返回全部设置和组件可渲染组合。 */
+    fun renderableSelections(): List<LauncherFontSelection> = families
+        .flatMap(FontFamilyDescriptor::faces)
+        .map { face -> selectionOf(face.key) }
+
+    /** 判断一个选择是否允许在设置页持久化。 */
+    fun supports(selection: LauncherFontSelection): Boolean =
+        findFace(selection)?.settingsVisible == true
+
+    /** 精确查找可渲染 face，不执行近似字号解析。 */
+    fun findFace(selection: LauncherFontSelection): FontFaceDescriptor? = facesByKey[selection.toFaceKey()]
+
+    /** 精确返回可渲染 face；缺失代表 catalog 或调用点错误。 */
+    fun requireFace(selection: LauncherFontSelection): FontFaceDescriptor = requireNotNull(findFace(selection)) {
+        "Missing exact font face: ${selection.family.id}/${selection.widthMode.assetStyleName}/${selection.size.px}px"
     }
 
-    /** 返回诊断页展示的全部基础字号。 */
-    fun fontSizeOptions(): List<PixelFontSize> = PixelFontSize.entries
-
-    /** 返回设置字号和组件专用字号所需的全部可渲染组合。 */
-    fun renderableSelections(): List<LauncherFontSelection> = resourceSelections
-
-    /** 判断一个三维字体组合是否存在对应的单字体资源。 */
-    fun supports(selection: LauncherFontSelection): Boolean = selection in supportedSelections
-
-    /** 把旧设置或不受支持的组合收敛到同一家族的有效选择。 */
+    /** 将未知设置恢复到同家族默认 face，未知家族恢复到全局默认。 */
     fun normalize(selection: LauncherFontSelection): LauncherFontSelection {
         if (supports(selection)) return selection
-        /** 同一家族全部有效组合，声明顺序即稳定回退顺序。 */
-        val familySelections = supportedSelections.filter { candidate -> candidate.family == selection.family }
-        return familySelections
-            .filter { candidate -> candidate.widthMode == selection.widthMode }
-            .minByOrNull { candidate -> abs(candidate.size.px - selection.size.px) }
-            ?: familySelections.minByOrNull { candidate -> abs(candidate.size.px - selection.size.px) }
-            ?: defaultUiFontSelection
+        val family = familyDescriptor(selection.family)
+            ?: familyDescriptor(LauncherFontFamily.FUSION)
+            ?: error("Generated font catalog must contain Fusion")
+        return selectionOf(family.defaultKey)
     }
 
-    /** 为 UI 组件解析同字体家族的可渲染字号，不把内部 10px 包暴露到设置选项。 */
-    fun resolveRenderable(selection: LauncherFontSelection): LauncherFontSelection {
-        if (selection in resourceSelections) return selection
-        /** 当前字体家族和宽度模式实际生成的全部资源组合。 */
-        val matchingResources = resourceSelections.filter { candidate ->
-            candidate.family == selection.family && candidate.widthMode == selection.widthMode
-        }
-        return matchingResources.minByOrNull { candidate -> abs(candidate.size.px - selection.size.px) }
-            ?: normalize(selection)
-    }
+    /** 兼容旧调用名称，但只允许精确资源，不再寻找最近字号。 */
+    fun resolveRenderable(selection: LauncherFontSelection): LauncherFontSelection =
+        selection.also(::requireFace)
 
-    /** 返回一个选择严格属于当前字体家族的字形包目录，不追加其他家族。 */
-    fun assetDirectories(selection: LauncherFontSelection): List<String> {
-        val normalized = resolveRenderable(selection)
-        return when (normalized.family) {
-            LauncherFontFamily.FUSION -> listOf(
-                "glyphpacks/fusion_pixel_${normalized.size.px}px_${normalized.widthMode.assetStyleName}_latin",
-                "glyphpacks/fusion_pixel_${normalized.size.px}px_${normalized.widthMode.assetStyleName}_zh_hans",
-            )
-            LauncherFontFamily.ARK -> listOf(
-                "glyphpacks/ark_pixel_${normalized.size.px}px_${normalized.widthMode.assetStyleName}_zh_cn",
-            )
-            else -> listOf(
-                "glyphpacks/${normalized.family.assetFamilyId}_${normalized.size.px}px_${normalized.widthMode.assetStyleName}",
-            )
-        }
-    }
+    /** 返回一个 face 严格属于当前家族的有序 asset 目录。 */
+    fun assetDirectories(selection: LauncherFontSelection): List<String> =
+        requireFace(selection).packs.map(FontPackDescriptor::assetDirectory)
 
-    /** 返回字体家族的设置页显示名称。 */
-    fun familyLabel(family: LauncherFontFamily): String = family.displayLabel
+    /** 返回字体家族设置页名称。 */
+    fun familyLabel(family: LauncherFontFamily): String =
+        familyDescriptor(family)?.displayLabel ?: family.id.uppercase()
 
-    /** 返回宽度模式的设置页显示名称。 */
+    /** 返回宽度模式设置页名称。 */
     fun widthModeLabel(widthMode: LauncherFontWidthMode): String = widthMode.displayLabel
 
-    /** 返回字号的设置页显示名称。 */
+    /** 返回标称字号设置页名称。 */
     fun sizeLabel(size: PixelFontSize): String = "${size.px}PX"
 
-    /** 返回指定原生字号的基础布局度量。 */
-    fun metrics(size: PixelFontSize): PixelFontMetrics {
-        return when (size) {
-            PixelFontSize.PX_7 -> PixelFontMetrics(
-                size = size,
-                cellHeight = 7,
-                baseline = 6,
-                narrowAdvanceWidth = 4,
-                wideAdvanceWidth = 7,
-            )
-            PixelFontSize.PX_8 -> PixelFontMetrics(
-                size = size,
-                cellHeight = 8,
-                baseline = 7,
-                narrowAdvanceWidth = 4,
-                wideAdvanceWidth = 8,
-            )
-            PixelFontSize.PX_9 -> PixelFontMetrics(
-                size = size,
-                cellHeight = 9,
-                baseline = 8,
-                narrowAdvanceWidth = 5,
-                wideAdvanceWidth = 9,
-            )
-            PixelFontSize.PX_10 -> PixelFontMetrics(
-                size = size,
-                cellHeight = 10,
-                baseline = 9,
-                narrowAdvanceWidth = 6,
-                wideAdvanceWidth = 10,
-            )
-            PixelFontSize.PX_11 -> PixelFontMetrics(
-                size = size,
-                cellHeight = 11,
-                baseline = 10,
-                narrowAdvanceWidth = 6,
-                wideAdvanceWidth = 11,
-            )
-            PixelFontSize.PX_12 -> PixelFontMetrics(
-                size = size,
-                cellHeight = 12,
-                baseline = 11,
-                narrowAdvanceWidth = 8,
-                wideAdvanceWidth = 12,
-            )
-            PixelFontSize.PX_16 -> PixelFontMetrics(
-                size = size,
-                cellHeight = 16,
-                baseline = 15,
-                narrowAdvanceWidth = 8,
-                wideAdvanceWidth = 16,
-            )
-        }
-    }
+    /** 返回完整选择的真实字形包度量。 */
+    fun metrics(selection: LauncherFontSelection): PixelFontMetrics = requireFace(selection).metrics
 
-    /** 返回完整字体选择对应的真实字形包度量。 */
-    fun metrics(selection: LauncherFontSelection): PixelFontMetrics {
-        /** 防止无效持久化组合进入度量分支，同时允许组件内部 10px 包。 */
-        val normalized = resolveRenderable(selection)
-        /** 先取得同字号 Fusion 比例模式使用的基础度量。 */
-        val base = metrics(normalized.size)
-        return when (normalized.family) {
-            LauncherFontFamily.FUSION -> when (normalized.widthMode) {
-                LauncherFontWidthMode.PROPORTIONAL -> base
-                LauncherFontWidthMode.MONOSPACED -> base.copy(
-                    baseline = if (normalized.size == PixelFontSize.PX_12) 10 else base.baseline,
-                    narrowAdvanceWidth = base.wideAdvanceWidth,
-                )
-            }
-            LauncherFontFamily.ARK -> arkMetrics(normalized)
-            LauncherFontFamily.CUBIC_11 -> when (normalized.size) {
-                PixelFontSize.PX_10 -> PixelFontMetrics(normalized.size, 10, 8, 7, 10)
-                else -> PixelFontMetrics(normalized.size, 14, 10, 8, 12)
-            }
-            LauncherFontFamily.BOUTIQUE_7 -> when (normalized.size) {
-                PixelFontSize.PX_10 -> PixelFontMetrics(normalized.size, 10, 8, 6, 10)
-                else -> PixelFontMetrics(normalized.size, 8, 6, 4, 7)
-            }
-            LauncherFontFamily.BOUTIQUE_9 -> when (normalized.size) {
-                PixelFontSize.PX_10 -> PixelFontMetrics(normalized.size, 10, 7, 6, 10)
-                else -> PixelFontMetrics(normalized.size, 11, 8, 6, 9)
-            }
-            LauncherFontFamily.DOTTED_CIRCLE,
-            LauncherFontFamily.DOTTED_SQUARE,
-            LauncherFontFamily.DOTTED_DIAMOND,
-            -> when (normalized.size) {
-                PixelFontSize.PX_10 -> PixelFontMetrics(normalized.size, 10, 7, 7, 10)
-                else -> PixelFontMetrics(normalized.size, 18, 13, 11, 16)
-            }
-            LauncherFontFamily.GNU_UNIFONT -> when (normalized.size) {
-                PixelFontSize.PX_10 -> PixelFontMetrics(normalized.size, 10, 8, 5, 10)
-                else -> PixelFontMetrics(normalized.size, 16, 14, 8, 16)
-            }
-            LauncherFontFamily.PIX32 -> when (normalized.size) {
-                PixelFontSize.PX_10 -> PixelFontMetrics(normalized.size, 10, 8, 5, 10)
-                else -> PixelFontMetrics(normalized.size, 14, 11, 6, 12)
-            }
-        }
-    }
-
-    /** 返回 Ark 官方 BDF 变体的原生基线与前进宽度。 */
-    private fun arkMetrics(selection: LauncherFontSelection): PixelFontMetrics {
-        return when (selection.size) {
-            PixelFontSize.PX_7,
-            PixelFontSize.PX_8 -> error("Ark Pixel does not provide an 8px pack")
-            PixelFontSize.PX_9,
-            PixelFontSize.PX_11,
-            -> error("Ark Pixel does not provide a ${selection.size.px}px pack")
-            PixelFontSize.PX_10 -> PixelFontMetrics(
-                size = selection.size,
-                cellHeight = 10,
-                baseline = if (selection.widthMode == LauncherFontWidthMode.PROPORTIONAL) 8 else 9,
-                narrowAdvanceWidth = 5,
-                wideAdvanceWidth = 10,
-            )
-            PixelFontSize.PX_12 -> PixelFontMetrics(
-                size = selection.size,
-                cellHeight = 12,
-                baseline = 10,
-                narrowAdvanceWidth = 6,
-                wideAdvanceWidth = 12,
-            )
-            PixelFontSize.PX_16 -> PixelFontMetrics(
-                size = selection.size,
-                cellHeight = 16,
-                baseline = 13,
-                narrowAdvanceWidth = if (selection.widthMode == LauncherFontWidthMode.PROPORTIONAL) 7 else 8,
-                wideAdvanceWidth = 16,
-            )
-        }
-    }
-
-    /** 返回诊断页使用的紧凑字体度量文本。 */
-    fun metricsLabel(size: PixelFontSize): String {
-        val metrics = metrics(size)
-        return "C${metrics.cellHeight} B${metrics.baseline} A${metrics.narrowAdvanceWidth}/${metrics.wideAdvanceWidth}"
-    }
-
-    /** 返回完整字体选择对应的紧凑真实度量文本。 */
+    /** 返回完整选择的紧凑真实度量文本。 */
     fun metricsLabel(selection: LauncherFontSelection): String {
         val metrics = metrics(selection)
         return "C${metrics.cellHeight} B${metrics.baseline} A${metrics.narrowAdvanceWidth}/${metrics.wideAdvanceWidth}"
     }
 
-    /** 按完整字体选择的宽度模式估算文本宽度。 */
+    /** 按精确 face 的缺字 advance 估算诊断文本宽度。 */
     fun estimatedTextWidth(
         text: String,
         selection: LauncherFontSelection = defaultUiFontSelection,
         size: PixelFontSize = selection.size,
     ): Int {
-        /** 组件覆盖字号后，同字体与模式对应的真实度量。 */
-        val metrics = metrics(resolveRenderable(selection.copy(size = size)))
+        val metrics = metrics(selection.copy(size = size))
         return text.sumOf { char ->
             if (char.code <= ASCII_MAX_CODE_POINT) metrics.narrowAdvanceWidth else metrics.wideAdvanceWidth
         }
     }
 
-    /** 所有能被设置页选中且具备实际资源的组合。 */
-    private val supportedSelections: List<LauncherFontSelection> = buildList {
-        LauncherFontWidthMode.entries.forEach { widthMode ->
-            listOf(PixelFontSize.PX_8, PixelFontSize.PX_10, PixelFontSize.PX_12).forEach { size ->
-                add(LauncherFontSelection(LauncherFontFamily.FUSION, widthMode, size))
-            }
+    /** 返回家族指定宽度模式承担某个组件角色的精确选择。 */
+    fun selectionForRole(
+        family: LauncherFontFamily,
+        widthMode: LauncherFontWidthMode,
+        role: LauncherTextRole,
+    ): LauncherFontSelection {
+        val face = familyDescriptor(family)?.faces?.singleOrNull { candidate ->
+            candidate.key.widthMode == widthMode && role in candidate.roles
         }
-        LauncherFontWidthMode.entries.forEach { widthMode ->
-            listOf(PixelFontSize.PX_10, PixelFontSize.PX_12, PixelFontSize.PX_16).forEach { size ->
-                add(LauncherFontSelection(LauncherFontFamily.ARK, widthMode, size))
-            }
-        }
-        add(LauncherFontSelection(LauncherFontFamily.CUBIC_11, LauncherFontWidthMode.PROPORTIONAL, PixelFontSize.PX_11))
-        add(LauncherFontSelection(LauncherFontFamily.BOUTIQUE_7, LauncherFontWidthMode.PROPORTIONAL, PixelFontSize.PX_7))
-        add(LauncherFontSelection(LauncherFontFamily.BOUTIQUE_9, LauncherFontWidthMode.PROPORTIONAL, PixelFontSize.PX_9))
-        listOf(
-            LauncherFontFamily.DOTTED_CIRCLE,
-            LauncherFontFamily.DOTTED_SQUARE,
-            LauncherFontFamily.DOTTED_DIAMOND,
-        ).forEach { family ->
-            add(LauncherFontSelection(family, LauncherFontWidthMode.PROPORTIONAL, PixelFontSize.PX_16))
-        }
-        add(LauncherFontSelection(LauncherFontFamily.GNU_UNIFONT, LauncherFontWidthMode.MONOSPACED, PixelFontSize.PX_16))
-        add(LauncherFontSelection(LauncherFontFamily.PIX32, LauncherFontWidthMode.MONOSPACED, PixelFontSize.PX_12))
+        return selectionOf(requireNotNull(face) { "Missing $role face for ${family.id}/${widthMode.assetStyleName}" }.key)
     }
 
-    /** 设置可选组合加上各字体固定 chrome 使用的同家族 10px 资源。 */
-    private val resourceSelections: List<LauncherFontSelection> = (
-        supportedSelections + LauncherFontFamily.entries.map { family ->
-            /** 每个家族稳定采用自身第一个宽度模式生成 chrome 包。 */
-            val widthMode = widthModeOptions(family).first()
-            LauncherFontSelection(family, widthMode, PixelFontSize.PX_10)
-        }
-    ).distinct()
+    /** 把内部 face key 转成公开选择值。 */
+    private fun selectionOf(key: FontFaceKey): LauncherFontSelection = LauncherFontSelection(
+        family = key.family,
+        widthMode = key.widthMode,
+        size = key.size,
+    )
 
-    /** ASCII 可打印宽度估算使用的最大码点。 */
+    /** ASCII 宽度估算使用的最大码点。 */
     private const val ASCII_MAX_CODE_POINT = 0x7F
 }

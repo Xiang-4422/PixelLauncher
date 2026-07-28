@@ -108,3 +108,24 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
+
+/** 从唯一 JSON 目录更新 Launcher 的只读 Kotlin 字体目录。 */
+tasks.register<Exec>("generatePixelFontCatalog") {
+    group = "build"
+    description = "Generates the Launcher font catalog from fonts/font_catalog.json."
+    workingDir(rootProject.projectDir)
+    commandLine("python3", rootProject.file("tools/generate_pixel_font_catalog.py"))
+}
+
+/** 验证已提交的 Kotlin 字体目录与唯一 JSON 声明完全一致。 */
+val checkPixelFontCatalog by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Checks that GeneratedPixelFontCatalog.kt is current."
+    workingDir(rootProject.projectDir)
+    commandLine("python3", rootProject.file("tools/generate_pixel_font_catalog.py"), "--check")
+}
+
+/** App 的标准检查必须阻止字体声明与生成代码漂移。 */
+tasks.named("check") {
+    dependsOn(checkPixelFontCatalog)
+}

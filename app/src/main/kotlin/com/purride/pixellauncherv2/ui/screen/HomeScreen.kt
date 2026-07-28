@@ -1051,7 +1051,7 @@ private fun homeActionButtonWidth(label: String, count: Int): Int {
 }
 
 private fun homeActionSegmentWidth(text: String): Int {
-    val metrics = PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSize)
+    val metrics = PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSelection)
     val conservativeTextWidth = text.length * metrics.wideAdvanceWidth
     return max(PixelFontCatalog.estimatedTextWidth(text), conservativeTextWidth) +
         (HOME_ACTION_SEGMENT_HORIZONTAL_PADDING_PX * 2)

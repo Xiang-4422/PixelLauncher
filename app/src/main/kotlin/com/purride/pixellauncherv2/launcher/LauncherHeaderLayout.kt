@@ -10,7 +10,7 @@ object LauncherHeaderLayout {
     const val dividerHeight = 1
 
     /** 默认 UI 字号的不可变指标，避免每次访问都重新计算。 */
-    private val uiFontMetrics = PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSize)
+    private val uiFontMetrics = PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSelection)
 
     val rowY: Int
         get() = 0
