@@ -169,10 +169,10 @@ class MainActivity : AppCompatActivity() {
         override fun isActive(): Boolean = !(isDestroyed || isFinishing)
 
         override fun smsThreadsVisibleRows(): Int =
-            SmsLayout.threadVisibleRows(screenProfile, state.fontSelection.size)
+            SmsLayout.threadVisibleRows(screenProfile, state.fontSelection)
 
         override fun smsInboxVisibleRows(): Int =
-            SettingsMenuLayout.largeVisibleRows(screenProfile, state.fontSelection.size)
+            SettingsMenuLayout.largeVisibleRows(screenProfile, state.fontSelection)
 
         override fun updateTextInputFocus() = this@MainActivity.updateTextInputFocus()
 
@@ -1532,11 +1532,11 @@ class MainActivity : AppCompatActivity() {
         )
         state = LauncherStateTransitions.reflowSmsWindow(
             state = state,
-            visibleRows = SettingsMenuLayout.largeVisibleRows(screenProfile, state.fontSelection.size),
+            visibleRows = SettingsMenuLayout.largeVisibleRows(screenProfile, state.fontSelection),
         )
         state = LauncherStateTransitions.reflowSmsThreadWindow(
             state = state,
-            visibleRows = SmsLayout.threadVisibleRows(screenProfile, state.fontSelection.size),
+            visibleRows = SmsLayout.threadVisibleRows(screenProfile, state.fontSelection),
         )
         if (render) {
             renderCurrentFrame()
@@ -1563,12 +1563,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun visibleRows(): Int = AppListLayout.visibleRows(
         screenProfile = screenProfile,
-        fontSize = state.fontSelection.size,
+        fontSelection = state.fontSelection,
     )
 
     private fun settingsVisibleRows(): Int = SettingsMenuLayout.visibleRows(
         screenProfile = screenProfile,
-        fontSize = state.fontSelection.size,
+        fontSelection = state.fontSelection,
     )
 
     /**

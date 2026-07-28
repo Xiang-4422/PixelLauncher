@@ -78,9 +78,28 @@ class SettingsMenuModelTest {
             SettingsMenuModel.nextFontFamily(fusion8, 1),
         )
         assertEquals(
-            fusion8.copy(size = PixelFontSize.PX_10),
+            LauncherFontSelection(
+                family = LauncherFontFamily.CUBIC_11,
+                widthMode = LauncherFontWidthMode.PROPORTIONAL,
+                size = PixelFontSize.PX_11,
+            ),
             SettingsMenuModel.nextFontFamily(
                 fusion8.copy(family = LauncherFontFamily.ARK, size = PixelFontSize.PX_10),
+                1,
+            ),
+        )
+        assertEquals(
+            LauncherFontSelection(
+                family = LauncherFontFamily.FUSION,
+                widthMode = LauncherFontWidthMode.MONOSPACED,
+                size = PixelFontSize.PX_12,
+            ),
+            SettingsMenuModel.nextFontFamily(
+                LauncherFontSelection(
+                    family = LauncherFontFamily.PIX32,
+                    widthMode = LauncherFontWidthMode.MONOSPACED,
+                    size = PixelFontSize.PX_12,
+                ),
                 1,
             ),
         )

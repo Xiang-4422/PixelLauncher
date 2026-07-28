@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import json
 import struct
 from dataclasses import dataclass
@@ -52,7 +53,9 @@ SUPPORTED_RANGES = [
 
 
 @dataclass(frozen=True)
-class FusionPackSpec:
+class TtfPackSpec:
+    """描述一个由 TTF/OTF 构建的内置字形包。"""
+
     pack_id: str
     display_name: str
     font_path: Path
@@ -60,6 +63,7 @@ class FusionPackSpec:
     baseline: int
     default_advance: int
     supported_ranges: list[RangeSpec]
+    cell_height: int | None = None
 
 
 @dataclass(frozen=True)
@@ -87,7 +91,7 @@ class BdfGlyph:
 
 
 FUSION_PACKS = [
-    FusionPackSpec(
+    TtfPackSpec(
         pack_id="fusion_pixel_8px_monospaced_latin",
         display_name="Fusion Pixel 8px Monospaced (latin)",
         font_path=FONT_DIR / "fusion-pixel-8px-monospaced-latin.ttf",
@@ -96,7 +100,7 @@ FUSION_PACKS = [
         default_advance=8,
         supported_ranges=SUPPORTED_RANGES,
     ),
-    FusionPackSpec(
+    TtfPackSpec(
         pack_id="fusion_pixel_8px_monospaced_zh_hans",
         display_name="Fusion Pixel 8px Monospaced (zh_hans)",
         font_path=FONT_DIR / "fusion-pixel-8px-monospaced-zh_hans.ttf",
@@ -105,7 +109,7 @@ FUSION_PACKS = [
         default_advance=8,
         supported_ranges=SUPPORTED_RANGES,
     ),
-    FusionPackSpec(
+    TtfPackSpec(
         pack_id="fusion_pixel_8px_proportional_latin",
         display_name="Fusion Pixel 8px Proportional (latin)",
         font_path=FONT_DIR / "fusion-pixel-8px-proportional-latin.ttf",
@@ -114,7 +118,7 @@ FUSION_PACKS = [
         default_advance=4,
         supported_ranges=SUPPORTED_RANGES,
     ),
-    FusionPackSpec(
+    TtfPackSpec(
         pack_id="fusion_pixel_8px_proportional_zh_hans",
         display_name="Fusion Pixel 8px Proportional (zh_hans)",
         font_path=FONT_DIR / "fusion-pixel-8px-proportional-zh_hans.ttf",
@@ -123,7 +127,7 @@ FUSION_PACKS = [
         default_advance=8,
         supported_ranges=SUPPORTED_RANGES,
     ),
-    FusionPackSpec(
+    TtfPackSpec(
         pack_id="fusion_pixel_10px_monospaced_latin",
         display_name="Fusion Pixel 10px Monospaced (latin)",
         font_path=FONT_DIR / "fusion-pixel-10px-monospaced-latin.ttf",
@@ -132,7 +136,7 @@ FUSION_PACKS = [
         default_advance=10,
         supported_ranges=SUPPORTED_RANGES,
     ),
-    FusionPackSpec(
+    TtfPackSpec(
         pack_id="fusion_pixel_10px_monospaced_zh_hans",
         display_name="Fusion Pixel 10px Monospaced (zh_hans)",
         font_path=FONT_DIR / "fusion-pixel-10px-monospaced-zh_hans.ttf",
@@ -141,7 +145,7 @@ FUSION_PACKS = [
         default_advance=10,
         supported_ranges=SUPPORTED_RANGES,
     ),
-    FusionPackSpec(
+    TtfPackSpec(
         pack_id="fusion_pixel_10px_proportional_latin",
         display_name="Fusion Pixel 10px Proportional (latin)",
         font_path=FONT_DIR / "fusion-pixel-10px-proportional-latin.ttf",
@@ -150,7 +154,7 @@ FUSION_PACKS = [
         default_advance=6,
         supported_ranges=SUPPORTED_RANGES,
     ),
-    FusionPackSpec(
+    TtfPackSpec(
         pack_id="fusion_pixel_10px_proportional_zh_hans",
         display_name="Fusion Pixel 10px Proportional (zh_hans)",
         font_path=FONT_DIR / "fusion-pixel-10px-proportional-zh_hans.ttf",
@@ -159,7 +163,7 @@ FUSION_PACKS = [
         default_advance=10,
         supported_ranges=SUPPORTED_RANGES,
     ),
-    FusionPackSpec(
+    TtfPackSpec(
         pack_id="fusion_pixel_12px_monospaced_latin",
         display_name="Fusion Pixel 12px Monospaced (latin)",
         font_path=FONT_DIR / "fusion-pixel-12px-monospaced-latin.ttf",
@@ -168,7 +172,7 @@ FUSION_PACKS = [
         default_advance=12,
         supported_ranges=SUPPORTED_RANGES,
     ),
-    FusionPackSpec(
+    TtfPackSpec(
         pack_id="fusion_pixel_12px_monospaced_zh_hans",
         display_name="Fusion Pixel 12px Monospaced (zh_hans)",
         font_path=FONT_DIR / "fusion-pixel-12px-monospaced-zh_hans.ttf",
@@ -177,7 +181,7 @@ FUSION_PACKS = [
         default_advance=12,
         supported_ranges=SUPPORTED_RANGES,
     ),
-    FusionPackSpec(
+    TtfPackSpec(
         pack_id="fusion_pixel_12px_proportional_latin",
         display_name="Fusion Pixel 12px Proportional (latin)",
         font_path=FONT_DIR / "fusion-pixel-12px-proportional-latin.ttf",
@@ -186,7 +190,7 @@ FUSION_PACKS = [
         default_advance=8,
         supported_ranges=SUPPORTED_RANGES,
     ),
-    FusionPackSpec(
+    TtfPackSpec(
         pack_id="fusion_pixel_12px_proportional_zh_hans",
         display_name="Fusion Pixel 12px Proportional (zh_hans)",
         font_path=FONT_DIR / "fusion-pixel-12px-proportional-zh_hans.ttf",
@@ -235,14 +239,168 @@ ARK_PACKS = [
 ]
 
 
+def ttf_pack_spec(
+    family_id: str,
+    display_name: str,
+    font_path: Path,
+    nominal_size: int,
+    cell_height: int,
+    baseline: int,
+    default_advance: int,
+    width_mode: str = "proportional",
+) -> TtfPackSpec:
+    """创建一个第三方 TTF/OTF 内置包定义。"""
+
+    return TtfPackSpec(
+        pack_id=f"{family_id}_{nominal_size}px_{width_mode}",
+        display_name=f"{display_name} {nominal_size}px {width_mode.title()}",
+        font_path=font_path,
+        font_size=nominal_size,
+        baseline=baseline,
+        default_advance=default_advance,
+        supported_ranges=[
+            RangeSpec(0x0020, 0xD7FF),
+            RangeSpec(0xE000, 0xFFFD),
+        ],
+        cell_height=cell_height,
+    )
+
+
+# 非 Fusion 的轮廓字体同时生成原生字号和固定 chrome 使用的 10px 字号。
+ADDITIONAL_TTF_PACKS = [
+    ttf_pack_spec(
+        family_id="cubic_11",
+        display_name="Cubic 11",
+        font_path=FONT_SOURCE_DIR / "cubic_11" / "1.500" / "Cubic_11.ttf",
+        nominal_size=10,
+        cell_height=10,
+        baseline=8,
+        default_advance=7,
+    ),
+    ttf_pack_spec(
+        family_id="cubic_11",
+        display_name="Cubic 11",
+        font_path=FONT_SOURCE_DIR / "cubic_11" / "1.500" / "Cubic_11.ttf",
+        nominal_size=11,
+        cell_height=14,
+        baseline=10,
+        default_advance=8,
+    ),
+    ttf_pack_spec(
+        family_id="boutique_7",
+        display_name="Boutique Bitmap 7x7",
+        font_path=FONT_SOURCE_DIR / "boutique_bitmap_7" / "current-2026.03.30" / "BoutiqueBitmap7x7.ttf",
+        nominal_size=7,
+        cell_height=8,
+        baseline=6,
+        default_advance=4,
+    ),
+    ttf_pack_spec(
+        family_id="boutique_7",
+        display_name="Boutique Bitmap 7x7",
+        font_path=FONT_SOURCE_DIR / "boutique_bitmap_7" / "current-2026.03.30" / "BoutiqueBitmap7x7.ttf",
+        nominal_size=10,
+        cell_height=10,
+        baseline=8,
+        default_advance=6,
+    ),
+    ttf_pack_spec(
+        family_id="boutique_9",
+        display_name="Boutique Bitmap 9x9",
+        font_path=FONT_SOURCE_DIR / "boutique_bitmap_9" / "1.93" / "BoutiqueBitmap9x9_1.93.ttf",
+        nominal_size=9,
+        cell_height=11,
+        baseline=8,
+        default_advance=6,
+    ),
+    ttf_pack_spec(
+        family_id="boutique_9",
+        display_name="Boutique Bitmap 9x9",
+        font_path=FONT_SOURCE_DIR / "boutique_bitmap_9" / "1.93" / "BoutiqueBitmap9x9_1.93.ttf",
+        nominal_size=10,
+        cell_height=10,
+        baseline=7,
+        default_advance=6,
+    ),
+    *[
+        ttf_pack_spec(
+            family_id=f"dotted_{variant_id}",
+            display_name=f"Dotted Songti {variant_id.title()}",
+            font_path=FONT_SOURCE_DIR / "dotted_songti" / "0.1" / file_name,
+            nominal_size=nominal_size,
+            cell_height=cell_height,
+            baseline=baseline,
+            default_advance=default_advance,
+        )
+        for variant_id, file_name in [
+            ("circle", "DottedSongtiCircleRegular.otf"),
+            ("square", "DottedSongtiSquareRegular.otf"),
+            ("diamond", "DottedSongtiDiamondRegular.otf"),
+        ]
+        for nominal_size, cell_height, baseline, default_advance in [
+            (10, 10, 7, 7),
+            (16, 18, 13, 11),
+        ]
+    ],
+    ttf_pack_spec(
+        family_id="gnu_unifont",
+        display_name="GNU Unifont",
+        font_path=FONT_SOURCE_DIR / "gnu_unifont" / "17.0.04" / "unifont-17.0.04.otf",
+        nominal_size=10,
+        cell_height=10,
+        baseline=8,
+        default_advance=5,
+        width_mode="monospaced",
+    ),
+    ttf_pack_spec(
+        family_id="pix32",
+        display_name="Pix32",
+        font_path=FONT_SOURCE_DIR / "pix32" / "1.9.7" / "Pixel32.v1.9.7.ttf",
+        nominal_size=10,
+        cell_height=10,
+        baseline=8,
+        default_advance=5,
+        width_mode="monospaced",
+    ),
+    ttf_pack_spec(
+        family_id="pix32",
+        display_name="Pix32",
+        font_path=FONT_SOURCE_DIR / "pix32" / "1.9.7" / "Pixel32.v1.9.7.ttf",
+        nominal_size=12,
+        cell_height=14,
+        baseline=11,
+        default_advance=6,
+        width_mode="monospaced",
+    ),
+]
+
+
+ADDITIONAL_BDF_PACKS = [
+    BdfPackSpec(
+        pack_id="gnu_unifont_16px_monospaced",
+        display_name="GNU Unifont 16px Monospaced",
+        font_path=FONT_SOURCE_DIR / "gnu_unifont" / "17.0.04" / "unifont-17.0.04.bdf.gz",
+        cell_height=16,
+        baseline=14,
+        default_advance=8,
+        supported_ranges=[
+            RangeSpec(0x0020, 0xD7FF),
+            RangeSpec(0xE000, 0xFFFD),
+        ],
+    ),
+]
+
+
 def main(argv: Sequence[str] | None = None) -> None:
     parser = build_argument_parser()
     args = parser.parse_args(argv)
     if args.input is None:
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         for pack in FUSION_PACKS:
-            generate_fusion_pack(pack)
-        for pack in ARK_PACKS:
+            generate_ttf_builtin_pack(pack)
+        for pack in ADDITIONAL_TTF_PACKS:
+            generate_ttf_builtin_pack(pack)
+        for pack in ARK_PACKS + ADDITIONAL_BDF_PACKS:
             generate_bdf_builtin_pack(pack)
         return
 
@@ -322,14 +480,16 @@ def parse_ranges(value: str) -> list[RangeSpec]:
     return ranges
 
 
-def generate_fusion_pack(spec: FusionPackSpec) -> None:
+def generate_ttf_builtin_pack(spec: TtfPackSpec) -> None:
+    """把仓库内置 TTF/OTF 源转换成 engine 的稳定二进制字形包。"""
+
     generate_ttf_pack(
         font_path=spec.font_path,
         output_dir=OUTPUT_DIR,
         pack_id=spec.pack_id,
         display_name=spec.display_name,
         font_size=spec.font_size,
-        cell_height=spec.font_size,
+        cell_height=spec.cell_height or spec.font_size,
         baseline=spec.baseline,
         default_advance=spec.default_advance,
         supported_ranges=spec.supported_ranges,
@@ -363,6 +523,7 @@ def generate_ttf_pack(
     supported_ranges: list[RangeSpec],
 ) -> None:
     from PIL import ImageFont
+    from fontTools.ttLib import TTFont
 
     font = ImageFont.truetype(
         str(font_path),
@@ -370,8 +531,17 @@ def generate_ttf_pack(
         layout_engine=ImageFont.Layout.BASIC,
     )
 
+    # 字体 cmap 中真实存在的 Unicode 码点，避免把 .notdef 方框写成每个缺失字符。
+    source_font = TTFont(font_path, lazy=True)
+    try:
+        source_code_points = set((source_font.getBestCmap() or {}).keys())
+    finally:
+        source_font.close()
+
     records = []
     for code_point in iter_code_points(supported_ranges):
+        if code_point not in source_code_points:
+            continue
         character = chr(code_point)
         glyph_pixels = render_font_glyph(
             font=font,
@@ -444,10 +614,17 @@ def generate_bdf_pack(
 
 
 def parse_bdf(font_path: Path) -> list[BdfGlyph]:
+    """解析普通或 gzip 压缩的 BDF 源文件。"""
+
     glyphs: list[BdfGlyph] = []
     current: dict[str, Any] | None = None
     reading_bitmap = False
-    for raw_line in font_path.read_text(encoding="ascii").splitlines():
+    if font_path.suffix == ".gz":
+        with gzip.open(font_path, mode="rt", encoding="utf-8") as compressed_file:
+            source_lines = compressed_file.read().splitlines()
+    else:
+        source_lines = font_path.read_text(encoding="utf-8").splitlines()
+    for raw_line in source_lines:
         line = raw_line.strip()
         if line.startswith("STARTCHAR "):
             current = {"bitmap_rows": []}

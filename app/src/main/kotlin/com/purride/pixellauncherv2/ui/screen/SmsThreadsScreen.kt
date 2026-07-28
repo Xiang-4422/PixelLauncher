@@ -240,7 +240,7 @@ private fun buildAllThreadsPage(
             itemCount = uiState.smsThreads.size,
             state = listState,
             controller = listController,
-            itemExtent = SmsThreadGeometry.rowExtent(uiState.fontSelection.size),
+            itemExtent = SmsThreadGeometry.rowExtent(uiState.fontSelection),
             spacing = SmsThreadGeometry.ROW_SPACING_PX,
             itemBuilder = { index ->
                 buildThreadRow(uiState.smsThreads[index], theme, onOpenThread)

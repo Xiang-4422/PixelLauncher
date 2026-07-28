@@ -31,6 +31,7 @@ import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.DrawerListGeometry
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
+import com.purride.pixellauncherv2.launcher.PixelFontCatalog
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
@@ -63,7 +64,7 @@ fun DrawerScreen(
     resolveLabelLeadingInkInset: (String) -> Int,
 ): Widget {
     val apps = drawerApps(uiState)
-    val rowHeight = DrawerListGeometry.rowExtent(uiState.fontSelection.size.px)
+    val rowHeight = DrawerListGeometry.rowExtent(PixelFontCatalog.metrics(uiState.fontSelection).cellHeight)
     val isInitialLoading = uiState.isLoading && apps.isEmpty()
     val content = Column(
         spacing = 0,

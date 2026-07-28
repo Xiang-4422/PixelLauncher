@@ -39,7 +39,7 @@ class LauncherTextRasterizers(
     /** 返回允许 UI 组件在同一字体内明确选择字号的 typography。 */
     fun typography(selection: LauncherFontSelection): LauncherTypography {
         /** 防止无效选择形成重复 typography 实例。 */
-        val normalized = PixelFontCatalog.normalize(selection)
+        val normalized = PixelFontCatalog.resolveRenderable(selection)
         return typographyCache.getOrPut(normalized) {
             LauncherTypography(selection = normalized, rasterizerResolver = ::getRasterizer)
         }
@@ -57,7 +57,7 @@ class LauncherTextRasterizers(
     /** 获取或创建同时服务测量、绘制和视觉边界查询的字体条目。 */
     private fun entryFor(selection: LauncherFontSelection): RasterizerEntry {
         /** 防止无效持久化组合进入资源路径。 */
-        val normalized = PixelFontCatalog.normalize(selection)
+        val normalized = PixelFontCatalog.resolveRenderable(selection)
         return cache.getOrPut(normalized) { createRasterizerEntry(normalized) }
     }
 

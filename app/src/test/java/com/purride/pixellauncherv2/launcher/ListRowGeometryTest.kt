@@ -29,7 +29,16 @@ class ListRowGeometryTest {
             SmsThreadGeometry.ROW_EXTENT_PX + SmsThreadGeometry.ROW_SPACING_PX,
             SmsThreadGeometry.ROW_PITCH_PX,
         )
-        assertEquals(26, SmsThreadGeometry.rowPitch(PixelFontSize.PX_10))
-        assertEquals(38, SmsThreadGeometry.rowPitch(PixelFontSize.PX_16))
+        assertEquals(26, SmsThreadGeometry.rowPitch(PixelFontCatalog.defaultUiFontSelection))
+        assertEquals(
+            42,
+            SmsThreadGeometry.rowPitch(
+                LauncherFontSelection(
+                    family = LauncherFontFamily.DOTTED_CIRCLE,
+                    widthMode = LauncherFontWidthMode.PROPORTIONAL,
+                    size = PixelFontSize.PX_16,
+                ),
+            ),
+        )
     }
 }

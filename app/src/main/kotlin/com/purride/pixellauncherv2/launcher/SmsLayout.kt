@@ -13,10 +13,10 @@ object SmsLayout {
     /** 按当前字体字号计算可见的短信会话行数。 */
     fun threadVisibleRows(
         screenProfile: LauncherLayoutProfile,
-        fontSize: PixelFontSize = PixelFontCatalog.defaultUiFontSize,
+        fontSelection: LauncherFontSelection = PixelFontCatalog.defaultUiFontSelection,
     ): Int {
         /** 与渲染列表完全一致的动态行距。 */
-        val threadRowHeight = SmsThreadGeometry.rowPitch(fontSize)
+        val threadRowHeight = SmsThreadGeometry.rowPitch(fontSelection)
         val top = LauncherHeaderLayout.firstContentItemTop(screenProfile)
         val bottomExclusive = (screenProfile.logicalHeight - panelBottomPadding).coerceAtLeast(top + threadRowHeight)
         return TextListSupport.createLayoutMetrics(

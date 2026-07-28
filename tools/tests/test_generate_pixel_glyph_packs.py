@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gzip
 import json
 import struct
 import tempfile
@@ -98,6 +99,21 @@ class GlyphPackConverterTest(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "bitmap rows"):
                 converter.parse_bdf(source)
+
+    def test_parse_bdf_accepts_gzip_source(self) -> None:
+        """压缩 BDF 应与普通 BDF 产生相同码点和度量。"""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # GNU Unifont 官方仅需保存压缩 BDF，避免源码体积无谓膨胀。
+            source = Path(temp_dir) / "sample.bdf.gz"
+            with gzip.open(source, mode="wt", encoding="utf-8") as compressed_file:
+                compressed_file.write(SAMPLE_BDF)
+
+            glyphs = converter.parse_bdf(source)
+
+            self.assertEqual(1, len(glyphs))
+            self.assertEqual(65, glyphs[0].code_point)
+            self.assertEqual(6, glyphs[0].advance_width)
 
 
 def unpack_bits(packed: bytes, pixel_count: int) -> str:

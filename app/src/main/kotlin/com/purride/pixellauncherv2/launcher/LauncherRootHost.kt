@@ -535,7 +535,7 @@ internal class LauncherRootHost(
                     placeholder = "SEARCH APP",
                     placeholderLeadingInkInset = textRasterizers.leadingInkInset(
                         text = "SEARCH APP",
-                        selection = PixelFontCatalog.normalize(
+                        selection = PixelFontCatalog.resolveRenderable(
                             uiState.fontSelection.copy(size = PixelFontSize.PX_10),
                         ),
                     ),

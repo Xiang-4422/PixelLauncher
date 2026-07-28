@@ -1,0 +1,17 @@
+{
+  "packId": "gnu_unifont_16px_monospaced",
+  "displayName": "GNU Unifont 16px Monospaced",
+  "cellHeight": 16,
+  "baseline": 14,
+  "defaultAdvance": 8,
+  "supportedRanges": [
+    "0020-009F",
+    "00A1-1FFF",
+    "200B-202E",
+    "2030-205E",
+    "2060-2FFF",
+    "3001-D7FF",
+    "F900-FF9F",
+    "FFA1-FFFD"
+  ]
+}

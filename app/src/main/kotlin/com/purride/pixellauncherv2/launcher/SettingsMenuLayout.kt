@@ -20,18 +20,18 @@ object SettingsMenuLayout {
 
     fun visibleRows(
         screenProfile: LauncherLayoutProfile,
-        fontSize: PixelFontSize = PixelFontCatalog.defaultUiFontSize,
+        fontSelection: LauncherFontSelection = PixelFontCatalog.defaultUiFontSelection,
     ): Int = computeVisibleRows(
         screenProfile = screenProfile,
-        listRowHeight = maxOf(rowHeight, fontSize.px + rowGap),
+        listRowHeight = maxOf(rowHeight, PixelFontCatalog.metrics(fontSelection).cellHeight + rowGap),
     )
 
     fun largeVisibleRows(
         screenProfile: LauncherLayoutProfile,
-        fontSize: PixelFontSize = PixelFontCatalog.defaultUiFontSize,
+        fontSelection: LauncherFontSelection = PixelFontCatalog.defaultUiFontSelection,
     ): Int = computeVisibleRows(
         screenProfile = screenProfile,
-        listRowHeight = (fontSize.px * 2) + rowGap,
+        listRowHeight = (PixelFontCatalog.metrics(fontSelection).cellHeight * 2) + rowGap,
     )
 
     private fun computeVisibleRows(screenProfile: LauncherLayoutProfile, listRowHeight: Int): Int {

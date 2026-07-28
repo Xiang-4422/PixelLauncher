@@ -15,10 +15,10 @@ object AppListLayout {
     /** 按当前字体字号计算与 DrawerScreen 一致的可见行数。 */
     fun visibleRows(
         screenProfile: LauncherLayoutProfile,
-        fontSize: PixelFontSize = PixelFontCatalog.defaultUiFontSize,
+        fontSelection: LauncherFontSelection = PixelFontCatalog.defaultUiFontSelection,
     ): Int {
         /** 与引擎 DrawerScreen 渲染行距一致的当前行高。 */
-        val rowHeight = DrawerListGeometry.rowPitch(fontSize.px)
+        val rowHeight = DrawerListGeometry.rowPitch(PixelFontCatalog.metrics(fontSelection).cellHeight)
         val listStartY = LauncherHeaderLayout.firstContentItemTop(screenProfile)
         val railHeight = (screenProfile.logicalHeight - listStartY - bottomPadding).coerceAtLeast(rowHeight)
         return TextListSupport.createLayoutMetrics(

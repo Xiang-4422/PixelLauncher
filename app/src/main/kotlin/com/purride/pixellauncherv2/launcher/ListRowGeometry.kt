@@ -30,9 +30,9 @@ object SmsThreadGeometry {
     private const val VERTICAL_PADDING_PX = 5
 
     /** 根据当前原生字号返回短信会话的两行内容高度。 */
-    fun rowExtent(fontSize: PixelFontSize): Int =
-        maxOf(ROW_EXTENT_PX, fontSize.px * 2 + VERTICAL_PADDING_PX)
+    fun rowExtent(fontSelection: LauncherFontSelection): Int =
+        maxOf(ROW_EXTENT_PX, PixelFontCatalog.metrics(fontSelection).cellHeight * 2 + VERTICAL_PADDING_PX)
 
     /** 根据当前原生字号返回包含列表间距的行距。 */
-    fun rowPitch(fontSize: PixelFontSize): Int = rowExtent(fontSize) + ROW_SPACING_PX
+    fun rowPitch(fontSelection: LauncherFontSelection): Int = rowExtent(fontSelection) + ROW_SPACING_PX
 }

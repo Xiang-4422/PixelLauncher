@@ -10,8 +10,11 @@ class PixelFontCatalogTest {
     /** 字号标签应使用稳定的 PX 表示。 */
     @Test
     fun sizeLabel_mapsPixelSizes() {
+        assertEquals("7PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_7))
         assertEquals("8PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_8))
+        assertEquals("9PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_9))
         assertEquals("10PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_10))
+        assertEquals("11PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_11))
         assertEquals("12PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_12))
         assertEquals("16PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_16))
     }
@@ -48,6 +51,34 @@ class PixelFontCatalogTest {
                 PixelFontCatalog.fontSizeOptions(LauncherFontFamily.ARK, widthMode),
             )
         }
+        assertEquals(
+            listOf(PixelFontSize.PX_11),
+            PixelFontCatalog.fontSizeOptions(LauncherFontFamily.CUBIC_11, LauncherFontWidthMode.PROPORTIONAL),
+        )
+        assertEquals(
+            listOf(PixelFontSize.PX_7),
+            PixelFontCatalog.fontSizeOptions(LauncherFontFamily.BOUTIQUE_7, LauncherFontWidthMode.PROPORTIONAL),
+        )
+        assertEquals(
+            listOf(PixelFontSize.PX_9),
+            PixelFontCatalog.fontSizeOptions(LauncherFontFamily.BOUTIQUE_9, LauncherFontWidthMode.PROPORTIONAL),
+        )
+        assertEquals(
+            listOf(PixelFontSize.PX_16),
+            PixelFontCatalog.fontSizeOptions(LauncherFontFamily.GNU_UNIFONT, LauncherFontWidthMode.MONOSPACED),
+        )
+        assertEquals(
+            listOf(PixelFontSize.PX_12),
+            PixelFontCatalog.fontSizeOptions(LauncherFontFamily.PIX32, LauncherFontWidthMode.MONOSPACED),
+        )
+        assertEquals(
+            listOf(LauncherFontWidthMode.PROPORTIONAL),
+            PixelFontCatalog.widthModeOptions(LauncherFontFamily.CUBIC_11),
+        )
+        assertEquals(
+            listOf(LauncherFontWidthMode.MONOSPACED),
+            PixelFontCatalog.widthModeOptions(LauncherFontFamily.PIX32),
+        )
     }
 
     /** 不支持的字号应在所选字体族和宽度模式内选择最近值。 */
@@ -71,8 +102,11 @@ class PixelFontCatalogTest {
     /** 基础布局度量应覆盖新增的 16px 原生字号。 */
     @Test
     fun metricsLabel_formatsCellBaselineAndAdvance() {
+        assertEquals("C7 B6 A4/7", PixelFontCatalog.metricsLabel(PixelFontSize.PX_7))
         assertEquals("C8 B7 A4/8", PixelFontCatalog.metricsLabel(PixelFontSize.PX_8))
+        assertEquals("C9 B8 A5/9", PixelFontCatalog.metricsLabel(PixelFontSize.PX_9))
         assertEquals("C10 B9 A6/10", PixelFontCatalog.metricsLabel(PixelFontSize.PX_10))
+        assertEquals("C11 B10 A6/11", PixelFontCatalog.metricsLabel(PixelFontSize.PX_11))
         assertEquals("C12 B11 A8/12", PixelFontCatalog.metricsLabel(PixelFontSize.PX_12))
         assertEquals("C16 B15 A8/16", PixelFontCatalog.metricsLabel(PixelFontSize.PX_16))
     }
@@ -99,5 +133,32 @@ class PixelFontCatalogTest {
 
         assertEquals(PixelFontMetrics(PixelFontSize.PX_10, 10, 8, 5, 10), arkProportional)
         assertEquals(PixelFontMetrics(PixelFontSize.PX_12, 12, 10, 12, 12), fusionMonospaced)
+    }
+
+    /** 每个字体都应提供同家族 10px chrome 资源，但不把它混入原生 SIZE 选项。 */
+    @Test
+    fun renderableSelections_includePrivateChromeSizeForEveryFamily() {
+        LauncherFontFamily.entries.forEach { family ->
+            assertTrue(
+                "missing 10px chrome resource for $family",
+                PixelFontCatalog.renderableSelections().any { selection ->
+                    selection.family == family && selection.size == PixelFontSize.PX_10
+                },
+            )
+        }
+        assertEquals(
+            listOf(PixelFontSize.PX_12),
+            PixelFontCatalog.fontSizeOptions(LauncherFontFamily.PIX32, LauncherFontWidthMode.MONOSPACED),
+        )
+        assertEquals(
+            PixelFontMetrics(PixelFontSize.PX_12, 14, 11, 6, 12),
+            PixelFontCatalog.metrics(
+                LauncherFontSelection(
+                    LauncherFontFamily.PIX32,
+                    LauncherFontWidthMode.MONOSPACED,
+                    PixelFontSize.PX_12,
+                ),
+            ),
+        )
     }
 }

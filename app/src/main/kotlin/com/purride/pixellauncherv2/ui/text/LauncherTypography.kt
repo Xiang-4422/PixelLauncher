@@ -24,7 +24,7 @@ class LauncherTypography internal constructor(
     /** 返回同一家族和宽度模式下指定字号的共享栅格器。 */
     fun rasterizer(size: PixelFontSize = selection.size): PixelTextRasterizer {
         /** 经过字体能力矩阵校验的组件级选择。 */
-        val resolvedSelection = PixelFontCatalog.normalize(selection.copy(size = size))
+        val resolvedSelection = PixelFontCatalog.resolveRenderable(selection.copy(size = size))
         return rasterizerResolver(resolvedSelection)
     }
 
