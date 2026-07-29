@@ -537,10 +537,13 @@ class MainActivity : AppCompatActivity() {
         notificationSummaryRepository.start(::onNotificationSummaryChanged)
         mediaPlaybackRepository.start(::onMediaPlaybackChanged)
         resetDrawerVerticalGesture()
+        // 覆盖层页面回到前台后应当留在原处；不在白名单里的模式才复位到 Home。
+        // 新增覆盖层模式时必须同步加进来，否则切后台再回来会被弹回 Home。
         if (
             state.mode != LauncherMode.SMS_ROLE_PROMPT &&
             state.mode != LauncherMode.SMS_THREADS &&
-            state.mode != LauncherMode.SMS_THREAD_DETAIL
+            state.mode != LauncherMode.SMS_THREAD_DETAIL &&
+            state.mode != LauncherMode.DIALER
         ) {
             state = LauncherStateTransitions.showHome(state)
         }
