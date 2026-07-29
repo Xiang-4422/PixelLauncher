@@ -62,7 +62,7 @@ fun DrawerScreen(
     resolveLabelLeadingInkInset: (String) -> Int,
 ): Widget {
     val apps = drawerApps(uiState)
-    val rowHeight = DrawerListGeometry.rowExtent(PixelFontCatalog.defaultUiFontSize.px)
+    val rowHeight = DrawerListGeometry.rowExtent(PixelFontCatalog.metrics(uiState.fontSelection).cellHeight)
     val isInitialLoading = uiState.isLoading && apps.isEmpty()
     val content = Column(
         spacing = 0,

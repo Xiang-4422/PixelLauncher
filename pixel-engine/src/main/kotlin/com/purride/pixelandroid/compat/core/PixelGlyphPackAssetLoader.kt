@@ -79,7 +79,7 @@ public class PixelGlyphPackAssetLoader @JvmOverloads public constructor(
 }
 
 /** 校验字形包 assets 相对目录。 */
-private fun requireSafeGlyphDirectory(assetDirectory: String) {
+internal fun requireSafeGlyphDirectory(assetDirectory: String) {
     require(assetDirectory.isNotBlank()) { "assetDirectory must not be blank" }
     require(assetDirectory.length <= 1_024) { "assetDirectory exceeds 1024 chars" }
     require(!assetDirectory.startsWith('/') && !assetDirectory.startsWith('\\')) {

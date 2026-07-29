@@ -45,7 +45,7 @@ import com.purride.pixellauncherv2.ui.screen.NotificationSettingsScreen
 import com.purride.pixellauncherv2.ui.screen.SmsRolePromptScreen
 import com.purride.pixellauncherv2.ui.screen.SmsThreadDetailScreen
 import com.purride.pixellauncherv2.ui.screen.SmsThreadsScreen
-import com.purride.pixellauncherv2.ui.text.LauncherTextRasterizers
+import com.purride.pixellauncherv2.ui.text.PreparedLauncherFont
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.theme.LauncherThemes
 import com.purride.pixellauncherv2.ui.widget.LauncherHeader
@@ -67,6 +67,8 @@ import kotlin.time.Duration.Companion.milliseconds
  */
 internal class LauncherRootHost(
     context: Context,
+    /** 冷启动前已完整准备、不会在 Host 内执行 IO 的字体。 */
+    initialFont: PreparedLauncherFont,
     private val callbacks: LauncherCallbacks,
     private val onPixelMatterEffectStart: () -> Unit = {},
     private val onPixelMatterRestoreStart: () -> Unit = {},
@@ -74,10 +76,13 @@ internal class LauncherRootHost(
 ) {
     // ── Mutable model fields ──────────────────────────────────────────────────
     private var uiState: LauncherUiState = LauncherUiState()
-    private var theme: LauncherTheme = LauncherThemes.fallbackFrom(PixelTheme.DAY)
+    private var theme: LauncherTheme = LauncherThemes.fallbackFrom(PixelTheme.DAY).copy(
+        typography = initialFont.typography,
+    )
     private var chargeTick: Int = 0
     private var screenProfile: LauncherLayoutProfile = LauncherLayoutProfile(logicalWidth = 1, logicalHeight = 1, dotSizePx = 1)
-    private val textRasterizers = LauncherTextRasterizers(context)
+    /** 每帧与业务 selection 原子更新的完整字体。 */
+    private var preparedFont: PreparedLauncherFont = initialFont
     /** Launcher 唯一的 Android Host View。 */
     private val hostView = PixelHostView(context)
     /** 与当前 Host 一一对应的新版 Engine 实例。 */
@@ -89,9 +94,7 @@ internal class LauncherRootHost(
         engine = engine,
         hostView = hostView,
         config = PixelHostSetupConfig(
-            textRasterizer = textRasterizers.getRasterizer(
-                PixelFontCatalog.defaultUiFontSize,
-            ),
+            textRasterizer = initialFont.defaultRasterizer,
             content = { buildRoot() },
         ),
     )
@@ -198,6 +201,7 @@ internal class LauncherRootHost(
         theme: LauncherTheme,
         screenProfile: LauncherLayoutProfile,
         chargeTick: Int,
+        preparedFont: PreparedLauncherFont,
         pixelGapEnabled: Boolean = state.isPixelGapEnabled,
     ) {
         val previousState = uiState
@@ -205,7 +209,9 @@ internal class LauncherRootHost(
             !msgListState.isSettling &&
             msgListController.isAtEnd(msgListState)
         uiState = state
-        this.theme = theme
+        require(preparedFont.selection == state.fontSelection) { "Prepared font must match UI state" }
+        this.preparedFont = preparedFont
+        this.theme = theme.copy(typography = preparedFont.typography)
         this.chargeTick = chargeTick
         this.screenProfile = screenProfile
         syncNavigatorRoute(state.mode)
@@ -219,9 +225,7 @@ internal class LauncherRootHost(
         setup.hostView.setPixelGapRatio(if (pixelGapEnabled) 1f else 0f)
         setup.hostView.bezelColor = theme.surface.bezelColor
         setup.hostView.offPixelColor = theme.surface.offPixelColor
-        setup.hostView.textRasterizer = textRasterizers.getRasterizer(
-            PixelFontCatalog.defaultUiFontSize,
-        )
+        setup.hostView.textRasterizer = preparedFont.defaultRasterizer
 
         // ── Sync main pager ───────────────────────────────────────────────────
         val targetMainPage = modeToMainPage(state.mode)
@@ -565,9 +569,9 @@ internal class LauncherRootHost(
         onNotificationPressed = callbacks.onHomeNotificationPressed,
         onNotificationAction = callbacks.onHomeNotificationAction,
         resolveLeadingInkInset = { text ->
-            textRasterizers.leadingInkInset(
+            preparedFont.leadingInkInset(
                 text = text,
-                size = PixelFontCatalog.defaultUiFontSize,
+                faceSelection = uiState.fontSelection,
             )
         },
     )
@@ -577,15 +581,15 @@ internal class LauncherRootHost(
         theme = theme,
         textEdgeResolvers = SettingsTextEdgeResolvers(
             leadingInkInset = { text ->
-                textRasterizers.leadingInkInset(
+                preparedFont.leadingInkInset(
                     text = text,
-                    size = PixelFontCatalog.defaultUiFontSize,
+                    faceSelection = uiState.fontSelection,
                 )
             },
             trailingInkInset = { text ->
-                textRasterizers.trailingInkInset(
+                preparedFont.trailingInkInset(
                     text = text,
-                    size = PixelFontCatalog.defaultUiFontSize,
+                    faceSelection = uiState.fontSelection,
                 )
             },
         ),
@@ -599,9 +603,13 @@ internal class LauncherRootHost(
                     state = drawerQueryState,
                     controller = drawerTextController,
                     placeholder = "SEARCH APP",
-                    placeholderLeadingInkInset = textRasterizers.leadingInkInset(
+                    placeholderLeadingInkInset = preparedFont.leadingInkInset(
                         text = "SEARCH APP",
-                        size = PixelFontCatalog.defaultUiFontSize,
+                        faceSelection = PixelFontCatalog.selectionForRole(
+                            family = uiState.fontSelection.family,
+                            widthMode = uiState.fontSelection.widthMode,
+                            role = LauncherTextRole.CHROME,
+                        ),
                     ),
                     autofocus = uiState.isDrawerSearchFocused,
                     textAlign = when (uiState.drawerListAlignment) {
@@ -644,15 +652,15 @@ internal class LauncherRootHost(
                     theme = theme,
                     statusBarWidth = screenProfile.logicalWidth,
                     resolveLeadingInkInset = { text ->
-                        textRasterizers.leadingInkInset(
+                        preparedFont.leadingInkInset(
                             text = text,
-                            size = PixelFontCatalog.defaultUiFontSize,
+                            faceSelection = chromeFontSelection(),
                         )
                     },
                     measureTextWidth = { text ->
-                        textRasterizers.measureTextWidth(
+                        preparedFont.measureTextWidth(
                             text = text,
-                            size = PixelFontCatalog.defaultUiFontSize,
+                            faceSelection = chromeFontSelection(),
                         )
                     },
                     statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
@@ -668,6 +676,13 @@ internal class LauncherRootHost(
                 )
             }
         }
+
+    /** 返回当前家族和宽度模式承担状态栏语义角色的精确原生 face。 */
+    private fun chromeFontSelection(): LauncherFontSelection = PixelFontCatalog.selectionForRole(
+        family = uiState.fontSelection.family,
+        widthMode = uiState.fontSelection.widthMode,
+        role = LauncherTextRole.CHROME,
+    )
 
     private fun statusBarPageTitle(presentation: LauncherStatusBarPresentation.Standard): String {
         return if (uiState.mode == LauncherMode.SMS_THREAD_DETAIL) {
@@ -694,9 +709,9 @@ internal class LauncherRootHost(
         onAppMenuRefresh = callbacks.onDrawerAppMenuRefresh,
         onAppMenuDismiss = callbacks.onDrawerAppMenuDismiss,
         resolveLabelLeadingInkInset = { label ->
-            textRasterizers.leadingInkInset(
+            preparedFont.leadingInkInset(
                 text = label,
-                size = PixelFontCatalog.defaultUiFontSize,
+                faceSelection = uiState.fontSelection,
             )
         },
     )

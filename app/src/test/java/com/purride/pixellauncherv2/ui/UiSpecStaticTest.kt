@@ -534,7 +534,8 @@ class UiSpecStaticTest {
             "Home action counts must use the ValueAdjuster-style shared border on the normal CALL/SMS actions.",
             homeSource.contains("borderColor = theme.button.border") &&
                 homeSource.contains("fillColor = theme.button.border") &&
-                homeSource.contains("TextStyle(color = theme.surface.offPixelColor)") &&
+                homeSource.contains("color = theme.surface.offPixelColor") &&
+                homeSource.contains("role = LauncherTextRole.CHROME") &&
                 homeSource.contains("HOME_ACTION_DIVIDER_PX = 1"),
         )
         val mediaBarSource = Regex(

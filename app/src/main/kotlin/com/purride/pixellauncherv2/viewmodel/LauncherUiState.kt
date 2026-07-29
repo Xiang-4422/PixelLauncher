@@ -1,25 +1,27 @@
 package com.purride.pixellauncherv2.viewmodel
 
 import com.purride.pixellauncherv2.model.CallLogGroup
-import com.purride.pixellauncherv2.model.SmsMessageEntry
-import com.purride.pixellauncherv2.model.SmsThreadSummary
 import com.purride.pixellauncherv2.launcher.AppEntry
 import com.purride.pixellauncherv2.launcher.CallPageIndex
 import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.launcher.DrawerFocus
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.IdleSettings
+import com.purride.pixellauncherv2.launcher.LauncherFontSelection
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.MediaPlaybackSnapshot
 import com.purride.pixellauncherv2.launcher.NotificationSignal
 import com.purride.pixellauncherv2.launcher.NotificationSourceInfo
+import com.purride.pixellauncherv2.launcher.PixelFontCatalog
 import com.purride.pixellauncherv2.launcher.PixelMatterEffectMode
+import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.launcher.SmsSendStatus
-import com.purride.pixelcore.PixelShape
-import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.layout.LauncherLayoutProfileFactory
+import com.purride.pixellauncherv2.model.SmsMessageEntry
+import com.purride.pixellauncherv2.model.SmsThreadSummary
+import com.purride.pixelcore.PixelShape
 
 /**
  * 重写后的 Launcher UI 状态快照。
@@ -108,6 +110,12 @@ data class LauncherUiState(
     val selectedDotSizePx: Int = LauncherLayoutProfileFactory.defaultDotSizePx,
     val isPixelGapEnabled: Boolean = true,
     val selectedTheme: PixelTheme = PixelTheme.DAY,
+    /** 设置页当前明确选中的字体家族、宽度模式和默认字号。 */
+    val fontSelection: LauncherFontSelection = PixelFontCatalog.defaultUiFontSelection,
+    /** 字体设置当前是否等待后台资源准备。 */
+    val isFontLoading: Boolean = false,
+    /** indexed pack 缓存的紧凑诊断摘要。 */
+    val fontCacheSummary: String = "0/0K",
 
     // ── UI behaviour ──────────────────────────────────────────────────────────
     val drawerListAlignment: DrawerListAlignment = DrawerListAlignment.LEFT,

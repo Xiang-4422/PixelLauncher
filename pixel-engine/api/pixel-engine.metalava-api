@@ -51,6 +51,8 @@ package com.purride.pixelcore {
   public final class BitmapGlyphSource implements com.purride.pixelcore.GlyphSource {
     ctor public BitmapGlyphSource(java.util.List<com.purride.pixelcore.PixelGlyphPack> packs);
     method public com.purride.pixelcore.GlyphBitmap? findGlyph(int codePoint, com.purride.pixelcore.GlyphStyle style);
+    field public static final long GLYPH_CACHE_OBJECT_BYTES = 64L; // 0x40L
+    field public static final long MAX_UNPACKED_GLYPH_BYTES = 2097152L; // 0x200000L
   }
 
   public final class CompositeGlyphProvider implements com.purride.pixelcore.GlyphProvider {
@@ -120,22 +122,30 @@ package com.purride.pixelcore {
   }
 
   public final class GlyphMetrics {
-    ctor public GlyphMetrics(int advanceWidth, int baselineOffset, boolean isWideGlyph, optional boolean requiresVisualGapProtection, optional int inkLeft, optional int inkRight);
+    ctor public GlyphMetrics(int advanceWidth, int baselineOffset, boolean isWideGlyph, boolean requiresVisualGapProtection, int inkLeft, int inkRight);
+    ctor public GlyphMetrics(int advanceWidth, int baselineOffset, boolean isWideGlyph, optional boolean requiresVisualGapProtection, optional int inkLeft, optional int inkRight, optional int bitmapOffsetX, optional int bitmapOffsetY);
     method public int component1();
     method public int component2();
     method public boolean component3();
     method public boolean component4();
     method public int component5();
     method public int component6();
-    method public com.purride.pixelcore.GlyphMetrics copy(optional int advanceWidth, optional int baselineOffset, optional boolean isWideGlyph, optional boolean requiresVisualGapProtection, optional int inkLeft, optional int inkRight);
+    method public int component7();
+    method public int component8();
+    method public com.purride.pixelcore.GlyphMetrics copy(int advanceWidth, int baselineOffset, boolean isWideGlyph, boolean requiresVisualGapProtection, int inkLeft, int inkRight);
+    method public com.purride.pixelcore.GlyphMetrics copy(optional int advanceWidth, optional int baselineOffset, optional boolean isWideGlyph, optional boolean requiresVisualGapProtection, optional int inkLeft, optional int inkRight, optional int bitmapOffsetX, optional int bitmapOffsetY);
     method @InaccessibleFromKotlin public int getAdvanceWidth();
     method @InaccessibleFromKotlin public int getBaselineOffset();
+    method @InaccessibleFromKotlin public int getBitmapOffsetX();
+    method @InaccessibleFromKotlin public int getBitmapOffsetY();
     method @InaccessibleFromKotlin public int getInkLeft();
     method @InaccessibleFromKotlin public int getInkRight();
     method @InaccessibleFromKotlin public boolean getRequiresVisualGapProtection();
     method @InaccessibleFromKotlin public boolean isWideGlyph();
     property public int advanceWidth;
     property public int baselineOffset;
+    property public int bitmapOffsetX;
+    property public int bitmapOffsetY;
     property public int inkLeft;
     property public int inkRight;
     property public boolean isWideGlyph;
@@ -196,19 +206,35 @@ package com.purride.pixelcore {
     property public float wideTextSizeRatio;
   }
 
+  public final class IndexedBitmapGlyphSource implements com.purride.pixelcore.GlyphSource {
+    ctor public IndexedBitmapGlyphSource(java.util.List<com.purride.pixelcore.PixelIndexedGlyphPack> packs);
+    ctor public IndexedBitmapGlyphSource(java.util.List<com.purride.pixelcore.PixelIndexedGlyphPack> packs, optional long maxUnpackedBytes);
+    method public com.purride.pixelcore.GlyphBitmap? findGlyph(int codePoint, com.purride.pixelcore.GlyphStyle style);
+    field public static final long DEFAULT_UNPACKED_BYTES = 2097152L; // 0x200000L
+    field public static final long GLYPH_OBJECT_BYTES = 64L; // 0x40L
+  }
+
   public final class PackedGlyphRecord {
     ctor public PackedGlyphRecord(int codePoint, int advanceWidth, int width, byte[] packedPixels);
+    ctor public PackedGlyphRecord(int codePoint, int advanceWidth, int width, int bitmapOffsetX, int bitmapOffsetY, int height, byte[] packedPixels);
     method public operator int component1();
     method public operator int component2();
     method public operator int component3();
     method public operator byte[] component4();
     method public com.purride.pixelcore.PackedGlyphRecord copy(optional int codePoint, optional int advanceWidth, optional int width, optional byte[] packedPixels);
+    method public com.purride.pixelcore.PackedGlyphRecord copyWithPlacement(optional int codePoint, optional int advanceWidth, optional int width, optional int bitmapOffsetX, optional int bitmapOffsetY, optional int height, optional byte[] packedPixels);
     method @InaccessibleFromKotlin public int getAdvanceWidth();
+    method @InaccessibleFromKotlin public int getBitmapOffsetX();
+    method @InaccessibleFromKotlin public int getBitmapOffsetY();
     method @InaccessibleFromKotlin public int getCodePoint();
+    method @InaccessibleFromKotlin public int getHeight();
     method @InaccessibleFromKotlin public byte[] getPackedPixels();
     method @InaccessibleFromKotlin public int getWidth();
     property public int advanceWidth;
+    property public int bitmapOffsetX;
+    property public int bitmapOffsetY;
     property public int codePoint;
+    property public int height;
     property public byte[] packedPixels;
     property public int width;
   }
@@ -597,6 +623,34 @@ package com.purride.pixelcore {
     field public static final com.purride.pixelcore.PixelGridGeometryResolver INSTANCE;
   }
 
+  public final class PixelIndexedGlyphPack {
+    method public boolean contains(int codePoint);
+    method @InaccessibleFromKotlin public long getByteSize();
+    method @InaccessibleFromKotlin public int getGlyphCount();
+    method @InaccessibleFromKotlin public com.purride.pixelcore.PixelGlyphPackManifest getManifest();
+    property public long byteSize;
+    property public int glyphCount;
+    property public com.purride.pixelcore.PixelGlyphPackManifest manifest;
+    field public static final long INDEX_BYTES_PER_GLYPH = 32L; // 0x20L
+  }
+
+  public final class PixelIndexedGlyphPackAssetLoader {
+    ctor public PixelIndexedGlyphPackAssetLoader(android.content.Context context);
+    ctor public PixelIndexedGlyphPackAssetLoader(android.content.Context context, optional com.purride.pixelcore.PixelResourceCache cache);
+    method public com.purride.pixelcore.PixelIndexedGlyphPack load(String assetDirectory);
+    method public com.purride.pixelcore.PixelIndexedGlyphPack load(String assetDirectory, String? manifestSha256, String? binarySha256);
+    method public com.purride.pixelcore.PixelResourceLoadHandle<com.purride.pixelcore.PixelIndexedGlyphPack> loadAsync(com.purride.pixelcore.PixelResourceLoader resourceLoader, String assetDirectory, optional String? manifestSha256, optional String? binarySha256);
+    method public void remove(String assetDirectory, optional String? manifestSha256, optional String? binarySha256);
+  }
+
+  public final class PixelIndexedGlyphPackParser {
+    method public com.purride.pixelcore.PixelIndexedGlyphPack parseBinary(com.purride.pixelcore.PixelGlyphPackManifest manifest, java.io.InputStream inputStream);
+    method public com.purride.pixelcore.PixelIndexedGlyphPack parseBinary(com.purride.pixelcore.PixelGlyphPackManifest manifest, java.io.InputStream inputStream, optional String? expectedSha256);
+    method public com.purride.pixelcore.PixelIndexedGlyphPack parseBinary(com.purride.pixelcore.PixelGlyphPackManifest manifest, java.nio.ByteBuffer byteBuffer);
+    method public com.purride.pixelcore.PixelIndexedGlyphPack parseBinary(com.purride.pixelcore.PixelGlyphPackManifest manifest, java.nio.ByteBuffer byteBuffer, optional String? expectedSha256);
+    field public static final com.purride.pixelcore.PixelIndexedGlyphPackParser INSTANCE;
+  }
+
   public final class PixelResourceCache {
     ctor public PixelResourceCache();
     ctor public PixelResourceCache(optional com.purride.pixelcore.PixelResourceCacheLimits limits);
@@ -607,6 +661,7 @@ package com.purride.pixelcore {
     method @InaccessibleFromKotlin public int getBitmapCount();
     method public com.purride.pixelcore.PixelGlyphPack getGlyphPack(String key, kotlin.jvm.functions.Function0<com.purride.pixelcore.PixelGlyphPack> loader);
     method @InaccessibleFromKotlin public int getGlyphPackCount();
+    method public com.purride.pixelcore.PixelIndexedGlyphPack getIndexedGlyphPack(String key, kotlin.jvm.functions.Function0<com.purride.pixelcore.PixelIndexedGlyphPack> loader);
     method public com.purride.pixelcore.PixelSpriteSheet getSpriteSheet(String key, kotlin.jvm.functions.Function0<com.purride.pixelcore.PixelSpriteSheet> loader);
     method @InaccessibleFromKotlin public int getSpriteSheetCount();
     method public void remove(String key);
@@ -798,10 +853,13 @@ package com.purride.pixelcore {
     method public com.purride.pixelcore.PixelResourceLoadHandle<com.purride.pixelcore.PixelBitmap> loadBitmapAsync(String key, kotlin.jvm.functions.Function0<com.purride.pixelcore.PixelBitmap> loader);
     method public com.purride.pixelcore.PixelGlyphPack loadGlyphPack(String key, kotlin.jvm.functions.Function0<com.purride.pixelcore.PixelGlyphPack> loader);
     method public com.purride.pixelcore.PixelResourceLoadHandle<com.purride.pixelcore.PixelGlyphPack> loadGlyphPackAsync(String key, kotlin.jvm.functions.Function0<com.purride.pixelcore.PixelGlyphPack> loader);
+    method public com.purride.pixelcore.PixelIndexedGlyphPack loadIndexedGlyphPack(String key, kotlin.jvm.functions.Function0<com.purride.pixelcore.PixelIndexedGlyphPack> loader);
+    method public com.purride.pixelcore.PixelResourceLoadHandle<com.purride.pixelcore.PixelIndexedGlyphPack> loadIndexedGlyphPackAsync(String key, kotlin.jvm.functions.Function0<com.purride.pixelcore.PixelIndexedGlyphPack> loader);
     method public com.purride.pixelcore.PixelSpriteSheet loadSpriteSheet(String key, kotlin.jvm.functions.Function0<com.purride.pixelcore.PixelSpriteSheet> loader);
     method public com.purride.pixelcore.PixelResourceLoadHandle<com.purride.pixelcore.PixelSpriteSheet> loadSpriteSheetAsync(String key, kotlin.jvm.functions.Function0<com.purride.pixelcore.PixelSpriteSheet> loader);
     method public com.purride.pixelcore.PixelResourceLoadHandle<com.purride.pixelcore.PixelBitmap> prefetchBitmap(String key, kotlin.jvm.functions.Function0<com.purride.pixelcore.PixelBitmap> loader);
     method public com.purride.pixelcore.PixelResourceLoadHandle<com.purride.pixelcore.PixelGlyphPack> prefetchGlyphPack(String key, kotlin.jvm.functions.Function0<com.purride.pixelcore.PixelGlyphPack> loader);
+    method public com.purride.pixelcore.PixelResourceLoadHandle<com.purride.pixelcore.PixelIndexedGlyphPack> prefetchIndexedGlyphPack(String key, kotlin.jvm.functions.Function0<com.purride.pixelcore.PixelIndexedGlyphPack> loader);
     method public com.purride.pixelcore.PixelResourceLoadHandle<com.purride.pixelcore.PixelSpriteSheet> prefetchSpriteSheet(String key, kotlin.jvm.functions.Function0<com.purride.pixelcore.PixelSpriteSheet> loader);
     method public com.purride.pixelcore.PixelResourceLoaderSnapshot snapshot();
   }

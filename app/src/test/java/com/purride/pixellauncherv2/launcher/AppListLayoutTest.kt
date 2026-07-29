@@ -15,7 +15,9 @@ import org.junit.Test
 class AppListLayoutTest {
 
     private fun expectedVisibleRows(profile: LauncherLayoutProfile): Int {
-        val rowHeight = DrawerListGeometry.rowPitch(PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSize).cellHeight)
+        val rowHeight = DrawerListGeometry.rowPitch(
+            PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSelection).cellHeight,
+        )
         val top = LauncherHeaderLayout.firstContentItemTop(profile)
         val rail = (profile.logicalHeight - top).coerceAtLeast(rowHeight)
         return (rail / rowHeight).coerceAtLeast(1)

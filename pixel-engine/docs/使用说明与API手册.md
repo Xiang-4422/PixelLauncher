@@ -515,6 +515,8 @@ widget 树，无论是否存在 `PixelTheme` provider；缺少 provider 时二�
 字体包加载与 fallback：
 
 - `PixelGlyphPackAssetLoader(context, cache).load(assetDirectory, manifestSha256, binarySha256)` 会从 `assets/<assetDirectory>/manifest.json` 和 `assets/<assetDirectory>/glyphs.bin` 有界加载一个 `PixelGlyphPack`；缓存由调用方提供或使用 loader 的默认有界缓存，不再创建无容量私有 map。
+- 大型字库应优先使用 `PixelIndexedGlyphPackAssetLoader`：它在未压缩 asset 上 mmap PGLY v1，并由 `PixelIndexedGlyphPackParser` 建立 primitive 索引，避免为每个字形创建 Map/record 对象。`IndexedBitmapGlyphSource` 按需解压字形并以字节预算执行 LRU。
+- `PixelResourceLoader.loadIndexedGlyphPackAsync` 为 UI 提供 single-flight 异步入口；indexed 与传统 `PixelGlyphPack` 共享 `PixelResourceCache` 的 glyph 字节和条目预算。
 - `PixelGlyphPackParser.parseManifest(json, expectedSha256)` 只解析字形包元数据；`parseBinary(manifest, inputStream, expectedSha256)` 会先限制输入总字节并校验 SHA-256，再校验 magic、version、`cellHeight`、glyph count、Unicode scalar、尺寸、精确压缩长度、重复 code point、截断和尾随数据。
 - `BitmapGlyphSource(packs)` 按 pack 顺序查找完整 Unicode scalar `Int`，只消费与当前 `GlyphStyle.cellHeight` 匹配的 pack；supplementary glyph 不会被拆成 surrogate。
 - `CompositeGlyphProvider(sources)` 按 source 顺序查找 scalar；全部 source 都缺字时，会返回 engine 内建兜底字形。

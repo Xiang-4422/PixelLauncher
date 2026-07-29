@@ -3,6 +3,7 @@ package com.purride.pixellauncherv2.app
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
+import android.content.ComponentCallbacks2
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -56,6 +57,7 @@ import com.purride.pixellauncherv2.launcher.DrawerSearchAutoLaunchPolicy
 import com.purride.pixellauncherv2.launcher.HomeInfoAction
 import com.purride.pixellauncherv2.launcher.HomeInfoDetailModel
 import com.purride.pixellauncherv2.launcher.IdleAutoEntryPolicy
+import com.purride.pixellauncherv2.launcher.LauncherFontSelection
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
@@ -84,6 +86,8 @@ import com.purride.pixellauncherv2.system.AndroidAppLauncher
 import com.purride.pixellauncherv2.system.ScreenGravityMapper
 import com.purride.pixellauncherv2.system.WindowModeController
 import com.purride.pixellauncherv2.ui.theme.LauncherThemes
+import com.purride.pixellauncherv2.ui.text.LauncherFontRepository
+import com.purride.pixellauncherv2.ui.text.PreparedLauncherFont
 import com.purride.pixellauncherv2.util.ThrottleClickHelper
 import com.purride.pixellauncherv2.util.TimeTextProvider
 import com.purride.pixellauncherv2.viewmodel.LauncherViewModel
@@ -104,6 +108,8 @@ import java.util.concurrent.RejectedExecutionException
 class MainActivity : AppCompatActivity() {
 
     private val backgroundExecutor: ExecutorService = Executors.newSingleThreadExecutor()
+    /** 字体 IO、索引和协调使用的独立双线程池，避免阻塞短信等后台任务。 */
+    private val fontExecutor: ExecutorService = Executors.newFixedThreadPool(2)
     private val mainHandler = Handler(Looper.getMainLooper())
     private val timeTextProvider = TimeTextProvider()
     private val throttleClickHelper = ThrottleClickHelper()
@@ -112,6 +118,14 @@ class MainActivity : AppCompatActivity() {
 
     // Phase 8: unified root host (replaces Phases 3–7 individual hosts)
     private lateinit var launcherRootHost: LauncherRootHost
+    /** 冷启动或切换成功后提交给 Host 的完整字体。 */
+    private lateinit var activePreparedFont: PreparedLauncherFont
+    /** 负责字体异步准备、single-flight 与有限历史缓存。 */
+    private lateinit var launcherFontRepository: LauncherFontRepository
+    /** 冷启动先展示主题背景，字体准备后再挂载唯一 Host。 */
+    private lateinit var rootContainer: FrameLayout
+    /** 字体请求期间阻止设置重复入队。 */
+    private var isFontLoading: Boolean = false
     private lateinit var handTrackingDebugOverlayView: HandTrackingDebugOverlayView
 
     private lateinit var appRepository: AppRepository
@@ -171,10 +185,10 @@ class MainActivity : AppCompatActivity() {
         override fun isActive(): Boolean = !(isDestroyed || isFinishing)
 
         override fun smsThreadsVisibleRows(): Int =
-            SmsLayout.threadVisibleRows(screenProfile)
+            SmsLayout.threadVisibleRows(screenProfile, state.fontSelection)
 
         override fun smsInboxVisibleRows(): Int =
-            SettingsMenuLayout.largeVisibleRows(screenProfile)
+            SettingsMenuLayout.largeVisibleRows(screenProfile, state.fontSelection)
 
         override fun updateTextInputFocus() = this@MainActivity.updateTextInputFocus()
 
@@ -333,6 +347,7 @@ class MainActivity : AppCompatActivity() {
             selectedDotSizePx = appearanceSettings.dotSizePx,
             isPixelGapEnabled = appearanceSettings.pixelGapEnabled,
             selectedTheme = appearanceSettings.theme,
+            fontSelection = appearanceSettings.fontSelection,
         )
         state = LauncherStateTransitions.updateUiBehavior(
             state = state,
@@ -376,99 +391,21 @@ class MainActivity : AppCompatActivity() {
             pixelShape = appearanceSettings.pixelShape,
             statusBarHeightPx = currentStatusBarHeightPx(),
         )
-        // Phase 8: unified root host (single host for all 9 modes)
-        launcherRootHost = LauncherRootHost(
-            context = this,
-            onPixelMatterEffectStart = ::syncPixelMatterHandTracking,
-            onPixelMatterRestoreStart = ::stopPixelMatterHandTracking,
-            onPixelMatterEffectClear = ::stopPixelMatterHandTracking,
-            callbacks = LauncherCallbacks(
-                onOpenCall           = ::onHomeOpenCall,
-                onOpenSms            = ::onHomeOpenSms,
-                onHomeInfoAction     = ::onHomeInfoAction,
-                onHomeInfoDetail     = ::onHomeInfoDetail,
-                onMediaOpenPlayer    = ::onMediaOpenPlayer,
-                onMediaToggleFavorite = ::onMediaToggleFavorite,
-                onMediaTogglePlayPause = ::onMediaTogglePlayPause,
-                onMediaSkipPrevious  = ::onMediaSkipPrevious,
-                onMediaSkipNext      = ::onMediaSkipNext,
-                onMediaSeek          = ::onMediaSeek,
-                onHomeNotificationPressed = ::onHomeNotificationPressed,
-                onHomeNotificationAction = ::onHomeNotificationAction,
-                onDrawerQueryChanged = ::onPixelEngineDrawerQueryChanged,
-                onDrawerSubmitSearch = ::onPixelEngineDrawerSubmitSearch,
-                onDrawerAppPressed   = ::onPixelEngineDrawerAppPressed,
-                onDrawerAppLongPressed = ::onPixelEngineDrawerAppLongPressed,
-                onDrawerAppMenuEdit = ::onDrawerAppMenuEdit,
-                onDrawerAppMenuRefresh = ::onDrawerAppMenuRefresh,
-                onDrawerAppMenuDismiss = ::onDrawerAppMenuDismiss,
-                onSettingsItemAction = ::onSettingsItemAction,
-                onStatusBarAction = ::onStatusBarAction,
-                onAppEditorPrevious = ::onAppEditorPrevious,
-                onAppEditorNext = ::onAppEditorNext,
-                onAppEditorNameChanged = ::onAppEditorNameChanged,
-                onAppEditorAliasChanged = ::onAppEditorAliasChanged,
-                onAppEditorSave = ::onAppEditorSave,
-                onAppEditorReset = ::onAppEditorReset,
-                onAppCacheReset = ::onAppCacheReset,
-                onOpenDataHealth = ::openDataHealth,
-                onDataHealthItemPressed = ::onDataHealthItemPressed,
-                onNotificationSourcePressed = ::onNotificationSourcePressed,
-                onRequestSmsRole     = smsController::requestDefaultRole,
-                onOpenThread         = smsController::openThread,
-                onComposeNewThread   = smsController::composeNewThread,
-                onSmsPageSelected    = smsController::selectPage,
-                onMarkSmsRead        = smsController::markAllRead,
-                onMarkUnreadMessageRead = smsController::markMessageRead,
-                onDraftChanged       = smsController::draftChanged,
-                onSmsThreadSearchChanged = smsController::threadSearchChanged,
-                onSendDraft          = smsController::sendDraft,
-                onSmsMessagePressed  = smsController::messagePressed,
-                onSmsMessageLongPressed = smsController::messageLongPressed,
-                onSmsMessageMenuCopy = smsController::messageMenuCopyBody,
-                onSmsMessageMenuCopyCode = smsController::messageMenuCopyCode,
-                onSmsMessageMenuResend = smsController::messageMenuResend,
-                onSmsMessageMenuDelete = smsController::messageMenuDelete,
-                onSmsMessageMenuDismiss = smsController::messageMenuDismiss,
-                onSmsThreadLongPressed = smsController::threadLongPressed,
-                onSmsThreadMenuMarkRead = smsController::threadMenuMarkRead,
-                onSmsThreadMenuToggleMute = smsController::threadMenuToggleMute,
-                onSmsThreadMenuDelete = smsController::threadMenuDelete,
-                onSmsThreadMenuDismiss = smsController::threadMenuDismiss,
-                onCallGroupPressed   = { number -> callController.callNumber(number) },
-                onCallPageSelected   = callController::selectPage,
-                onDialDigit          = callController::appendDialDigit,
-                onDialBackspace      = callController::backspaceDialInput,
-                onDialClear          = callController::clearDialInput,
-                onDialCall           = callController::callDialInput,
-                onMainPageChanged    = ::onMainPageChanged,
-                onMainPageDragStart  = ::onMainPageDragStart,
-            ),
-        )
-        val rootContainer = FrameLayout(this).apply {
+        rootContainer = FrameLayout(this).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT,
             )
-            // Phase 8: unified root host (single engine overlay for all modes)
-            addView(
-                launcherRootHost.rootView,
-                FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                ),
-            )
-            handTrackingDebugOverlayView = HandTrackingDebugOverlayView(this@MainActivity)
-            addView(
-                handTrackingDebugOverlayView,
-                FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                ),
-            )
+            setBackgroundColor(LauncherThemes.from(applicationContext, selectedTheme.resolve(isSystemInDarkMode())).surface.bezelColor.argb)
         }
         setContentView(rootContainer)
-        updateTextInputFocus()
+        launcherFontRepository = LauncherFontRepository(applicationContext, fontExecutor, mainHandler)
+        isFontLoading = true
+        launcherFontRepository.prepare(state.fontSelection) { result ->
+            isFontLoading = false
+            result.onSuccess(::initializeLauncherRootHost)
+                .onFailure { error -> showFatalFontLoadError(error) }
+        }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (::launcherRootHost.isInitialized && launcherRootHost.handlePixelMatterBack()) {
@@ -507,21 +444,120 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+        suppressActivityAnimations()
+    }
+
+    /** 在持久化字体准备成功后一次性创建 Host、调试层和首帧。 */
+    private fun initializeLauncherRootHost(preparedFont: PreparedLauncherFont) {
+        if (isDestroyed || ::launcherRootHost.isInitialized) return
+        activePreparedFont = preparedFont
+        refreshFontCacheSummary()
+        launcherRootHost = LauncherRootHost(
+            context = this,
+            initialFont = preparedFont,
+            onPixelMatterEffectStart = ::syncPixelMatterHandTracking,
+            onPixelMatterRestoreStart = ::stopPixelMatterHandTracking,
+            onPixelMatterEffectClear = ::stopPixelMatterHandTracking,
+            callbacks = createLauncherCallbacks(),
+        )
+        rootContainer.addView(
+            launcherRootHost.rootView,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+            ),
+        )
+        handTrackingDebugOverlayView = HandTrackingDebugOverlayView(this)
+        rootContainer.addView(
+            handTrackingDebugOverlayView,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+            ),
+        )
         launcherRootHost.rootView.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
             val newWidth = right - left
             val newHeight = bottom - top
             val oldWidth = oldRight - oldLeft
             val oldHeight = oldBottom - oldTop
-
             if (newWidth > 0 && newHeight > 0 && (newWidth != oldWidth || newHeight != oldHeight)) {
                 updateScreenProfile(newWidth, newHeight)
                 updateMediaGestureExclusion(state.mediaPlayback.hasTrack)
             }
         }
-
+        updateTextInputFocus()
         renderCurrentFrame()
         handleLaunchIntent(intent)
-        suppressActivityAnimations()
+    }
+
+    /** 集中构建唯一 Host 使用的全部业务回调。 */
+    private fun createLauncherCallbacks(): LauncherCallbacks = LauncherCallbacks(
+        onOpenCall = ::onHomeOpenCall,
+        onOpenSms = ::onHomeOpenSms,
+        onHomeInfoAction = ::onHomeInfoAction,
+        onHomeInfoDetail = ::onHomeInfoDetail,
+        onMediaOpenPlayer = ::onMediaOpenPlayer,
+        onMediaToggleFavorite = ::onMediaToggleFavorite,
+        onMediaTogglePlayPause = ::onMediaTogglePlayPause,
+        onMediaSkipPrevious = ::onMediaSkipPrevious,
+        onMediaSkipNext = ::onMediaSkipNext,
+        onMediaSeek = ::onMediaSeek,
+        onHomeNotificationPressed = ::onHomeNotificationPressed,
+        onHomeNotificationAction = ::onHomeNotificationAction,
+        onDrawerQueryChanged = ::onPixelEngineDrawerQueryChanged,
+        onDrawerSubmitSearch = ::onPixelEngineDrawerSubmitSearch,
+        onDrawerAppPressed = ::onPixelEngineDrawerAppPressed,
+        onDrawerAppLongPressed = ::onPixelEngineDrawerAppLongPressed,
+        onDrawerAppMenuEdit = ::onDrawerAppMenuEdit,
+        onDrawerAppMenuRefresh = ::onDrawerAppMenuRefresh,
+        onDrawerAppMenuDismiss = ::onDrawerAppMenuDismiss,
+        onSettingsItemAction = ::onSettingsItemAction,
+        onStatusBarAction = ::onStatusBarAction,
+        onAppEditorPrevious = ::onAppEditorPrevious,
+        onAppEditorNext = ::onAppEditorNext,
+        onAppEditorNameChanged = ::onAppEditorNameChanged,
+        onAppEditorAliasChanged = ::onAppEditorAliasChanged,
+        onAppEditorSave = ::onAppEditorSave,
+        onAppEditorReset = ::onAppEditorReset,
+        onAppCacheReset = ::onAppCacheReset,
+        onOpenDataHealth = ::openDataHealth,
+        onDataHealthItemPressed = ::onDataHealthItemPressed,
+        onNotificationSourcePressed = ::onNotificationSourcePressed,
+        onRequestSmsRole = smsController::requestDefaultRole,
+        onOpenThread = smsController::openThread,
+        onSmsPageSelected = smsController::selectPage,
+        onMarkSmsRead = smsController::markAllRead,
+        onMarkUnreadMessageRead = smsController::markMessageRead,
+        onDraftChanged = smsController::draftChanged,
+        onSmsThreadSearchChanged = smsController::threadSearchChanged,
+        onSendDraft = smsController::sendDraft,
+        onSmsMessagePressed = smsController::messagePressed,
+        onSmsMessageLongPressed = smsController::messageLongPressed,
+        onSmsMessageMenuCopy = smsController::messageMenuCopyBody,
+        onSmsMessageMenuCopyCode = smsController::messageMenuCopyCode,
+        onSmsMessageMenuResend = smsController::messageMenuResend,
+        onSmsMessageMenuDelete = smsController::messageMenuDelete,
+        onSmsMessageMenuDismiss = smsController::messageMenuDismiss,
+        onSmsThreadLongPressed = smsController::threadLongPressed,
+        onSmsThreadMenuMarkRead = smsController::threadMenuMarkRead,
+        onSmsThreadMenuToggleMute = smsController::threadMenuToggleMute,
+        onSmsThreadMenuDelete = smsController::threadMenuDelete,
+        onSmsThreadMenuDismiss = smsController::threadMenuDismiss,
+        onComposeNewThread = smsController::composeNewThread,
+        onCallGroupPressed = { number -> callController.callNumber(number) },
+        onCallPageSelected = callController::selectPage,
+        onDialDigit = callController::appendDialDigit,
+        onDialBackspace = callController::backspaceDialInput,
+        onDialClear = callController::clearDialInput,
+        onDialCall = callController::callDialInput,
+        onMainPageChanged = ::onMainPageChanged,
+        onMainPageDragStart = ::onMainPageDragStart,
+    )
+
+    /** 冷启动字体损坏时不换用其他字体，只显示系统级错误并保留背景。 */
+    private fun showFatalFontLoadError(error: Throwable) {
+        Log.e(fontLoadLogTag, "Initial font load failed", error)
+        android.widget.Toast.makeText(this, "FONT LOAD ERROR", android.widget.Toast.LENGTH_LONG).show()
     }
 
     /**
@@ -823,9 +859,31 @@ class MainActivity : AppCompatActivity() {
         if (::launcherRootHost.isInitialized) {
             launcherRootHost.dispose()
         }
+        if (::launcherFontRepository.isInitialized) {
+            launcherFontRepository.dispose()
+        }
         mainHandler.removeCallbacksAndMessages(null)
         backgroundExecutor.shutdownNow()
+        fontExecutor.shutdownNow()
         super.onDestroy()
+    }
+
+    /** 根据系统内存压力释放最近字体和解压 glyph，不替换当前字体。 */
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (!::launcherFontRepository.isInitialized) return
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN && ::activePreparedFont.isInitialized) {
+            launcherFontRepository.trimToActive(activePreparedFont.selection)
+        }
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+            launcherFontRepository.clearGlyphCaches()
+        }
+    }
+
+    /** 极端内存压力下仅清理解压 glyph，当前压缩索引仍保持可渲染。 */
+    override fun onLowMemory() {
+        super.onLowMemory()
+        if (::launcherFontRepository.isInitialized) launcherFontRepository.clearGlyphCaches()
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
@@ -1165,6 +1223,7 @@ class MainActivity : AppCompatActivity() {
             theme           = LauncherThemes.from(applicationContext, uiState.selectedTheme.resolve(isSystemInDarkMode())),
             screenProfile   = screenProfile,
             chargeTick      = animationState.headerChargeTick,
+            preparedFont    = activePreparedFont,
             pixelGapEnabled = uiState.isPixelGapEnabled,
         )
         updateMediaGestureExclusion(uiState.mediaPlayback.hasTrack)
@@ -1287,6 +1346,20 @@ class MainActivity : AppCompatActivity() {
                     newPixelGapEnabled = current.isPixelGapEnabled,
                     newTheme = SettingsMenuModel.nextTheme(current.selectedTheme, direction),
                 )
+            }
+            SettingsMenuItem.FONT -> {
+                restorePendingPixelAppearanceChange(render = false)
+                val target = SettingsMenuModel.nextFontFamily(state.fontSelection, direction)
+                requestFontSelection(fontSettingsRepository.selectionForFamily(target.family))
+            }
+            SettingsMenuItem.FONT_WIDTH -> {
+                restorePendingPixelAppearanceChange(render = false)
+                val target = SettingsMenuModel.nextFontWidth(state.fontSelection, direction)
+                requestFontSelection(fontSettingsRepository.selectionForWidth(target.family, target.widthMode))
+            }
+            SettingsMenuItem.FONT_SIZE -> {
+                restorePendingPixelAppearanceChange(render = false)
+                requestFontSelection(SettingsMenuModel.nextFontSize(state.fontSelection, direction))
             }
             SettingsMenuItem.HOME_STATUS -> {
                 state = LauncherStateTransitions.showHome(state)
@@ -1585,11 +1658,11 @@ class MainActivity : AppCompatActivity() {
         )
         state = LauncherStateTransitions.reflowSmsWindow(
             state = state,
-            visibleRows = SettingsMenuLayout.largeVisibleRows(screenProfile),
+            visibleRows = SettingsMenuLayout.largeVisibleRows(screenProfile, state.fontSelection),
         )
         state = LauncherStateTransitions.reflowSmsThreadWindow(
             state = state,
-            visibleRows = SmsLayout.threadVisibleRows(screenProfile),
+            visibleRows = SmsLayout.threadVisibleRows(screenProfile, state.fontSelection),
         )
         if (render) {
             renderCurrentFrame()
@@ -1614,9 +1687,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun visibleRows(): Int = AppListLayout.visibleRows(screenProfile)
+    private fun visibleRows(): Int = AppListLayout.visibleRows(
+        screenProfile = screenProfile,
+        fontSelection = state.fontSelection,
+    )
 
-    private fun settingsVisibleRows(): Int = SettingsMenuLayout.visibleRows(screenProfile)
+    private fun settingsVisibleRows(): Int = SettingsMenuLayout.visibleRows(
+        screenProfile = screenProfile,
+        fontSelection = state.fontSelection,
+    )
 
     /**
      * 从当前页面打开抽屉，并根据持久化偏好决定是否默认进入搜索态。
@@ -2201,18 +2280,63 @@ class MainActivity : AppCompatActivity() {
         newDotSizePx: Int,
         newPixelGapEnabled: Boolean,
         newTheme: PixelTheme,
+        newFontSelection: LauncherFontSelection = state.fontSelection,
     ) {
         persistAppearance(
             pixelShape = newPixelShape,
             dotSizePx = newDotSizePx,
             pixelGapEnabled = newPixelGapEnabled,
             theme = newTheme,
+            fontSelection = newFontSelection,
         )
         applyAppearanceState(
             newPixelShape = newPixelShape,
             newDotSizePx = newDotSizePx,
             newPixelGapEnabled = newPixelGapEnabled,
             newTheme = newTheme,
+            newFontSelection = newFontSelection,
+        )
+    }
+
+    /** 后台准备候选字体，成功后才原子更新状态、Host 与持久化设置。 */
+    private fun requestFontSelection(candidate: LauncherFontSelection) {
+        if (isFontLoading || candidate == state.fontSelection) return
+        val activeSelection = state.fontSelection
+        isFontLoading = true
+        state = LauncherStateTransitions.updateFontLoading(state, isLoading = true)
+        mainHandler.removeCallbacks(statusBarMessageClearRunnable)
+        state = LauncherStateTransitions.updateStatusBarMessage(state, message = "FONT LOADING")
+        renderCurrentFrame()
+        launcherFontRepository.prepare(candidate) { result ->
+            isFontLoading = false
+            state = LauncherStateTransitions.updateFontLoading(state, isLoading = false)
+            result.onSuccess { prepared ->
+                if (state.fontSelection != activeSelection) return@onSuccess
+                activePreparedFont = prepared
+                refreshFontCacheSummary()
+                val current = state
+                applyAppearance(
+                    newPixelShape = current.selectedPixelShape,
+                    newDotSizePx = current.selectedDotSizePx,
+                    newPixelGapEnabled = current.isPixelGapEnabled,
+                    newTheme = current.selectedTheme,
+                    newFontSelection = candidate,
+                )
+                state = LauncherStateTransitions.updateStatusBarMessage(state, message = "")
+                renderCurrentFrame()
+            }.onFailure { error ->
+                Log.e(fontLoadLogTag, "Font switch failed: $candidate", error)
+                showStatusBarMessage("FONT LOAD ERROR")
+            }
+        }
+    }
+
+    /** 把 indexed pack 条目数和 KiB 占用写入诊断状态。 */
+    private fun refreshFontCacheSummary() {
+        val snapshot = launcherFontRepository.cacheSnapshot()
+        state = LauncherStateTransitions.updateFontCacheSummary(
+            state = state,
+            summary = "${snapshot.glyphPackCount}/${snapshot.glyphPackBytes / 1024L}K",
         )
     }
 
@@ -2221,12 +2345,14 @@ class MainActivity : AppCompatActivity() {
         dotSizePx: Int,
         pixelGapEnabled: Boolean,
         theme: PixelTheme,
+        fontSelection: LauncherFontSelection = state.fontSelection,
     ) {
         fontSettingsRepository.setAppearanceSettings(
             pixelShape = pixelShape,
             dotSizePx = dotSizePx,
             pixelGapEnabled = pixelGapEnabled,
             theme = theme,
+            fontSelection = fontSelection,
         )
     }
 
@@ -2235,6 +2361,7 @@ class MainActivity : AppCompatActivity() {
         newDotSizePx: Int,
         newPixelGapEnabled: Boolean,
         newTheme: PixelTheme,
+        newFontSelection: LauncherFontSelection = state.fontSelection,
         render: Boolean = true,
     ) {
         selectedTheme = newTheme
@@ -2244,6 +2371,7 @@ class MainActivity : AppCompatActivity() {
             selectedDotSizePx = newDotSizePx,
             isPixelGapEnabled = newPixelGapEnabled,
             selectedTheme = newTheme,
+            fontSelection = newFontSelection,
         )
 
         val widthPx = launcherRootHost.rootView.width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
@@ -2289,6 +2417,7 @@ class MainActivity : AppCompatActivity() {
             dotSizePx = confirmedState.selectedDotSizePx,
             pixelGapEnabled = confirmedState.isPixelGapEnabled,
             theme = confirmedState.selectedTheme,
+            fontSelection = confirmedState.fontSelection,
         )
         clearPendingPixelAppearanceChange()
     }
@@ -2783,6 +2912,8 @@ class MainActivity : AppCompatActivity() {
         const val EXTRA_OPEN_SMS_THREAD_ID = "open_sms_thread_id"
         const val EXTRA_OPEN_SMS_ADDRESS = "open_sms_address"
         const val smsIntentLogTag = "SmsIntent"
+        /** 字体冷启动和切换失败使用的日志标签。 */
+        const val fontLoadLogTag = "LauncherFont"
     }
 }
 

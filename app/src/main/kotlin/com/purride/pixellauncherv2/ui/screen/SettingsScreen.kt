@@ -16,6 +16,7 @@ import com.purride.pixellauncherv2.launcher.DataHealthModel
 import com.purride.pixellauncherv2.launcher.HomeInfoModel
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.NotificationSettingsModel
+import com.purride.pixellauncherv2.launcher.PixelFontCatalog
 import com.purride.pixellauncherv2.launcher.SettingsListGeometry
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
@@ -23,6 +24,7 @@ import com.purride.pixellauncherv2.launcher.SettingsSection
 import com.purride.pixellauncherv2.launcher.pixelMatterEffectModeLabel
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.SettingsActionRow
+import com.purride.pixellauncherv2.ui.widget.SettingsInfoRow
 import com.purride.pixellauncherv2.ui.widget.SettingsOptionStepperRow
 import com.purride.pixellauncherv2.ui.widget.SettingsPixelSizeControl
 import com.purride.pixellauncherv2.ui.widget.SettingsSectionHeader
@@ -122,6 +124,53 @@ class SettingsScreen(
                     textEdgeResolvers = widget.textEdgeResolvers,
                     onPrevious = { widget.onItemAction(SettingsMenuItem.THEME, -1) },
                     onNext = { widget.onItemAction(SettingsMenuItem.THEME, +1) },
+                ),
+            )
+            add(
+                SettingsOptionStepperRow(
+                    title = "FONT",
+                    valueLabel = SettingsMenuModel.fontLabel(fontSelection.family),
+                    theme = t,
+                    onPrevious = { widget.onItemAction(SettingsMenuItem.FONT, -1) },
+                    onNext = { widget.onItemAction(SettingsMenuItem.FONT, +1) },
+                    enabled = !isFontLoading && PixelFontCatalog.fontFamilyOptions().size > 1,
+                ),
+            )
+            add(
+                SettingsOptionStepperRow(
+                    title = "WIDTH",
+                    valueLabel = SettingsMenuModel.fontWidthLabel(fontSelection.widthMode),
+                    theme = t,
+                    onPrevious = { widget.onItemAction(SettingsMenuItem.FONT_WIDTH, -1) },
+                    onNext = { widget.onItemAction(SettingsMenuItem.FONT_WIDTH, +1) },
+                    enabled = !isFontLoading && PixelFontCatalog.widthModeOptions(fontSelection.family).size > 1,
+                ),
+            )
+            add(
+                SettingsOptionStepperRow(
+                    title = "SIZE",
+                    valueLabel = SettingsMenuModel.fontSizeLabel(fontSelection.size),
+                    theme = t,
+                    onPrevious = { widget.onItemAction(SettingsMenuItem.FONT_SIZE, -1) },
+                    onNext = { widget.onItemAction(SettingsMenuItem.FONT_SIZE, +1) },
+                    enabled = !isFontLoading && PixelFontCatalog.fontSizeOptions(
+                        fontSelection.family,
+                        fontSelection.widthMode,
+                    ).size > 1,
+                ),
+            )
+            add(
+                SettingsInfoRow(
+                    title = "FONT INFO",
+                    valueLabel = PixelFontCatalog.fontInfoLabel(fontSelection),
+                    theme = t,
+                ),
+            )
+            add(
+                SettingsInfoRow(
+                    title = "SAMPLE",
+                    valueLabel = "ABC 012 中文 .,:!?",
+                    theme = t,
                 ),
             )
             addSection(SettingsSection.HOME, t)

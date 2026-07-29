@@ -3,6 +3,7 @@ com.purride.pixelcore public class AxisMotionController(
 com.purride.pixelcore public class BitmapGlyphSource(
 com.purride.pixelcore public class CompositeGlyphProvider(
 com.purride.pixelcore public class FrameSwapBuffer
+com.purride.pixelcore public class IndexedBitmapGlyphSource @JvmOverloads public constructor(
 com.purride.pixelcore public class PackedGlyphRecord(
 com.purride.pixelcore public class PixelBitmap private constructor(
 com.purride.pixelcore public class PixelBitmapAssetLoader(
@@ -14,6 +15,8 @@ com.purride.pixelcore public class PixelBufferPool(
 com.purride.pixelcore public class PixelFontEngine(
 com.purride.pixelcore public class PixelGlyphPackAssetLoader @JvmOverloads public constructor(
 com.purride.pixelcore public class PixelGlyphPackLoadException(
+com.purride.pixelcore public class PixelIndexedGlyphPack internal constructor(
+com.purride.pixelcore public class PixelIndexedGlyphPackAssetLoader @JvmOverloads public constructor(
 com.purride.pixelcore public class PixelResourceCache @JvmOverloads public constructor(
 com.purride.pixelcore public class PixelResourceLoadHandle<T : Any> internal constructor(
 com.purride.pixelcore public class PixelResourceLoader(
@@ -30,6 +33,8 @@ com.purride.pixelcore public companion object
 com.purride.pixelcore public const val PixelResourceManifestVersion: Int = 1
 com.purride.pixelcore public const val PixelSpriteSheetVersion: Int = 1
 com.purride.pixelcore public const val defaultDotSizePx: Int = 12
+com.purride.pixelcore public constructor(
+com.purride.pixelcore public constructor(
 com.purride.pixelcore public constructor(width: Int, height: Int, pixels: IntArray) :
 com.purride.pixelcore public data class AxisMotionState(
 com.purride.pixelcore public data class FramePayload(
@@ -93,8 +98,11 @@ com.purride.pixelcore public fun clearFailure(kind: PixelResourceKind, key: Stri
 com.purride.pixelcore public fun clearFailures()
 com.purride.pixelcore public fun compose(
 com.purride.pixelcore public fun consumeLatest(afterSequence: Long): FramePayload?
+com.purride.pixelcore public fun contains(codePoint: Int): Boolean = findIndex(codePoint) >= 0
+com.purride.pixelcore public fun copy(
 com.purride.pixelcore public fun copy(
 com.purride.pixelcore public fun copy(): PixelBuffer
+com.purride.pixelcore public fun copyWithPlacement(
 com.purride.pixelcore public fun create(
 com.purride.pixelcore public fun create(): AxisMotionState = AxisMotionState()
 com.purride.pixelcore public fun detailedSnapshot(): PixelResourceCacheDetailedSnapshot = synchronized(lock)
@@ -111,6 +119,7 @@ com.purride.pixelcore public fun fromArgb(a: Int, r: Int, g: Int, b: Int): Pixel
 com.purride.pixelcore public fun fromRgb(r: Int, g: Int, b: Int): PixelColor = fromArgb(0xFF, r, g, b)
 com.purride.pixelcore public fun getBitmap(key: String, loader: () -> PixelBitmap): PixelBitmap
 com.purride.pixelcore public fun getGlyphPack(key: String, loader: () -> PixelGlyphPack): PixelGlyphPack
+com.purride.pixelcore public fun getIndexedGlyphPack(
 com.purride.pixelcore public fun getPixel(x: Int, y: Int): PixelColor
 com.purride.pixelcore public fun getSpriteSheet(key: String, loader: () -> PixelSpriteSheet): PixelSpriteSheet
 com.purride.pixelcore public fun glyphCacheStats(): GlyphCacheStats
@@ -122,16 +131,21 @@ com.purride.pixelcore public fun load(
 com.purride.pixelcore public fun load(
 com.purride.pixelcore public fun load(
 com.purride.pixelcore public fun load(
+com.purride.pixelcore public fun load(
 com.purride.pixelcore public fun load(assetDirectory: String): PixelGlyphPack = load(
+com.purride.pixelcore public fun load(assetDirectory: String): PixelIndexedGlyphPack = load(
 com.purride.pixelcore public fun load(json: String, bitmap: PixelBitmap): PixelSpriteSheet =
 com.purride.pixelcore public fun load(path: String): PixelBitmap = load(
 com.purride.pixelcore public fun load(resourceId: Int): PixelBitmap = load(
+com.purride.pixelcore public fun loadAsync(
 com.purride.pixelcore public fun loadAtlas(
 com.purride.pixelcore public fun loadAtlas(json: String, bitmap: PixelBitmap): PixelSpriteAtlas =
 com.purride.pixelcore public fun loadBitmap(key: String, loader: () -> PixelBitmap): PixelBitmap
 com.purride.pixelcore public fun loadBitmapAsync(
 com.purride.pixelcore public fun loadGlyphPack(key: String, loader: () -> PixelGlyphPack): PixelGlyphPack
 com.purride.pixelcore public fun loadGlyphPackAsync(
+com.purride.pixelcore public fun loadIndexedGlyphPack(
+com.purride.pixelcore public fun loadIndexedGlyphPackAsync(
 com.purride.pixelcore public fun loadSpriteSheet(key: String, loader: () -> PixelSpriteSheet): PixelSpriteSheet
 com.purride.pixelcore public fun loadSpriteSheetAsync(
 com.purride.pixelcore public fun mapSurfaceToLogical(
@@ -155,6 +169,8 @@ com.purride.pixelcore public fun parse(json: String, expectedSha256: String?): P
 com.purride.pixelcore public fun parseAtlasDefinition(json: String): PixelSpriteAtlasDefinition =
 com.purride.pixelcore public fun parseAtlasDefinition(json: String, expectedSha256: String?): PixelSpriteAtlasDefinition
 com.purride.pixelcore public fun parseBinary(
+com.purride.pixelcore public fun parseBinary(
+com.purride.pixelcore public fun parseBinary(
 com.purride.pixelcore public fun parseBinary(manifest: PixelGlyphPackManifest, inputStream: InputStream): PixelGlyphPack =
 com.purride.pixelcore public fun parseCatalog(json: String): PixelResourceCatalog =
 com.purride.pixelcore public fun parseCatalog(json: String, expectedSha256: String?): PixelResourceCatalog
@@ -165,9 +181,11 @@ com.purride.pixelcore public fun parseManifest(json: String, expectedSha256: Str
 com.purride.pixelcore public fun pixelAt(x: Int, y: Int): Int
 com.purride.pixelcore public fun prefetchBitmap(
 com.purride.pixelcore public fun prefetchGlyphPack(
+com.purride.pixelcore public fun prefetchIndexedGlyphPack(
 com.purride.pixelcore public fun prefetchSpriteSheet(
 com.purride.pixelcore public fun rasterizeGlyph(codePoint: Int, style: GlyphStyle): GlyphBitmap
 com.purride.pixelcore public fun release(buffer: PixelBuffer)
+com.purride.pixelcore public fun remove(
 com.purride.pixelcore public fun remove(
 com.purride.pixelcore public fun remove(key: String)
 com.purride.pixelcore public fun reset(): AxisMotionState = create()
@@ -194,6 +212,7 @@ com.purride.pixelcore public object AxisBufferComposer
 com.purride.pixelcore public object PixelCoreModule
 com.purride.pixelcore public object PixelGlyphPackParser
 com.purride.pixelcore public object PixelGridGeometryResolver
+com.purride.pixelcore public object PixelIndexedGlyphPackParser
 com.purride.pixelcore public object PixelResourceManifestJsonLoader
 com.purride.pixelcore public object PixelSpriteSheetJsonLoader
 com.purride.pixelcore public object ScreenProfileFactory
@@ -212,14 +231,19 @@ com.purride.pixelcore public val binaryPath: String,
 com.purride.pixelcore public val binarySha256: String? = null,
 com.purride.pixelcore public val bitmap: String,
 com.purride.pixelcore public val bitmapCount: Int
+com.purride.pixelcore public val bitmapOffsetX: Int,
+com.purride.pixelcore public val bitmapOffsetY: Int,
 com.purride.pixelcore public val blue: Int get() = argb and 0xFF
+com.purride.pixelcore public val byteSize: Long
 com.purride.pixelcore public val byteSize: Long
 com.purride.pixelcore public val codePoint: Int,
 com.purride.pixelcore public val fit: PixelViewportFit = PixelViewportFit.CONTAIN,
+com.purride.pixelcore public val glyphCount: Int
 com.purride.pixelcore public val glyphHeight: Int = 7,
 com.purride.pixelcore public val glyphPackCount: Int
 com.purride.pixelcore public val glyphWidth: Int = 5,
 com.purride.pixelcore public val green: Int get() = (argb ushr 8) and 0xFF
+com.purride.pixelcore public val height: Int,
 com.purride.pixelcore public val height: Int,
 com.purride.pixelcore public val height: Int,
 com.purride.pixelcore public val id: String,
@@ -229,6 +253,7 @@ com.purride.pixelcore public val id: String,
 com.purride.pixelcore public val isCancelled: Boolean
 com.purride.pixelcore public val isDone: Boolean
 com.purride.pixelcore public val lineHeight: Int
+com.purride.pixelcore public val manifest: PixelGlyphPackManifest,
 com.purride.pixelcore public val manifestPath: String,
 com.purride.pixelcore public val manifestSha256: String? = null,
 com.purride.pixelcore public val packedPixels: ByteArray

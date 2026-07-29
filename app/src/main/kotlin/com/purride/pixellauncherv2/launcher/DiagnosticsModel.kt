@@ -23,6 +23,9 @@ object DiagnosticsModel {
             batteryLevel = state.batteryLevel,
             isCharging = state.isCharging,
             hasUsageAccess = state.hasUsageAccess,
+            fontSelection = state.fontSelection,
+            isFontLoading = state.isFontLoading,
+            fontCacheSummary = state.fontCacheSummary,
             screenProfile = screenProfile,
         )
     }
@@ -39,6 +42,9 @@ object DiagnosticsModel {
             batteryLevel = state.batteryLevel,
             isCharging = state.isCharging,
             hasUsageAccess = state.hasUsageAccess,
+            fontSelection = state.fontSelection,
+            isFontLoading = state.isFontLoading,
+            fontCacheSummary = state.fontCacheSummary,
             screenProfile = screenProfile,
         )
     }
@@ -53,6 +59,12 @@ object DiagnosticsModel {
         batteryLevel: Int,
         isCharging: Boolean,
         hasUsageAccess: Boolean,
+        /** 当前由设置页明确选择的字体家族、宽度模式和字号。 */
+        fontSelection: LauncherFontSelection,
+        /** 候选字体是否仍在后台准备。 */
+        isFontLoading: Boolean,
+        /** indexed pack 缓存条目/占用摘要。 */
+        fontCacheSummary: String,
         screenProfile: LauncherLayoutProfile,
     ): List<DiagnosticsLine> {
         val lastLaunch = lastLaunchPackageName
@@ -68,12 +80,18 @@ object DiagnosticsModel {
             ?.ifBlank { "0" }
             ?: "0"
         val statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile)
-        val fontRows = PixelFontCatalog.fontSizeOptions().map { size ->
-            DiagnosticsLine(PixelFontCatalog.sizeLabel(size), PixelFontCatalog.metricsLabel(size))
+        val fontRows = PixelFontCatalog.fontSizeOptions(fontSelection.family, fontSelection.widthMode).map { size ->
+            /** 同一字体家族与宽度模式下该字号的真实度量。 */
+            val sizedSelection = fontSelection.copy(size = size)
+            DiagnosticsLine(PixelFontCatalog.sizeLabel(size), PixelFontCatalog.metricsLabel(sizedSelection))
         }
         val textSummary = DiagnosticsTextSampleModel.summary(textSamples)
         val maxTextSample = DiagnosticsTextSampleModel.maxSample(textSamples)
         val boundsSnapshot = DiagnosticsBoundsModel.snapshot(screenProfile)
+        val familyDescriptor = requireNotNull(PixelFontCatalog.familyDescriptor(fontSelection.family))
+        val faceDescriptor = PixelFontCatalog.requireFace(fontSelection)
+        /** 当前 face 所有 pack 声明范围的稳定去重列表。 */
+        val coverageRanges = faceDescriptor.packs.flatMap { pack -> pack.coverageRanges }.distinct()
 
         return listOf(
             DiagnosticsLine("HOME", homeSummary),
@@ -82,7 +100,23 @@ object DiagnosticsModel {
             DiagnosticsLine("LAUNCHES", launchCount.toString()),
             DiagnosticsLine("LAST", lastLaunch),
             DiagnosticsLine("RECENT", recentSummary),
-            DiagnosticsLine("FONT", "FUSION ${PixelFontCatalog.sizeLabel(PixelFontCatalog.defaultUiFontSize)}"),
+            DiagnosticsLine(
+                "FONT",
+                "${PixelFontCatalog.familyLabel(fontSelection.family)} " +
+                    "${PixelFontCatalog.widthModeLabel(fontSelection.widthMode)} " +
+                    PixelFontCatalog.sizeLabel(fontSelection.size),
+            ),
+            DiagnosticsLine("FONT ID", fontSelection.family.id.uppercase()),
+            DiagnosticsLine("FONT SRC", familyDescriptor.sourceVersion),
+            DiagnosticsLine("FONT TYPE", faceDescriptor.packs.map { pack -> pack.sourceType }.distinct().joinToString("+").uppercase()),
+            DiagnosticsLine("FONT PACK", faceDescriptor.packs.joinToString("+") { pack -> pack.id }.take(32)),
+            DiagnosticsLine(
+                "FONT RANGE",
+                "${coverageRanges.size} ${coverageRanges.first().substringBefore('-')}-" +
+                    coverageRanges.last().substringAfter('-'),
+            ),
+            DiagnosticsLine("FONT LOAD", if (isFontLoading) "LOADING" else "READY"),
+            DiagnosticsLine("FONT CACHE", fontCacheSummary),
         ) + fontRows + listOf(
             DiagnosticsLine("TEXT", textSummary),
             DiagnosticsLine(

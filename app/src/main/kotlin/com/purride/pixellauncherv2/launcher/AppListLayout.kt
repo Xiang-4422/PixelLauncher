@@ -12,11 +12,13 @@ object AppListLayout {
 
     private const val bottomPadding = 0
 
-    /** 与引擎 DrawerScreen 渲染行距一致（单一来源 [DrawerListGeometry]）。 */
-    private val rowHeight: Int
-        get() = DrawerListGeometry.rowPitch(PixelFontCatalog.defaultUiFontSize.px)
-
-    fun visibleRows(screenProfile: LauncherLayoutProfile): Int {
+    /** 按当前字体字号计算与 DrawerScreen 一致的可见行数。 */
+    fun visibleRows(
+        screenProfile: LauncherLayoutProfile,
+        fontSelection: LauncherFontSelection = PixelFontCatalog.defaultUiFontSelection,
+    ): Int {
+        /** 与引擎 DrawerScreen 渲染行距一致的当前行高。 */
+        val rowHeight = DrawerListGeometry.rowPitch(PixelFontCatalog.metrics(fontSelection).cellHeight)
         val listStartY = LauncherHeaderLayout.firstContentItemTop(screenProfile)
         val railHeight = (screenProfile.logicalHeight - listStartY - bottomPadding).coerceAtLeast(rowHeight)
         return TextListSupport.createLayoutMetrics(

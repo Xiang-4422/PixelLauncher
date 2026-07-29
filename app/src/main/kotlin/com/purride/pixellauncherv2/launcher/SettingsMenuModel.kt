@@ -8,6 +8,9 @@ enum class SettingsMenuItem {
     PIXEL_GAP,
     STYLE,
     THEME,
+    FONT,
+    FONT_WIDTH,
+    FONT_SIZE,
     HOME_STATUS,
     APP_LIST_ALIGNMENT,
     IDLE_PAGE,
@@ -51,6 +54,9 @@ object SettingsMenuModel {
         PixelShape.DIAMOND,
     )
     val themeOptions: List<PixelTheme> = PixelTheme.entries
+    /** 设置页允许循环选择的字体家族。 */
+    val fontOptions: List<LauncherFontFamily> = PixelFontCatalog.fontFamilyOptions()
+
     fun rows(state: LauncherState): List<SettingsMenuRow> {
         return buildList {
             add(
@@ -84,6 +90,30 @@ object SettingsMenuModel {
                     item = SettingsMenuItem.THEME,
                     title = "THEME",
                     value = themeLabel(state.selectedTheme),
+                    section = SettingsSection.DISPLAY,
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.FONT,
+                    title = "FONT",
+                    value = fontLabel(state.fontSelection.family),
+                    section = SettingsSection.DISPLAY,
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.FONT_WIDTH,
+                    title = "WIDTH",
+                    value = fontWidthLabel(state.fontSelection.widthMode),
+                    section = SettingsSection.DISPLAY,
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.FONT_SIZE,
+                    title = "SIZE",
+                    value = fontSizeLabel(state.fontSelection.size),
                     section = SettingsSection.DISPLAY,
                 ),
             )
@@ -264,6 +294,31 @@ object SettingsMenuModel {
         return themeOptions[nextIndex]
     }
 
+    /** 按设置页方向循环选择字体家族，并收敛到新家族支持的最近组合。 */
+    fun nextFontFamily(current: LauncherFontSelection, direction: Int): LauncherFontSelection {
+        val currentIndex = fontOptions.indexOf(current.family).takeIf { it >= 0 } ?: 0
+        val nextIndex = wrapIndex(currentIndex + direction, fontOptions.size)
+        return PixelFontCatalog.normalize(current.copy(family = fontOptions[nextIndex]))
+    }
+
+    /** 只在当前字体家族真实提供的宽度模式之间循环。 */
+    fun nextFontWidth(current: LauncherFontSelection, direction: Int): LauncherFontSelection {
+        /** 当前字体家族公开的宽度模式。 */
+        val options = PixelFontCatalog.widthModeOptions(current.family)
+        val currentIndex = options.indexOf(current.widthMode).takeIf { it >= 0 } ?: 0
+        val nextIndex = wrapIndex(currentIndex + direction, options.size)
+        return PixelFontCatalog.normalize(current.copy(widthMode = options[nextIndex]))
+    }
+
+    /** 只在当前字体家族和宽度模式真实提供的字号之间循环。 */
+    fun nextFontSize(current: LauncherFontSelection, direction: Int): LauncherFontSelection {
+        /** 当前字体家族与宽度模式公开的字号。 */
+        val options = PixelFontCatalog.fontSizeOptions(current.family, current.widthMode)
+        val currentIndex = options.indexOf(current.size).takeIf { it >= 0 } ?: 0
+        val nextIndex = wrapIndex(currentIndex + direction, options.size)
+        return current.copy(size = options[nextIndex])
+    }
+
     fun styleLabel(pixelShape: PixelShape): String {
         return when (pixelShape) {
             PixelShape.SQUARE -> "SQUARE"
@@ -274,6 +329,21 @@ object SettingsMenuModel {
 
     fun themeLabel(theme: PixelTheme): String {
         return theme.displayLabel
+    }
+
+    /** 返回设置页展示的字体名称。 */
+    fun fontLabel(fontFamily: LauncherFontFamily): String {
+        return PixelFontCatalog.familyLabel(fontFamily)
+    }
+
+    /** 返回设置页展示的字体宽度模式。 */
+    fun fontWidthLabel(widthMode: LauncherFontWidthMode): String {
+        return PixelFontCatalog.widthModeLabel(widthMode)
+    }
+
+    /** 返回设置页展示的字体字号。 */
+    fun fontSizeLabel(size: PixelFontSize): String {
+        return PixelFontCatalog.sizeLabel(size)
     }
 
     fun nextDrawerListAlignment(current: DrawerListAlignment, direction: Int): DrawerListAlignment {

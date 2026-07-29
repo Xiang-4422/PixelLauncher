@@ -42,6 +42,8 @@ import com.purride.pixellauncherv2.launcher.MediaPlaybackSnapshot
 import com.purride.pixellauncherv2.launcher.NotificationActionInfo
 import com.purride.pixellauncherv2.launcher.NotificationSignal
 import com.purride.pixellauncherv2.launcher.PixelFontCatalog
+import com.purride.pixellauncherv2.launcher.PixelFontSize
+import com.purride.pixellauncherv2.launcher.LauncherTextRole
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.text.opticallyAlignStartText
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
@@ -270,7 +272,10 @@ class HomeScreen(
             }
 
             val actionButtonStyle = TextButtonStyle(
-                textStyle = TextStyle(color = t.button.text),
+                textStyle = t.typography.textStyle(
+                    color = t.button.text,
+                    role = LauncherTextRole.CHROME,
+                ),
             )
             val balanceSideActions = s.missedCallCount > 0 || s.unreadSmsCount > 0
             val sideActionWidth = if (balanceSideActions) {
@@ -562,7 +567,10 @@ private fun homeNotificationActionButton(
         padding = EdgeInsets.symmetric(horizontal = HOME_ACTION_SEGMENT_HORIZONTAL_PADDING_PX),
         child = Text(
             action.title.uppercase(Locale.getDefault()),
-            style = TextStyle(color = if (enabled) theme.surface.offPixelColor else theme.button.disabledText),
+            style = theme.typography.textStyle(
+                color = if (enabled) theme.surface.offPixelColor else theme.button.disabledText,
+                role = LauncherTextRole.CHROME,
+            ),
             overflow = TextOverflow.ELLIPSIS,
             softWrap = false,
             maxLines = 1,
@@ -705,7 +713,10 @@ private fun HomeActionButton(
 
     val labelSegment = homeActionSegment(
         text = label,
-        textStyle = TextStyle(color = theme.button.text),
+        textStyle = theme.typography.textStyle(
+            color = theme.button.text,
+            role = LauncherTextRole.CHROME,
+        ),
         fillColor = null,
     )
     val labelChild = if (width != null) {
@@ -716,7 +727,10 @@ private fun HomeActionButton(
     val children = if (count > 0) {
         val countSegment = homeActionSegment(
             text = count.toString(),
-            textStyle = TextStyle(color = theme.surface.offPixelColor),
+            textStyle = theme.typography.textStyle(
+                color = theme.surface.offPixelColor,
+                role = LauncherTextRole.CHROME,
+            ),
             fillColor = theme.button.border,
         )
         val divider = homeActionDivider(theme)
@@ -878,7 +892,10 @@ private fun HomeMediaSideAction(
 private fun homeMediaSideText(text: String, theme: LauncherTheme): Widget =
     Text(
         text,
-        style = TextStyle(color = theme.button.text),
+        style = theme.typography.textStyle(
+            color = theme.button.text,
+            role = LauncherTextRole.CHROME,
+        ),
         overflow = TextOverflow.ELLIPSIS,
         softWrap = false,
         maxLines = 1,
@@ -1043,7 +1060,7 @@ private fun homeActionButtonWidth(label: String, count: Int): Int {
 }
 
 private fun homeActionSegmentWidth(text: String): Int {
-    val metrics = PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSize)
+    val metrics = PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSelection)
     val conservativeTextWidth = text.length * metrics.wideAdvanceWidth
     return max(PixelFontCatalog.estimatedTextWidth(text), conservativeTextWidth) +
         (HOME_ACTION_SEGMENT_HORIZONTAL_PADDING_PX * 2)
