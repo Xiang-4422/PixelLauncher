@@ -2794,6 +2794,13 @@ class MainActivity : AppCompatActivity() {
             if (!communicationStatusRepository.hasCallLogPermission()) {
                 add(Manifest.permission.READ_CALL_LOG)
             }
+            // WRITE 与 READ 同属 CALL_LOG 权限组，一起请求只弹同一个框，不额外打扰用户。
+            // 而漏掉它是净损失：API 26+ 只授予被显式请求的那一个权限，从未请求过
+            // WRITE_CALL_LOG 就恒为 DENIED，markCallsAcknowledged 会一直静默失败，
+            // 未接角标在看过通话记录后依然不清零。
+            if (checkSelfPermission(Manifest.permission.WRITE_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
+                add(Manifest.permission.WRITE_CALL_LOG)
+            }
             if (!communicationStatusRepository.hasSmsPermission()) {
                 add(Manifest.permission.READ_SMS)
             }

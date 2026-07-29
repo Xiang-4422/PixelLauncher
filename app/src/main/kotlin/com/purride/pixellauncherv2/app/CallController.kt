@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.app
 
 import android.Manifest
 import android.os.Handler
+import android.os.SystemClock
 import android.util.Log
 import com.purride.pixellauncherv2.data.CallLogRepository
 import com.purride.pixellauncherv2.data.ContactSearchRepository
@@ -54,6 +55,20 @@ internal class CallController(
 
     /** 已请求过一次权限就不再自动弹窗，避免反复打扰。 */
     private var permissionRequestedThisSession = false
+
+    /** 上一次实际提交的呼叫号码与时刻（uptime），用于丢弃重复点按。 */
+    private var lastCallRequestNumber: String = ""
+    private var lastCallRequestAtUptime: Long = 0L
+
+    /**
+     * 最新的 T9 查询串（后台线程读）。
+     *
+     * 后台执行器是单线程且与呼叫共用：联系人首次加载是跨进程 IO，若队列里还排着
+     * 几个已经过期的检索任务，用户正在等的 placeCall 就被压在后面。任务开工前拿它
+     * 比对一次，过期的直接空转返回，把线程尽快让出来。
+     */
+    @Volatile
+    private var latestDialQuery: String = ""
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -116,7 +131,14 @@ internal class CallController(
 
     // ── Actions ───────────────────────────────────────────────────────────────
 
-    /** 回电：列表点按与按键回车共用。 */
+    /**
+     * 回电：列表点按、CALL 条与按键回车共用。
+     *
+     * 同号码在 [CALL_DEBOUNCE_MS] 内的重复请求会被丢弃。三个入口都直连本方法，
+     * 而 placeCall 是异步提交的，成功与否要等系统电话栈响应——期间界面没有任何
+     * "正在拨号"的反馈，用户很自然会再点一次；长按回车的重复率更是几十毫秒一次。
+     * 没有这道节流就会向电话栈连发多次 placeCall。
+     */
     fun callNumber(number: String) {
         val trimmed = number.trim()
         if (trimmed.isBlank()) {
@@ -127,6 +149,13 @@ internal class CallController(
             requestMissingPermissions()
             return
         }
+        // uptimeMillis 而非 currentTimeMillis：不受系统时间校正影响。
+        val now = SystemClock.uptimeMillis()
+        if (trimmed == lastCallRequestNumber && now - lastCallRequestAtUptime < CALL_DEBOUNCE_MS) {
+            return
+        }
+        lastCallRequestNumber = trimmed
+        lastCallRequestAtUptime = now
         // placeCall 会拉起系统电话栈，可能阻塞：放到后台线程。
         runInBackground {
             val result = dialerRepository.placeCall(trimmed)
@@ -189,10 +218,15 @@ internal class CallController(
         }
         host.state = nextState
         host.render()
+        latestDialQuery = input
         if (input.isBlank()) {
             return
         }
         runInBackground {
+            // 队列里的过期检索直接让出线程，别把用户正在等的呼叫压在后面。
+            if (latestDialQuery != input) {
+                return@runInBackground
+            }
             val matches = contactSearchRepository.search(input, limit = MAX_DIAL_MATCHES)
             if (matches.isEmpty()) {
                 return@runInBackground
@@ -240,6 +274,11 @@ internal class CallController(
             if (!callLogRepository.hasReadCallLogPermission()) add(Manifest.permission.READ_CALL_LOG)
             if (!callLogRepository.hasWriteCallLogPermission()) add(Manifest.permission.WRITE_CALL_LOG)
             if (!dialerRepository.hasCallPhonePermission()) add(Manifest.permission.CALL_PHONE)
+            // T9 全靠联系人库做姓名与拼音匹配，缺这一项检索恒为空——新装后只用过
+            // 拨号、没走过短信授权流程的用户会以为智能拨号根本没做。
+            if (!contactSearchRepository.hasReadContactsPermission()) {
+                add(Manifest.permission.READ_CONTACTS)
+            }
         }
         if (missing.isEmpty()) {
             return
@@ -359,5 +398,13 @@ internal class CallController(
 
         /** 通话记录变更防抖窗口，与短信保持一致。 */
         const val CHANGE_DEBOUNCE_MS = 300L
+
+        /**
+         * 同号码重复呼叫的丢弃窗口。
+         *
+         * 取 1.5s：双击间隔通常不足 300ms、长按回车的重复率约 50ms，都能拦住；
+         * 而"挂断后重拨同一号码"要经过切回 Launcher 再点按，远超这个窗口，不受影响。
+         */
+        const val CALL_DEBOUNCE_MS = 1_500L
     }
 }

@@ -130,7 +130,13 @@ class CallLogRepository(
      * 同时清 IS_READ，与系统拨号应用的行为一致。
      */
     fun markCallsAcknowledged(callIds: Collection<Long>): Boolean {
-        if (!hasWriteCallLogPermission() || callIds.isEmpty()) {
+        if (callIds.isEmpty()) {
+            return false
+        }
+        if (!hasWriteCallLogPermission()) {
+            // 出声而不是静默返回：缺这项权限时未接角标永远不清零，而现象离原因很远，
+            // 排查时若 logcat 里一点痕迹都没有会非常难定位。
+            Log.w(LOG_TAG, "markCallsAcknowledged skipped: WRITE_CALL_LOG not granted")
             return false
         }
         val values = ContentValues().apply {
