@@ -23,4 +23,5 @@ rootProject.name = "PixelLauncherV2"
 include(":app")
 include(":pixel-engine")
 include(":showcase")
+include(":showcase-desktop")
  
