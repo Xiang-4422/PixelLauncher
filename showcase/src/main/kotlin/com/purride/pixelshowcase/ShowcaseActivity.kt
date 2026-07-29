@@ -11,11 +11,14 @@ import com.purride.pixelui.PixelHostProfilePolicy
 import com.purride.pixelui.PixelHostSetup
 import com.purride.pixelui.PixelHostSetupConfig
 import com.purride.pixelshowcase.scenes.CubeScene
+import com.purride.pixelshowcase.scenes.FireScene
 import com.purride.pixelshowcase.scenes.LifeScene
 import com.purride.pixelshowcase.scenes.PlasmaScene
 import com.purride.pixelshowcase.scenes.RainScene
+import com.purride.pixelshowcase.scenes.RippleScene
 import com.purride.pixelshowcase.scenes.StarfieldScene
 import com.purride.pixelshowcase.scenes.TitleScene
+import com.purride.pixelshowcase.scenes.TunnelScene
 import com.purride.pixelshowcase.scenes.WaveScene
 
 /**
@@ -47,6 +50,9 @@ class ShowcaseActivity : AppCompatActivity() {
             scenes = listOf(
                 TitleScene(),
                 PlasmaScene(),
+                FireScene(),
+                RippleScene(),
+                TunnelScene(),
                 RainScene(),
                 CubeScene(),
                 WaveScene(),

@@ -57,10 +57,15 @@ class DemoDirector(
         ticker.start()
     }
 
-    /** 点按：切下一场景。 */
-    fun nextScene() {
+    /** 点按/左滑：下一场景。 */
+    fun nextScene() = jumpTo(sceneIndex + 1)
+
+    /** 右滑：上一场景。 */
+    fun previousScene() = jumpTo(sceneIndex - 1)
+
+    private fun jumpTo(index: Int) {
         if (width <= 0) return
-        sceneIndex = (sceneIndex + 1) % scenes.size
+        sceneIndex = ((index % scenes.size) + scenes.size) % scenes.size
         sceneElapsedSeconds = 0f
         currentScene.reset(width, height)
         ticker.start()
@@ -78,8 +83,9 @@ class DemoDirector(
         }
         lastElapsedNanos = elapsedNanos
         sceneElapsedSeconds += dt
+        // 手动切换模式：到时不跳下一场，而是重置当前场景循环演出——
+        // TITLE 爆散完重新聚合、生命游戏烧完重新播种，每个节目无限返场。
         if (sceneElapsedSeconds >= currentScene.durationSeconds) {
-            sceneIndex = (sceneIndex + 1) % scenes.size
             sceneElapsedSeconds = 0f
             currentScene.reset(width, height)
         }
@@ -97,10 +103,12 @@ class DemoDirector(
     }
 }
 
-/** 演示画布：全屏自绘层 + 点按切场。 */
+/** 演示画布：全屏自绘层；点按/左滑下一场，右滑上一场。 */
 fun DemoCanvas(director: DemoDirector): Widget = GestureDetector(
     child = DemoCanvasRenderWidget(director),
     onTap = { director.nextScene() },
+    onSwipeLeft = { director.nextScene() },
+    onSwipeRight = { director.previousScene() },
     key = "demo-canvas-gesture",
 )
 
@@ -147,7 +155,7 @@ private class RenderDemoCanvas(
         for (index in 0 until dots) {
             val x = right - (dots - index) * 3
             val color = if (index == director.currentIndex) PixelColor.White else CHROME_COLOR
-            buffer.fillRect(x, 3, 2, 2, color)
+            buffer.setPixel(x, 3, color)
         }
     }
 

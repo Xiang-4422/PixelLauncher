@@ -74,8 +74,8 @@ class CubeScene : DemoScene {
                 color,
             )
         }
-        // 顶点强调：2×2 亮块。
-        projected.forEach { p -> buffer.fillRect(p[0] - 1, p[1] - 1, 2, 2, VERTEX) }
+        // 顶点强调：单像素高亮，不用多像素块。
+        projected.forEach { p -> buffer.setPixel(p[0], p[1], VERTEX) }
     }
 
     /** Bresenham：整数误差步进，逐逻辑像素落点。 */

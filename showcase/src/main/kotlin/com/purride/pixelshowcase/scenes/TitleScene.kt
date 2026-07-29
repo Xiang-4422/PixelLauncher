@@ -75,21 +75,24 @@ class TitleScene : DemoScene {
     }
 
     override fun render(buffer: PixelBuffer) {
-        // 呼吸 = 分裂↔聚合循环：sin(π·t) 把每个周期驱动成 0→1→0 的往返，
-        // 峰值时每粒沿自己的飘散向量散开（雾化的字），归零时精确回到字形。
-        // 偏移只做在渲染层，粒子的逻辑位置始终钉在目标位——聚合零误差。
+        // 呼吸 = 定格 → 分裂 → 聚合的循环。每轮先让完整字形停留 HOLD 秒
+        // （没有平台期的正弦呼吸里，字形完整只存在于周期端点的一瞬，根本
+        // 来不及读），随后 sin(π·t) 驱动一次雾化往返。偏移只做在渲染层，
+        // 粒子逻辑位置钉在目标位——定格期与聚合端点都是零误差字形。
         val burst = if (elapsed in BREATH_FROM..SCATTER_AT) {
-            val cycleT = ((elapsed - BREATH_FROM) / BREATH_CYCLE_SECONDS) % 1f
-            sin(cycleT * PI.toFloat())
+            val cycleT = ((elapsed - BREATH_FROM) % BREATH_CYCLE_SECONDS)
+            if (cycleT < BREATH_HOLD_SECONDS) {
+                0f
+            } else {
+                sin((cycleT - BREATH_HOLD_SECONDS) / BREATH_BURST_SECONDS * PI.toFloat())
+            }
         } else {
             0f
         }
         particles.forEach { p ->
-            buffer.fillRect(
+            buffer.setPixel(
                 (p.x + p.driftX * burst).toInt(),
                 (p.y + p.driftY * burst).toInt(),
-                SCALE,
-                SCALE,
                 INK,
             )
         }
@@ -117,31 +120,37 @@ class TitleScene : DemoScene {
         for (y in 0 until small.height) {
             for (x in 0 until small.width) {
                 if (small.pixels[y * small.width + x] == 0) continue
-                // 起点：随机屏幕边缘；延迟按列错开，聚合呈扫描感。
-                val fromEdge = random.nextInt(4)
-                val startX: Float
-                val startY: Float
-                when (fromEdge) {
-                    0 -> { startX = -8f; startY = random.nextInt(height).toFloat() }
-                    1 -> { startX = width + 8f; startY = random.nextInt(height).toFloat() }
-                    2 -> { startX = random.nextInt(width).toFloat(); startY = -8f }
-                    else -> { startX = random.nextInt(width).toFloat(); startY = height + 8f }
+                // 放大后的每个像素独立成粒：粒子 = 1 逻辑像素。
+                // 块状粒子雾化时是方块糖，单像素粒子雾化时才是沙。
+                for (dy in 0 until SCALE) {
+                    for (dx in 0 until SCALE) {
+                        // 起点：随机屏幕边缘；延迟按列错开，聚合呈扫描感。
+                        val fromEdge = random.nextInt(4)
+                        val startX: Float
+                        val startY: Float
+                        when (fromEdge) {
+                            0 -> { startX = -8f; startY = random.nextInt(height).toFloat() }
+                            1 -> { startX = width + 8f; startY = random.nextInt(height).toFloat() }
+                            2 -> { startX = random.nextInt(width).toFloat(); startY = -8f }
+                            else -> { startX = random.nextInt(width).toFloat(); startY = height + 8f }
+                        }
+                        // 飘散向量：随机方向、4~14 像素幅度。幅度刻意压在"散而可辨"
+                        // 区间——峰值时字应该像雾化而不是消失，聚合的瞬间才有魔力。
+                        val driftAngle = random.nextFloat() * 2f * PI.toFloat()
+                        val driftRadius = 4f + random.nextFloat() * 10f
+                        result.add(
+                            Particle(
+                                targetX = (originLeft + x * SCALE + dx).toFloat(),
+                                targetY = (originTop + y * SCALE + dy).toFloat(),
+                                x = startX,
+                                y = startY,
+                                delay = (x * SCALE + dx) * 0.006f + random.nextFloat() * 0.25f,
+                                driftX = cos(driftAngle) * driftRadius,
+                                driftY = sin(driftAngle) * driftRadius,
+                            ),
+                        )
+                    }
                 }
-                // 飘散向量：随机方向、4~14 像素幅度。幅度刻意压在"散而可辨"的
-                // 区间——峰值时字应该像雾化而不是消失，聚合的瞬间才有魔力。
-                val driftAngle = random.nextFloat() * 2f * PI.toFloat()
-                val driftRadius = 4f + random.nextFloat() * 10f
-                result.add(
-                    Particle(
-                        targetX = (originLeft + x * SCALE).toFloat(),
-                        targetY = (originTop + y * SCALE).toFloat(),
-                        x = startX,
-                        y = startY,
-                        delay = x * 0.018f + random.nextFloat() * 0.25f,
-                        driftX = cos(driftAngle) * driftRadius,
-                        driftY = sin(driftAngle) * driftRadius,
-                    ),
-                )
             }
         }
         return result
@@ -151,11 +160,13 @@ class TitleScene : DemoScene {
         const val SCALE = 3
         const val LINE_GAP = 2
         const val GATHER_SECONDS = 1.6f
-        const val BREATH_FROM = 3.2f
+        const val BREATH_FROM = 2.6f
         const val SCATTER_AT = 7.6f
 
-        /** 一次完整的分裂→聚合时长；呼吸窗口内正好跑两轮。 */
-        const val BREATH_CYCLE_SECONDS = 2.2f
+        /** 每轮先定格（字可读）再雾化往返；两轮正好铺满呼吸窗口。 */
+        const val BREATH_HOLD_SECONDS = 1.3f
+        const val BREATH_BURST_SECONDS = 1.2f
+        const val BREATH_CYCLE_SECONDS = BREATH_HOLD_SECONDS + BREATH_BURST_SECONDS
         val INK = PixelColor.fromRgb(240, 246, 255)
     }
 }

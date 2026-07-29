@@ -48,11 +48,11 @@ class StarfieldScene : DemoScene {
                 star[2] < 0.7f -> 1
                 else -> 2
             }
+            // 近星沿径向拖一颗暗尾迹像素：冲屏感来自方向，不靠加粗。
+            buffer.setPixel(screenX, screenY, STAR_TIERS[tier])
             if (tier == 0) {
-                // 近星拖出 2px 光轨，冲屏感来自这一点点长度。
-                buffer.fillRect(screenX, screenY, 2, 1, STAR_TIERS[tier])
-            } else {
-                buffer.setPixel(screenX, screenY, STAR_TIERS[tier])
+                val trailX = screenX - if (screenX >= cx) 1 else -1
+                buffer.setPixel(trailX, screenY, STAR_TIERS[2])
             }
         }
         if (elapsed > CREDIT_AT) {
