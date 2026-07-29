@@ -1101,6 +1101,7 @@ private fun controlFeedbackTarget(
  * @param key 表面、交互、焦点与语义边界共用的稳定 identity。
  * @param semanticLabel 可选无障碍名称；null 时解析主题 label token。
  * @param onDismissRequest back 或无障碍 dismiss 请求的受控回调。
+ * @param dismissOnOutsideTap modal 表面之外的点击是否触发 [onDismissRequest]。
  * @param modal 是否隔离对话框外的焦点、指针、文本输入与无障碍交互。
  */
 public fun Dialog(
@@ -1113,6 +1114,7 @@ public fun Dialog(
     semanticLabel: String? = null,
     onDismissRequest: (() -> Unit)? = null,
     modal: Boolean = true,
+    dismissOnOutsideTap: Boolean = true,
 ): Widget = Dialog(
     content = content,
     states = PixelControlStateSet.Normal,
@@ -1124,6 +1126,7 @@ public fun Dialog(
     semanticLabel = semanticLabel,
     onDismissRequest = onDismissRequest,
     modal = modal,
+    dismissOnOutsideTap = dismissOnOutsideTap,
 )
 
 /**
@@ -1143,6 +1146,7 @@ public fun Dialog(
     semanticLabel: String? = null,
     onDismissRequest: (() -> Unit)? = null,
     modal: Boolean = true,
+    dismissOnOutsideTap: Boolean = true,
 ): Widget = PixelThemeResolvedWidget(
     key = PixelThemeResolverKey(ownerKey = key, component = "Dialog", mode = modal),
 ) { context, theme ->
@@ -1184,6 +1188,7 @@ public fun Dialog(
         ).takeIf { PixelControlState.Error in states },
         onDismissRequest = effectiveDismiss,
         modal = modal,
+        dismissOnOutsideTap = dismissOnOutsideTap,
         alignment = SafeOverlayAlignment.Center,
         fillSafeWidth = false,
     )
@@ -1205,6 +1210,7 @@ public fun Dialog(
  * @param key 表面、布局、交互、焦点与语义边界共用的稳定 identity。
  * @param semanticLabel 可选无障碍名称；null 时解析主题 label token。
  * @param onDismissRequest back 或无障碍 dismiss 请求的受控回调。
+ * @param dismissOnOutsideTap modal 表面之外的点击是否触发 [onDismissRequest]。
  * @param modal 是否隔离 Sheet 外的焦点、指针、文本输入与无障碍交互。
  */
 public fun BottomSheet(
@@ -1217,6 +1223,7 @@ public fun BottomSheet(
     semanticLabel: String? = null,
     onDismissRequest: (() -> Unit)? = null,
     modal: Boolean = true,
+    dismissOnOutsideTap: Boolean = true,
 ): Widget = BottomSheet(
     content = content,
     states = PixelControlStateSet.Normal,
@@ -1228,6 +1235,7 @@ public fun BottomSheet(
     semanticLabel = semanticLabel,
     onDismissRequest = onDismissRequest,
     modal = modal,
+    dismissOnOutsideTap = dismissOnOutsideTap,
 )
 
 /** 执行 `PixelComponents` 的 `BottomSheet` 公开行为；具体参数、返回和副作用见下文。
@@ -1246,6 +1254,7 @@ public fun BottomSheet(
     semanticLabel: String? = null,
     onDismissRequest: (() -> Unit)? = null,
     modal: Boolean = true,
+    dismissOnOutsideTap: Boolean = true,
 ): Widget = PixelThemeResolvedWidget(
     key = PixelThemeResolverKey(ownerKey = key, component = "BottomSheet", mode = modal),
 ) { context, theme ->
@@ -1287,6 +1296,7 @@ public fun BottomSheet(
         ).takeIf { PixelControlState.Error in states },
         onDismissRequest = effectiveDismiss,
         modal = modal,
+        dismissOnOutsideTap = dismissOnOutsideTap,
         alignment = SafeOverlayAlignment.BottomCenter,
         fillSafeWidth = true,
     )
@@ -1321,6 +1331,8 @@ private fun safeOverlaySurface(
     onDismissRequest: (() -> Unit)?,
     /** Whether background interaction and focus are isolated. */
     modal: Boolean,
+    /** Whether an outside tap requests dismissal through [onDismissRequest]. */
+    dismissOnOutsideTap: Boolean,
     /** Center or bottom-center placement inside safe bounds. */
     alignment: SafeOverlayAlignment,
     /** Whether the surface fills the safe viewport width. */
@@ -1392,6 +1404,7 @@ private fun safeOverlaySurface(
         ContextualSafeSurfaceModalBoundary(
             child = safePresentation,
             onDismissRequest = onDismissRequest,
+            dismissOnOutsideTap = dismissOnOutsideTap,
             key = key?.let { "$it-modal-boundary" },
         )
     } else {
@@ -1409,6 +1422,8 @@ private class ContextualSafeSurfaceModalBoundary(
     val child: Widget,
     /** Escape/Back callback used only when this surface owns the modal. */
     val onDismissRequest: (() -> Unit)?,
+    /** Whether an outside tap requests dismissal through [onDismissRequest]. */
+    val dismissOnOutsideTap: Boolean,
     /** Stable identity for the contextual modal decision. */
     override val key: Any?,
 ) : StatelessWidget(key = key) {
@@ -1416,13 +1431,36 @@ private class ContextualSafeSurfaceModalBoundary(
     override fun build(context: BuildContext): Widget {
         /** Nearest route policy that permits standard nested surfaces to share its token. */
         val modalPresence = context.getInheritedWidgetOfExactType<PixelModalFocusPresence>()
+        /** Enclosing routes own both the modal token and their own configured barrier. */
         if (modalPresence?.coalesceNestedModal == true) return child
+        /**
+         * 点击表面之外的关闭目标。必须与表面同处 modal 子树内：modal 会滤掉
+         * 作用域之外的全部命中目标，调用方在浮层下方自行铺的遮罩收不到点击。
+         * 排在表面之前，因此表面自身的命中目标（后者优先）不会被它抢走。
+         */
+        val dismissBarrier = onDismissRequest?.takeIf { dismissOnOutsideTap }?.let { dismiss ->
+            ModalBarrier(
+                color = PixelColor.Transparent,
+                dismissible = true,
+                onDismiss = dismiss,
+                key = key?.let { "$it-dismiss-barrier" },
+            )
+        }
+        /** Barrier and surface share one presentation Stack so both stay inside the scope. */
+        val presentation = if (dismissBarrier != null) {
+            Stack(
+                children = listOf(dismissBarrier, child),
+                key = key?.let { "$it-presentation" },
+            )
+        } else {
+            child
+        }
         return StandaloneModalBoundaryFactory.create(
             active = true,
             onDismissRequest = onDismissRequest,
             child = ModalInteractionScopeWidget(
                 active = true,
-                child = child,
+                child = presentation,
                 key = key?.let { "$it-interaction" },
             ),
             key = key,

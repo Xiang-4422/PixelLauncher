@@ -576,9 +576,6 @@ internal class LauncherRootHost(
                         size = PixelFontCatalog.defaultUiFontSize,
                     ),
                     autofocus = uiState.isDrawerSearchFocused,
-                    // 长按菜单打开时禁用搜索框：否则点击菜单外的搜索区会被输入
-                    // 目标抢走（抬手时输入目标优先），菜单关不掉。
-                    enabled = !uiState.isAppActionMenuVisible,
                     textAlign = when (uiState.drawerListAlignment) {
                         DrawerListAlignment.LEFT -> TextAlign.START
                         DrawerListAlignment.CENTER -> TextAlign.CENTER

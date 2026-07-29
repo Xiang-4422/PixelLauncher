@@ -13,7 +13,6 @@ import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Padding
-import com.purride.pixelui.PositionedFill
 import com.purride.pixelui.Row
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.Text
@@ -107,12 +106,6 @@ fun DrawerScreen(
         Stack(
             children = listOf(
                 content,
-                PositionedFill(
-                    child = GestureDetector(
-                        onTap = onAppMenuDismiss,
-                        child = Container(fillColor = PixelColor.Transparent),
-                    ),
-                ),
                 drawerActionMenu(
                     app = uiState.apps.getOrNull(uiState.appEditorSelectedIndex),
                     theme = theme,
@@ -243,10 +236,9 @@ private fun drawerActionMenu(
         ),
         fillColor = theme.surface.panel,
         borderColor = theme.button.border,
-        // 不传 onDismissRequest 时引擎按 consumeUnhandledDismissRequest 吞掉 BACK；
-        // modal=true 又会滤掉浮层外的命中目标让全屏遮罩收不到点击。两者都要改。
+        // 引擎按 onDismissRequest 装内建关闭屏障：Back 与点外都会走这里，
+        // 同时保留 modal 对背景指针/输入/焦点的隔离。
         onDismissRequest = onDismiss,
-        modal = false,
     )
 }
 

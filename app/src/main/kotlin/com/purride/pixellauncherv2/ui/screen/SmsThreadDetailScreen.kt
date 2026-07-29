@@ -3,13 +3,11 @@ package com.purride.pixellauncherv2.ui.screen
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.BuildContext
 import com.purride.pixelui.Column
-import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Dialog
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
-import com.purride.pixelui.PositionedFill
 import com.purride.pixelui.Stack
 import com.purride.pixelui.TextButton
 import com.purride.pixelui.TextButtonStyle
@@ -130,8 +128,8 @@ fun SmsThreadDetailScreen(
             }
         },
     )
-    // 长按消息弹出的 Playdate 风格轻量浮层菜单（UI 规范 §10）：
-    // 点击浮层外任意位置即关闭。
+    // 长按消息弹出的 Playdate 风格轻量浮层菜单（UI 规范 §10）。点外关闭与
+    // Back 关闭都由引擎的 modal 关闭屏障提供（见 Dialog 的 onDismissRequest）。
     val menuMessage = uiState.smsMessages
         .firstOrNull { it.messageId == uiState.smsMessageMenuMessageId }
     if (!uiState.isSmsMessageMenuVisible || menuMessage == null) {
@@ -140,12 +138,6 @@ fun SmsThreadDetailScreen(
     return Stack(
         children = listOf(
             content,
-            PositionedFill(
-                child = GestureDetector(
-                    onTap = onMenuDismiss,
-                    child = Container(fillColor = PixelColor.Transparent),
-                ),
-            ),
             smsMessageActionMenu(
                 message = menuMessage,
                 theme = theme,
@@ -200,13 +192,9 @@ private fun smsMessageActionMenu(
         ),
         fillColor = theme.surface.panel,
         borderColor = theme.button.border,
-        // onDismissRequest 接回 BACK：不传时引擎按 consumeUnhandledDismissRequest
-        // 直接吞掉返回键，菜单只能靠 CANCEL 退出。
+        // 引擎按 onDismissRequest 装内建关闭屏障：Back 与点外都会走这里，
+        // 同时保留 modal 对背景指针/输入/焦点的隔离。
         onDismissRequest = onDismiss,
-        // modal=false：modal 会把浮层之外的全部命中目标过滤掉，垫在下面的
-        // 全屏遮罩就再也收不到点击，UI 规范要求的“点击外部关闭”会失效。
-        // 遮罩本身已覆盖全屏并按 z 序拦截，背景不会被误触。
-        modal = false,
     )
 }
 
@@ -264,8 +252,6 @@ private fun buildComposeArea(
                                 controller = draftController,
                                 placeholder = "TYPE MSG",
                                 style = smsTextFieldStyle(theme),
-                                // 消息菜单打开时禁用，理由同会话页搜索框。
-                                enabled = !uiState.isSmsMessageMenuVisible,
                                 textInputAction = TextInputAction.SEND,
                                 onChanged = onDraftChanged,
                                 onSubmitted = { onSendDraft() },

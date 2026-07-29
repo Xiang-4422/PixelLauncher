@@ -259,10 +259,12 @@ class UiSpecStaticTest {
             .readText()
 
         assertTrue(
-            "Drawer long-press actions must stay in a lightweight dialog overlay.",
+            "Drawer long-press actions must stay in a lightweight dialog overlay that closes on Back and outside taps.",
             source.contains("isAppActionMenuVisible") &&
                 source.contains("Stack(") &&
-                source.contains("PositionedFill(") &&
+                // 关闭屏障由引擎按 onDismissRequest 装配（modal 会滤掉浮层外的
+                // 命中目标，调用方自己铺的遮罩收不到点击）。
+                source.contains("onDismissRequest = onDismiss") &&
                 source.contains("Dialog(") &&
                 source.contains("TextButton(text = \"EDIT\"") &&
                 source.contains("TextButton(text = \"REFRESH\"") &&

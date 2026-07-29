@@ -16,7 +16,6 @@ import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.PageView
 import com.purride.pixelui.Padding
 import com.purride.pixelui.PixelSemanticRole
-import com.purride.pixelui.PositionedFill
 import com.purride.pixelui.Row
 import com.purride.pixelui.Semantics
 import com.purride.pixelui.Slidable
@@ -155,7 +154,8 @@ fun SmsThreadsScreen(
             }
         },
     )
-    // 长按会话行弹出的 Playdate 风格轻量浮层菜单：点浮层外任意位置即关闭。
+    // 长按会话行弹出的 Playdate 风格轻量浮层菜单。点外关闭与 Back 关闭都由
+    // 引擎的 modal 关闭屏障提供（见 Dialog 的 onDismissRequest）。
     val menuThread = uiState.smsThreads
         .firstOrNull { it.conversationKey == uiState.smsThreadMenuConversationKey }
     if (!uiState.isSmsThreadMenuVisible || menuThread == null) {
@@ -164,12 +164,6 @@ fun SmsThreadsScreen(
     return Stack(
         children = listOf(
             content,
-            PositionedFill(
-                child = GestureDetector(
-                    onTap = onThreadMenuDismiss,
-                    child = Container(fillColor = PixelColor.Transparent),
-                ),
-            ),
             smsThreadActionMenu(
                 thread = menuThread,
                 isMuted = menuThread.conversationKey in uiState.smsMutedConversationKeys,
@@ -226,10 +220,9 @@ private fun smsThreadActionMenu(
         ),
         fillColor = theme.surface.panel,
         borderColor = theme.button.border,
-        // 同消息菜单：onDismissRequest 接回 BACK，modal=false 让全屏遮罩仍能
-        // 收到“点击外部关闭”的点击（modal 会过滤掉浮层外的全部命中目标）。
+        // 引擎按 onDismissRequest 装内建关闭屏障：Back 与点外都会走这里，
+        // 同时保留 modal 对背景指针/输入/焦点的隔离。
         onDismissRequest = onDismiss,
-        modal = false,
     )
 }
 
@@ -364,9 +357,6 @@ private fun buildAllThreadsPage(
                     controller = searchController,
                     placeholder = "SEARCH ALL SMS",
                     style = smsTextFieldStyle(theme),
-                    // 会话菜单打开时禁用：否则点击菜单外的搜索区会被输入目标抢走
-                    // （抬手时输入目标优先于点击目标），遮罩收不到点击、菜单关不掉。
-                    enabled = !uiState.isSmsThreadMenuVisible,
                     textInputAction = TextInputAction.SEARCH,
                     onChanged = onSearchChanged,
                 ),
