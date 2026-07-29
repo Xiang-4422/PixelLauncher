@@ -28,6 +28,7 @@ internal sealed class LauncherStatusBarPresentation {
             LauncherMode.SMS_THREAD_DETAIL,
             -> "SMS"
             LauncherMode.DIALER -> "CALL"
+            LauncherMode.CONTACT_DETAIL -> "CONTACT"
             LauncherMode.DATA_HEALTH -> "DATA"
             LauncherMode.NOTIFICATION_SETTINGS -> "NOTIFY"
             LauncherMode.LOADING_PREVIEW -> "LOAD"
@@ -38,15 +39,24 @@ internal sealed class LauncherStatusBarPresentation {
         fun smsDetailPageTitle(
             conversationTitle: String,
             address: String,
-        ): String {
-            val title = conversationTitle
-                .trim()
-                .ifBlank { address.trim() }
-                .ifBlank { pageTitleFor(LauncherMode.SMS_THREAD_DETAIL) }
-            val trimmed = title.take(SMS_DETAIL_PAGE_TITLE_MAX)
-            return if (trimmed.length < title.length) "$trimmed…" else trimmed
+        ): String = detailPageTitle(
+            title = conversationTitle.trim().ifBlank { address.trim() },
+            fallback = pageTitleFor(LauncherMode.SMS_THREAD_DETAIL),
+        )
+
+        /** 联系人详情标题：显示联系人名，缺失时回落到模式默认标题。 */
+        fun contactDetailPageTitle(displayName: String): String = detailPageTitle(
+            title = displayName.trim(),
+            fallback = pageTitleFor(LauncherMode.CONTACT_DETAIL),
+        )
+
+        /** 详情页通用标题：清洗、回落、按状态栏预算截断。 */
+        private fun detailPageTitle(title: String, fallback: String): String {
+            val resolved = title.ifBlank { fallback }
+            val trimmed = resolved.take(DETAIL_PAGE_TITLE_MAX)
+            return if (trimmed.length < resolved.length) "$trimmed…" else trimmed
         }
 
-        private const val SMS_DETAIL_PAGE_TITLE_MAX = 12
+        private const val DETAIL_PAGE_TITLE_MAX = 12
     }
 }

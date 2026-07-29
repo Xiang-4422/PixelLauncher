@@ -82,6 +82,14 @@ data class LauncherCallbacks(
     val onCallPageSelected: (Int) -> Unit,
     /** 「最近通话」空态里的授权入口：用户主动重试，绕过本会话的一次性节流。 */
     val onRequestCallLogPermission: () -> Unit,
+    /** 点按联系人 → 打开详情。 */
+    val onContactPressed: (lookupKey: String) -> Unit,
+    /** 联系人页空态的授权入口。 */
+    val onRequestContactsPermission: () -> Unit,
+    /** 详情页拨打某个号码。 */
+    val onContactCallNumber: (number: String) -> Unit,
+    /** 详情页给某个号码发短信。 */
+    val onContactSmsNumber: (number: String) -> Unit,
     /** 拨号盘按键。 */
     val onDialDigit: (Char) -> Unit,
     val onDialBackspace: () -> Unit,

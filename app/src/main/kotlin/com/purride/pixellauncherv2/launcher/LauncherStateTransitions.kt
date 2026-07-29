@@ -3,6 +3,7 @@ package com.purride.pixellauncherv2.launcher
 import com.purride.pixellauncherv2.model.DeviceStatus
 import com.purride.pixellauncherv2.model.LauncherStatsSnapshot
 import com.purride.pixellauncherv2.model.CallLogGroup
+import com.purride.pixellauncherv2.model.ContactDetail
 import com.purride.pixellauncherv2.model.ContactEntry
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.model.SmsThreadSummary
@@ -32,7 +33,8 @@ object LauncherStateTransitions {
             LauncherMode.SMS_ROLE_PROMPT,
             LauncherMode.SMS_THREADS,
             LauncherMode.SMS_THREAD_DETAIL,
-            LauncherMode.DIALER -> state.mode
+            LauncherMode.DIALER,
+            LauncherMode.CONTACT_DETAIL -> state.mode
 
             LauncherMode.SETTINGS,
             LauncherMode.APP_MANAGEMENT,
@@ -67,7 +69,8 @@ object LauncherStateTransitions {
             LauncherMode.SMS_ROLE_PROMPT,
             LauncherMode.SMS_THREADS,
             LauncherMode.SMS_THREAD_DETAIL,
-            LauncherMode.DIALER -> state.returnMode
+            LauncherMode.DIALER,
+            LauncherMode.CONTACT_DETAIL -> state.returnMode
 
             LauncherMode.SETTINGS,
             LauncherMode.APP_MANAGEMENT,
@@ -169,7 +172,8 @@ object LauncherStateTransitions {
             LauncherMode.SMS_ROLE_PROMPT,
             LauncherMode.SMS_THREADS,
             LauncherMode.SMS_THREAD_DETAIL,
-            LauncherMode.DIALER -> LauncherMode.SETTINGS
+            LauncherMode.DIALER,
+            LauncherMode.CONTACT_DETAIL -> LauncherMode.SETTINGS
         }
         return state.copy(mode = returnMode)
     }
@@ -276,6 +280,44 @@ object LauncherStateTransitions {
         return state.copy(
             callLogGroups = groups,
             isCallLogLoading = false,
+        )
+    }
+
+    /** 打开联系人详情；仅允许从拨号模块进入。 */
+    fun showContactDetail(state: LauncherState, lookupKey: String): LauncherState {
+        if (lookupKey.isBlank()) {
+            return state
+        }
+        return state.copy(
+            mode = LauncherMode.CONTACT_DETAIL,
+            contactDetailLookupKey = lookupKey,
+        )
+    }
+
+    /** 关闭联系人详情，回到拨号模块的联系人页。 */
+    fun hideContactDetail(state: LauncherState): LauncherState {
+        return state.copy(
+            mode = LauncherMode.DIALER,
+            callPageIndex = CallPageIndex.CONTACTS,
+            contactDetailLookupKey = "",
+        )
+    }
+
+    /** 联系人目录开始加载；已有数据时不清空，静默换新避免列表闪空。 */
+    fun beginContactsLoading(state: LauncherState): LauncherState {
+        return state.copy(isContactsLoading = state.contacts.isEmpty())
+    }
+
+    /** 同步联系人目录与读取权限。 */
+    fun updateContacts(
+        state: LauncherState,
+        hasPermission: Boolean,
+        contacts: List<ContactDetail>,
+    ): LauncherState {
+        return state.copy(
+            contacts = contacts,
+            isContactsLoading = false,
+            hasContactsPermission = hasPermission,
         )
     }
 

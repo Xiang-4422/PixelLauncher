@@ -26,6 +26,7 @@ class LauncherStatusBarPresentationTest {
             LauncherMode.SMS_THREADS to "SMS",
             LauncherMode.SMS_THREAD_DETAIL to "SMS",
             LauncherMode.DIALER to "CALL",
+            LauncherMode.CONTACT_DETAIL to "CONTACT",
             LauncherMode.APP_MANAGEMENT to "APP",
             LauncherMode.DATA_HEALTH to "DATA",
             LauncherMode.NOTIFICATION_SETTINGS to "NOTIFY",

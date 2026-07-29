@@ -65,3 +65,36 @@ data class ContactEntry(
     /** 拼音或注音，中文联系人靠它参与 T9 匹配；ROM 未提供时为空。 */
     val phoneticName: String = "",
 )
+
+/**
+ * 联系人的一个电话号码。
+ */
+data class ContactPhone(
+    /** ContactsContract Data 行 id，编辑/删除该号码时的定位键。 */
+    val dataId: Long,
+    /** 号码原文（保留分隔符）。 */
+    val number: String,
+    /** 号码类型的展示标签（MOBILE/HOME/WORK/…，自定义类型取其原文）。 */
+    val typeLabel: String,
+)
+
+/**
+ * 联系人目录页与详情页共用的完整条目。
+ *
+ * 与 [ContactEntry]（T9 检索的扁平快照，一号一条）不同：这里一人一条、
+ * 携带全部号码与编辑所需的定位键。
+ */
+data class ContactDetail(
+    /** 聚合联系人 id。 */
+    val contactId: Long,
+    /** 稳定定位键；聚合 id 会因同步变化，跨会话定位一律用它。 */
+    val lookupKey: String,
+    /** 主 raw contact id，改名/改号的写入目标。 */
+    val rawContactId: Long,
+    /** 展示名。 */
+    val displayName: String,
+    /** 拼音排序键；ROM 未提供时为空，分组降级用展示名。 */
+    val phoneticName: String = "",
+    /** 全部号码（已去重），至少一条——目录只收录有号码的联系人。 */
+    val numbers: List<ContactPhone> = emptyList(),
+)

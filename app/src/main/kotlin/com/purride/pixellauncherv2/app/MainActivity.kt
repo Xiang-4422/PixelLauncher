@@ -144,6 +144,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var handTrackingRepository: HandTrackingRepository
     private lateinit var smsController: SmsController
     private lateinit var callController: CallController
+    private lateinit var contactsController: ContactsController
     private lateinit var rainForecastRepository: RainForecastRepository
     private lateinit var appLauncher: AndroidAppLauncher
     private lateinit var windowModeController: WindowModeController
@@ -231,6 +232,18 @@ class MainActivity : AppCompatActivity() {
             this@MainActivity.showStatusBarMessage(message)
 
         override fun scheduleIdleCheck() = this@MainActivity.scheduleIdleCheck()
+    }
+
+    private val contactsHost = object : ContactsController.Host {
+        override var state: LauncherState
+            get() = this@MainActivity.state
+            set(value) {
+                this@MainActivity.state = value
+            }
+
+        override fun render() = renderCurrentFrame()
+
+        override fun isActive(): Boolean = !(isDestroyed || isFinishing)
     }
 
     private val clockTicker = object : Runnable {
@@ -335,6 +348,12 @@ class MainActivity : AppCompatActivity() {
             mainHandler = mainHandler,
             host = callHost,
         )
+        contactsController = ContactsController(
+            contactDirectoryRepository = appContainer.contactDirectoryRepository,
+            backgroundExecutor = backgroundExecutor,
+            mainHandler = mainHandler,
+            host = contactsHost,
+        )
         deviceLocationRepository = appContainer.deviceLocationRepository
         deviceMotionRepository = appContainer.deviceMotionRepository
         handTrackingRepository = appContainer.handTrackingRepository
@@ -418,6 +437,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SMS_THREADS -> smsController.closeModule()
                     LauncherMode.SMS_THREAD_DETAIL -> smsController.closeThreadDetail()
                     LauncherMode.DIALER -> callController.closeCallLog()
+                    LauncherMode.CONTACT_DETAIL -> contactsController.closeContact()
                     LauncherMode.APP_MANAGEMENT -> closeAppManagement()
                     LauncherMode.DATA_HEALTH -> closeDataHealth()
                     LauncherMode.NOTIFICATION_SETTINGS -> closeNotificationSettings()
@@ -547,6 +567,10 @@ class MainActivity : AppCompatActivity() {
         onComposeNewThread = smsController::composeNewThread,
         onCallGroupPressed = { number -> callController.callNumber(number) },
         onRequestCallLogPermission = callController::retryCallPermissions,
+        onContactPressed = contactsController::openContact,
+        onRequestContactsPermission = callController::retryCallPermissions,
+        onContactCallNumber = callController::callNumber,
+        onContactSmsNumber = smsController::composeNewThread,
         onCallPageSelected = callController::selectPage,
         onDialDigit = callController::appendDialDigit,
         onDialBackspace = callController::backspaceDialInput,
@@ -582,7 +606,8 @@ class MainActivity : AppCompatActivity() {
             state.mode != LauncherMode.SMS_ROLE_PROMPT &&
             state.mode != LauncherMode.SMS_THREADS &&
             state.mode != LauncherMode.SMS_THREAD_DETAIL &&
-            state.mode != LauncherMode.DIALER
+            state.mode != LauncherMode.DIALER &&
+            state.mode != LauncherMode.CONTACT_DETAIL
         ) {
             state = LauncherStateTransitions.showHome(state)
         }
@@ -833,7 +858,11 @@ class MainActivity : AppCompatActivity() {
 
             smsPermissionRequestCode -> smsController.onPermissionsResult()
 
-            callPermissionRequestCode -> callController.onPermissionsResult()
+            callPermissionRequestCode -> {
+                callController.onPermissionsResult()
+                // 同一次授权可能带上 READ_CONTACTS：联系人页与 T9 都要立即受益。
+                contactsController.refreshContacts()
+            }
 
             cameraPermissionRequestCode -> {
                 val granted = grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
@@ -978,6 +1007,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
                     // 通话记录页无选中态呈现，方向键不再驱动一个看不见的选中项。
                     LauncherMode.DIALER -> Unit
+                    LauncherMode.CONTACT_DETAIL -> Unit
                     LauncherMode.SETTINGS -> Unit
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
@@ -1004,6 +1034,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
                     LauncherMode.DIALER -> Unit
+                    LauncherMode.CONTACT_DETAIL -> Unit
                     LauncherMode.SETTINGS -> Unit
                     LauncherMode.HOME -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -1023,7 +1054,8 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.HOME -> Unit
                     LauncherMode.SMS_ROLE_PROMPT,
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
-                    LauncherMode.DIALER -> callController.selectPage(CallPageIndex.RECENT)
+                    LauncherMode.DIALER -> callController.selectPage(state.callPageIndex - 1)
+                    LauncherMode.CONTACT_DETAIL -> Unit
                     LauncherMode.SMS_THREADS -> smsController.selectPage(SmsPageIndex.UNREAD)
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -1042,7 +1074,8 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.HOME -> Unit
                     LauncherMode.SMS_ROLE_PROMPT,
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
-                    LauncherMode.DIALER -> callController.selectPage(CallPageIndex.DIAL)
+                    LauncherMode.DIALER -> callController.selectPage(state.callPageIndex + 1)
+                    LauncherMode.CONTACT_DETAIL -> Unit
                     LauncherMode.SMS_THREADS -> smsController.selectPage(SmsPageIndex.ALL)
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -1077,6 +1110,7 @@ class MainActivity : AppCompatActivity() {
                             callController.callDialInput()
                         }
                     }
+                    LauncherMode.CONTACT_DETAIL -> Unit
                     LauncherMode.SMS_THREAD_DETAIL -> {
                         if (state.smsDraftText.isBlank()) {
                             Unit // engine TextField handles SMS draft focus
@@ -1434,9 +1468,10 @@ class MainActivity : AppCompatActivity() {
 
     // ── HOME callbacks (called from LauncherCallbacks) ────────────────────────
 
-    /** CALL 按钮：打开通话记录。 */
+    /** CALL 按钮：打开拨号模块，联系人目录随之后台刷新。 */
     private fun onHomeOpenCall() {
         callController.openCallLog()
+        contactsController.refreshContacts()
     }
 
     /** SMS 按钮：进入短信模块。 */
@@ -1492,7 +1527,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            HomeInfoAction.CALL -> callController.openCallLog()
+            HomeInfoAction.CALL -> onHomeOpenCall()
 
             HomeInfoAction.ALARM -> openAlarmClock()
 
@@ -2219,6 +2254,7 @@ class MainActivity : AppCompatActivity() {
             LauncherMode.SMS_THREADS,
             LauncherMode.SMS_THREAD_DETAIL,
             LauncherMode.DIALER,
+            LauncherMode.CONTACT_DETAIL,
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,

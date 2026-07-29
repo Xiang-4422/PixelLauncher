@@ -33,14 +33,17 @@ import com.purride.pixellauncherv2.launcher.T9Model
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
-private val CALL_PAGE_TABS = listOf("RECENT", "DIAL")
+private val CALL_PAGE_TABS = listOf("RECENT", "PEOPLE", "DIAL")
 
 /**
  * DIALER 屏幕：拨号模块首页。
  *
- * 固定两页——左页最近通话，右页拨号盘。导航放在**第一行**，底部留给当页的主操作
+ * 固定三页——最近通话 / 联系人 / 拨号盘。导航放在**第一行**，底部留给当页的主操作
  * （拨号盘的 CALL）：在 22 行的纵向预算里，把导航和主操作挤在同一端会让主操作
  * 失去分量。全屏只允许一个反色实心块，那就是主操作。
+ *
+ * 联系人页签用 PEOPLE 而非 CONTACTS：三等分后每格约 9 字符宽，CONTACTS（8 字符）
+ * 加内边距后已经贴边，PEOPLE 留出呼吸空间。
  */
 fun DialerScreen(
     uiState: LauncherUiState,
@@ -50,9 +53,13 @@ fun DialerScreen(
     pagerState: PixelPagerState,
     listState: PixelListState,
     listController: PixelListController,
+    contactsListState: PixelListState,
+    contactsListController: PixelListController,
     onCallPageSelected: (Int) -> Unit,
     onCallGroupPressed: (number: String) -> Unit,
     onRequestCallLogPermission: () -> Unit,
+    onContactPressed: (lookupKey: String) -> Unit,
+    onRequestContactsPermission: () -> Unit,
     onDialDigit: (Char) -> Unit,
     onDialBackspace: () -> Unit,
     onDialClear: () -> Unit,
@@ -82,6 +89,15 @@ fun DialerScreen(
                         listController = listController,
                         onCallGroupPressed = onCallGroupPressed,
                         onRequestCallLogPermission = onRequestCallLogPermission,
+                    ),
+                    ContactsPage(
+                        uiState = uiState,
+                        theme = theme,
+                        vsync = vsync,
+                        listState = contactsListState,
+                        listController = contactsListController,
+                        onContactPressed = onContactPressed,
+                        onRequestContactsPermission = onRequestContactsPermission,
                     ),
                     dialPadPage(
                         uiState = uiState,

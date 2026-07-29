@@ -1,5 +1,6 @@
 package com.purride.pixellauncherv2.launcher
 
+import com.purride.pixellauncherv2.model.ContactDetail
 import com.purride.pixellauncherv2.model.ContactEntry
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.model.SmsThreadSummary
@@ -618,6 +619,50 @@ class LauncherStateTransitionsTest {
         )
         assertFalse(logOnly.hasCallPhonePermission)
         assertTrue(logOnly.hasCallLogPermission)
+    }
+
+    @Test
+    fun showContactDetail_requiresLookupKeyAndHideReturnsToContactsPage() {
+        val state = LauncherState(mode = LauncherMode.DIALER, callPageIndex = CallPageIndex.CONTACTS)
+
+        // 空 lookupKey 不进详情：详情页无从解析联系人
+        assertEquals(state, LauncherStateTransitions.showContactDetail(state, ""))
+
+        val opened = LauncherStateTransitions.showContactDetail(state, "lk-1")
+        assertEquals(LauncherMode.CONTACT_DETAIL, opened.mode)
+        assertEquals("lk-1", opened.contactDetailLookupKey)
+
+        val closed = LauncherStateTransitions.hideContactDetail(opened)
+        assertEquals(LauncherMode.DIALER, closed.mode)
+        assertEquals(CallPageIndex.CONTACTS, closed.callPageIndex)
+        assertEquals("", closed.contactDetailLookupKey)
+    }
+
+    @Test
+    fun updateContacts_landsDataPermissionAndClearsLoading() {
+        val loading = LauncherStateTransitions.beginContactsLoading(LauncherState())
+        assertTrue(loading.isContactsLoading)
+
+        val loaded = LauncherStateTransitions.updateContacts(
+            state = loading,
+            hasPermission = true,
+            contacts = listOf(
+                ContactDetail(
+                    contactId = 1L,
+                    lookupKey = "lk-1",
+                    rawContactId = 1L,
+                    displayName = "ALICE",
+                ),
+            ),
+        )
+        assertFalse(loaded.isContactsLoading)
+        assertTrue(loaded.hasContactsPermission)
+        assertEquals(1, loaded.contacts.size)
+
+        // 已有数据时再次加载不闪空
+        val reloading = LauncherStateTransitions.beginContactsLoading(loaded)
+        assertFalse(reloading.isContactsLoading)
+        assertEquals(1, reloading.contacts.size)
     }
 
     @Test

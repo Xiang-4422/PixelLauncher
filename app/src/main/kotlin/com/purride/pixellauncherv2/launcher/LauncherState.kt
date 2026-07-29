@@ -3,6 +3,7 @@ package com.purride.pixellauncherv2.launcher
 import com.purride.pixelcore.PixelShape
 import com.purride.pixellauncherv2.layout.LauncherLayoutProfileFactory
 import com.purride.pixellauncherv2.model.CallLogGroup
+import com.purride.pixellauncherv2.model.ContactDetail
 import com.purride.pixellauncherv2.model.ContactEntry
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.model.SmsThreadSummary
@@ -72,6 +73,14 @@ data class LauncherState(
     val dialInput: String = "",
     /** 拨号盘输入的 T9 命中结果（已限量），空列表表示未命中。 */
     val dialMatches: List<ContactEntry> = emptyList(),
+    /** 联系人目录（一人一条、provider 排序）。 */
+    val contacts: List<ContactDetail> = emptyList(),
+    /** 联系人目录首次加载中。 */
+    val isContactsLoading: Boolean = false,
+    /** 是否具备读取联系人的权限；缺失时联系人页渲染带授权入口的空态。 */
+    val hasContactsPermission: Boolean = false,
+    /** 详情页当前联系人的 lookupKey；详情不可见时为空。数据从 [contacts] 现场解析，单一真值。 */
+    val contactDetailLookupKey: String = "",
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = LauncherLayoutProfileFactory.defaultDotSizePx,
     val isPixelGapEnabled: Boolean = true,
@@ -144,6 +153,7 @@ enum class LauncherMode {
     SMS_THREADS,
     SMS_THREAD_DETAIL,
     DIALER,
+    CONTACT_DETAIL,
     APP_MANAGEMENT,
     DATA_HEALTH,
     NOTIFICATION_SETTINGS,

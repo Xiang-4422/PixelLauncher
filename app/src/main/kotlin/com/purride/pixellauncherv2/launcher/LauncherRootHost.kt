@@ -34,6 +34,7 @@ import com.purride.pixelui.jumpToPage
 import com.purride.pixelui.pixelRouteDestination
 import com.purride.pixelui.showItem
 import com.purride.pixellauncherv2.ui.screen.AppManagementScreen
+import com.purride.pixellauncherv2.ui.screen.ContactDetailScreen
 import com.purride.pixellauncherv2.ui.screen.DiagnosticsScreen
 import com.purride.pixellauncherv2.ui.screen.DialerScreen
 import com.purride.pixellauncherv2.ui.screen.DataHealthScreen
@@ -144,6 +145,8 @@ internal class LauncherRootHost(
     private val callPagerState = callPagerController.create(pageCount = CallPageIndex.COUNT)
     private val callLogListController = ScrollController()
     private val callLogListState = callLogListController.create()
+    private val contactsListController = ScrollController()
+    private val contactsListState = contactsListController.create()
 
     // ── SMS search + detail message list + draft ──────────────────────────────
     private val msgListController = ScrollController()
@@ -468,14 +471,24 @@ internal class LauncherRootHost(
             pagerState = callPagerState,
             listState = callLogListState,
             listController = callLogListController,
+            contactsListState = contactsListState,
+            contactsListController = contactsListController,
             onCallPageSelected = callbacks.onCallPageSelected,
             onCallGroupPressed = callbacks.onCallGroupPressed,
             onRequestCallLogPermission = callbacks.onRequestCallLogPermission,
+            onContactPressed = callbacks.onContactPressed,
+            onRequestContactsPermission = callbacks.onRequestContactsPermission,
             onDialDigit = callbacks.onDialDigit,
             onDialBackspace = callbacks.onDialBackspace,
             onDialClear = callbacks.onDialClear,
             onDialCall = callbacks.onDialCall,
             onDialMatchPressed = callbacks.onDialMatchPressed,
+        )
+        LauncherRouteDestination.CONTACT_DETAIL -> ContactDetailScreen(
+            uiState = uiState,
+            theme = theme,
+            onCallNumber = callbacks.onContactCallNumber,
+            onSmsNumber = callbacks.onContactSmsNumber,
         )
         LauncherRouteDestination.DIAGNOSTICS -> DiagnosticsScreen(
             uiState = uiState,
@@ -687,13 +700,19 @@ internal class LauncherRootHost(
     )
 
     private fun statusBarPageTitle(presentation: LauncherStatusBarPresentation.Standard): String {
-        return if (uiState.mode == LauncherMode.SMS_THREAD_DETAIL) {
-            LauncherStatusBarPresentation.smsDetailPageTitle(
+        return when (uiState.mode) {
+            LauncherMode.SMS_THREAD_DETAIL -> LauncherStatusBarPresentation.smsDetailPageTitle(
                 conversationTitle = uiState.smsCurrentConversationTitle,
                 address = uiState.smsCurrentAddress,
             )
-        } else {
-            presentation.pageTitle
+            LauncherMode.CONTACT_DETAIL -> LauncherStatusBarPresentation.contactDetailPageTitle(
+                displayName = uiState.contacts
+                    .firstOrNull { contact -> contact.lookupKey == uiState.contactDetailLookupKey }
+                    ?.displayName
+                    .orEmpty()
+                    .uppercase(),
+            )
+            else -> presentation.pageTitle
         }
     }
 
@@ -806,6 +825,7 @@ internal class LauncherRootHost(
             LauncherMode.SMS_THREADS -> LauncherRouteDestination.SMS_THREADS
             LauncherMode.SMS_THREAD_DETAIL -> LauncherRouteDestination.SMS_THREAD_DETAIL
             LauncherMode.DIALER -> LauncherRouteDestination.DIALER
+            LauncherMode.CONTACT_DETAIL -> LauncherRouteDestination.CONTACT_DETAIL
             LauncherMode.APP_MANAGEMENT -> LauncherRouteDestination.APP_MANAGEMENT
             LauncherMode.DATA_HEALTH -> LauncherRouteDestination.DATA_HEALTH
             LauncherMode.NOTIFICATION_SETTINGS -> LauncherRouteDestination.NOTIFICATION_SETTINGS
@@ -822,6 +842,7 @@ internal class LauncherRootHost(
 
             LauncherRouteDestination.MAIN,
             LauncherRouteDestination.SMS_THREAD_DETAIL,
+            LauncherRouteDestination.CONTACT_DETAIL,
             LauncherRouteDestination.APP_MANAGEMENT,
             LauncherRouteDestination.DATA_HEALTH,
             LauncherRouteDestination.NOTIFICATION_SETTINGS,
@@ -879,6 +900,7 @@ internal enum class LauncherRouteDestination(
     SMS_THREADS("sms-threads"),
     SMS_THREAD_DETAIL("sms-thread-detail"),
     DIALER("dialer"),
+    CONTACT_DETAIL("contact-detail"),
     APP_MANAGEMENT("app-management"),
     DATA_HEALTH("data-health"),
     NOTIFICATION_SETTINGS("notification-settings"),
