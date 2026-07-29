@@ -64,9 +64,14 @@ class CallLogRepository(
         if (!hasReadCallLogPermission() || limit <= 0) {
             return emptyList()
         }
+        // 条数上限必须走 URI 的 limit 查询参数：把 "LIMIT n" 拼进 sortOrder 会被
+        // 通话记录 provider 的排序串校验拒绝（实机 Android 12 抛 Invalid token LIMIT）。
+        val limitedUri = CallLog.Calls.CONTENT_URI.buildUpon()
+            .appendQueryParameter(CallLog.Calls.LIMIT_PARAM_KEY, limit.toString())
+            .build()
         val cursor = try {
             contentResolver.query(
-                CallLog.Calls.CONTENT_URI,
+                limitedUri,
                 arrayOf(
                     CallLog.Calls._ID,
                     CallLog.Calls.NUMBER,
@@ -79,9 +84,12 @@ class CallLogRepository(
                 ),
                 null,
                 null,
-                "${CallLog.Calls.DATE} DESC LIMIT $limit",
+                "${CallLog.Calls.DATE} DESC",
             )
-        } catch (_: SecurityException) {
+        } catch (error: Throwable) {
+            // 各家 ROM 的通话记录 provider 行为差异很大：读不到就当空列表，
+            // 绝不能让一次查询异常把 Launcher 进程带走。
+            Log.w(LOG_TAG, "readRecentCalls failed", error)
             null
         } ?: return emptyList()
 

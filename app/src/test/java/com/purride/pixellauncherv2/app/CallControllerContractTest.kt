@@ -3,6 +3,7 @@ package com.purride.pixellauncherv2.app
 import android.os.Handler
 import com.purride.pixellauncherv2.data.CallLogRepository
 import com.purride.pixellauncherv2.data.DialerRepository
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -62,10 +63,16 @@ class CallControllerContractTest {
             source.contains("RejectedExecutionException") &&
                 source.contains("private fun runInBackground("),
         )
-        assertFalse(
+        // 守卫是唯一的提交点：整份源码只允许出现一次 execute 调用。
+        assertEquals(
             "CallController must not call backgroundExecutor.execute outside the guard.",
-            source.replace("backgroundExecutor.execute { task() }", "")
-                .contains("backgroundExecutor.execute"),
+            1,
+            Regex("backgroundExecutor\\.execute").findAll(source).count(),
+        )
+        // 任务内部异常同样不能逃逸——未捕获异常会杀掉整个 Launcher 进程。
+        assertTrue(
+            "CallController must swallow failures thrown inside background tasks.",
+            source.contains("runCatching(task)"),
         )
     }
 

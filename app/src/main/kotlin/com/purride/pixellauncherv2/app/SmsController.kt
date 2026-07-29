@@ -941,7 +941,13 @@ internal class SmsController(
      */
     private fun runInBackground(task: () -> Unit) {
         try {
-            backgroundExecutor.execute { task() }
+            backgroundExecutor.execute {
+                // 任务内部的未捕获异常会杀掉整个进程——对 Launcher 而言就是桌面
+                // 消失。仓库层再怎么出错也只记日志，不允许带走宿主。
+                runCatching(task).onFailure { error ->
+                    Log.w(LOG_TAG, "background task failed", error)
+                }
+            }
         } catch (_: RejectedExecutionException) {
         }
     }
