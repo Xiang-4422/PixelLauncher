@@ -9,8 +9,8 @@ import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
+import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
-import com.purride.pixelui.OutlinedButton
 import com.purride.pixelui.PageView
 import com.purride.pixelui.Padding
 import com.purride.pixelui.PixelSemanticRole
@@ -19,7 +19,6 @@ import com.purride.pixelui.Semantics
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextOverflow
-import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
 import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.state.PixelListController
@@ -29,6 +28,8 @@ import com.purride.pixelui.state.PixelPagerState
 import com.purride.pixellauncherv2.launcher.CallPageIndex
 import com.purride.pixellauncherv2.launcher.DialInputModel
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
+import com.purride.pixellauncherv2.launcher.PixelFontSize
+import com.purride.pixellauncherv2.launcher.T9Model
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
@@ -37,8 +38,9 @@ private val CALL_PAGE_TABS = listOf("RECENT", "DIAL")
 /**
  * DIALER 屏幕：拨号模块首页。
  *
- * 固定两页——左页最近通话，右页拨号盘；页签固定在底部并与横向 PageView 同步，
- * 与短信首页保持同一套结构（见 UI 规范 §8）。
+ * 固定两页——左页最近通话，右页拨号盘。导航放在**第一行**，底部留给当页的主操作
+ * （拨号盘的 CALL）：在 22 行的纵向预算里，把导航和主操作挤在同一端会让主操作
+ * 失去分量。全屏只允许一个反色实心块，那就是主操作。
  */
 fun DialerScreen(
     uiState: LauncherUiState,
@@ -54,11 +56,17 @@ fun DialerScreen(
     onDialBackspace: () -> Unit,
     onDialClear: () -> Unit,
     onDialCall: () -> Unit,
+    onDialMatchPressed: (number: String) -> Unit,
 ): Widget = Column(
     crossAxisAlignment = CrossAxisAlignment.STRETCH,
     mainAxisSize = MainAxisSize.MAX,
     spacing = 0,
     children = listOf(
+        callTopTabs(
+            selectedIndex = CallPageIndex.coerce(uiState.callPageIndex),
+            theme = theme,
+            onSelected = onCallPageSelected,
+        ),
         Expanded(
             child = PageView(
                 axis = Axis.HORIZONTAL,
@@ -80,24 +88,71 @@ fun DialerScreen(
                         onDialBackspace = onDialBackspace,
                         onDialClear = onDialClear,
                         onDialCall = onDialCall,
+                        onDialMatchPressed = onDialMatchPressed,
                     ),
                 ),
                 onPageChanged = onCallPageSelected,
             ),
         ),
-        Padding(
-            horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
-            vertical = LauncherSpacing.ROW_SPACING,
-            child = callBottomTabs(
-                selectedIndex = CallPageIndex.coerce(uiState.callPageIndex),
-                theme = theme,
-                onSelected = onCallPageSelected,
-            ),
+    ),
+)
+
+/** 顶部页签：等宽、文字居中、共用外边框，选中页纯色填充（UI 规范 §8）。 */
+private fun callTopTabs(
+    selectedIndex: Int,
+    theme: LauncherTheme,
+    onSelected: (Int) -> Unit,
+): Widget = Padding(
+    horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+    vertical = LauncherSpacing.ROW_SPACING,
+    child = Container(
+        borderColor = theme.button.border,
+        child = Row(
+            spacing = 0,
+            children = CALL_PAGE_TABS.mapIndexed { index, label ->
+                Expanded(
+                    child = Semantics(
+                        label = if (index == selectedIndex) "$label selected" else label,
+                        role = PixelSemanticRole.TAB,
+                        focused = index == selectedIndex,
+                        child = GestureDetector(
+                            onTap = { onSelected(index) },
+                            child = Container(
+                                alignment = Alignment.CENTER,
+                                fillColor = if (index == selectedIndex) {
+                                    theme.button.border
+                                } else {
+                                    PixelColor.Transparent
+                                },
+                                padding = EdgeInsets.symmetric(
+                                    horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+                                    vertical = LauncherSpacing.ROW_SPACING,
+                                ),
+                                child = dialText(
+                                    text = label,
+                                    color = if (index == selectedIndex) {
+                                        theme.surface.offPixelColor
+                                    } else {
+                                        theme.button.text
+                                    },
+                                    theme = theme,
+                                    align = TextAlign.CENTER,
+                                ),
+                            ),
+                        ),
+                    ),
+                )
+            },
         ),
     ),
 )
 
-/** 拨号盘页：号码框 + 3x4 键盘 + 操作行。键位用 Expanded 均分，不写死宽高。 */
+/**
+ * 拨号盘页：号码行 + 固定匹配槽 + 无边框键盘 + 通栏主操作。
+ *
+ * 键位不画边框——12 个方框在点阵屏上会形成密集网格线，噪声压过数字本身；
+ * 靠 Expanded 均分的留白分隔即可，按下态由手势反馈承担。
+ */
 private fun dialPadPage(
     uiState: LauncherUiState,
     theme: LauncherTheme,
@@ -105,6 +160,7 @@ private fun dialPadPage(
     onDialBackspace: () -> Unit,
     onDialClear: () -> Unit,
     onDialCall: () -> Unit,
+    onDialMatchPressed: (number: String) -> Unit,
 ): Widget = Padding(
     horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
     vertical = LauncherSpacing.CONTENT_VERTICAL,
@@ -113,7 +169,8 @@ private fun dialPadPage(
         mainAxisSize = MainAxisSize.MAX,
         spacing = LauncherSpacing.ROW_SPACING,
         children = buildList {
-            add(dialInputRow(uiState, theme))
+            add(dialNumberRow(uiState, theme, onDialBackspace, onDialClear))
+            add(dialMatchSlot(uiState, theme, onDialMatchPressed))
             DialInputModel.keypadRows.forEach { row ->
                 add(
                     Expanded(
@@ -125,177 +182,177 @@ private fun dialPadPage(
                     ),
                 )
             }
-            add(
-                dialActionRow(
-                    uiState = uiState,
-                    theme = theme,
-                    onDialBackspace = onDialBackspace,
-                    onDialClear = onDialClear,
-                    onDialCall = onDialCall,
-                ),
-            )
+            add(dialCallBar(uiState, theme, onDialCall))
         },
     ),
 )
 
-/** 号码框：展示当前输入，命中联系人时在下方补一行姓名。 */
-private fun dialInputRow(
-    uiState: LauncherUiState,
-    theme: LauncherTheme,
-): Widget = Column(
-    crossAxisAlignment = CrossAxisAlignment.STRETCH,
-    mainAxisSize = MainAxisSize.MIN,
-    spacing = 1,
-    children = listOfNotNull(
-        Text(
-            DialInputModel.displayText(uiState.dialInput),
-            style = TextStyle(
-                color = if (uiState.dialInput.isEmpty()) {
-                    theme.sms.timestamp
-                } else {
-                    theme.text.primary
-                },
-            ),
-            textAlign = TextAlign.CENTER,
-            overflow = TextOverflow.ELLIPSIS,
-            softWrap = false,
-            maxLines = 1,
-        ),
-        uiState.dialContactName.takeIf(String::isNotBlank)?.let { name ->
-            Text(
-                name.uppercase(),
-                style = TextStyle(color = theme.sms.sender),
-                textAlign = TextAlign.CENTER,
-                overflow = TextOverflow.ELLIPSIS,
-                softWrap = false,
-                maxLines = 1,
-            )
-        },
-    ),
-)
-
-/** 单个键位：占满所在格，长按 0 输入 +（拨号盘惯例）。 */
-private fun dialKey(
-    key: Char,
-    theme: LauncherTheme,
-    onDialDigit: (Char) -> Unit,
-): Widget = Expanded(
-    child = GestureDetector(
-        onTap = { onDialDigit(key) },
-        onLongPress = if (key == '0') {
-            { onDialDigit('+') }
-        } else {
-            null
-        },
-        child = Container(
-            alignment = Alignment.CENTER,
-            borderColor = theme.button.border,
-            padding = EdgeInsets.all(LauncherSpacing.BORDERED_CONTROL_INSET),
-            child = Text(
-                key.toString(),
-                style = TextStyle(color = theme.button.text),
-                textAlign = TextAlign.CENTER,
-                overflow = TextOverflow.ELLIPSIS,
-                softWrap = false,
-                maxLines = 1,
-            ),
-        ),
-    ),
-)
-
-/** 操作行：删除（长按清空）与呼叫；无输入时呼叫按钮禁用。 */
-private fun dialActionRow(
+/** 号码行：当前输入靠左，DEL 靠右（就近编辑）；长按 DEL 清空。 */
+private fun dialNumberRow(
     uiState: LauncherUiState,
     theme: LauncherTheme,
     onDialBackspace: () -> Unit,
     onDialClear: () -> Unit,
-    onDialCall: () -> Unit,
 ): Widget = Row(
     spacing = LauncherSpacing.ROW_SPACING,
     crossAxisAlignment = CrossAxisAlignment.CENTER,
     children = listOf(
         Expanded(
-            child = GestureDetector(
-                onTap = onDialBackspace,
-                onLongPress = onDialClear,
-                child = Container(
-                    alignment = Alignment.CENTER,
-                    borderColor = theme.button.border,
-                    padding = EdgeInsets.all(LauncherSpacing.BORDERED_CONTROL_INSET),
-                    child = Text(
-                        "DEL",
-                        style = TextStyle(
-                            color = if (uiState.dialInput.isEmpty()) {
-                                theme.button.disabledText
-                            } else {
-                                theme.button.text
-                            },
-                        ),
-                        textAlign = TextAlign.CENTER,
-                        overflow = TextOverflow.ELLIPSIS,
-                        softWrap = false,
-                        maxLines = 1,
-                    ),
-                ),
+            child = dialText(
+                text = DialInputModel.displayText(uiState.dialInput),
+                color = if (uiState.dialInput.isEmpty()) {
+                    theme.sms.timestamp
+                } else {
+                    theme.text.primary
+                },
+                theme = theme,
             ),
         ),
-        Expanded(
-            child = OutlinedButton(
-                text = "CALL",
-                onPressed = onDialCall,
-                enabled = DialInputModel.isCallable(uiState.dialInput),
-                borderColor = theme.button.border,
+        GestureDetector(
+            onTap = onDialBackspace,
+            onLongPress = onDialClear,
+            child = dialText(
+                text = "DEL",
+                color = if (uiState.dialInput.isEmpty()) {
+                    theme.button.disabledText
+                } else {
+                    theme.button.text
+                },
+                theme = theme,
             ),
         ),
     ),
 )
 
-/** 底部页签：等宽、文字居中、共用外边框，选中页纯色填充（UI 规范 §8）。 */
-private fun callBottomTabs(
-    selectedIndex: Int,
+/**
+ * T9 匹配槽：**固定占一行，永不塌陷**。
+ *
+ * 塌陷会让整个键盘上下跳动——输入时手指已经落在键位上，位置变化直接导致误触。
+ * 唯一命中显示姓名与号码（点按即拨），多命中显示条数，未命中留空占位。
+ */
+private fun dialMatchSlot(
+    uiState: LauncherUiState,
     theme: LauncherTheme,
-    onSelected: (Int) -> Unit,
-): Widget = Container(
-    borderColor = theme.button.border,
-    child = Row(
-        spacing = 0,
-        children = CALL_PAGE_TABS.mapIndexed { index, label ->
-            Expanded(
-                child = Semantics(
-                    label = if (index == selectedIndex) "$label selected" else label,
-                    role = PixelSemanticRole.TAB,
-                    focused = index == selectedIndex,
-                    child = GestureDetector(
-                        onTap = { onSelected(index) },
-                        child = Container(
-                            alignment = Alignment.CENTER,
-                            fillColor = if (index == selectedIndex) {
-                                theme.button.border
-                            } else {
-                                PixelColor.Transparent
+    onDialMatchPressed: (number: String) -> Unit,
+): Widget {
+    val matches = uiState.dialMatches
+    val first = matches.firstOrNull()
+    val text = when {
+        first == null -> ""
+        matches.size == 1 -> "${first.displayName.uppercase()}  ${first.number}"
+        else -> "${first.displayName.uppercase()}  +${matches.size - 1}"
+    }
+    val slot = dialText(
+        text = text,
+        color = theme.sms.sender,
+        theme = theme,
+    )
+    return if (first == null) {
+        slot
+    } else {
+        GestureDetector(onTap = { onDialMatchPressed(first.number) }, child = slot)
+    }
+}
+
+/** 单个键位：数字为主，字母副标用更小字号与低对比，绝不与数字等重。 */
+private fun dialKey(
+    key: Char,
+    theme: LauncherTheme,
+    onDialDigit: (Char) -> Unit,
+): Widget {
+    val hint = T9Model.letterHint(key)
+    return Expanded(
+        child = Semantics(
+            label = if (hint.isEmpty()) key.toString() else "$key $hint",
+            role = PixelSemanticRole.BUTTON,
+            child = GestureDetector(
+                onTap = { onDialDigit(key) },
+                // 长按 0 输入 +，拨号盘通行惯例。
+                onLongPress = if (key == '0') {
+                    { onDialDigit('+') }
+                } else {
+                    null
+                },
+                child = Container(
+                    alignment = Alignment.CENTER,
+                    child = Column(
+                        mainAxisSize = MainAxisSize.MIN,
+                        mainAxisAlignment = MainAxisAlignment.CENTER,
+                        crossAxisAlignment = CrossAxisAlignment.CENTER,
+                        spacing = 0,
+                        children = listOfNotNull(
+                            dialText(
+                                text = key.toString(),
+                                color = theme.text.primary,
+                                theme = theme,
+                                align = TextAlign.CENTER,
+                            ),
+                            hint.takeIf(String::isNotEmpty)?.let { letters ->
+                                dialText(
+                                    text = letters,
+                                    color = theme.button.disabledText,
+                                    theme = theme,
+                                    align = TextAlign.CENTER,
+                                    size = PixelFontSize.PX_8,
+                                )
                             },
-                            padding = EdgeInsets.symmetric(
-                                horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
-                                vertical = LauncherSpacing.ROW_SPACING,
-                            ),
-                            child = Text(
-                                label,
-                                style = TextStyle(
-                                    color = if (index == selectedIndex) {
-                                        theme.surface.offPixelColor
-                                    } else {
-                                        theme.button.text
-                                    },
-                                ),
-                                textAlign = TextAlign.CENTER,
-                                overflow = TextOverflow.ELLIPSIS,
-                                softWrap = false,
-                                maxLines = 1,
-                            ),
                         ),
                     ),
                 ),
-            )
-        },
-    ),
+            ),
+        ),
+    )
+}
+
+/** 主操作：通栏反色实心块——全屏唯一的实心块，其余控件只用边框或纯文字。 */
+private fun dialCallBar(
+    uiState: LauncherUiState,
+    theme: LauncherTheme,
+    onDialCall: () -> Unit,
+): Widget {
+    val enabled = DialInputModel.isCallable(uiState.dialInput)
+    return Semantics(
+        label = "CALL",
+        role = PixelSemanticRole.BUTTON,
+        enabled = enabled,
+        child = GestureDetector(
+            // onTap 不可空：始终接上，能否拨出由控制器判断（callDialInput 会校验），
+            // 这样禁用态只是视觉弱化，不会变成一块无反馈的死区。
+            onTap = onDialCall,
+            child = Container(
+                alignment = Alignment.CENTER,
+                fillColor = if (enabled) theme.button.border else PixelColor.Transparent,
+                borderColor = if (enabled) null else theme.button.border,
+                padding = EdgeInsets.symmetric(
+                    horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+                    vertical = LauncherSpacing.ROW_SPACING,
+                ),
+                child = dialText(
+                    text = "CALL",
+                    color = if (enabled) theme.surface.offPixelColor else theme.button.disabledText,
+                    theme = theme,
+                    align = TextAlign.CENTER,
+                ),
+            ),
+        ),
+    )
+}
+
+private fun dialText(
+    text: String,
+    color: PixelColor,
+    theme: LauncherTheme,
+    align: TextAlign = TextAlign.START,
+    size: PixelFontSize? = null,
+): Widget = Text(
+    text,
+    style = if (size == null) {
+        theme.typography.textStyle(color = color)
+    } else {
+        theme.typography.textStyle(color = color, size = size)
+    },
+    textAlign = align,
+    overflow = TextOverflow.ELLIPSIS,
+    softWrap = false,
+    maxLines = 1,
 )

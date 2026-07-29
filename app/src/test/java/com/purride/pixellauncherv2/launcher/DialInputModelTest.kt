@@ -57,6 +57,26 @@ class DialInputModelTest {
     }
 
     @Test
+    fun displayTextGroupsMainlandMobileOnly() {
+        assertEquals("138 0013 8000", DialInputModel.displayText("13800138000"))
+        // 位数不足、非 1 开头、含符号的一律原样显示
+        assertEquals("1380013800", DialInputModel.displayText("1380013800"))
+        assertEquals("02112345678", DialInputModel.displayText("02112345678"))
+        assertEquals("+8613800138", DialInputModel.displayText("+8613800138"))
+    }
+
+    @Test
+    fun truncateKeepingTailHidesHeadNotTail() {
+        // 尾号是核对依据，必须留在可见范围内
+        assertEquals("..8000", DialInputModel.truncateKeepingTail("13800138000", maxChars = 6))
+        assertEquals("13800138000", DialInputModel.truncateKeepingTail("13800138000", maxChars = 11))
+        assertEquals("13800138000", DialInputModel.truncateKeepingTail("13800138000", maxChars = 99))
+        // 放不下省略号时给尾号本身
+        assertEquals("0", DialInputModel.truncateKeepingTail("13800138000", maxChars = 1))
+        assertEquals("13800138000", DialInputModel.truncateKeepingTail("13800138000", maxChars = 0))
+    }
+
+    @Test
     fun digitForKeyCodeMapsNumberRowNumpadAndSymbols() {
         assertEquals('0', DialInputModel.digitForKeyCode(7))
         assertEquals('9', DialInputModel.digitForKeyCode(16))

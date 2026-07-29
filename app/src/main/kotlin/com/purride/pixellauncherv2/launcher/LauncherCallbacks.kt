@@ -85,6 +85,8 @@ data class LauncherCallbacks(
     val onDialBackspace: () -> Unit,
     val onDialClear: () -> Unit,
     val onDialCall: () -> Unit,
+    /** 点按 T9 匹配槽 → 直接拨该联系人。 */
+    val onDialMatchPressed: (number: String) -> Unit,
 
     // ── Navigation ────────────────────────────────────────────────────────────
     /**

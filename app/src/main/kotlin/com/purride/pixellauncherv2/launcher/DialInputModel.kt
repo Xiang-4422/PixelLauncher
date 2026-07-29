@@ -14,6 +14,12 @@ object DialInputModel {
     /** 输入上限。国际号码最长 15 位，留足暂停符与前缀的余量。 */
     const val MAX_LENGTH = 24
 
+    /** 大陆手机号位数，用于分组显示。 */
+    private const val MAINLAND_MOBILE_LENGTH = 11
+
+    /** 头部省略号；像素字体里单字符 … 未必有字形，用 ASCII 点。 */
+    private const val ELLIPSIS = ".."
+
     /** 追加一个字符；非可拨字符与超长输入原样返回。 */
     fun append(current: String, digit: Char): String {
         if (digit !in DIALABLE_CHARS) return current
@@ -32,9 +38,35 @@ object DialInputModel {
 
     /**
      * 号码框展示文本。空输入时给出提示占位，避免出现一行空白。
+     *
+     * 大陆 11 位手机号按 3/4/4 分组，长号码更易逐段核对；其余形态原样显示
+     * （国际号码、短号、带 * # 的特殊号码分组规则各异，强行切分反而更难读）。
      */
-    fun displayText(input: String, placeholder: String = "ENTER NUMBER"): String =
-        input.ifEmpty { placeholder }
+    fun displayText(input: String, placeholder: String = "ENTER NUMBER"): String {
+        if (input.isEmpty()) return placeholder
+        return groupMainlandMobile(input)
+    }
+
+    /**
+     * 超长号码的截断：**保留尾部、在头部加省略号**。
+     *
+     * 尾号是用户核对刚按下的数字的唯一依据，从尾部截断等于把刚输入的内容藏起来。
+     * [maxChars] 由调用方按当前字号能容纳的字符数给出。
+     */
+    fun truncateKeepingTail(text: String, maxChars: Int): String {
+        if (maxChars <= 0 || text.length <= maxChars) return text
+        // 连省略号都放不下时直接给尾部：尾号比一串点更有信息量。
+        if (maxChars <= ELLIPSIS.length) return text.takeLast(maxChars)
+        return ELLIPSIS + text.takeLast(maxChars - ELLIPSIS.length)
+    }
+
+    /** 大陆手机号 3/4/4 分组；不满足条件时原样返回。 */
+    private fun groupMainlandMobile(input: String): String {
+        if (input.length != MAINLAND_MOBILE_LENGTH) return input
+        if (!input.all(Char::isDigit)) return input
+        if (!input.startsWith("1")) return input
+        return "${input.substring(0, 3)} ${input.substring(3, 7)} ${input.substring(7)}"
+    }
 
     /** 硬件按键码到拨号字符的映射；非拨号键返回 null。 */
     fun digitForKeyCode(keyCode: Int): Char? = when (keyCode) {

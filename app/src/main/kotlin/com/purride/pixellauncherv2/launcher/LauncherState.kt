@@ -3,6 +3,7 @@ package com.purride.pixellauncherv2.launcher
 import com.purride.pixelcore.PixelShape
 import com.purride.pixellauncherv2.layout.LauncherLayoutProfileFactory
 import com.purride.pixellauncherv2.model.CallLogGroup
+import com.purride.pixellauncherv2.model.ContactEntry
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.model.SmsThreadSummary
 
@@ -71,8 +72,8 @@ data class LauncherState(
     val callPageIndex: Int = CallPageIndex.RECENT,
     /** 拨号盘当前输入的号码。 */
     val dialInput: String = "",
-    /** 拨号盘输入命中的联系人名，未命中为空。 */
-    val dialContactName: String = "",
+    /** 拨号盘输入的 T9 命中结果（已限量），空列表表示未命中。 */
+    val dialMatches: List<ContactEntry> = emptyList(),
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = LauncherLayoutProfileFactory.defaultDotSizePx,
     val isPixelGapEnabled: Boolean = true,

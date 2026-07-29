@@ -330,6 +330,7 @@ class MainActivity : AppCompatActivity() {
         callController = CallController(
             callLogRepository = appContainer.callLogRepository,
             dialerRepository = appContainer.dialerRepository,
+            contactSearchRepository = appContainer.contactSearchRepository,
             backgroundExecutor = backgroundExecutor,
             mainHandler = mainHandler,
             host = callHost,
@@ -550,6 +551,7 @@ class MainActivity : AppCompatActivity() {
         onDialBackspace = callController::backspaceDialInput,
         onDialClear = callController::clearDialInput,
         onDialCall = callController::callDialInput,
+        onDialMatchPressed = callController::callDialMatch,
         onMainPageChanged = ::onMainPageChanged,
         onMainPageDragStart = ::onMainPageDragStart,
     )

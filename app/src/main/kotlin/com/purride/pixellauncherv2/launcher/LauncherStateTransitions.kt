@@ -3,6 +3,7 @@ package com.purride.pixellauncherv2.launcher
 import com.purride.pixellauncherv2.model.DeviceStatus
 import com.purride.pixellauncherv2.model.LauncherStatsSnapshot
 import com.purride.pixellauncherv2.model.CallLogGroup
+import com.purride.pixellauncherv2.model.ContactEntry
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.model.SmsThreadSummary
 import com.purride.pixelcore.PixelShape
@@ -237,7 +238,7 @@ object LauncherStateTransitions {
         return state.copy(
             mode = LauncherMode.HOME,
             dialInput = "",
-            dialContactName = "",
+            dialMatches = emptyList(),
         )
     }
 
@@ -246,24 +247,24 @@ object LauncherStateTransitions {
         return state.copy(callPageIndex = CallPageIndex.coerce(index))
     }
 
-    /** 更新拨号盘输入；号码变化时联系人名先清空，由异步解析回填。 */
+    /** 更新拨号盘输入；号码变化时匹配结果先清空，由异步检索回填。 */
     fun updateDialInput(state: LauncherState, input: String): LauncherState {
         if (state.dialInput == input) {
             return state
         }
-        return state.copy(dialInput = input, dialContactName = "")
+        return state.copy(dialInput = input, dialMatches = emptyList())
     }
 
-    /** 回填拨号盘输入对应的联系人名；输入已变化时丢弃这次结果。 */
-    fun updateDialContactName(
+    /** 回填 T9 检索结果；输入已变化时丢弃这次结果，避免旧结果盖住新号码。 */
+    fun updateDialMatches(
         state: LauncherState,
         input: String,
-        contactName: String,
+        matches: List<ContactEntry>,
     ): LauncherState {
         if (state.dialInput != input) {
             return state
         }
-        return state.copy(dialContactName = contactName)
+        return state.copy(dialMatches = matches)
     }
 
     /** 同步通话记录数据；选中下标收敛到新列表范围内。 */

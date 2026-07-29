@@ -474,6 +474,7 @@ internal class LauncherRootHost(
             onDialBackspace = callbacks.onDialBackspace,
             onDialClear = callbacks.onDialClear,
             onDialCall = callbacks.onDialCall,
+            onDialMatchPressed = callbacks.onDialMatchPressed,
         )
         LauncherRouteDestination.DIAGNOSTICS -> DiagnosticsScreen(
             uiState = uiState,

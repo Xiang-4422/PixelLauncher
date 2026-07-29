@@ -4,6 +4,7 @@ import android.Manifest
 import android.os.Handler
 import android.util.Log
 import com.purride.pixellauncherv2.data.CallLogRepository
+import com.purride.pixellauncherv2.data.ContactSearchRepository
 import com.purride.pixellauncherv2.data.DialerRepository
 import com.purride.pixellauncherv2.launcher.CallLogModel
 import com.purride.pixellauncherv2.launcher.DialInputModel
@@ -22,6 +23,7 @@ import java.util.concurrent.RejectedExecutionException
 internal class CallController(
     private val callLogRepository: CallLogRepository,
     private val dialerRepository: DialerRepository,
+    private val contactSearchRepository: ContactSearchRepository,
     private val backgroundExecutor: ExecutorService,
     private val mainHandler: Handler,
     private val host: Host,
@@ -75,6 +77,8 @@ internal class CallController(
             requestMissingPermissions()
             return
         }
+        // 每次进入模块丢弃一次联系人快照：期间新增/改名的联系人才能被 T9 命中。
+        contactSearchRepository.invalidate()
         val hasData = host.state.callLogGroups.isNotEmpty()
         host.state = LauncherStateTransitions.showCallLog(
             host.state.copy(isCallLogLoading = !hasData),
@@ -168,22 +172,27 @@ internal class CallController(
             return
         }
         runInBackground {
-            val name = callLogRepository.contactNameFor(input)
-            if (name.isBlank()) {
+            val matches = contactSearchRepository.search(input, limit = MAX_DIAL_MATCHES)
+            if (matches.isEmpty()) {
                 return@runInBackground
             }
             mainHandler.post {
                 if (!host.isActive()) {
                     return@post
                 }
-                host.state = LauncherStateTransitions.updateDialContactName(
+                host.state = LauncherStateTransitions.updateDialMatches(
                     state = host.state,
                     input = input,
-                    contactName = name,
+                    matches = matches,
                 )
                 host.render()
             }
         }
+    }
+
+    /** 点按匹配槽：直接拨该联系人号码。 */
+    fun callDialMatch(number: String) {
+        callNumber(number)
     }
 
     /** 按键导航：移动选中项。 */
@@ -313,6 +322,9 @@ internal class CallController(
         const val STATUS_CALL_FAILED = "CALL FAILED"
         const val STATUS_UNKNOWN_NUMBER = "NO NUMBER"
         const val STATUS_NEED_PERMISSION = "NEED CALL PERMISSION"
+
+        /** 匹配槽只展示第一条与总数，取够用即可。 */
+        const val MAX_DIAL_MATCHES = 5
 
         /** 通话记录变更防抖窗口，与短信保持一致。 */
         const val CHANGE_DEBOUNCE_MS = 300L

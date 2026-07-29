@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.app
 
 import android.os.Handler
 import com.purride.pixellauncherv2.data.CallLogRepository
+import com.purride.pixellauncherv2.data.ContactSearchRepository
 import com.purride.pixellauncherv2.data.DialerRepository
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -23,6 +24,7 @@ class CallControllerContractTest {
         val constructor = CallController::class.java.getDeclaredConstructor(
             CallLogRepository::class.java,
             DialerRepository::class.java,
+            ContactSearchRepository::class.java,
             ExecutorService::class.java,
             Handler::class.java,
             CallController.Host::class.java,
@@ -47,7 +49,8 @@ class CallControllerContractTest {
         assertFalse(
             "CallController must not construct its own repositories; they must be injected.",
             source.contains("CallLogRepository(") ||
-                source.contains("DialerRepository("),
+                source.contains("DialerRepository(") ||
+                source.contains("ContactSearchRepository("),
         )
     }
 

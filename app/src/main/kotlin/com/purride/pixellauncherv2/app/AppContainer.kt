@@ -7,6 +7,7 @@ import com.purride.pixellauncherv2.data.AppCustomizationRepository
 import com.purride.pixellauncherv2.data.AppRepository
 import com.purride.pixellauncherv2.data.CallLogRepository
 import com.purride.pixellauncherv2.data.CommunicationStatusRepository
+import com.purride.pixellauncherv2.data.ContactSearchRepository
 import com.purride.pixellauncherv2.data.DeviceLocationRepository
 import com.purride.pixellauncherv2.data.DialerRepository
 import com.purride.pixellauncherv2.data.DeviceMotionRepository
@@ -113,6 +114,9 @@ internal class AppContainer(
 
     /** 系统通话记录读写仓库。 */
     val callLogRepository = CallLogRepository(appContext)
+
+    /** T9 智能拨号的联系人检索仓库。 */
+    val contactSearchRepository = ContactSearchRepository(appContext)
 
     /** 发起通话与（后续）默认电话应用角色的仓库。 */
     val dialerRepository = DialerRepository(appContext)

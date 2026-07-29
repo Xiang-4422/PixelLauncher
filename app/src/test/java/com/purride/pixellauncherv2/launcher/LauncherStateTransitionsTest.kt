@@ -1,5 +1,6 @@
 package com.purride.pixellauncherv2.launcher
 
+import com.purride.pixellauncherv2.model.ContactEntry
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.model.SmsThreadSummary
 import org.junit.Assert.assertEquals
@@ -555,25 +556,29 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
-    fun updateDialInput_clearsStaleContactName() {
-        val state = LauncherState(dialInput = "1008", dialContactName = "BANK")
+    fun updateDialInput_clearsStaleMatches() {
+        val state = LauncherState(
+            dialInput = "1008",
+            dialMatches = listOf(ContactEntry(displayName = "BANK", number = "10086")),
+        )
 
         val result = LauncherStateTransitions.updateDialInput(state, "10086")
         assertEquals("10086", result.dialInput)
-        // 号码变了，旧姓名必须先清掉，避免显示成新号码的联系人。
-        assertEquals("", result.dialContactName)
+        // 号码变了，旧匹配必须先清掉，避免显示成新号码的联系人。
+        assertTrue(result.dialMatches.isEmpty())
     }
 
     @Test
-    fun updateDialContactName_ignoresResultForStaleInput() {
+    fun updateDialMatches_ignoresResultForStaleInput() {
         val state = LauncherState(dialInput = "10086")
+        val matches = listOf(ContactEntry(displayName = "BANK", number = "10086"))
 
-        val applied = LauncherStateTransitions.updateDialContactName(state, "10086", "BANK")
-        assertEquals("BANK", applied.dialContactName)
+        val applied = LauncherStateTransitions.updateDialMatches(state, "10086", matches)
+        assertEquals(matches, applied.dialMatches)
 
-        // 异步解析回来时用户已经改了号码：这次结果必须丢弃。
-        val stale = LauncherStateTransitions.updateDialContactName(state, "1008", "OLD")
-        assertEquals("", stale.dialContactName)
+        // 异步检索回来时用户已经改了号码：这次结果必须丢弃。
+        val stale = LauncherStateTransitions.updateDialMatches(state, "1008", matches)
+        assertTrue(stale.dialMatches.isEmpty())
     }
 
     @Test
@@ -581,13 +586,13 @@ class LauncherStateTransitionsTest {
         val state = LauncherState(
             mode = LauncherMode.DIALER,
             dialInput = "10086",
-            dialContactName = "BANK",
+            dialMatches = listOf(ContactEntry(displayName = "BANK", number = "10086")),
         )
 
         val result = LauncherStateTransitions.hideCallLog(state)
         assertEquals(LauncherMode.HOME, result.mode)
         assertEquals("", result.dialInput)
-        assertEquals("", result.dialContactName)
+        assertTrue(result.dialMatches.isEmpty())
     }
 
     @Test

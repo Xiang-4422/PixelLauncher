@@ -27,6 +27,19 @@ object CallLogModel {
     fun isUnanswered(type: Int): Boolean =
         type == TYPE_MISSED || type == TYPE_REJECTED || type == TYPE_BLOCKED
 
+    /**
+     * 单字符状态符：未接通一律 `!`，呼出 `>`，语音信箱 `v`，其余（已接来电）`<`。
+     *
+     * 用 1 个字符替代 MISS/OUT/IN 这类 4 字符缩写——在 29 字符一行里，
+     * 方向信息不值得占 4 格，真正需要被强调的只有「未接通」。
+     */
+    fun statusSymbol(type: Int): String = when {
+        isUnanswered(type) -> "!"
+        type == TYPE_OUTGOING -> ">"
+        type == TYPE_VOICEMAIL -> "v"
+        else -> "<"
+    }
+
     /** 通话方向标记：呼出 OUT、未接 MISS、拒接 REJ、拦截 BLOCK、其余 IN。 */
     fun directionLabel(type: Int): String = when (type) {
         TYPE_OUTGOING -> "OUT"
