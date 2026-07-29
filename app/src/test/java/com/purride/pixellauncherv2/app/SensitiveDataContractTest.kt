@@ -30,18 +30,18 @@ class SensitiveDataContractTest {
         )
     }
 
-    /** Android 11 及以下的 Auto Backup 必须排除本机应用清单缓存的两种存储域。 */
+    /** Android 11 及以下的 Auto Backup 必须排除每个契约文件的两种存储域。 */
     @Test
-    fun deviceLocalCacheIsExcludedFromFullBackup() {
+    fun contractPreferenceFilesAreExcludedFromFullBackup() {
         // Android 11 及以下的编译前备份规则文档。
         val backupRules = parseXml(moduleRoot().resolve("src/main/res/xml/backup_rules.xml"))
 
-        assertDeviceLocalCacheExclusions(backupRules.documentElement)
+        assertContractExclusions(backupRules.documentElement)
     }
 
-    /** Android 12+ 的云备份与设备迁移必须分别排除本机应用清单缓存。 */
+    /** Android 12+ 的云备份与设备迁移必须分别排除每个契约文件。 */
     @Test
-    fun deviceLocalCacheIsExcludedFromCloudBackupAndDeviceTransfer() {
+    fun contractPreferenceFilesAreExcludedFromCloudBackupAndDeviceTransfer() {
         // Android 12 及以上的数据提取规则文档。
         val extractionRules = parseXml(moduleRoot().resolve("src/main/res/xml/data_extraction_rules.xml"))
         // 云备份节点必须独立存在并包含排除项。
@@ -51,22 +51,26 @@ class SensitiveDataContractTest {
 
         assertNotNull("Android 12+ rules must define cloud-backup.", cloudBackup)
         assertNotNull("Android 12+ rules must define device-transfer.", deviceTransfer)
-        assertDeviceLocalCacheExclusions(checkNotNull(cloudBackup))
-        assertDeviceLocalCacheExclusions(checkNotNull(deviceTransfer))
+        assertContractExclusions(checkNotNull(cloudBackup))
+        assertContractExclusions(checkNotNull(deviceTransfer))
     }
 
-    /** 被排除的偏好文件名必须与真实写入方保持一致，避免规则指向不存在的文件。 */
+    /** 每个被排除的偏好文件名都必须与真实写入方一致，避免规则指向不存在的文件。 */
     @Test
-    fun excludedPreferenceFileMatchesItsRuntimeWriter() {
-        // 应用清单缓存仓库源码是该偏好文件的唯一写入方。
-        val repositorySource = moduleRoot()
-            .resolve("src/main/kotlin/com/purride/pixellauncherv2/data/PackageManagerAppRepository.kt")
-            .readText()
+    fun everyExcludedPreferenceFileMatchesItsRuntimeWriter() {
+        EXCLUDED_PREFERENCE_FILES.forEach { (preferenceFile, writerPath) ->
+            // 该偏好文件的唯一写入方源码。
+            val writerSource = moduleRoot().resolve(writerPath)
 
-        assertTrue(
-            "Backup rules must exclude a preference file that the app actually writes.",
-            repositorySource.contains("\"${DEVICE_LOCAL_PREFERENCES_FILE.removeSuffix(".xml")}\""),
-        )
+            assertTrue(
+                "Declared runtime writer for $preferenceFile does not exist: $writerPath.",
+                writerSource.isFile,
+            )
+            assertTrue(
+                "Backup rules must exclude $preferenceFile, which $writerPath actually writes.",
+                writerSource.readText().contains("\"${preferenceFile.removeSuffix(".xml")}\""),
+            )
+        }
     }
 
     /** 应用主源码和文本资源中不得再出现可识别的长凭据字符串。 */
@@ -91,25 +95,27 @@ class SensitiveDataContractTest {
         )
     }
 
-    /** 验证指定备份节点同时排除凭据保护和设备保护的本机缓存偏好文件。 */
-    private fun assertDeviceLocalCacheExclusions(parent: Element) {
-        // 实际排除域集合只统计目标缓存文件，忽略其他规则。
-        val excludedDomains = parent.getElementsByTagName("exclude")
-            .let { nodes ->
-                (0 until nodes.length)
-                    .map { index -> nodes.item(index) as Element }
-                    .filter { element -> element.getAttribute("path") == DEVICE_LOCAL_PREFERENCES_FILE }
-                    .map { element -> element.getAttribute("domain") }
-                    .toSet()
-            }
+    /** 验证指定备份节点为每个契约文件同时排除凭据保护和设备保护两种存储域。 */
+    private fun assertContractExclusions(parent: Element) {
+        // 该节点下的全部 exclude 元素，供逐个契约文件筛选。
+        val excludeElements = parent.getElementsByTagName("exclude")
+            .let { nodes -> (0 until nodes.length).map { index -> nodes.item(index) as Element } }
 
-        REQUIRED_SHARED_PREFERENCE_DOMAINS.forEach { domain ->
-            assertTrue(
-                "$domain must exclude $DEVICE_LOCAL_PREFERENCES_FILE under ${parent.tagName}.",
-                domain in excludedDomains,
-            )
+        EXCLUDED_PREFERENCE_FILES.keys.forEach { preferenceFile ->
+            // 实际排除域集合只统计当前契约文件，忽略其他规则。
+            val excludedDomains = excludeElements
+                .filter { element -> element.getAttribute("path") == preferenceFile }
+                .map { element -> element.getAttribute("domain") }
+                .toSet()
+
+            REQUIRED_SHARED_PREFERENCE_DOMAINS.forEach { domain ->
+                assertTrue(
+                    "$domain must exclude $preferenceFile under ${parent.tagName}.",
+                    domain in excludedDomains,
+                )
+            }
+            assertFalse("Backup exclusion must not use an empty domain.", "" in excludedDomains)
         }
-        assertFalse("Backup exclusion must not use an empty domain.", "" in excludedDomains)
     }
 
     /** 使用禁用外部实体的解析器读取仓库内受信任的 XML 契约。 */
@@ -130,8 +136,18 @@ class SensitiveDataContractTest {
     }
 
     private companion object {
-        /** Android 备份 XML 中本机应用清单缓存使用的完整文件名。 */
-        const val DEVICE_LOCAL_PREFERENCES_FILE: String = "app_repository_cache.xml"
+        /**
+         * 必须排除出备份的偏好文件 → 该文件在运行时的唯一写入方源码路径。
+         *
+         * app_repository_cache 只对本机有效；sms_mute_settings 的会话键内含手机号，
+         * 属于不应随云备份或换机迁移离开设备的个人可识别信息。
+         */
+        val EXCLUDED_PREFERENCE_FILES: Map<String, String> = mapOf(
+            "app_repository_cache.xml" to
+                "src/main/kotlin/com/purride/pixellauncherv2/data/PackageManagerAppRepository.kt",
+            "sms_mute_settings.xml" to
+                "src/main/kotlin/com/purride/pixellauncherv2/data/SmsMuteSettingsRepository.kt",
+        )
 
         /** 同时覆盖凭据保护和设备保护 SharedPreferences 的备份域。 */
         val REQUIRED_SHARED_PREFERENCE_DOMAINS: Set<String> = setOf("sharedpref", "device_sharedpref")

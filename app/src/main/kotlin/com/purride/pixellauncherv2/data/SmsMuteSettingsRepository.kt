@@ -8,6 +8,9 @@ import android.content.Context
  * 以 conversationKey 为粒度持久化（SharedPreferences），
  * 与消息流的会话归组口径一致——服务号聚合会话静音一次即全部生效。
  * SharedPreferences 本身线程安全，可被接收器工作线程与后台刷新线程并发访问。
+ *
+ * 会话键内含手机号，因此该偏好文件被备份规则排除（见 SECURITY.md 与 backup_rules.xml）：
+ * 静音规则不跨设备恢复，换机后需重新设置。
  */
 class SmsMuteSettingsRepository(
     context: Context,

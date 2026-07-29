@@ -14,7 +14,14 @@
 Launcher 不内置第三方客户端凭据，也不提供明文 Key 配置入口；单元测试会扫描 `app/src/main` 全部
 文本资源，禁止任何具备凭据形状的长字符串进入主源码。
 
-只对本机有效的已安装应用清单缓存 `app_repository_cache.xml` 被 Android 11 及以下的
-`fullBackupContent`、Android 12 及以上的云备份和设备迁移规则同时排除，因此用户的装机列表不会
-随备份或换机迁移离开当前设备。该边界由源码级契约测试与 `tools/verify_backup_contract.py`
-对 debug/release 两个 APK 的合并 Manifest 与编译后 XML 资源共同验证。
+两类本地偏好被 Android 11 及以下的 `fullBackupContent`、Android 12 及以上的云备份和设备迁移
+规则同时排除，因此不会随备份或换机迁移离开当前设备：
+
+- `app_repository_cache.xml`——只对本机有效的已安装应用清单缓存，用户的装机列表不出本机。
+- `sms_mute_settings.xml`——短信会话静音规则，会话键形如 `person:<手机号>`，内含个人可识别信息。
+  代价是静音规则不跨设备恢复、换机后需重新设置；相比手机号进入云备份后无法追溯清除，这个可重做的
+  代价是有意接受的取舍。
+
+该边界由源码级契约测试与 `tools/verify_backup_contract.py` 对 debug/release 两个 APK 的合并
+Manifest 与编译后 XML 资源共同验证。新增持久化个人可识别信息的偏好文件时，必须同时登记到这两处
+契约，否则门禁不会覆盖它。

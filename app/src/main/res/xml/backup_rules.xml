@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 排除只对本机有效的已安装应用清单缓存，避免用户装机列表进入云备份。 -->
+<!--
+  排除两类不应离开本机的偏好：只对本机有效的已安装应用清单缓存，
+  以及会话键内含手机号的短信静音规则。
+-->
 <full-backup-content>
     <exclude domain="sharedpref" path="app_repository_cache.xml" />
     <exclude domain="device_sharedpref" path="app_repository_cache.xml" />
+    <exclude domain="sharedpref" path="sms_mute_settings.xml" />
+    <exclude domain="device_sharedpref" path="sms_mute_settings.xml" />
 </full-backup-content>

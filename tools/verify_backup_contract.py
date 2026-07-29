@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify that built APK manifests and XML resources exclude the device-local app inventory cache."""
+"""Verify that built APK manifests and XML resources exclude every device-local preference file."""
 
 from __future__ import annotations
 
@@ -17,13 +17,14 @@ from xml.etree import ElementTree
 
 # Android XML namespace used by manifest attributes in apkanalyzer output.
 ANDROID_NAMESPACE = "http://schemas.android.com/apk/res/android"
-# The device-local app inventory cache must stay excluded so it never crosses devices.
-DEVICE_LOCAL_PREFERENCE_FILE = "app_repository_cache.xml"
+# These preference files must stay excluded so they never cross devices: the app inventory cache is
+# device-local, and the SMS mute rules key conversations by phone number.
+EXCLUDED_PREFERENCE_FILES = ("app_repository_cache.xml", "sms_mute_settings.xml")
 
 
 @dataclass(frozen=True)
 class BackupContractEvidence:
-    """Records which built APK and resource scopes were verified."""
+    """Records which built APK and resource scopes excluded every contract preference file."""
 
     apk: str
     manifest_rules: bool
@@ -87,15 +88,15 @@ def run_apkanalyzer(executable: Path, arguments: Sequence[str]) -> str:
     return result.stdout
 
 
-def has_exact_exclude(parent: ElementTree.Element, domain: str) -> bool:
-    """Return true when one scope excludes the exact device-local preference file and domain."""
+def missing_exclusions(parent: ElementTree.Element, domain: str) -> list[str]:
+    """Return the contract preference files that this scope fails to exclude for the given domain."""
 
-    return any(
-        child.tag == "exclude"
-        and child.attrib.get("domain") == domain
-        and child.attrib.get("path") == DEVICE_LOCAL_PREFERENCE_FILE
+    excluded_paths = {
+        child.attrib.get("path")
         for child in parent
-    )
+        if child.tag == "exclude" and child.attrib.get("domain") == domain
+    }
+    return [name for name in EXCLUDED_PREFERENCE_FILES if name not in excluded_paths]
 
 
 def validate_contract(
@@ -119,17 +120,32 @@ def validate_contract(
         raise ValueError(f"Built manifest does not reference both backup rule resources: {apk_label}")
 
     full_backup = ElementTree.fromstring(full_backup_xml)
-    full_backup_excluded = has_exact_exclude(full_backup, "sharedpref")
+    full_backup_missing = missing_exclusions(full_backup, "sharedpref")
+    full_backup_excluded = not full_backup_missing
     if not full_backup_excluded:
-        raise ValueError(f"API 24–30 backup rules do not exclude the device-local cache: {apk_label}")
+        raise ValueError(
+            f"API 24–30 backup rules do not exclude {', '.join(full_backup_missing)}: {apk_label}"
+        )
 
     data_extraction = ElementTree.fromstring(data_extraction_xml)
     cloud_backup = data_extraction.find("cloud-backup")
     device_transfer = data_extraction.find("device-transfer")
-    cloud_backup_excluded = cloud_backup is not None and has_exact_exclude(cloud_backup, "sharedpref")
-    device_transfer_excluded = device_transfer is not None and has_exact_exclude(device_transfer, "sharedpref")
+    cloud_backup_missing = (
+        list(EXCLUDED_PREFERENCE_FILES) if cloud_backup is None else missing_exclusions(cloud_backup, "sharedpref")
+    )
+    device_transfer_missing = (
+        list(EXCLUDED_PREFERENCE_FILES)
+        if device_transfer is None
+        else missing_exclusions(device_transfer, "sharedpref")
+    )
+    cloud_backup_excluded = not cloud_backup_missing
+    device_transfer_excluded = not device_transfer_missing
     if not cloud_backup_excluded or not device_transfer_excluded:
-        raise ValueError(f"API 31+ cloud/device rules do not both exclude the device-local cache: {apk_label}")
+        raise ValueError(
+            "API 31+ cloud/device rules do not both exclude every device-local preference file "
+            f"(cloud missing: {', '.join(cloud_backup_missing) or 'none'}; "
+            f"device missing: {', '.join(device_transfer_missing) or 'none'}): {apk_label}"
+        )
 
     return BackupContractEvidence(
         apk=apk_label,
@@ -185,9 +201,9 @@ def write_report(path: Path, evidence: Sequence[BackupContractEvidence]) -> None
     """Write deterministic JSON evidence safe for CI artifact upload."""
 
     report = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "status": "passed",
-        "deviceLocalPreferenceFile": DEVICE_LOCAL_PREFERENCE_FILE,
+        "excludedPreferenceFiles": list(EXCLUDED_PREFERENCE_FILES),
         "apks": [
             {
                 "apk": item.apk,
