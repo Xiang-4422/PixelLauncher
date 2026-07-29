@@ -31,7 +31,6 @@ import com.purride.pixelui.widgets.animated.AnimatedSwitcher
 import com.purride.pixellauncherv2.launcher.LauncherChromeLayout
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
-import com.purride.pixellauncherv2.launcher.PixelFontSize
 import com.purride.pixellauncherv2.launcher.LauncherTextRole
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.text.opticallyAlignStartText

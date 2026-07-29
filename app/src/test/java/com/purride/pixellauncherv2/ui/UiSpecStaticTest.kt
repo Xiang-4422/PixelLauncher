@@ -126,6 +126,41 @@ class UiSpecStaticTest {
         )
     }
 
+    /**
+     * UI 只能通过语义角色取字号，不能指定具体像素字号。
+     *
+     * 运行时只 prepare 两个 face：用户在设置页选择的正文 face，和承担
+     * [com.purride.pixellauncherv2.launcher.LauncherTextRole.CHROME] 的 face
+     * （见 `LauncherFontRepository.requiredSelections`）。catalog 声明的其它字号
+     * 能通过 `resolveRenderable` 校验，却没有栅格器——首帧绘制会抛
+     * `Font face was not prepared` 并杀掉整个 Launcher 进程。编译和单测都拦不住，
+     * 只能靠这条静态契约。
+     */
+    @Test
+    fun uiSourcesRequestFontsByRoleNotByExplicitSize() {
+        val moduleRoot = resolveModuleRoot()
+        val offenders = uiSourceRoots(moduleRoot)
+            .flatMap { root ->
+                root.walkTopDown()
+                    .filter { file -> file.isFile && file.extension == "kt" }
+                    .flatMap { file ->
+                        file.readLines().mapIndexedNotNull { index, line ->
+                            if (explicitFontSizePattern.containsMatchIn(line)) {
+                                "${file.relativeTo(moduleRoot).invariantSeparatorsPath}:${index + 1}: ${line.trim()}"
+                            } else {
+                                null
+                            }
+                        }
+                    }
+            }
+
+        assertTrue(
+            "UI must request fonts by LauncherTextRole; explicit PixelFontSize crashes at first draw " +
+                "because only the body and CHROME faces are prepared:\n${offenders.joinToString("\n")}",
+            offenders.isEmpty(),
+        )
+    }
+
     @Test
     fun screenSourcesUseLauncherSpacingForPageRhythm() {
         val moduleRoot = resolveModuleRoot()
@@ -726,6 +761,9 @@ class UiSpecStaticTest {
     )
 
     private companion object {
+        /** screen/widget 里出现 PixelFontSize 一律视为违规：唯一合法入口是 LauncherTextRole。 */
+        val explicitFontSizePattern = Regex("""\bPixelFontSize\b""")
+
         val forbiddenPatterns = listOf(
             ForbiddenPattern(Regex("""TextOverflow\.CLIP"""), "use ELLIPSIS or wrapping, not CLIP"),
             ForbiddenPattern(Regex("""\bfontScale\b"""), "font size must come from the controlled font scale"),

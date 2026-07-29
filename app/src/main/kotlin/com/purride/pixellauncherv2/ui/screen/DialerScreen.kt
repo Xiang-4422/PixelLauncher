@@ -28,7 +28,7 @@ import com.purride.pixelui.state.PixelPagerState
 import com.purride.pixellauncherv2.launcher.CallPageIndex
 import com.purride.pixellauncherv2.launcher.DialInputModel
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
-import com.purride.pixellauncherv2.launcher.PixelFontSize
+import com.purride.pixellauncherv2.launcher.LauncherTextRole
 import com.purride.pixellauncherv2.launcher.T9Model
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
@@ -254,7 +254,12 @@ private fun dialMatchSlot(
     }
 }
 
-/** 单个键位：数字为主，字母副标用更小字号与低对比，绝不与数字等重。 */
+/**
+ * 单个键位：数字为主，字母副标只用低对比色弱化，绝不与数字等重。
+ *
+ * 副标不能靠"更小字号"分层——运行时只准备正文与 CHROME 两个 face，正文已是家族
+ * 最小字号时 CHROME 与之同号；层级差全部由颜色承担。
+ */
 private fun dialKey(
     key: Char,
     theme: LauncherTheme,
@@ -293,7 +298,7 @@ private fun dialKey(
                                     color = theme.button.disabledText,
                                     theme = theme,
                                     align = TextAlign.CENTER,
-                                    size = PixelFontSize.PX_8,
+                                    role = LauncherTextRole.CHROME,
                                 )
                             },
                         ),
@@ -338,18 +343,25 @@ private fun dialCallBar(
     )
 }
 
+/**
+ * 拨号界面的统一文本。
+ *
+ * [role] 只接受语义角色，**不接受裸字号**：运行时只准备用户选择的正文 face 与
+ * [LauncherTextRole.CHROME] face 两种，显式指定其它字号会在首帧抛
+ * `Font face was not prepared` 并杀掉进程。
+ */
 private fun dialText(
     text: String,
     color: PixelColor,
     theme: LauncherTheme,
     align: TextAlign = TextAlign.START,
-    size: PixelFontSize? = null,
+    role: LauncherTextRole? = null,
 ): Widget = Text(
     text,
-    style = if (size == null) {
+    style = if (role == null) {
         theme.typography.textStyle(color = color)
     } else {
-        theme.typography.textStyle(color = color, size = size)
+        theme.typography.textStyle(color = color, role = role)
     },
     textAlign = align,
     overflow = TextOverflow.ELLIPSIS,
