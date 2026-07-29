@@ -161,10 +161,16 @@ internal class SmsController(
 
     fun draftChanged(text: String) {
         draftStore.update(host.state.smsCurrentConversationKey, text)
+        // 状态确实从 SENDING/FAILED 变回 NONE 时必须重绘：输入区的状态标签由
+        // 渲染快照派生，不重绘会让 FAILED 一直残留在屏上。
+        val clearedStatus = host.state.smsSendStatus != SmsSendStatus.NONE
         host.state = LauncherStateTransitions.updateSmsSendStatus(
             state = LauncherStateTransitions.updateSmsDraftText(state = host.state, smsDraftText = text),
             smsSendStatus = SmsSendStatus.NONE,
         )
+        if (clearedStatus) {
+            host.render()
+        }
     }
 
     fun threadSearchChanged(text: String) {
@@ -230,12 +236,22 @@ internal class SmsController(
     }
 
     fun openSelectedThread() {
-        if (host.state.smsThreadSearchQuery.isNotBlank()) {
-            val message = SmsThreadSearchModel.filter(
+        val query = host.state.smsThreadSearchQuery
+        if (query.isNotBlank()) {
+            val results = SmsThreadSearchModel.filter(
                 messages = host.state.smsAllMessages,
-                query = host.state.smsThreadSearchQuery,
-            ).getOrNull(host.state.smsThreadSelectedIndex) ?: return
-            openSmsConversation(message.conversationKey)
+                query = query,
+            )
+            val message = results.getOrNull(host.state.smsThreadSelectedIndex)
+            if (message != null) {
+                openSmsConversation(message.conversationKey)
+                return
+            }
+            // 无匹配但搜索词是可拨号码时，回车等同点按屏上的 NEW MSG TO 入口，
+            // 否则纯按键操作看得到入口却无法激活。
+            if (results.isEmpty()) {
+                SmsThreadSearchModel.composeAddress(query)?.let(::composeNewThread)
+            }
             return
         }
         val thread = host.state.smsThreads.getOrNull(host.state.smsThreadSelectedIndex) ?: return

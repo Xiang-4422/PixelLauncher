@@ -250,9 +250,14 @@ internal class LauncherRootHost(
 
         // ── Sync SMS thread list scroll ───────────────────────────────────────
         if (SmsScrollSyncPolicy.shouldRevealSelectedThread(previousState, state)) {
-            val target = state.smsThreadSelectedIndex.coerceIn(
-                0, (state.smsThreads.size - 1).coerceAtLeast(0),
-            )
+            // 搜索态 ALL 页渲染的是搜索结果（命中消息数常多于会话数），
+            // 用会话数收敛会把定位目标钳在错误上限，列表提前停止滚动。
+            val rowCount = if (state.smsThreadSearchQuery.isNotBlank()) {
+                SmsThreadSearchModel.filter(state.smsAllMessages, state.smsThreadSearchQuery).size
+            } else {
+                state.smsThreads.size
+            }
+            val target = state.smsThreadSelectedIndex.coerceIn(0, (rowCount - 1).coerceAtLeast(0))
             threadListController.showItem(threadListState, target)
         }
 
