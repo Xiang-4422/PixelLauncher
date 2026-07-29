@@ -173,7 +173,7 @@ def render_kotlin(root: dict[str, Any]) -> str:
             ],
         )
         for face in family["faces"]:
-            roles = ", ".join("LauncherTextRole.CHROME_10" for role in face.get("roles", []) if role == "chrome")
+            roles = ", ".join("LauncherTextRole.CHROME" for role in face.get("roles", []) if role == "chrome")
             lines.extend(
                 [
                     "                FontFaceDescriptor(",

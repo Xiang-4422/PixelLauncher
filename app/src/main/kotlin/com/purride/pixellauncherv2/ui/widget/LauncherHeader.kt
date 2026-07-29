@@ -32,6 +32,7 @@ import com.purride.pixellauncherv2.launcher.LauncherChromeLayout
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.PixelFontSize
+import com.purride.pixellauncherv2.launcher.LauncherTextRole
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -138,7 +139,7 @@ private fun statusBarText(
     color: PixelColor = theme.statusBar.text,
 ): Widget = Text(
     text,
-    style = theme.typography.textStyle(color = color, size = PixelFontSize.PX_10),
+    style = theme.typography.textStyle(color = color, role = LauncherTextRole.CHROME),
     textAlign = textAlign,
     overflow = TextOverflow.ELLIPSIS,
     softWrap = false,
@@ -303,7 +304,7 @@ private fun statusBarFullWidthAction(
     val textColor = PixelColor.White
     val labelText = Text(
         actionLabel,
-        style = theme.typography.textStyle(color = textColor, size = PixelFontSize.PX_10),
+        style = theme.typography.textStyle(color = textColor, role = LauncherTextRole.CHROME),
         overflow = TextOverflow.ELLIPSIS,
         softWrap = false,
         maxLines = 1,
@@ -321,7 +322,7 @@ private fun statusBarFullWidthAction(
         listOf(
             Text(
                 leadingText,
-                style = theme.typography.textStyle(color = textColor, size = PixelFontSize.PX_10),
+                style = theme.typography.textStyle(color = textColor, role = LauncherTextRole.CHROME),
                 overflow = TextOverflow.ELLIPSIS,
                 softWrap = false,
                 maxLines = 1,
@@ -377,7 +378,7 @@ private fun statusBarCenterAction(
         onPressed = onAction,
         enabled = enabled,
         style = TextButtonStyle(
-            textStyle = theme.typography.textStyle(color = textColor, size = PixelFontSize.PX_10),
+            textStyle = theme.typography.textStyle(color = textColor, role = LauncherTextRole.CHROME),
         ),
     )
     val fillColor = if (filled) statusBarActionBackgroundColor(isDanger, theme) else null
@@ -397,7 +398,7 @@ private fun statusBarCenterAction(
             children = listOf(
                 Text(
                     leadingText,
-                    style = theme.typography.textStyle(color = textColor, size = PixelFontSize.PX_10),
+                    style = theme.typography.textStyle(color = textColor, role = LauncherTextRole.CHROME),
                     overflow = TextOverflow.ELLIPSIS,
                     softWrap = false,
                     maxLines = 1,
@@ -589,11 +590,11 @@ private fun statusBarSearchRow(
                         focusedBorderColor = PixelColor.Transparent,
                         textStyle = theme.typography.textStyle(
                             color = theme.statusBar.searchText,
-                            size = PixelFontSize.PX_10,
+                            role = LauncherTextRole.CHROME,
                         ),
                         placeholderStyle = theme.typography.textStyle(
                             color = theme.statusBar.searchPlaceholder,
-                            size = PixelFontSize.PX_10,
+                            role = LauncherTextRole.CHROME,
                         ),
                         padding = 0,
                     ),

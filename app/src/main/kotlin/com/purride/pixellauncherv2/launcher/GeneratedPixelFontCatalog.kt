@@ -61,7 +61,7 @@ internal object GeneratedPixelFontCatalog {
                         size = PixelFontSize(10),
                     ),
                     settingsVisible = true,
-                    roles = setOf(LauncherTextRole.CHROME_10),
+                    roles = setOf(LauncherTextRole.CHROME),
                     metrics = PixelFontMetrics(
                         size = PixelFontSize(10),
                         cellHeight = 10,
@@ -169,7 +169,7 @@ internal object GeneratedPixelFontCatalog {
                         size = PixelFontSize(10),
                     ),
                     settingsVisible = true,
-                    roles = setOf(LauncherTextRole.CHROME_10),
+                    roles = setOf(LauncherTextRole.CHROME),
                     metrics = PixelFontMetrics(
                         size = PixelFontSize(10),
                         cellHeight = 10,
@@ -256,7 +256,7 @@ internal object GeneratedPixelFontCatalog {
                         size = PixelFontSize(10),
                     ),
                     settingsVisible = true,
-                    roles = setOf(LauncherTextRole.CHROME_10),
+                    roles = setOf(LauncherTextRole.CHROME),
                     metrics = PixelFontMetrics(
                         size = PixelFontSize(10),
                         cellHeight = 10,
@@ -337,7 +337,7 @@ internal object GeneratedPixelFontCatalog {
                         size = PixelFontSize(10),
                     ),
                     settingsVisible = true,
-                    roles = setOf(LauncherTextRole.CHROME_10),
+                    roles = setOf(LauncherTextRole.CHROME),
                     metrics = PixelFontMetrics(
                         size = PixelFontSize(10),
                         cellHeight = 10,
@@ -433,7 +433,7 @@ internal object GeneratedPixelFontCatalog {
                         size = PixelFontSize(10),
                     ),
                     settingsVisible = false,
-                    roles = setOf(LauncherTextRole.CHROME_10),
+                    roles = setOf(LauncherTextRole.CHROME),
                     metrics = PixelFontMetrics(
                         size = PixelFontSize(10),
                         cellHeight = 10,
@@ -529,7 +529,7 @@ internal object GeneratedPixelFontCatalog {
                         size = PixelFontSize(10),
                     ),
                     settingsVisible = false,
-                    roles = setOf(LauncherTextRole.CHROME_10),
+                    roles = setOf(LauncherTextRole.CHROME),
                     metrics = PixelFontMetrics(
                         size = PixelFontSize(10),
                         cellHeight = 10,
@@ -598,7 +598,7 @@ internal object GeneratedPixelFontCatalog {
                         size = PixelFontSize(10),
                     ),
                     settingsVisible = false,
-                    roles = setOf(LauncherTextRole.CHROME_10),
+                    roles = setOf(LauncherTextRole.CHROME),
                     metrics = PixelFontMetrics(
                         size = PixelFontSize(10),
                         cellHeight = 10,
@@ -640,7 +640,7 @@ internal object GeneratedPixelFontCatalog {
                         size = PixelFontSize(10),
                     ),
                     settingsVisible = false,
-                    roles = setOf(LauncherTextRole.CHROME_10),
+                    roles = setOf(LauncherTextRole.CHROME),
                     metrics = PixelFontMetrics(
                         size = PixelFontSize(10),
                         cellHeight = 14,
@@ -709,7 +709,7 @@ internal object GeneratedPixelFontCatalog {
                         size = PixelFontSize(10),
                     ),
                     settingsVisible = false,
-                    roles = setOf(LauncherTextRole.CHROME_10),
+                    roles = setOf(LauncherTextRole.CHROME),
                     metrics = PixelFontMetrics(
                         size = PixelFontSize(10),
                         cellHeight = 10,
@@ -778,7 +778,7 @@ internal object GeneratedPixelFontCatalog {
                         size = PixelFontSize(10),
                     ),
                     settingsVisible = false,
-                    roles = setOf(LauncherTextRole.CHROME_10),
+                    roles = setOf(LauncherTextRole.CHROME),
                     metrics = PixelFontMetrics(
                         size = PixelFontSize(10),
                         cellHeight = 10,

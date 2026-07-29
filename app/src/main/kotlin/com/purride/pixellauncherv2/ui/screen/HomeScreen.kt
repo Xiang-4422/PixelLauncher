@@ -43,6 +43,7 @@ import com.purride.pixellauncherv2.launcher.NotificationActionInfo
 import com.purride.pixellauncherv2.launcher.NotificationSignal
 import com.purride.pixellauncherv2.launcher.PixelFontCatalog
 import com.purride.pixellauncherv2.launcher.PixelFontSize
+import com.purride.pixellauncherv2.launcher.LauncherTextRole
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 import java.text.SimpleDateFormat
@@ -285,7 +286,7 @@ class HomeScreen(
             val actionButtonStyle = TextButtonStyle(
                 textStyle = t.typography.textStyle(
                     color = t.button.text,
-                    size = PixelFontSize.PX_10,
+                    role = LauncherTextRole.CHROME,
                 ),
             )
             val balanceSideActions = s.missedCallCount > 0 || s.unreadSmsCount > 0
@@ -560,7 +561,7 @@ private fun homeNotificationActionButton(
             action.title.uppercase(Locale.getDefault()),
             style = theme.typography.textStyle(
                 color = if (enabled) theme.surface.offPixelColor else theme.button.disabledText,
-                size = PixelFontSize.PX_10,
+                role = LauncherTextRole.CHROME,
             ),
             overflow = TextOverflow.ELLIPSIS,
             softWrap = false,
@@ -706,7 +707,7 @@ private fun HomeActionButton(
         text = label,
         textStyle = theme.typography.textStyle(
             color = theme.button.text,
-            size = PixelFontSize.PX_10,
+            role = LauncherTextRole.CHROME,
         ),
         fillColor = null,
     )
@@ -720,7 +721,7 @@ private fun HomeActionButton(
             text = count.toString(),
             textStyle = theme.typography.textStyle(
                 color = theme.surface.offPixelColor,
-                size = PixelFontSize.PX_10,
+                role = LauncherTextRole.CHROME,
             ),
             fillColor = theme.button.border,
         )
@@ -885,7 +886,7 @@ private fun homeMediaSideText(text: String, theme: LauncherTheme): Widget =
         text,
         style = theme.typography.textStyle(
             color = theme.button.text,
-            size = PixelFontSize.PX_10,
+            role = LauncherTextRole.CHROME,
         ),
         overflow = TextOverflow.ELLIPSIS,
         softWrap = false,

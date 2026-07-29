@@ -222,7 +222,7 @@ class LauncherFontRepository(
         PixelFontCatalog.selectionForRole(
             family = selection.family,
             widthMode = selection.widthMode,
-            role = LauncherTextRole.CHROME_10,
+            role = LauncherTextRole.CHROME,
         ),
     ).distinct()
 

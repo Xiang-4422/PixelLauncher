@@ -539,8 +539,10 @@ internal class LauncherRootHost(
                     placeholder = "SEARCH APP",
                     placeholderLeadingInkInset = preparedFont.leadingInkInset(
                         text = "SEARCH APP",
-                        faceSelection = PixelFontCatalog.resolveRenderable(
-                            uiState.fontSelection.copy(size = PixelFontSize.PX_10),
+                        faceSelection = PixelFontCatalog.selectionForRole(
+                            family = uiState.fontSelection.family,
+                            widthMode = uiState.fontSelection.widthMode,
+                            role = LauncherTextRole.CHROME,
                         ),
                     ),
                     autofocus = uiState.isDrawerSearchFocused,
