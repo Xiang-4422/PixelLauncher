@@ -336,17 +336,24 @@ private fun lapRow(number: Int, millis: Long): Widget = Row(
 class TimerController(
     vsync: PixelTickerProvider,
     private val onFrame: () -> Unit,
+    private val onPhaseChanged: (Phase) -> Unit = {},
 ) {
     enum class Phase { SETUP, RUNNING, PAUSED, FINISHED }
 
     private val ticker: PixelTicker = vsync.createTicker { elapsedNanos ->
         segmentNanos = elapsedNanos
-        if (phase == Phase.RUNNING && remainingMillis <= 0L) phase = Phase.FINISHED
+        if (phase == Phase.RUNNING && remainingMillis <= 0L) moveTo(Phase.FINISHED)
         onFrame()
     }
 
     var phase = Phase.SETUP
         private set
+
+    private fun moveTo(next: Phase) {
+        if (phase == next) return
+        phase = next
+        onPhaseChanged(next)
+    }
     var minutes = 1
         private set
     var seconds = 30
@@ -380,7 +387,7 @@ class TimerController(
 
     fun start() {
         if (phase != Phase.SETUP || totalMillis == 0L) return
-        phase = Phase.RUNNING
+        moveTo(Phase.RUNNING)
         segmentNanos = 0L
         ticker.start()
         onFrame()
@@ -391,13 +398,13 @@ class TimerController(
         accumulatedNanos += segmentNanos
         segmentNanos = 0L
         ticker.stop()
-        phase = Phase.PAUSED
+        moveTo(Phase.PAUSED)
         onFrame()
     }
 
     fun resume() {
         if (phase != Phase.PAUSED) return
-        phase = Phase.RUNNING
+        moveTo(Phase.RUNNING)
         segmentNanos = 0L
         ticker.start()
         onFrame()
@@ -405,7 +412,7 @@ class TimerController(
 
     fun reset() {
         ticker.stop()
-        phase = Phase.SETUP
+        moveTo(Phase.SETUP)
         accumulatedNanos = 0L
         segmentNanos = 0L
         onFrame()

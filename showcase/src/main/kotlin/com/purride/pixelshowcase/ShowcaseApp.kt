@@ -91,9 +91,18 @@ class ShowcaseAppHost(
     )
     private val lapListController = ScrollController()
     private val lapListState = lapListController.create()
+    private val beeper = ShowcaseBeeper()
     private val timer = TimerController(
         vsync = hostView.tickerProvider,
         onFrame = { hostView.invalidate() },
+        onPhaseChanged = { phase ->
+            when (phase) {
+                TimerController.Phase.RUNNING -> beeper.confirm()
+                TimerController.Phase.FINISHED -> beeper.alarmStart()
+                TimerController.Phase.SETUP -> beeper.alarmStop()
+                TimerController.Phase.PAUSED -> Unit
+            }
+        },
     )
     private val homeScrollController = ScrollController()
     private val homeScrollState = homeScrollController.create()
@@ -125,10 +134,11 @@ class ShowcaseAppHost(
         ),
     )
 
-    /** 释放示例应用持有的 ticker；Activity 销毁时统一调用。 */
+    /** 释放示例应用持有的 ticker 与音频轨；Activity 销毁时统一调用。 */
     fun dispose() {
         stopwatch.dispose()
         timer.dispose()
+        beeper.dispose()
     }
 
     /** BACK：对话框 → 子页 → 交还系统（退出）。 */
@@ -186,7 +196,10 @@ class ShowcaseAppHost(
             listState = todoListState,
             listController = todoListController,
             header = pageHeader("TODO"),
-            onChanged = { mutate { } },
+            onChanged = {
+                beeper.tick()
+                mutate { }
+            },
         )
         ShowcaseRoute.STOPWATCH -> StopwatchPage(
             controller = stopwatch,
