@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.launcher
 
 import com.purride.pixelcore.PixelShape
 import com.purride.pixellauncherv2.layout.LauncherLayoutProfileFactory
+import com.purride.pixellauncherv2.model.CallLogGroup
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.model.SmsThreadSummary
 
@@ -58,6 +59,14 @@ data class LauncherState(
     val smsMutedConversationKeys: Set<String> = emptySet(),
     val isDefaultSmsApp: Boolean = false,
     val smsPermissionState: SmsPermissionState = SmsPermissionState.MISSING,
+    /** 通话记录列表（相邻同号已合并）。 */
+    val callLogGroups: List<CallLogGroup> = emptyList(),
+    /** 通话记录首次加载中。 */
+    val isCallLogLoading: Boolean = false,
+    /** 通话记录按键导航的选中下标（只驱动滚动定位，不渲染高亮）。 */
+    val callLogSelectedIndex: Int = 0,
+    /** 是否具备发起通话的权限。 */
+    val hasCallPhonePermission: Boolean = false,
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = LauncherLayoutProfileFactory.defaultDotSizePx,
     val isPixelGapEnabled: Boolean = true,
@@ -123,6 +132,7 @@ enum class LauncherMode {
     SMS_ROLE_PROMPT,
     SMS_THREADS,
     SMS_THREAD_DETAIL,
+    CALL_LOG,
     APP_MANAGEMENT,
     DATA_HEALTH,
     NOTIFICATION_SETTINGS,

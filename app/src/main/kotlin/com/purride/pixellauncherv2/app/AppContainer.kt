@@ -5,8 +5,10 @@ import android.content.Context
 import android.os.Handler
 import com.purride.pixellauncherv2.data.AppCustomizationRepository
 import com.purride.pixellauncherv2.data.AppRepository
+import com.purride.pixellauncherv2.data.CallLogRepository
 import com.purride.pixellauncherv2.data.CommunicationStatusRepository
 import com.purride.pixellauncherv2.data.DeviceLocationRepository
+import com.purride.pixellauncherv2.data.DialerRepository
 import com.purride.pixellauncherv2.data.DeviceMotionRepository
 import com.purride.pixellauncherv2.data.DeviceStatusRepository
 import com.purride.pixellauncherv2.data.FontSettingsRepository
@@ -108,6 +110,12 @@ internal class AppContainer(
     /** 短信通知展示辅助类，同样复用框架组件共用的构造边界。 */
     val smsNotificationHelper: SmsNotificationHelper =
         AndroidComponentDependencies.smsNotificationHelper(appContext)
+
+    /** 系统通话记录读写仓库。 */
+    val callLogRepository = CallLogRepository(appContext)
+
+    /** 发起通话与（后续）默认电话应用角色的仓库。 */
+    val dialerRepository = DialerRepository(appContext)
 
     /** 会话静音规则仓库，复用框架组件共用的构造边界。 */
     val smsMuteSettingsRepository: SmsMuteSettingsRepository =

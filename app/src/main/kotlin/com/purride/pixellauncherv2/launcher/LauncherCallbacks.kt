@@ -75,6 +75,10 @@ data class LauncherCallbacks(
     val onSmsThreadMenuDelete: () -> Unit,
     val onSmsThreadMenuDismiss: () -> Unit,
 
+    // ── CALL ──────────────────────────────────────────────────────────────────
+    /** 用户点按通话记录行 → 回电该号码。 */
+    val onCallGroupPressed: (number: String) -> Unit,
+
     // ── Navigation ────────────────────────────────────────────────────────────
     /**
      * 主页面 Pager 翻页回调（HOME=0 / APP_DRAWER=1 / SETTINGS=2）。

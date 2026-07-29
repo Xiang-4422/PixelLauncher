@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.launcher
 
 import com.purride.pixellauncherv2.model.DeviceStatus
 import com.purride.pixellauncherv2.model.LauncherStatsSnapshot
+import com.purride.pixellauncherv2.model.CallLogGroup
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.model.SmsThreadSummary
 import com.purride.pixelcore.PixelShape
@@ -29,7 +30,8 @@ object LauncherStateTransitions {
             LauncherMode.IDLE,
             LauncherMode.SMS_ROLE_PROMPT,
             LauncherMode.SMS_THREADS,
-            LauncherMode.SMS_THREAD_DETAIL -> state.mode
+            LauncherMode.SMS_THREAD_DETAIL,
+            LauncherMode.CALL_LOG -> state.mode
 
             LauncherMode.SETTINGS,
             LauncherMode.APP_MANAGEMENT,
@@ -63,7 +65,8 @@ object LauncherStateTransitions {
             LauncherMode.IDLE,
             LauncherMode.SMS_ROLE_PROMPT,
             LauncherMode.SMS_THREADS,
-            LauncherMode.SMS_THREAD_DETAIL -> state.returnMode
+            LauncherMode.SMS_THREAD_DETAIL,
+            LauncherMode.CALL_LOG -> state.returnMode
 
             LauncherMode.SETTINGS,
             LauncherMode.APP_MANAGEMENT,
@@ -164,7 +167,8 @@ object LauncherStateTransitions {
             LauncherMode.IDLE,
             LauncherMode.SMS_ROLE_PROMPT,
             LauncherMode.SMS_THREADS,
-            LauncherMode.SMS_THREAD_DETAIL -> LauncherMode.SETTINGS
+            LauncherMode.SMS_THREAD_DETAIL,
+            LauncherMode.CALL_LOG -> LauncherMode.SETTINGS
         }
         return state.copy(mode = returnMode)
     }
@@ -216,6 +220,49 @@ object LauncherStateTransitions {
     /** 从 Idle 返回到进入前的页面模式。 */
     fun hideIdle(state: LauncherState): LauncherState {
         return state.copy(mode = state.returnMode)
+    }
+
+    /** 打开通话记录页；选中下标归零。 */
+    fun showCallLog(state: LauncherState): LauncherState {
+        return state.copy(
+            mode = LauncherMode.CALL_LOG,
+            returnMode = LauncherMode.HOME,
+            callLogSelectedIndex = 0,
+        )
+    }
+
+    /** 关闭通话记录页，返回 Home。 */
+    fun hideCallLog(state: LauncherState): LauncherState {
+        return state.copy(mode = LauncherMode.HOME)
+    }
+
+    /** 同步通话记录数据；选中下标收敛到新列表范围内。 */
+    fun updateCallLogGroups(
+        state: LauncherState,
+        groups: List<CallLogGroup>,
+    ): LauncherState {
+        val lastIndex = (groups.size - 1).coerceAtLeast(0)
+        return state.copy(
+            callLogGroups = groups,
+            isCallLogLoading = false,
+            callLogSelectedIndex = state.callLogSelectedIndex.coerceIn(0, lastIndex),
+        )
+    }
+
+    /** 通话记录按键导航：移动选中下标，不环绕。 */
+    fun moveCallLogSelection(state: LauncherState, delta: Int): LauncherState {
+        if (state.callLogGroups.isEmpty()) {
+            return state.copy(callLogSelectedIndex = 0)
+        }
+        return state.copy(
+            callLogSelectedIndex = (state.callLogSelectedIndex + delta)
+                .coerceIn(0, state.callLogGroups.lastIndex),
+        )
+    }
+
+    /** 同步是否具备发起通话的权限。 */
+    fun updateCallCapability(state: LauncherState, hasCallPhonePermission: Boolean): LauncherState {
+        return state.copy(hasCallPhonePermission = hasCallPhonePermission)
     }
 
     /** 打开短信角色引导页。 */

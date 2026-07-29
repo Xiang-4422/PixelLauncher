@@ -13,7 +13,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.provider.AlarmClock
-import android.provider.CallLog
 import android.provider.Settings
 import android.util.Log
 import android.view.KeyEvent
@@ -128,6 +127,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var deviceMotionRepository: DeviceMotionRepository
     private lateinit var handTrackingRepository: HandTrackingRepository
     private lateinit var smsController: SmsController
+    private lateinit var callController: CallController
     private lateinit var rainForecastRepository: RainForecastRepository
     private lateinit var appLauncher: AndroidAppLauncher
     private lateinit var windowModeController: WindowModeController
@@ -192,6 +192,29 @@ class MainActivity : AppCompatActivity() {
         override fun showStatusBarMessage(message: String) =
             this@MainActivity.showStatusBarMessage(message)
 
+    }
+
+    private val callHost = object : CallController.Host {
+        override var state: LauncherState
+            get() = this@MainActivity.state
+            set(value) {
+                this@MainActivity.state = value
+            }
+
+        override fun render() = renderCurrentFrame()
+
+        override fun isActive(): Boolean = !(isDestroyed || isFinishing)
+
+        override fun refreshCommunicationStatus(render: Boolean) =
+            this@MainActivity.refreshCommunicationStatus(render)
+
+        override fun requestCallPermissions(permissions: Array<String>) =
+            requestPermissions(permissions, callPermissionRequestCode)
+
+        override fun showStatusBarMessage(message: String) =
+            this@MainActivity.showStatusBarMessage(message)
+
+        override fun scheduleIdleCheck() = this@MainActivity.scheduleIdleCheck()
     }
 
     private val clockTicker = object : Runnable {
@@ -287,6 +310,13 @@ class MainActivity : AppCompatActivity() {
             backgroundExecutor = backgroundExecutor,
             mainHandler = mainHandler,
             host = smsHost,
+        )
+        callController = CallController(
+            callLogRepository = appContainer.callLogRepository,
+            dialerRepository = appContainer.dialerRepository,
+            backgroundExecutor = backgroundExecutor,
+            mainHandler = mainHandler,
+            host = callHost,
         )
         deviceLocationRepository = appContainer.deviceLocationRepository
         deviceMotionRepository = appContainer.deviceMotionRepository
@@ -403,6 +433,7 @@ class MainActivity : AppCompatActivity() {
                 onSmsThreadMenuToggleMute = smsController::threadMenuToggleMute,
                 onSmsThreadMenuDelete = smsController::threadMenuDelete,
                 onSmsThreadMenuDismiss = smsController::threadMenuDismiss,
+                onCallGroupPressed   = { number -> callController.callNumber(number) },
                 onMainPageChanged    = ::onMainPageChanged,
                 onMainPageDragStart  = ::onMainPageDragStart,
             ),
@@ -441,6 +472,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SMS_ROLE_PROMPT -> smsController.closeModule()
                     LauncherMode.SMS_THREADS -> smsController.closeModule()
                     LauncherMode.SMS_THREAD_DETAIL -> smsController.closeThreadDetail()
+                    LauncherMode.CALL_LOG -> callController.closeCallLog()
                     LauncherMode.APP_MANAGEMENT -> closeAppManagement()
                     LauncherMode.DATA_HEALTH -> closeDataHealth()
                     LauncherMode.NOTIFICATION_SETTINGS -> closeNotificationSettings()
@@ -511,6 +543,7 @@ class MainActivity : AppCompatActivity() {
         if (!launchedUsageAccessSettings) {
             communicationStatusRepository.start(::onCommunicationStatusChanged)
             smsController.start()
+            callController.start()
             refreshScreenUsageSummary(render = false)
             smsController.refreshSmsCapability(render = false)
             refreshRainHint(force = true, render = false)
@@ -584,6 +617,7 @@ class MainActivity : AppCompatActivity() {
         nextAlarmRepository.stop()
         notificationSummaryRepository.stop()
         mediaPlaybackRepository.stop()
+        callController.stop()
         communicationStatusRepository.stop()
         smsController.stop()
         suppressActivityAnimations()
@@ -750,6 +784,8 @@ class MainActivity : AppCompatActivity() {
 
             smsPermissionRequestCode -> smsController.onPermissionsResult()
 
+            callPermissionRequestCode -> callController.onPermissionsResult()
+
             cameraPermissionRequestCode -> {
                 val granted = grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
                 if (granted) {
@@ -858,6 +894,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
+                    LauncherMode.CALL_LOG -> callController.moveSelection(-1)
                     LauncherMode.SETTINGS -> Unit
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
@@ -883,6 +920,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
+                    LauncherMode.CALL_LOG -> callController.moveSelection(1)
                     LauncherMode.SETTINGS -> Unit
                     LauncherMode.HOME -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -902,6 +940,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.HOME -> Unit
                     LauncherMode.SMS_ROLE_PROMPT,
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
+                    LauncherMode.CALL_LOG -> Unit
                     LauncherMode.SMS_THREADS -> smsController.selectPage(SmsPageIndex.UNREAD)
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -920,6 +959,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.HOME -> Unit
                     LauncherMode.SMS_ROLE_PROMPT,
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
+                    LauncherMode.CALL_LOG -> Unit
                     LauncherMode.SMS_THREADS -> smsController.selectPage(SmsPageIndex.ALL)
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -946,6 +986,7 @@ class MainActivity : AppCompatActivity() {
                             smsController.openSelectedThread()
                         }
                     }
+                    LauncherMode.CALL_LOG -> callController.callSelected()
                     LauncherMode.SMS_THREAD_DETAIL -> {
                         if (state.smsDraftText.isBlank()) {
                             Unit // engine TextField handles SMS draft focus
@@ -1290,7 +1331,7 @@ class MainActivity : AppCompatActivity() {
 
     /** CALL 按钮：打开通话记录。 */
     private fun onHomeOpenCall() {
-        openCallLog()
+        callController.openCallLog()
     }
 
     /** SMS 按钮：进入短信模块。 */
@@ -1346,7 +1387,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            HomeInfoAction.CALL -> openCallLog()
+            HomeInfoAction.CALL -> callController.openCallLog()
 
             HomeInfoAction.ALARM -> openAlarmClock()
 
@@ -1393,17 +1434,6 @@ class MainActivity : AppCompatActivity() {
         )
         renderCurrentFrame()
         scheduleStatusBarMessageClear()
-    }
-
-    private fun openCallLog() {
-        launchFirstAvailableIntent(
-            Intent(Intent.ACTION_VIEW, CallLog.Calls.CONTENT_URI).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            },
-            Intent(Intent.ACTION_DIAL).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            },
-        )
     }
 
     private fun openAlarmClock() {
@@ -2077,6 +2107,7 @@ class MainActivity : AppCompatActivity() {
             LauncherMode.SMS_ROLE_PROMPT,
             LauncherMode.SMS_THREADS,
             LauncherMode.SMS_THREAD_DETAIL,
+            LauncherMode.CALL_LOG,
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,
@@ -2703,6 +2734,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         const val LOW_BATTERY_THRESHOLD = 15
         const val homeDataPermissionRequestCode = 1001
+        const val callPermissionRequestCode = 1004
         const val smsPermissionRequestCode = 1002
         const val smsRoleRequestCode = 1003
         const val cameraPermissionRequestCode = 1004

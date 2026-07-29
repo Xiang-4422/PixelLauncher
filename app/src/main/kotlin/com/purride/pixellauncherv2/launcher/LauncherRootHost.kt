@@ -35,6 +35,7 @@ import com.purride.pixelui.pixelRouteDestination
 import com.purride.pixelui.showItem
 import com.purride.pixellauncherv2.ui.screen.AppManagementScreen
 import com.purride.pixellauncherv2.ui.screen.DiagnosticsScreen
+import com.purride.pixellauncherv2.ui.screen.CallLogScreen
 import com.purride.pixellauncherv2.ui.screen.DataHealthScreen
 import com.purride.pixellauncherv2.ui.screen.DrawerScreen
 import com.purride.pixellauncherv2.ui.screen.HomeScreen
@@ -134,6 +135,10 @@ internal class LauncherRootHost(
     private val unreadListState = unreadListController.create()
     private val threadListController = ScrollController()
     private val threadListState = threadListController.create()
+
+    // ── Call log list ─────────────────────────────────────────────────────────
+    private val callLogListController = ScrollController()
+    private val callLogListState = callLogListController.create()
 
     // ── SMS search + detail message list + draft ──────────────────────────────
     private val msgListController = ScrollController()
@@ -442,6 +447,14 @@ internal class LauncherRootHost(
             onMenuResend = callbacks.onSmsMessageMenuResend,
             onMenuDelete = callbacks.onSmsMessageMenuDelete,
             onMenuDismiss = callbacks.onSmsMessageMenuDismiss,
+        )
+        LauncherRouteDestination.CALL_LOG -> CallLogScreen(
+            uiState = uiState,
+            theme = theme,
+            vsync = routeTickerProvider,
+            listState = callLogListState,
+            listController = callLogListController,
+            onCallGroupPressed = callbacks.onCallGroupPressed,
         )
         LauncherRouteDestination.DIAGNOSTICS -> DiagnosticsScreen(
             uiState = uiState,
@@ -760,6 +773,7 @@ internal class LauncherRootHost(
             LauncherMode.SMS_ROLE_PROMPT -> LauncherRouteDestination.SMS_ROLE_PROMPT
             LauncherMode.SMS_THREADS -> LauncherRouteDestination.SMS_THREADS
             LauncherMode.SMS_THREAD_DETAIL -> LauncherRouteDestination.SMS_THREAD_DETAIL
+            LauncherMode.CALL_LOG -> LauncherRouteDestination.CALL_LOG
             LauncherMode.APP_MANAGEMENT -> LauncherRouteDestination.APP_MANAGEMENT
             LauncherMode.DATA_HEALTH -> LauncherRouteDestination.DATA_HEALTH
             LauncherMode.NOTIFICATION_SETTINGS -> LauncherRouteDestination.NOTIFICATION_SETTINGS
@@ -771,6 +785,7 @@ internal class LauncherRootHost(
         internal fun transitionFor(destination: LauncherRouteDestination): PixelRouteTransition? = when (destination) {
             LauncherRouteDestination.SMS_ROLE_PROMPT,
             LauncherRouteDestination.SMS_THREADS,
+            LauncherRouteDestination.CALL_LOG,
             -> PixelRouteTransition.SlideVertical
 
             LauncherRouteDestination.MAIN,
@@ -831,6 +846,7 @@ internal enum class LauncherRouteDestination(
     SMS_ROLE_PROMPT("sms-role-prompt"),
     SMS_THREADS("sms-threads"),
     SMS_THREAD_DETAIL("sms-thread-detail"),
+    CALL_LOG("call-log"),
     APP_MANAGEMENT("app-management"),
     DATA_HEALTH("data-health"),
     NOTIFICATION_SETTINGS("notification-settings"),
