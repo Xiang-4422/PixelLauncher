@@ -112,22 +112,28 @@ public final class com.purride.pixelcore.GlyphCacheStats {
   public boolean equals(java.lang.Object);
 }
 public final class com.purride.pixelcore.GlyphMetrics {
-  public com.purride.pixelcore.GlyphMetrics(int, int, boolean, boolean, int, int);
-  public com.purride.pixelcore.GlyphMetrics(int, int, boolean, boolean, int, int, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public com.purride.pixelcore.GlyphMetrics(int, int, boolean, boolean, int, int, int, int);
+  public com.purride.pixelcore.GlyphMetrics(int, int, boolean, boolean, int, int, int, int, int, kotlin.jvm.internal.DefaultConstructorMarker);
   public final int getAdvanceWidth();
   public final int getBaselineOffset();
   public final boolean isWideGlyph();
   public final boolean getRequiresVisualGapProtection();
   public final int getInkLeft();
   public final int getInkRight();
+  public final int getBitmapOffsetX();
+  public final int getBitmapOffsetY();
+  public com.purride.pixelcore.GlyphMetrics(int, int, boolean, boolean, int, int);
+  public final com.purride.pixelcore.GlyphMetrics copy(int, int, boolean, boolean, int, int);
   public final int component1();
   public final int component2();
   public final boolean component3();
   public final boolean component4();
   public final int component5();
   public final int component6();
-  public final com.purride.pixelcore.GlyphMetrics copy(int, int, boolean, boolean, int, int);
-  public static com.purride.pixelcore.GlyphMetrics copy$default(com.purride.pixelcore.GlyphMetrics, int, int, boolean, boolean, int, int, int, java.lang.Object);
+  public final int component7();
+  public final int component8();
+  public final com.purride.pixelcore.GlyphMetrics copy(int, int, boolean, boolean, int, int, int, int);
+  public static com.purride.pixelcore.GlyphMetrics copy$default(com.purride.pixelcore.GlyphMetrics, int, int, boolean, boolean, int, int, int, int, int, java.lang.Object);
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);
@@ -191,10 +197,14 @@ public final class com.purride.pixelcore.IndexedBitmapGlyphSource implements com
   public com.purride.pixelcore.IndexedBitmapGlyphSource(java.util.List<com.purride.pixelcore.PixelIndexedGlyphPack>);
 }
 public final class com.purride.pixelcore.PackedGlyphRecord {
-  public com.purride.pixelcore.PackedGlyphRecord(int, int, int, byte[]);
+  public com.purride.pixelcore.PackedGlyphRecord(int, int, int, int, int, int, byte[]);
   public final int getCodePoint();
   public final int getAdvanceWidth();
   public final int getWidth();
+  public final int getBitmapOffsetX();
+  public final int getBitmapOffsetY();
+  public final int getHeight();
+  public com.purride.pixelcore.PackedGlyphRecord(int, int, int, byte[]);
   public final byte[] getPackedPixels();
   public final int component1();
   public final int component2();
@@ -202,6 +212,8 @@ public final class com.purride.pixelcore.PackedGlyphRecord {
   public final byte[] component4();
   public final com.purride.pixelcore.PackedGlyphRecord copy(int, int, int, byte[]);
   public static com.purride.pixelcore.PackedGlyphRecord copy$default(com.purride.pixelcore.PackedGlyphRecord, int, int, int, byte[], int, java.lang.Object);
+  public final com.purride.pixelcore.PackedGlyphRecord copyWithPlacement(int, int, int, int, int, int, byte[]);
+  public static com.purride.pixelcore.PackedGlyphRecord copyWithPlacement$default(com.purride.pixelcore.PackedGlyphRecord, int, int, int, int, int, int, byte[], int, java.lang.Object);
   public boolean equals(java.lang.Object);
   public int hashCode();
   public java.lang.String toString();
@@ -594,7 +606,7 @@ public final class com.purride.pixelcore.PixelGridGeometryResolver {
 }
 public final class com.purride.pixelcore.PixelIndexedGlyphPack {
   public static final long INDEX_BYTES_PER_GLYPH;
-  public com.purride.pixelcore.PixelIndexedGlyphPack(com.purride.pixelcore.PixelGlyphPackManifest, java.nio.ByteBuffer, int[], int[], int[], int[], int[]);
+  public com.purride.pixelcore.PixelIndexedGlyphPack(com.purride.pixelcore.PixelGlyphPackManifest, java.nio.ByteBuffer, int[], int[], int[], int[], int[], int[], int[], int[]);
   public final com.purride.pixelcore.PixelGlyphPackManifest getManifest();
   public final int getGlyphCount();
   public final long getByteSize();

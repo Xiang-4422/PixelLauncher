@@ -17,7 +17,7 @@ OUTPUT_DIR = ASSETS_DIR / "glyphpacks"
 FONT_SOURCE_DIR = ROOT_DIR / "tools" / "font_sources"
 
 MAGIC = 0x50474C59  # PGLY
-VERSION = 1
+VERSION = 2
 # FontForge 清理 OTF 时会把理论网格坐标取整，允许不超过半个字体单位的误差。
 DOT_GRID_COORDINATE_TOLERANCE = 0.02
 
@@ -113,10 +113,13 @@ class BdfGlyph:
 
 @dataclass(frozen=True)
 class RenderedTtfGlyph:
-    """保存按字体逻辑原点栅格化后的位图和真实 advance。"""
+    """保存按字体原生网格恢复的位图、placement 和真实 advance。"""
 
     pixels: bytes
     width: int
+    height: int
+    bitmap_offset_x: int
+    bitmap_offset_y: int
     advance_width: int
 
 
@@ -612,53 +615,50 @@ def generate_ttf_pack(
     allowed_advances: tuple[int, ...] | None = None,
     shift_negative_bearing: bool = False,
 ) -> None:
-    from PIL import ImageFont
     from fontTools.ttLib import TTFont
 
-    font = ImageFont.truetype(
-        str(font_path),
-        size=font_size,
-        layout_engine=ImageFont.Layout.BASIC,
-    )
-
-    # 字体 cmap 中真实存在的 Unicode 码点，避免把 .notdef 方框写成每个缺失字符。
-    source_font = TTFont(font_path, lazy=True)
+    # 生产路径直接解释线性轮廓，不经过 Pillow/FreeType 的抗锯齿栅格化。
+    source_font = TTFont(font_path, lazy=False)
     try:
-        source_code_points = set((source_font.getBestCmap() or {}).keys())
+        source_code_points = source_font.getBestCmap() or {}
+        glyph_set = source_font.getGlyphSet()
+        units_per_em = int(source_font["head"].unitsPerEm)
+        records = []
+        for code_point in iter_code_points(supported_ranges):
+            glyph_name = source_code_points.get(code_point)
+            if glyph_name is None:
+                continue
+            rendered = render_outline_glyph(
+                glyph_set=glyph_set,
+                glyph_name=glyph_name,
+                units_per_em=units_per_em,
+                pixels_per_em=font_size,
+                baseline=baseline,
+                pack_id=pack_id,
+                code_point=code_point,
+            )
+            if not any(rendered.pixels) and not chr(code_point).isspace():
+                continue
+
+            if allowed_advances is not None and rendered.advance_width not in allowed_advances:
+                raise ValueError(
+                    f"{pack_id} U+{code_point:04X} advance {rendered.advance_width} "
+                    f"is outside declared mono grid {allowed_advances}",
+                )
+
+            records.append(
+                (
+                    code_point,
+                    rendered.advance_width,
+                    rendered.bitmap_offset_x,
+                    rendered.bitmap_offset_y,
+                    rendered.width,
+                    rendered.height,
+                    pack_bits(rendered.pixels),
+                ),
+            )
     finally:
         source_font.close()
-
-    records = []
-    for code_point in iter_code_points(supported_ranges):
-        if code_point not in source_code_points:
-            continue
-        character = chr(code_point)
-        rendered = render_font_glyph(
-            font=font,
-            character=character,
-            cell_height=cell_height,
-            baseline=baseline,
-            shift_negative_bearing=shift_negative_bearing,
-        )
-        if rendered is None:
-            continue
-        if not any(rendered.pixels) and not character.isspace():
-            continue
-
-        if allowed_advances is not None and rendered.advance_width not in allowed_advances:
-            raise ValueError(
-                f"{pack_id} U+{code_point:04X} advance {rendered.advance_width} "
-                f"is outside declared mono grid {allowed_advances}",
-            )
-
-        records.append(
-            (
-                code_point,
-                rendered.advance_width,
-                rendered.width,
-                pack_bits(rendered.pixels),
-            ),
-        )
 
     write_pack(
         output_dir=output_dir,
@@ -695,7 +695,7 @@ def generate_dot_grid_pack(
         units_per_em = float(source_font["head"].unitsPerEm)
         grid_unit = units_per_em / grid_height
         grid_top = float(source_font["hhea"].ascent)
-        records: list[tuple[int, int, int, bytes]] = []
+        records: list[tuple[int, int, int, int, int, int, bytes]] = []
         for code_point in iter_code_points(supported_ranges):
             glyph_name = source_code_points.get(code_point)
             if glyph_name is None:
@@ -724,7 +724,9 @@ def generate_dot_grid_pack(
                         f"{bitmap_width}x{cell_height} grid",
                     )
                 pixels[(y * bitmap_width) + x] = 1
-            records.append((code_point, advance_width, bitmap_width, pack_bits(pixels)))
+            records.append(
+                (code_point, advance_width, 0, 0, bitmap_width, cell_height, pack_bits(pixels)),
+            )
     finally:
         source_font.close()
 
@@ -803,16 +805,29 @@ def generate_bdf_pack(
     supported_ranges: list[RangeSpec],
 ) -> None:
     selected = set(iter_code_points(supported_ranges))
-    records: list[tuple[int, int, int, bytes]] = []
+    records: list[tuple[int, int, int, int, int, int, bytes]] = []
     for glyph in parse_bdf(font_path):
         if glyph.code_point not in selected:
             continue
         advance = glyph.advance_width if glyph.advance_width > 0 else default_advance
-        output_width = max(1, advance, glyph.x_offset + glyph.width)
-        pixels = rasterize_bdf_glyph(glyph, output_width, cell_height, baseline)
+        output_width = max(1, glyph.width)
+        output_height = max(1, glyph.height)
+        pixels = decode_bdf_glyph(glyph, output_width, output_height)
         if not any(pixels) and glyph.code_point != 0x20:
             continue
-        records.append((glyph.code_point, advance, output_width, pack_bits(pixels)))
+        bitmap_offset_x = glyph.x_offset if glyph.width > 0 else 0
+        bitmap_offset_y = baseline - (glyph.y_offset + glyph.height) if glyph.height > 0 else 0
+        records.append(
+            (
+                glyph.code_point,
+                advance,
+                bitmap_offset_x,
+                bitmap_offset_y,
+                output_width,
+                output_height,
+                pack_bits(pixels),
+            ),
+        )
 
     write_pack(
         output_dir=output_dir,
@@ -891,61 +906,152 @@ def parse_bdf(font_path: Path) -> list[BdfGlyph]:
     return glyphs
 
 
-def rasterize_bdf_glyph(glyph: BdfGlyph, output_width: int, cell_height: int, baseline: int) -> bytes:
-    pixels = bytearray(output_width * cell_height)
-    top = baseline - (glyph.y_offset + glyph.height)
+def decode_bdf_glyph(glyph: BdfGlyph, output_width: int, output_height: int) -> bytes:
+    """原样解码 BDF BBX 位图，不把它裁进统一行框。"""
+
+    pixels = bytearray(output_width * output_height)
     for source_y, encoded_row in enumerate(glyph.bitmap_rows):
         row_value = int(encoded_row, 16) if encoded_row else 0
         encoded_bits = len(encoded_row) * 4
-        target_y = top + source_y
-        if target_y < 0 or target_y >= cell_height:
-            continue
+        target_y = source_y
         for source_x in range(glyph.width):
             bit_index = encoded_bits - 1 - source_x
             if bit_index < 0 or not (row_value & (1 << bit_index)):
                 continue
-            target_x = glyph.x_offset + source_x
-            if 0 <= target_x < output_width:
-                pixels[target_y * output_width + target_x] = 1
+            pixels[target_y * output_width + source_x] = 1
     return bytes(pixels)
 
 
-def render_font_glyph(
-    font: Any,
-    character: str,
-    cell_height: int,
+def render_outline_glyph(
+    glyph_set: Any,
+    glyph_name: str,
+    units_per_em: int,
+    pixels_per_em: int,
     baseline: int,
-    shift_negative_bearing: bool = False,
-) -> RenderedTtfGlyph | None:
-    from PIL import Image, ImageDraw
+    pack_id: str,
+    code_point: int,
+) -> RenderedTtfGlyph:
+    """在原生 ppem 网格以像素中心和 non-zero fill 恢复线性轮廓。"""
 
-    try:
-        ascent, _ = font.getmetrics()
-        draw_y = baseline - ascent
-        measure_image = Image.new("1", (1, 1), 0)
-        measure_draw = ImageDraw.Draw(measure_image)
-        measure_draw.fontmode = "1"
-        bbox = measure_draw.textbbox((0, draw_y), character, font=font)
-        if bbox is None:
-            return None
-        if bbox[0] < 0 and not shift_negative_bearing:
-            raise ValueError(f"negative left bearing {bbox[0]} for U+{ord(character):04X}")
-        draw_x = -bbox[0] if bbox[0] < 0 else 0
-        advance_width = max(1, int(round(float(font.getlength(character)))))
-        bitmap_width = max(1, advance_width, bbox[2] + draw_x)
-        image = Image.new("1", (bitmap_width, cell_height), 0)
-        draw = ImageDraw.Draw(image)
-        draw.fontmode = "1"
-        draw.text((draw_x, draw_y), character, font=font, fill=1)
-    except OSError:
-        return None
+    from fontTools.pens.recordingPen import DecomposingRecordingPen
 
-    pixels = bytes(
-        1 if image.getpixel((x, y)) else 0
-        for y in range(cell_height)
-        for x in range(bitmap_width)
+    glyph = glyph_set[glyph_name]
+    grid_unit = units_per_em / float(pixels_per_em)
+    advance_value = glyph.width / grid_unit
+    advance_width = int(round(advance_value))
+    if abs(advance_value - advance_width) > DOT_GRID_COORDINATE_TOLERANCE:
+        raise ValueError(
+            f"{pack_id} U+{code_point:04X} advance {advance_value:.4f} is off the native grid",
+        )
+    advance_width = max(1, advance_width)
+    pen = DecomposingRecordingPen(glyph_set)
+    glyph.draw(pen)
+    contours = linear_contours(pen.value, pack_id, code_point)
+    if not contours:
+        return RenderedTtfGlyph(
+            pixels=bytes([0]),
+            width=1,
+            height=1,
+            bitmap_offset_x=0,
+            bitmap_offset_y=0,
+            advance_width=advance_width,
+        )
+
+    min_x = min(point[0] for contour in contours for point in contour)
+    max_x = max(point[0] for contour in contours for point in contour)
+    min_y = min(point[1] for contour in contours for point in contour)
+    max_y = max(point[1] for contour in contours for point in contour)
+    candidate_left = int(min_x // grid_unit) - 1
+    candidate_right = int(-(-max_x // grid_unit)) + 1
+    candidate_top = int((baseline - (max_y / grid_unit)) // 1) - 1
+    candidate_bottom = int(-(-(baseline - (min_y / grid_unit)) // 1)) + 1
+    lit_points: list[tuple[int, int]] = []
+    for row in range(candidate_top, candidate_bottom + 1):
+        sample_y = (baseline - row - 0.5) * grid_unit
+        for column in range(candidate_left, candidate_right + 1):
+            sample_x = (column + 0.5) * grid_unit
+            if non_zero_contains(contours, sample_x, sample_y):
+                lit_points.append((column, row))
+
+    if not lit_points:
+        return RenderedTtfGlyph(
+            pixels=bytes([0]),
+            width=1,
+            height=1,
+            bitmap_offset_x=0,
+            bitmap_offset_y=0,
+            advance_width=advance_width,
+        )
+    bitmap_offset_x = min(point[0] for point in lit_points)
+    bitmap_offset_y = min(point[1] for point in lit_points)
+    bitmap_width = max(point[0] for point in lit_points) - bitmap_offset_x + 1
+    bitmap_height = max(point[1] for point in lit_points) - bitmap_offset_y + 1
+    pixels = bytearray(bitmap_width * bitmap_height)
+    for x, y in lit_points:
+        pixels[(y - bitmap_offset_y) * bitmap_width + (x - bitmap_offset_x)] = 1
+    return RenderedTtfGlyph(
+        pixels=bytes(pixels),
+        width=bitmap_width,
+        height=bitmap_height,
+        bitmap_offset_x=bitmap_offset_x,
+        bitmap_offset_y=bitmap_offset_y,
+        advance_width=advance_width,
     )
-    return RenderedTtfGlyph(pixels=pixels, width=bitmap_width, advance_width=advance_width)
+
+
+def linear_contours(
+    operations: list[tuple[str, tuple[Any, ...]]],
+    pack_id: str,
+    code_point: int,
+) -> list[list[tuple[float, float]]]:
+    """提取已经展开 component 的直线轮廓，并拒绝任何曲线生产源。"""
+
+    contours: list[list[tuple[float, float]]] = []
+    current: list[tuple[float, float]] = []
+    for operation, arguments in operations:
+        if operation == "moveTo":
+            if current:
+                contours.append(current)
+            current = [arguments[0]]
+        elif operation == "lineTo":
+            current.append(arguments[0])
+        elif operation in {"closePath", "endPath"}:
+            if current:
+                contours.append(current)
+                current = []
+        elif operation in {"curveTo", "qCurveTo"}:
+            raise ValueError(f"{pack_id} U+{code_point:04X} contains a non-linear contour")
+        else:
+            raise ValueError(f"{pack_id} U+{code_point:04X} contains unsupported operation {operation}")
+    if current:
+        contours.append(current)
+    return [contour for contour in contours if len(contour) >= 3]
+
+
+def non_zero_contains(contours: list[list[tuple[float, float]]], x: float, y: float) -> bool:
+    """按 non-zero winding rule 判断一个像素中心是否位于轮廓内部。"""
+
+    winding = 0
+    for contour in contours:
+        previous = contour[-1]
+        for current in contour:
+            if previous[1] <= y < current[1] and edge_side(previous, current, x, y) > 0:
+                winding += 1
+            elif current[1] <= y < previous[1] and edge_side(previous, current, x, y) < 0:
+                winding -= 1
+            previous = current
+    return winding != 0
+
+
+def edge_side(
+    start: tuple[float, float],
+    end: tuple[float, float],
+    x: float,
+    y: float,
+) -> float:
+    """返回采样点相对有向边的二维叉积。"""
+
+    return (end[0] - start[0]) * (y - start[1]) - (x - start[0]) * (end[1] - start[1])
 
 
 def detect_glyph_width(pixels: bytes, canvas_width: int, canvas_height: int) -> int:
@@ -1017,7 +1123,7 @@ def write_pack(
     baseline: int,
     default_advance: int,
     supported_ranges: list[str],
-    records: list[tuple[int, int, int, bytes]],
+    records: list[tuple[int, int, int, int, int, int, bytes]],
 ) -> None:
     # 固定按完整 Unicode scalar 排序，供 indexed loader 二分检索并保证输出确定性。
     records = sorted(records, key=lambda record: record[0])
@@ -1039,8 +1145,19 @@ def write_pack(
 
     with (pack_dir / "glyphs.bin").open("wb") as output:
         output.write(struct.pack(">IIII", MAGIC, VERSION, cell_height, len(records)))
-        for code_point, advance_width, width, packed_pixels in records:
-            output.write(struct.pack(">IIII", code_point, advance_width, width, len(packed_pixels)))
+        for code_point, advance_width, offset_x, offset_y, width, height, packed_pixels in records:
+            output.write(
+                struct.pack(
+                    ">IiiiiiI",
+                    code_point,
+                    advance_width,
+                    offset_x,
+                    offset_y,
+                    width,
+                    height,
+                    len(packed_pixels),
+                ),
+            )
             output.write(packed_pixels)
 
     print(f"Generated {pack_id}: {len(records)} glyphs")

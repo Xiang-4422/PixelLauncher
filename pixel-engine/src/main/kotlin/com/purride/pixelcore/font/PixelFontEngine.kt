@@ -78,7 +78,49 @@ public data class GlyphMetrics(
     val inkLeft: Int = 0,
     /** Last bitmap column containing visible ink, or `-1` for blank glyphs. */
     val inkRight: Int = advanceWidth - 1,
-)
+    /** 位图左边缘相对排版光标的水平偏移。 */
+    val bitmapOffsetX: Int = 0,
+    /** 位图顶边缘相对行顶的垂直偏移。 */
+    val bitmapOffsetY: Int = 0,
+) {
+    /** 保留增加 placement 字段之前的六参数 JVM 构造入口。 */
+    public constructor(
+        advanceWidth: Int,
+        baselineOffset: Int,
+        isWideGlyph: Boolean,
+        requiresVisualGapProtection: Boolean,
+        inkLeft: Int,
+        inkRight: Int,
+    ) : this(
+        advanceWidth = advanceWidth,
+        baselineOffset = baselineOffset,
+        isWideGlyph = isWideGlyph,
+        requiresVisualGapProtection = requiresVisualGapProtection,
+        inkLeft = inkLeft,
+        inkRight = inkRight,
+        bitmapOffsetX = 0,
+        bitmapOffsetY = 0,
+    )
+
+    /** 保留旧版六参数 `copy` 的二进制入口。 */
+    public fun copy(
+        advanceWidth: Int,
+        baselineOffset: Int,
+        isWideGlyph: Boolean,
+        requiresVisualGapProtection: Boolean,
+        inkLeft: Int,
+        inkRight: Int,
+    ): GlyphMetrics = GlyphMetrics(
+        advanceWidth = advanceWidth,
+        baselineOffset = baselineOffset,
+        isWideGlyph = isWideGlyph,
+        requiresVisualGapProtection = requiresVisualGapProtection,
+        inkLeft = inkLeft,
+        inkRight = inkRight,
+        bitmapOffsetX = bitmapOffsetX,
+        bitmapOffsetY = bitmapOffsetY,
+    )
+}
 
 /** 解包后的单个字形 bitmap 和度量。 */
 public data class GlyphBitmap(
@@ -218,19 +260,20 @@ public class BitmapGlyphSource(
             unpackedGlyphCache[cacheKey]?.let { cached -> return cached }
             val bitmap = run {
                 /** Exact binary bitmap expanded to one byte per logical pixel. */
+                val bitmapHeight = record.height.takeIf { value -> value > 0 } ?: pack.manifest.cellHeight
                 val unpackedPixels = unpackBits(
                     packed = record.packedPixelsUnsafe,
-                    pixelCount = record.width * pack.manifest.cellHeight,
+                    pixelCount = record.width * bitmapHeight,
                 )
                 /** Horizontal visible-ink bounds computed from expanded pixels. */
                 val inkBounds = computeInkBounds(
                     width = record.width,
-                    height = pack.manifest.cellHeight,
+                    height = bitmapHeight,
                     pixels = unpackedPixels,
                 )
                 GlyphBitmap(
                     width = record.width,
-                    height = pack.manifest.cellHeight,
+                    height = bitmapHeight,
                     pixels = unpackedPixels,
                     metrics = GlyphMetrics(
                         advanceWidth = record.advanceWidth,
@@ -240,8 +283,18 @@ public class BitmapGlyphSource(
                             codePoint = codePoint,
                             isWideGlyph = record.advanceWidth > style.narrowAdvanceWidth,
                         ),
-                        inkLeft = inkBounds.first,
-                        inkRight = inkBounds.second,
+                        inkLeft = if (inkBounds.second >= inkBounds.first) {
+                            inkBounds.first + record.bitmapOffsetX
+                        } else {
+                            record.advanceWidth
+                        },
+                        inkRight = if (inkBounds.second >= inkBounds.first) {
+                            inkBounds.second + record.bitmapOffsetX
+                        } else {
+                            -1
+                        },
+                        bitmapOffsetX = record.bitmapOffsetX,
+                        bitmapOffsetY = record.bitmapOffsetY,
                     ),
                 )
             }
@@ -479,8 +532,9 @@ public class PixelFontEngine(
                 /** Bitmap column inspected for ink. */
                 for (x in 0 until glyph.width) {
                     if (glyph.pixels[(y * glyph.width) + x].toInt() != 0) {
-                        if (y < inkTop) inkTop = y
-                        if (y > inkBottom) inkBottom = y
+                        val placedY = y + glyph.metrics.bitmapOffsetY
+                        if (placedY < inkTop) inkTop = placedY
+                        if (placedY > inkBottom) inkBottom = placedY
                     }
                 }
             }
@@ -627,7 +681,11 @@ public class PixelFontEngine(
             /** Glyph column copied into the destination. */
             for (x in 0 until glyph.width) {
                 if (glyph.pixels[(y * glyph.width) + x].toInt() == 1) {
-                    buffer.setPixel(startX + x, startY + y, color)
+                    buffer.setPixel(
+                        startX + glyph.metrics.bitmapOffsetX + x,
+                        startY + glyph.metrics.bitmapOffsetY + y,
+                        color,
+                    )
                 }
             }
         }

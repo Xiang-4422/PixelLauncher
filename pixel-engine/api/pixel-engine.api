@@ -33,6 +33,8 @@ com.purride.pixelcore public companion object
 com.purride.pixelcore public const val PixelResourceManifestVersion: Int = 1
 com.purride.pixelcore public const val PixelSpriteSheetVersion: Int = 1
 com.purride.pixelcore public const val defaultDotSizePx: Int = 12
+com.purride.pixelcore public constructor(
+com.purride.pixelcore public constructor(
 com.purride.pixelcore public constructor(width: Int, height: Int, pixels: IntArray) :
 com.purride.pixelcore public data class AxisMotionState(
 com.purride.pixelcore public data class FramePayload(
@@ -98,7 +100,9 @@ com.purride.pixelcore public fun compose(
 com.purride.pixelcore public fun consumeLatest(afterSequence: Long): FramePayload?
 com.purride.pixelcore public fun contains(codePoint: Int): Boolean = findIndex(codePoint) >= 0
 com.purride.pixelcore public fun copy(
+com.purride.pixelcore public fun copy(
 com.purride.pixelcore public fun copy(): PixelBuffer
+com.purride.pixelcore public fun copyWithPlacement(
 com.purride.pixelcore public fun create(
 com.purride.pixelcore public fun create(): AxisMotionState = AxisMotionState()
 com.purride.pixelcore public fun detailedSnapshot(): PixelResourceCacheDetailedSnapshot = synchronized(lock)
@@ -227,6 +231,8 @@ com.purride.pixelcore public val binaryPath: String,
 com.purride.pixelcore public val binarySha256: String? = null,
 com.purride.pixelcore public val bitmap: String,
 com.purride.pixelcore public val bitmapCount: Int
+com.purride.pixelcore public val bitmapOffsetX: Int,
+com.purride.pixelcore public val bitmapOffsetY: Int,
 com.purride.pixelcore public val blue: Int get() = argb and 0xFF
 com.purride.pixelcore public val byteSize: Long
 com.purride.pixelcore public val byteSize: Long
@@ -237,6 +243,7 @@ com.purride.pixelcore public val glyphHeight: Int = 7,
 com.purride.pixelcore public val glyphPackCount: Int
 com.purride.pixelcore public val glyphWidth: Int = 5,
 com.purride.pixelcore public val green: Int get() = (argb ushr 8) and 0xFF
+com.purride.pixelcore public val height: Int,
 com.purride.pixelcore public val height: Int,
 com.purride.pixelcore public val height: Int,
 com.purride.pixelcore public val id: String,

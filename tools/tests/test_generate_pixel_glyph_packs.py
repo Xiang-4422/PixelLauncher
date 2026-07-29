@@ -77,20 +77,24 @@ class GlyphPackConverterTest(unittest.TestCase):
             self.assertEqual(["0041-0041"], manifest["supportedRanges"])
 
             magic, version, cell_height, glyph_count = struct.unpack_from(">IIII", binary, 0)
-            code_point, advance, width, data_length = struct.unpack_from(">IIII", binary, 16)
-            packed = binary[32 : 32 + data_length]
-            pixels = unpack_bits(packed, width * cell_height)
+            code_point, advance, offset_x, offset_y, width, height, data_length = struct.unpack_from(
+                ">IiiiiiI", binary, 16,
+            )
+            packed = binary[44 : 44 + data_length]
+            pixels = unpack_bits(packed, width * height)
 
             self.assertEqual(0x50474C59, magic)
-            self.assertEqual(1, version)
+            self.assertEqual(2, version)
             self.assertEqual(8, cell_height)
             self.assertEqual(1, glyph_count)
             self.assertEqual(0x41, code_point)
             self.assertEqual(6, advance)
-            self.assertEqual(6, width)
-            self.assertEqual("011100", pixels[0:6])
-            self.assertEqual("100010", pixels[6:12])
-            self.assertEqual("000000", pixels[-6:])
+            self.assertEqual(0, offset_x)
+            self.assertEqual(0, offset_y)
+            self.assertEqual(5, width)
+            self.assertEqual(7, height)
+            self.assertEqual("01110", pixels[0:5])
+            self.assertEqual("10001", pixels[5:10])
 
     def test_bdf_rejects_incomplete_bitmap_rows(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -118,46 +122,47 @@ class GlyphPackConverterTest(unittest.TestCase):
     def test_ttf_render_preserves_real_advance_and_origin(self) -> None:
         """TTF 字形不能再被居中，也不能把墨迹宽度误当 advance。"""
 
-        from PIL import ImageFont
+        from fontTools.ttLib import TTFont
 
-        font = ImageFont.truetype(
-            "app/src/main/assets/fonts/fusion-pixel-8px-monospaced-latin.ttf",
-            size=8,
-            layout_engine=ImageFont.Layout.BASIC,
+        font = TTFont("app/src/main/assets/fonts/fusion-pixel-8px-monospaced-latin.ttf")
+        cmap = font.getBestCmap() or {}
+        rendered = converter.render_outline_glyph(
+            glyph_set=font.getGlyphSet(),
+            glyph_name=cmap[ord("i")],
+            units_per_em=font["head"].unitsPerEm,
+            pixels_per_em=8,
+            baseline=7,
+            pack_id="fusion_test",
+            code_point=ord("i"),
         )
-        rendered = converter.render_font_glyph(font, "i", cell_height=8, baseline=7)
-
-        self.assertIsNotNone(rendered)
-        assert rendered is not None
         self.assertEqual(4, rendered.advance_width)
-        self.assertEqual(4, rendered.width)
         self.assertTrue(any(rendered.pixels))
-        self.assertTrue(
-            any(rendered.pixels[row * rendered.width] for row in range(8)),
-            "logical origin column should retain the glyph's left-side ink",
-        )
+        self.assertEqual(0, rendered.bitmap_offset_x)
+        font.close()
 
-    def test_negative_bearing_requires_explicit_catalog_policy(self) -> None:
-        """负 bearing 默认失败，显式 shift 策略才允许写入 v1 bitmap。"""
+    def test_negative_bearing_is_preserved_as_v2_placement(self) -> None:
+        """负 bearing 必须写入 placement，不能平移到 advance 单元内部。"""
 
-        from PIL import ImageFont
+        from fontTools.ttLib import TTFont
 
-        font = ImageFont.truetype(
-            "tools/font_sources/cubic_11/1.500/Cubic_11.ttf",
-            size=10,
-            layout_engine=ImageFont.Layout.BASIC,
-        )
-        with self.assertRaisesRegex(ValueError, "negative left bearing"):
-            converter.render_font_glyph(font, "+", cell_height=10, baseline=8)
-
-        shifted = converter.render_font_glyph(
-            font,
-            "+",
-            cell_height=10,
-            baseline=8,
-            shift_negative_bearing=True,
-        )
-        self.assertIsNotNone(shifted)
+        font = TTFont("tools/font_sources/cubic_11/1.500/Cubic_11.ttf")
+        cmap = font.getBestCmap() or {}
+        negative = None
+        for code_point, glyph_name in sorted(cmap.items()):
+            rendered = converter.render_outline_glyph(
+                glyph_set=font.getGlyphSet(),
+                glyph_name=glyph_name,
+                units_per_em=font["head"].unitsPerEm,
+                pixels_per_em=12,
+                baseline=10,
+                pack_id="cubic_test",
+                code_point=code_point,
+            )
+            if rendered.bitmap_offset_x < 0:
+                negative = rendered
+                break
+        font.close()
+        self.assertIsNotNone(negative)
 
     def test_dot_grid_otf_restores_every_source_dot_without_rasterization(self) -> None:
         """Dotted 的 A/中应按轮廓数恢复全部逻辑点，且重复生成字节一致。"""
@@ -204,15 +209,17 @@ def unpack_bits(packed: bytes, pixel_count: int) -> str:
 def unpack_records(binary: bytes) -> dict[int, tuple[int, int, int]]:
     """返回测试关心的 code point、advance、宽度和亮点数量。"""
 
-    _, _, cell_height, glyph_count = struct.unpack_from(">IIII", binary, 0)
+    _, version, _, glyph_count = struct.unpack_from(">IIII", binary, 0)
+    if version != 2:
+        raise AssertionError(f"expected PGLY v2, got {version}")
     offset = 16
     records: dict[int, tuple[int, int, int]] = {}
     for _ in range(glyph_count):
-        code_point, advance, width, data_length = struct.unpack_from(">IIII", binary, offset)
-        offset += 16
+        code_point, advance, _, _, width, height, data_length = struct.unpack_from(">IiiiiiI", binary, offset)
+        offset += 28
         packed = binary[offset : offset + data_length]
         offset += data_length
-        pixels = unpack_bits(packed, width * cell_height)
+        pixels = unpack_bits(packed, width * height)
         records[code_point] = (advance, width, pixels.count("1"))
     return records
 

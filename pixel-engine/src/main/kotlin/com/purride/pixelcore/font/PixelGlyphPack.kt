@@ -63,8 +63,30 @@ public class PackedGlyphRecord(
     public val advanceWidth: Int,
     /** 压缩位图的正宽度。 */
     public val width: Int,
+    /** 位图左边缘相对排版光标的水平偏移。 */
+    public val bitmapOffsetX: Int,
+    /** 位图顶边缘相对行顶的垂直偏移。 */
+    public val bitmapOffsetY: Int,
+    /** 当前记录自身的正位图高度。 */
+    public val height: Int,
     packedPixels: ByteArray,
 ) {
+    /** 构造没有独立 placement 的 PGLY v1 兼容记录。 */
+    public constructor(
+        codePoint: Int,
+        advanceWidth: Int,
+        width: Int,
+        packedPixels: ByteArray,
+    ) : this(
+        codePoint = codePoint,
+        advanceWidth = advanceWidth,
+        width = width,
+        bitmapOffsetX = 0,
+        bitmapOffsetY = 0,
+        height = 0,
+        packedPixels = packedPixels,
+    )
+
     /** 只在引擎内部读取的不可变压缩字节副本。 */
     internal val packedPixelsUnsafe: ByteArray = packedPixels.copyOf()
 
@@ -81,6 +103,15 @@ public class PackedGlyphRecord(
         }
         require(width in 1..PixelResourceSafetyLimits.MaxDimension) {
             "width must be within 1..${PixelResourceSafetyLimits.MaxDimension}"
+        }
+        require(bitmapOffsetX in -PixelResourceSafetyLimits.MaxDimension..PixelResourceSafetyLimits.MaxDimension) {
+            "bitmapOffsetX exceeds the supported placement range"
+        }
+        require(bitmapOffsetY in -PixelResourceSafetyLimits.MaxDimension..PixelResourceSafetyLimits.MaxDimension) {
+            "bitmapOffsetY exceeds the supported placement range"
+        }
+        require(height in 0..PixelResourceSafetyLimits.MaxDimension) {
+            "height must be within 0..${PixelResourceSafetyLimits.MaxDimension}"
         }
         require(packedPixelsUnsafe.isNotEmpty()) { "packedPixels must not be empty" }
     }
@@ -105,6 +136,25 @@ public class PackedGlyphRecord(
         packedPixels: ByteArray = this.packedPixels,
     ): PackedGlyphRecord = PackedGlyphRecord(codePoint, advanceWidth, width, packedPixels)
 
+    /** 复制包含 PGLY v2 placement 的完整记录。 */
+    public fun copyWithPlacement(
+        codePoint: Int = this.codePoint,
+        advanceWidth: Int = this.advanceWidth,
+        width: Int = this.width,
+        bitmapOffsetX: Int = this.bitmapOffsetX,
+        bitmapOffsetY: Int = this.bitmapOffsetY,
+        height: Int = this.height,
+        packedPixels: ByteArray = this.packedPixels,
+    ): PackedGlyphRecord = PackedGlyphRecord(
+        codePoint = codePoint,
+        advanceWidth = advanceWidth,
+        width = width,
+        bitmapOffsetX = bitmapOffsetX,
+        bitmapOffsetY = bitmapOffsetY,
+        height = height,
+        packedPixels = packedPixels,
+    )
+
     /** 按字节内容而非数组引用比较记录。 */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -112,6 +162,9 @@ public class PackedGlyphRecord(
         return codePoint == other.codePoint &&
             advanceWidth == other.advanceWidth &&
             width == other.width &&
+            bitmapOffsetX == other.bitmapOffsetX &&
+            bitmapOffsetY == other.bitmapOffsetY &&
+            height == other.height &&
             packedPixelsUnsafe.contentEquals(other.packedPixelsUnsafe)
     }
 
@@ -121,6 +174,9 @@ public class PackedGlyphRecord(
         var result = codePoint
         result = 31 * result + advanceWidth
         result = 31 * result + width
+        result = 31 * result + bitmapOffsetX
+        result = 31 * result + bitmapOffsetY
+        result = 31 * result + height
         result = 31 * result + packedPixelsUnsafe.contentHashCode()
         return result
     }
@@ -128,7 +184,8 @@ public class PackedGlyphRecord(
     /** 生成不展开二进制内容的稳定诊断文本。 */
     override fun toString(): String {
         return "PackedGlyphRecord(codePoint=$codePoint, advanceWidth=$advanceWidth, " +
-            "width=$width, packedPixelsSize=${packedPixelsUnsafe.size})"
+            "width=$width, bitmapOffsetX=$bitmapOffsetX, bitmapOffsetY=$bitmapOffsetY, " +
+            "height=$height, packedPixelsSize=${packedPixelsUnsafe.size})"
     }
 }
 
@@ -159,7 +216,9 @@ public object PixelGlyphPackParser {
     /** PGLY 文件头。 */
     private const val Magic: Int = 0x50474C59
     /** 当前支持的 glyph 二进制版本。 */
-    private const val Version: Int = 1
+    private const val VersionV1: Int = 1
+    /** 支持独立字形 placement 和高度的当前版本。 */
+    private const val VersionV2: Int = 2
 
     /** 从 manifest.json 文本解析字形包元数据。 */
     public fun parseManifest(json: String): PixelGlyphPackManifest =
@@ -226,7 +285,7 @@ public object PixelGlyphPackParser {
         require(magic == Magic) { "Unexpected glyph pack magic: $magic" }
         /** 文件协议版本。 */
         val version = dataInput.readInt()
-        require(version == Version) { "Unsupported glyph pack version: $version" }
+        require(version == VersionV1 || version == VersionV2) { "Unsupported glyph pack version: $version" }
         /** 二进制声明的统一单元高度。 */
         val cellHeight = dataInput.readInt()
         require(cellHeight == manifest.cellHeight) {
@@ -251,13 +310,27 @@ public object PixelGlyphPackParser {
             require(advanceWidth in 1..PixelResourceSafetyLimits.MaxDimension) {
                 "glyph[$index] advanceWidth $advanceWidth is invalid"
             }
+            /** V2 placement；V1 在统一单元左上角绘制。 */
+            val bitmapOffsetX = if (version == VersionV2) dataInput.readInt() else 0
+            val bitmapOffsetY = if (version == VersionV2) dataInput.readInt() else 0
             /** 当前记录位图宽度。 */
             val width = dataInput.readInt()
             require(width in 1..PixelResourceSafetyLimits.MaxDimension) {
                 "glyph[$index] width $width is invalid"
             }
+            /** V2 独立高度；V1 继续使用 manifest 统一高度。 */
+            val height = if (version == VersionV2) dataInput.readInt() else manifest.cellHeight
+            require(height in 1..PixelResourceSafetyLimits.MaxDimension) {
+                "glyph[$index] height $height is invalid"
+            }
+            require(bitmapOffsetX in -PixelResourceSafetyLimits.MaxDimension..PixelResourceSafetyLimits.MaxDimension) {
+                "glyph[$index] bitmapOffsetX $bitmapOffsetX is invalid"
+            }
+            require(bitmapOffsetY in -PixelResourceSafetyLimits.MaxDimension..PixelResourceSafetyLimits.MaxDimension) {
+                "glyph[$index] bitmapOffsetY $bitmapOffsetY is invalid"
+            }
             /** 以 Long 计算的未压缩 bit 数。 */
-            val bitCount = width.toLong() * manifest.cellHeight.toLong()
+            val bitCount = width.toLong() * height.toLong()
             require(bitCount <= Int.MAX_VALUE.toLong() * 8L) {
                 "glyph[$index] pixel count overflows packed length"
             }
@@ -278,6 +351,9 @@ public object PixelGlyphPackParser {
                 codePoint = codePoint,
                 advanceWidth = advanceWidth,
                 width = width,
+                bitmapOffsetX = bitmapOffsetX,
+                bitmapOffsetY = bitmapOffsetY,
+                height = height,
                 packedPixels = packedPixels,
             )
         }

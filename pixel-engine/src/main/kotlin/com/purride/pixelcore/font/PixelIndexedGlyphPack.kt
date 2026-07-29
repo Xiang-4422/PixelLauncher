@@ -7,7 +7,7 @@ import java.security.MessageDigest
 import java.util.LinkedHashMap
 
 /**
- * PGLY v1 的只读索引表示。
+ * PGLY v1/v2 的只读索引表示。
  *
  * 它只保留原始二进制和 primitive 索引，不为每个字形创建 Map 节点或记录对象。
  */
@@ -22,6 +22,12 @@ public class PixelIndexedGlyphPack internal constructor(
     internal val advances: IntArray,
     /** 每条记录的位图宽度。 */
     internal val widths: IntArray,
+    /** 每条记录相对排版光标的水平偏移。 */
+    internal val bitmapOffsetsX: IntArray,
+    /** 每条记录相对行顶的垂直偏移。 */
+    internal val bitmapOffsetsY: IntArray,
+    /** 每条记录自身的位图高度。 */
+    internal val heights: IntArray,
     /** 每条记录压缩像素在 [binary] 中的起点。 */
     internal val dataOffsets: IntArray,
     /** 每条记录压缩像素字节数。 */
@@ -31,7 +37,7 @@ public class PixelIndexedGlyphPack internal constructor(
     public val glyphCount: Int
         get() = codePoints.size
 
-    /** 原始二进制与五组 Int 索引的保守字节数。 */
+    /** 原始二进制与八组 Int 索引的保守字节数。 */
     public val byteSize: Long
         get() = binary.limit().toLong() + glyphCount.toLong() * INDEX_BYTES_PER_GLYPH
 
@@ -50,12 +56,12 @@ public class PixelIndexedGlyphPack internal constructor(
     }
 
     private companion object {
-        /** code point、advance、width、offset、length 五个 Int。 */
-        const val INDEX_BYTES_PER_GLYPH: Long = 20L
+        /** code point、advance、width、X/Y placement、高度、数据 offset/length 八个 Int。 */
+        const val INDEX_BYTES_PER_GLYPH: Long = 32L
     }
 }
 
-/** 安全解析 PGLY v1 为 [PixelIndexedGlyphPack]。 */
+/** 安全解析 PGLY v1/v2 为 [PixelIndexedGlyphPack]。 */
 public object PixelIndexedGlyphPackParser {
     /** 从有界输入流解析并可选校验 SHA-256。 */
     @JvmOverloads
@@ -91,7 +97,7 @@ public object PixelIndexedGlyphPackParser {
         val magic = source.int
         require(magic == MAGIC) { "Unexpected glyph pack magic: $magic" }
         val version = source.int
-        require(version == VERSION) { "Unsupported glyph pack version: $version" }
+        require(version == VERSION_V1 || version == VERSION_V2) { "Unsupported glyph pack version: $version" }
         val cellHeight = source.int
         require(cellHeight == manifest.cellHeight) {
             "Manifest cellHeight ${manifest.cellHeight} does not match binary $cellHeight"
@@ -103,11 +109,15 @@ public object PixelIndexedGlyphPackParser {
         val codePoints = IntArray(glyphCount)
         val advances = IntArray(glyphCount)
         val widths = IntArray(glyphCount)
+        val bitmapOffsetsX = IntArray(glyphCount)
+        val bitmapOffsetsY = IntArray(glyphCount)
+        val heights = IntArray(glyphCount)
         val dataOffsets = IntArray(glyphCount)
         val dataLengths = IntArray(glyphCount)
         var previousCodePoint = -1
         repeat(glyphCount) { index ->
-            require(source.remaining() >= RECORD_HEADER_BYTES) { "glyph[$index] is truncated before record header" }
+            val recordHeaderBytes = if (version == VERSION_V2) RECORD_HEADER_BYTES_V2 else RECORD_HEADER_BYTES_V1
+            require(source.remaining() >= recordHeaderBytes) { "glyph[$index] is truncated before record header" }
             val codePoint = source.int
             require(Character.isValidCodePoint(codePoint) && codePoint !in 0xD800..0xDFFF) {
                 "glyph[$index] code point is not a Unicode scalar"
@@ -115,16 +125,29 @@ public object PixelIndexedGlyphPackParser {
             require(codePoint > previousCodePoint) { "glyph code points must be strictly increasing" }
             previousCodePoint = codePoint
             val advance = source.int
+            val bitmapOffsetX = if (version == VERSION_V2) source.int else 0
+            val bitmapOffsetY = if (version == VERSION_V2) source.int else 0
             val width = source.int
+            val height = if (version == VERSION_V2) source.int else cellHeight
             val length = source.int
             require(advance in 1..PixelResourceSafetyLimits.MaxDimension) { "glyph[$index] advance is invalid" }
             require(width in 1..PixelResourceSafetyLimits.MaxDimension) { "glyph[$index] width is invalid" }
-            val expectedLength = ((width.toLong() * cellHeight.toLong() + 7L) / 8L).toInt()
+            require(height in 1..PixelResourceSafetyLimits.MaxDimension) { "glyph[$index] height is invalid" }
+            require(bitmapOffsetX in -PixelResourceSafetyLimits.MaxDimension..PixelResourceSafetyLimits.MaxDimension) {
+                "glyph[$index] bitmapOffsetX is invalid"
+            }
+            require(bitmapOffsetY in -PixelResourceSafetyLimits.MaxDimension..PixelResourceSafetyLimits.MaxDimension) {
+                "glyph[$index] bitmapOffsetY is invalid"
+            }
+            val expectedLength = ((width.toLong() * height.toLong() + 7L) / 8L).toInt()
             require(length == expectedLength) { "glyph[$index] data length does not match dimensions" }
             require(length <= source.remaining()) { "glyph[$index] packed pixels are truncated" }
             codePoints[index] = codePoint
             advances[index] = advance
             widths[index] = width
+            bitmapOffsetsX[index] = bitmapOffsetX
+            bitmapOffsetsY[index] = bitmapOffsetY
+            heights[index] = height
             dataOffsets[index] = source.position()
             dataLengths[index] = length
             source.position(source.position() + length)
@@ -136,6 +159,9 @@ public object PixelIndexedGlyphPackParser {
             codePoints = codePoints,
             advances = advances,
             widths = widths,
+            bitmapOffsetsX = bitmapOffsetsX,
+            bitmapOffsetsY = bitmapOffsetsY,
+            heights = heights,
             dataOffsets = dataOffsets,
             dataLengths = dataLengths,
         )
@@ -155,9 +181,11 @@ public object PixelIndexedGlyphPackParser {
     }
 
     private const val MAGIC: Int = 0x50474C59
-    private const val VERSION: Int = 1
+    private const val VERSION_V1: Int = 1
+    private const val VERSION_V2: Int = 2
     private const val HEADER_BYTES: Int = 16
-    private const val RECORD_HEADER_BYTES: Int = 16
+    private const val RECORD_HEADER_BYTES_V1: Int = 16
+    private const val RECORD_HEADER_BYTES_V2: Int = 28
 }
 
 /** 从 indexed pack 按需解压字形，并以字节预算限制热字形缓存。 */
@@ -209,7 +237,9 @@ public class IndexedBitmapGlyphSource @JvmOverloads public constructor(
         style: GlyphStyle,
     ): GlyphBitmap {
         val width = pack.widths[index]
-        val height = pack.manifest.cellHeight
+        val height = pack.heights[index]
+        val bitmapOffsetX = pack.bitmapOffsetsX[index]
+        val bitmapOffsetY = pack.bitmapOffsetsY[index]
         val packed = pack.packedPixels(index)
         val pixels = ByteArray(width * height)
         var inkLeft = width
@@ -234,8 +264,10 @@ public class IndexedBitmapGlyphSource @JvmOverloads public constructor(
                 baselineOffset = pack.manifest.baseline,
                 isWideGlyph = isWide,
                 requiresVisualGapProtection = requiresVisualGapProtection(codePoint, isWide),
-                inkLeft = inkLeft,
-                inkRight = inkRight,
+                inkLeft = if (inkRight >= inkLeft) inkLeft + bitmapOffsetX else advance,
+                inkRight = if (inkRight >= inkLeft) inkRight + bitmapOffsetX else -1,
+                bitmapOffsetX = bitmapOffsetX,
+                bitmapOffsetY = bitmapOffsetY,
             ),
         )
     }

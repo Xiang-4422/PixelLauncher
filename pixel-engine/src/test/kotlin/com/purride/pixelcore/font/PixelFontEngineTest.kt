@@ -200,6 +200,42 @@ class PixelFontEngineTest {
         assertEquals(15, metrics.inkBottom)
     }
 
+    /** 绘制与字体度量必须使用 V2 placement，而不是把位图强行贴到行框左上角。 */
+    @Test
+    fun drawAndMetricsHonorBitmapPlacement() {
+        val provider = object : GlyphProvider {
+            /** 返回一个位于光标左侧且高于行顶的单像素字形。 */
+            override fun rasterizeGlyph(codePoint: Int, style: GlyphStyle): GlyphBitmap = GlyphBitmap(
+                width = 1,
+                height = 1,
+                pixels = byteArrayOf(1),
+                metrics = GlyphMetrics(
+                    advanceWidth = 4,
+                    baselineOffset = 7,
+                    isWideGlyph = false,
+                    inkLeft = -1,
+                    inkRight = -1,
+                    bitmapOffsetX = -1,
+                    bitmapOffsetY = -2,
+                ),
+            )
+        }
+        val engine = PixelFontEngine(provider)
+        val buffer = PixelBuffer(width = 8, height = 8)
+
+        engine.drawText(
+            buffer = buffer,
+            text = "A",
+            startX = 2,
+            startY = 2,
+            maxWidth = 4,
+            style = appLabelStyle,
+        )
+
+        assertEquals(PixelColor.fromRgb(255, 255, 255), buffer.getPixel(1, 0))
+        assertEquals(-2, engine.fontMetrics("A", appLabelStyle).inkTop)
+    }
+
     @Test
     fun bitmapGlyphSourceCachesMetricsPerStyle() {
         val source = BitmapGlyphSource(

@@ -42,6 +42,48 @@ class PixelIndexedGlyphPackTest {
         )
     }
 
+    /** V2 indexed 与对象解析必须保留负 bearing、垂直偏移和独立高度。 */
+    @Test
+    fun indexedV2MatchesObjectParserPlacement() {
+        val manifest = sampleManifest()
+        val binary = buildV2Binary()
+        val objectPack = PixelGlyphPackParser.parseBinary(manifest, ByteArrayInputStream(binary))
+        val indexedPack = PixelIndexedGlyphPackParser.parseBinary(manifest, ByteArrayInputStream(binary))
+        val style = sampleStyle()
+        val expected = requireNotNull(BitmapGlyphSource(listOf(objectPack)).findGlyph(0x41, style))
+        val actual = requireNotNull(IndexedBitmapGlyphSource(listOf(indexedPack)).findGlyph(0x41, style))
+
+        assertEquals(3, actual.width)
+        assertEquals(10, actual.height)
+        assertEquals(-1, actual.metrics.bitmapOffsetX)
+        assertEquals(-2, actual.metrics.bitmapOffsetY)
+        assertEquals(expected.metrics, actual.metrics)
+        assertArrayEquals(expected.pixels, actual.pixels)
+    }
+
+    /** 创建一个带 placement 且高度超过行框的 PGLY v2 字形。 */
+    private fun buildV2Binary(): ByteArray {
+        val output = ByteArrayOutputStream()
+        DataOutputStream(output).use { data ->
+            val width = 3
+            val height = 10
+            val packed = ByteArray((width * height + 7) / 8) { 0xFF.toByte() }
+            data.writeInt(0x50474C59)
+            data.writeInt(2)
+            data.writeInt(8)
+            data.writeInt(1)
+            data.writeInt(0x41)
+            data.writeInt(4)
+            data.writeInt(-1)
+            data.writeInt(-2)
+            data.writeInt(width)
+            data.writeInt(height)
+            data.writeInt(packed.size)
+            data.write(packed)
+        }
+        return output.toByteArray()
+    }
+
     /** 创建两个固定宽度不同的测试字形。 */
     private fun buildBinary(codePoints: List<Int>): ByteArray {
         val output = ByteArrayOutputStream()

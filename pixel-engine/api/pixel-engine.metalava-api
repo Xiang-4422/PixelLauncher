@@ -122,22 +122,30 @@ package com.purride.pixelcore {
   }
 
   public final class GlyphMetrics {
-    ctor public GlyphMetrics(int advanceWidth, int baselineOffset, boolean isWideGlyph, optional boolean requiresVisualGapProtection, optional int inkLeft, optional int inkRight);
+    ctor public GlyphMetrics(int advanceWidth, int baselineOffset, boolean isWideGlyph, boolean requiresVisualGapProtection, int inkLeft, int inkRight);
+    ctor public GlyphMetrics(int advanceWidth, int baselineOffset, boolean isWideGlyph, optional boolean requiresVisualGapProtection, optional int inkLeft, optional int inkRight, optional int bitmapOffsetX, optional int bitmapOffsetY);
     method public int component1();
     method public int component2();
     method public boolean component3();
     method public boolean component4();
     method public int component5();
     method public int component6();
-    method public com.purride.pixelcore.GlyphMetrics copy(optional int advanceWidth, optional int baselineOffset, optional boolean isWideGlyph, optional boolean requiresVisualGapProtection, optional int inkLeft, optional int inkRight);
+    method public int component7();
+    method public int component8();
+    method public com.purride.pixelcore.GlyphMetrics copy(int advanceWidth, int baselineOffset, boolean isWideGlyph, boolean requiresVisualGapProtection, int inkLeft, int inkRight);
+    method public com.purride.pixelcore.GlyphMetrics copy(optional int advanceWidth, optional int baselineOffset, optional boolean isWideGlyph, optional boolean requiresVisualGapProtection, optional int inkLeft, optional int inkRight, optional int bitmapOffsetX, optional int bitmapOffsetY);
     method @InaccessibleFromKotlin public int getAdvanceWidth();
     method @InaccessibleFromKotlin public int getBaselineOffset();
+    method @InaccessibleFromKotlin public int getBitmapOffsetX();
+    method @InaccessibleFromKotlin public int getBitmapOffsetY();
     method @InaccessibleFromKotlin public int getInkLeft();
     method @InaccessibleFromKotlin public int getInkRight();
     method @InaccessibleFromKotlin public boolean getRequiresVisualGapProtection();
     method @InaccessibleFromKotlin public boolean isWideGlyph();
     property public int advanceWidth;
     property public int baselineOffset;
+    property public int bitmapOffsetX;
+    property public int bitmapOffsetY;
     property public int inkLeft;
     property public int inkRight;
     property public boolean isWideGlyph;
@@ -208,17 +216,25 @@ package com.purride.pixelcore {
 
   public final class PackedGlyphRecord {
     ctor public PackedGlyphRecord(int codePoint, int advanceWidth, int width, byte[] packedPixels);
+    ctor public PackedGlyphRecord(int codePoint, int advanceWidth, int width, int bitmapOffsetX, int bitmapOffsetY, int height, byte[] packedPixels);
     method public operator int component1();
     method public operator int component2();
     method public operator int component3();
     method public operator byte[] component4();
     method public com.purride.pixelcore.PackedGlyphRecord copy(optional int codePoint, optional int advanceWidth, optional int width, optional byte[] packedPixels);
+    method public com.purride.pixelcore.PackedGlyphRecord copyWithPlacement(optional int codePoint, optional int advanceWidth, optional int width, optional int bitmapOffsetX, optional int bitmapOffsetY, optional int height, optional byte[] packedPixels);
     method @InaccessibleFromKotlin public int getAdvanceWidth();
+    method @InaccessibleFromKotlin public int getBitmapOffsetX();
+    method @InaccessibleFromKotlin public int getBitmapOffsetY();
     method @InaccessibleFromKotlin public int getCodePoint();
+    method @InaccessibleFromKotlin public int getHeight();
     method @InaccessibleFromKotlin public byte[] getPackedPixels();
     method @InaccessibleFromKotlin public int getWidth();
     property public int advanceWidth;
+    property public int bitmapOffsetX;
+    property public int bitmapOffsetY;
     property public int codePoint;
+    property public int height;
     property public byte[] packedPixels;
     property public int width;
   }
@@ -615,7 +631,7 @@ package com.purride.pixelcore {
     property public long byteSize;
     property public int glyphCount;
     property public com.purride.pixelcore.PixelGlyphPackManifest manifest;
-    field public static final long INDEX_BYTES_PER_GLYPH = 20L; // 0x14L
+    field public static final long INDEX_BYTES_PER_GLYPH = 32L; // 0x20L
   }
 
   public final class PixelIndexedGlyphPackAssetLoader {
