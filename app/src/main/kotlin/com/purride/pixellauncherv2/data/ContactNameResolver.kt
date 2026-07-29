@@ -8,7 +8,7 @@ import android.provider.ContactsContract
 import androidx.core.content.ContextCompat
 import java.util.concurrent.ConcurrentHashMap
 
-class SmsContactResolver(
+class ContactNameResolver(
     private val context: Context,
 ) {
     // 来信接收器（主线程）与后台刷新线程会并发读写，必须用并发容器。

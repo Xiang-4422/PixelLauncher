@@ -41,7 +41,7 @@ import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.model.SmsThreadSummary
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
-import com.purride.pixellauncherv2.util.SmsTimeFormatter
+import com.purride.pixellauncherv2.util.RelativeTimeFormatter
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsThreadSearchModel
@@ -464,7 +464,7 @@ private fun buildUnreadRow(
                             ),
                         ),
                         Text(
-                            SmsTimeFormatter.format(entry.dateMillis),
+                            RelativeTimeFormatter.format(entry.dateMillis),
                             style = TextStyle(color = theme.sms.timestamp),
                             overflow = TextOverflow.ELLIPSIS,
                             softWrap = false,
@@ -541,7 +541,7 @@ private fun buildThreadRow(
                             ),
                         ),
                         Text(
-                            SmsTimeFormatter.format(thread.dateMillis),
+                            RelativeTimeFormatter.format(thread.dateMillis),
                             style = TextStyle(color = theme.sms.timestamp),
                             overflow = TextOverflow.ELLIPSIS,
                             softWrap = false,
@@ -589,7 +589,7 @@ private fun buildSearchResultRow(
                             ),
                         ),
                         Text(
-                            SmsTimeFormatter.format(message.dateMillis),
+                            RelativeTimeFormatter.format(message.dateMillis),
                             style = TextStyle(color = theme.sms.timestamp),
                             overflow = TextOverflow.ELLIPSIS,
                             softWrap = false,

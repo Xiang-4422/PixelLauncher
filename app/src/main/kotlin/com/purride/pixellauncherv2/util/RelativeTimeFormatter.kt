@@ -9,7 +9,7 @@ import java.util.Locale
  * - 当天消息：显示 "HH:MM"（24 小时制）
  * - 非当天消息：显示 "M/D"
  */
-object SmsTimeFormatter {
+object RelativeTimeFormatter {
 
     fun format(dateMillis: Long): String {
         if (dateMillis <= 0L) return "--:--"

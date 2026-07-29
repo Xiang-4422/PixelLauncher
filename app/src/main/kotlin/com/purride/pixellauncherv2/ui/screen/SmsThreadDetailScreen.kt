@@ -36,7 +36,7 @@ import com.purride.pixellauncherv2.launcher.SmsMessageStatusModel
 import com.purride.pixellauncherv2.launcher.SmsSendStatus
 import com.purride.pixellauncherv2.launcher.SmsVerificationCodeModel
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
-import com.purride.pixellauncherv2.util.SmsTimeFormatter
+import com.purride.pixellauncherv2.util.RelativeTimeFormatter
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 /**
@@ -289,7 +289,7 @@ private fun buildMessage(
             mainAxisSize = MainAxisSize.MIN,
             spacing = 1,
             children = buildList {
-                add(messageMetaRow(code, SmsTimeFormatter.format(msg.dateMillis), theme))
+                add(messageMetaRow(code, RelativeTimeFormatter.format(msg.dateMillis), theme))
                 add(
                     Text(
                         msg.body,

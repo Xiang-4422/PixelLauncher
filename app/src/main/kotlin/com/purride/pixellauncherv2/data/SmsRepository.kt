@@ -31,7 +31,7 @@ class SmsRepository(
 ) {
 
     private val contentResolver: ContentResolver = context.contentResolver
-    private val contactResolver = SmsContactResolver(context)
+    private val contactResolver = ContactNameResolver(context)
     private var smsObserver: ContentObserver? = null
 
     fun hasReadSmsPermission(): Boolean {

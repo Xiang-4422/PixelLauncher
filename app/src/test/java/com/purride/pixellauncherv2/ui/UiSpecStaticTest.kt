@@ -608,7 +608,7 @@ class UiSpecStaticTest {
                 source.contains("GestureDetector(") &&
                 source.contains("SmsVerificationCodeModel.extract") &&
                 source.contains("\"CODE ") &&
-                source.contains("messageMetaRow(code, SmsTimeFormatter.format(msg.dateMillis), theme)") &&
+                source.contains("messageMetaRow(code, RelativeTimeFormatter.format(msg.dateMillis), theme)") &&
                 source.contains("private fun messageMetaRow(") &&
                 !source.contains("private fun codeLine(") &&
                 source.contains("smsCurrentIsServiceConversation") &&

@@ -5,17 +5,17 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * Coverage for [SmsTimeFormatter] — invalid-timestamp placeholder, same-day
+ * Coverage for [RelativeTimeFormatter] — invalid-timestamp placeholder, same-day
  * "HH:MM" and other-day "M/D" formatting. Timestamps are built relative to the
  * same system clock/timezone the formatter reads, so assertions stay timezone
  * self-consistent. JVM-safe; no Android dependencies.
  */
-class SmsTimeFormatterTest {
+class RelativeTimeFormatterTest {
 
     @Test
     fun format_nonPositiveReturnsPlaceholder() {
-        assertEquals("--:--", SmsTimeFormatter.format(0L))
-        assertEquals("--:--", SmsTimeFormatter.format(-1L))
+        assertEquals("--:--", RelativeTimeFormatter.format(0L))
+        assertEquals("--:--", RelativeTimeFormatter.format(-1L))
     }
 
     @Test
@@ -26,7 +26,7 @@ class SmsTimeFormatterTest {
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }
-        assertEquals("09:05", SmsTimeFormatter.format(cal.timeInMillis))
+        assertEquals("09:05", RelativeTimeFormatter.format(cal.timeInMillis))
     }
 
     @Test
@@ -36,6 +36,6 @@ class SmsTimeFormatterTest {
             set(Calendar.MONTH, Calendar.MARCH)
             set(Calendar.DAY_OF_MONTH, 7)
         }
-        assertEquals("3/7", SmsTimeFormatter.format(cal.timeInMillis))
+        assertEquals("3/7", RelativeTimeFormatter.format(cal.timeInMillis))
     }
 }
