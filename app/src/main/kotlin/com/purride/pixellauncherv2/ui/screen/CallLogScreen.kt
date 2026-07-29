@@ -3,14 +3,18 @@ package com.purride.pixellauncherv2.ui.screen
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.AnimatedPixelLoadingBar
 import com.purride.pixelui.Column
+import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
+import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Padding
+import com.purride.pixelui.PixelSemanticRole
 import com.purride.pixelui.Row
+import com.purride.pixelui.Semantics
 import com.purride.pixelui.SizedBox
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextOverflow
@@ -46,8 +50,14 @@ fun CallLogScreen(
     listState: PixelListState,
     listController: PixelListController,
     onCallGroupPressed: (number: String) -> Unit,
+    onRequestCallLogPermission: () -> Unit,
 ): Widget {
     val groups = uiState.callLogGroups
+    // 缺权限与"确实没有通话"是两件事：前者可操作，必须给出恢复路径，
+    // 否则用户被拒一次后就只能去系统设置里翻。
+    if (!uiState.hasCallLogPermission) {
+        return callLogPermissionEmptyState(theme, onRequestCallLogPermission)
+    }
     if (uiState.isCallLogLoading && groups.isEmpty()) {
         return centeredCallLoading(theme, vsync)
     }
@@ -110,7 +120,8 @@ private fun buildCallRow(
                             SizedBox(width = CALL_STATUS_INDENT_PX, height = 0),
                             Expanded(
                                 child = callText(
-                                    text = group.number,
+                                    // 无联系人姓名时第一行已经是号码，这里不再重复。
+                                    text = CallLogModel.secondaryLine(group.displayTitle, group.number),
                                     color = theme.sms.timestamp,
                                     theme = theme,
                                 ),
@@ -144,6 +155,45 @@ private fun callText(
     overflow = TextOverflow.ELLIPSIS,
     softWrap = false,
     maxLines = 1,
+)
+
+/**
+ * 缺少通话记录权限时的空态：说明原因 + 一个可点的授权入口。
+ *
+ * 授权入口是被拒后唯一的恢复路径——控制器的一次性节流会让第二次按 CALL 只闪一条
+ * 状态栏文字，没有这个按钮用户就只能去系统设置里找。按钮用边框而非实心：顶部页签的
+ * 选中态已经占用了本屏的实心块。
+ */
+private fun callLogPermissionEmptyState(
+    theme: LauncherTheme,
+    onRequestCallLogPermission: () -> Unit,
+): Widget = Column(
+    crossAxisAlignment = CrossAxisAlignment.CENTER,
+    mainAxisSize = MainAxisSize.MAX,
+    mainAxisAlignment = MainAxisAlignment.CENTER,
+    spacing = LauncherSpacing.ROW_SPACING * 2,
+    children = listOf(
+        smsStatusText("NO CALL LOG ACCESS", theme),
+        Semantics(
+            label = "GRANT CALL LOG ACCESS",
+            role = PixelSemanticRole.BUTTON,
+            child = GestureDetector(
+                onTap = onRequestCallLogPermission,
+                child = Container(
+                    borderColor = theme.button.border,
+                    padding = EdgeInsets.symmetric(
+                        horizontal = LauncherSpacing.CONTENT_HORIZONTAL * 2,
+                        vertical = LauncherSpacing.ROW_SPACING,
+                    ),
+                    child = callText(
+                        text = "GRANT",
+                        color = theme.button.text,
+                        theme = theme,
+                    ),
+                ),
+            ),
+        ),
+    ),
 )
 
 private fun centeredCallStatus(

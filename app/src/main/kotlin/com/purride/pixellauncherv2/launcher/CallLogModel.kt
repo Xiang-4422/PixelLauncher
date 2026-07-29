@@ -106,6 +106,17 @@ object CallLogModel {
     fun countBadge(callCount: Int): String = if (callCount > 1) "x$callCount" else ""
 
     /**
+     * 单条第二行左侧文本。
+     *
+     * 有联系人姓名时给号码——第一行是姓名，两行互补。没有姓名时 [displayTitle] 本身
+     * 就是号码，第二行再重复一次等于把一条记录的两行花在同一个信息上（通讯录里没有
+     * 的陌生来电正是最常见的情形），此时留空。该行右侧还有时长文本撑住行高，留空
+     * 不会让行塌陷。
+     */
+    fun secondaryLine(displayTitle: String, number: String): String =
+        if (displayTitle.trim() == number.trim()) "" else number
+
+    /**
      * 分组键：号码规范化后比较，号码为空（未知来电）的记录各自独立成组
      * ——多个未知来电之间无法确认是否同一来源，不应合并。
      */

@@ -52,6 +52,7 @@ fun DialerScreen(
     listController: PixelListController,
     onCallPageSelected: (Int) -> Unit,
     onCallGroupPressed: (number: String) -> Unit,
+    onRequestCallLogPermission: () -> Unit,
     onDialDigit: (Char) -> Unit,
     onDialBackspace: () -> Unit,
     onDialClear: () -> Unit,
@@ -80,6 +81,7 @@ fun DialerScreen(
                         listState = listState,
                         listController = listController,
                         onCallGroupPressed = onCallGroupPressed,
+                        onRequestCallLogPermission = onRequestCallLogPermission,
                     ),
                     dialPadPage(
                         uiState = uiState,
@@ -237,13 +239,13 @@ private fun dialMatchSlot(
 ): Widget {
     val matches = uiState.dialMatches
     val first = matches.firstOrNull()
-    val text = when {
-        first == null -> ""
-        matches.size == 1 -> "${first.displayName.uppercase()}  ${first.number}"
-        else -> "${first.displayName.uppercase()}  +${matches.size - 1}"
-    }
     val slot = dialText(
-        text = text,
+        // 文本由 model 负责且保证非空——空串会让本槽塌成 0 高度，键盘随每次按键弹跳。
+        text = DialInputModel.matchSlotText(
+            displayName = first?.displayName,
+            number = first?.number,
+            extraCount = (matches.size - 1).coerceAtLeast(0),
+        ),
         color = theme.sms.sender,
         theme = theme,
     )

@@ -229,7 +229,9 @@ object LauncherStateTransitions {
             mode = LauncherMode.DIALER,
             returnMode = LauncherMode.HOME,
             callLogSelectedIndex = 0,
-            callPageIndex = CallPageIndex.RECENT,
+            // 读不到通话记录时直接落到拨号盘：让用户停在一个空页上没有意义，
+            // 而拨号盘只需要 CALL_PHONE，与记录权限无关。
+            callPageIndex = if (state.hasCallLogPermission) CallPageIndex.RECENT else CallPageIndex.DIAL,
         )
     }
 
@@ -292,8 +294,15 @@ object LauncherStateTransitions {
     }
 
     /** 同步是否具备发起通话的权限。 */
-    fun updateCallCapability(state: LauncherState, hasCallPhonePermission: Boolean): LauncherState {
-        return state.copy(hasCallPhonePermission = hasCallPhonePermission)
+    fun updateCallCapability(
+        state: LauncherState,
+        hasCallPhonePermission: Boolean,
+        hasCallLogPermission: Boolean,
+    ): LauncherState {
+        return state.copy(
+            hasCallPhonePermission = hasCallPhonePermission,
+            hasCallLogPermission = hasCallLogPermission,
+        )
     }
 
     /** 打开短信角色引导页。 */

@@ -546,6 +546,7 @@ class MainActivity : AppCompatActivity() {
         onSmsThreadMenuDismiss = smsController::threadMenuDismiss,
         onComposeNewThread = smsController::composeNewThread,
         onCallGroupPressed = { number -> callController.callNumber(number) },
+        onRequestCallLogPermission = callController::retryCallPermissions,
         onCallPageSelected = callController::selectPage,
         onDialDigit = callController::appendDialDigit,
         onDialBackspace = callController::backspaceDialInput,

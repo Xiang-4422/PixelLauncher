@@ -80,6 +80,8 @@ data class LauncherCallbacks(
     val onCallGroupPressed: (number: String) -> Unit,
     /** 拨号模块翻页（最近通话 / 拨号盘）。 */
     val onCallPageSelected: (Int) -> Unit,
+    /** 「最近通话」空态里的授权入口：用户主动重试，绕过本会话的一次性节流。 */
+    val onRequestCallLogPermission: () -> Unit,
     /** 拨号盘按键。 */
     val onDialDigit: (Char) -> Unit,
     val onDialBackspace: () -> Unit,

@@ -581,6 +581,45 @@ class LauncherStateTransitionsTest {
         assertTrue(stale.dialMatches.isEmpty())
     }
 
+    /**
+     * 进入拨号模块不依赖通话记录权限——拨号盘只要 CALL_PHONE。
+     * 缺记录权限时直接落到拨号盘，而不是把用户留在一个空的「最近通话」页上。
+     */
+    @Test
+    fun showCallLog_landsOnDialPadWhenCallLogUnreadable() {
+        val withoutPermission = LauncherState(hasCallLogPermission = false)
+        val opened = LauncherStateTransitions.showCallLog(withoutPermission)
+        assertEquals(LauncherMode.DIALER, opened.mode)
+        assertEquals(CallPageIndex.DIAL, opened.callPageIndex)
+
+        val withPermission = LauncherState(hasCallLogPermission = true)
+        val normal = LauncherStateTransitions.showCallLog(withPermission)
+        assertEquals(LauncherMode.DIALER, normal.mode)
+        assertEquals(CallPageIndex.RECENT, normal.callPageIndex)
+    }
+
+    /** 两种能力各自独立落地：拨号可用不代表记录可读，反之亦然。 */
+    @Test
+    fun updateCallCapability_tracksBothPermissionsIndependently() {
+        val state = LauncherState()
+
+        val callOnly = LauncherStateTransitions.updateCallCapability(
+            state = state,
+            hasCallPhonePermission = true,
+            hasCallLogPermission = false,
+        )
+        assertTrue(callOnly.hasCallPhonePermission)
+        assertFalse(callOnly.hasCallLogPermission)
+
+        val logOnly = LauncherStateTransitions.updateCallCapability(
+            state = state,
+            hasCallPhonePermission = false,
+            hasCallLogPermission = true,
+        )
+        assertFalse(logOnly.hasCallPhonePermission)
+        assertTrue(logOnly.hasCallLogPermission)
+    }
+
     @Test
     fun hideCallLog_clearsDialInput() {
         val state = LauncherState(

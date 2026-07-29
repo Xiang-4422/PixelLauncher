@@ -470,6 +470,7 @@ internal class LauncherRootHost(
             listController = callLogListController,
             onCallPageSelected = callbacks.onCallPageSelected,
             onCallGroupPressed = callbacks.onCallGroupPressed,
+            onRequestCallLogPermission = callbacks.onRequestCallLogPermission,
             onDialDigit = callbacks.onDialDigit,
             onDialBackspace = callbacks.onDialBackspace,
             onDialClear = callbacks.onDialClear,

@@ -115,6 +115,20 @@ class CallLogModelTest {
         assertEquals("x3", CallLogModel.countBadge(3))
     }
 
+    /**
+     * 陌生来电（通讯录里没有）时第一行已经是号码，第二行不能再重复一遍——
+     * 那等于把一条记录的两行花在同一个信息上，而这恰好是最常见的情形。
+     */
+    @Test
+    fun secondaryLineOmitsNumberWhenTitleIsAlreadyTheNumber() {
+        assertEquals("10086", CallLogModel.secondaryLine(displayTitle = "BANK", number = "10086"))
+        assertEquals("", CallLogModel.secondaryLine(displayTitle = "10086", number = "10086"))
+        // displayTitle 经过 trim 后相同也算重复
+        assertEquals("", CallLogModel.secondaryLine(displayTitle = " 10086 ", number = "10086"))
+        // UNKNOWN 占位与空号码：没有可展示的第二行内容
+        assertEquals("", CallLogModel.secondaryLine(displayTitle = "", number = ""))
+    }
+
     @Test
     fun displayTitleFallsBackFromNameToNumberToUnknown() {
         assertEquals("BANK", entry(id = 1, number = "10086", date = 1, name = "BANK").displayTitle)

@@ -70,21 +70,42 @@ internal class CallController(
 
     // ── Module open/close ─────────────────────────────────────────────────────
 
-    /** 打开通话记录页；缺少读取权限时先申请。 */
+    /**
+     * 打开拨号模块。
+     *
+     * **进入模块本身不需要任何权限。** 拨号盘只依赖 CALL_PHONE，与通话记录无关，
+     * 因此不能因为用户拒绝 READ_CALL_LOG 就把整个模块挡在门外——那会让"愿意授权拨号、
+     * 不愿交出通话历史"这个完全合理的选择变成无法手动拨号。缺记录权限时
+     * [LauncherStateTransitions.showCallLog] 会直接落到拨号盘页，「最近通话」页渲染
+     * 带授权入口的空态。
+     */
     fun openCallLog() {
         refreshCallCapability(render = false)
-        if (!callLogRepository.hasReadCallLogPermission()) {
-            requestMissingPermissions()
-            return
-        }
+        val canReadCallLog = callLogRepository.hasReadCallLogPermission()
         // 每次进入模块丢弃一次联系人快照：期间新增/改名的联系人才能被 T9 命中。
         contactSearchRepository.invalidate()
         val hasData = host.state.callLogGroups.isNotEmpty()
         host.state = LauncherStateTransitions.showCallLog(
-            host.state.copy(isCallLogLoading = !hasData),
+            host.state.copy(isCallLogLoading = canReadCallLog && !hasData),
         )
         host.render()
-        refreshCallLog(render = true, acknowledgeNewCalls = true)
+        if (canReadCallLog) {
+            refreshCallLog(render = true, acknowledgeNewCalls = true)
+        } else {
+            // 首次进入时顺带申请一次；被拒后靠空态里的入口重试，不再自动弹窗。
+            requestMissingPermissions()
+        }
+    }
+
+    /**
+     * 空态里的「授权」入口：用户主动点击，因此允许绕过本会话的一次性节流再弹一次。
+     *
+     * [permissionRequestedThisSession] 的作用是防止自动重复打扰；用户自己按下的
+     * 重试不属于打扰，若继续沿用该节流，被拒一次后就再也没有恢复路径。
+     */
+    fun retryCallPermissions() {
+        permissionRequestedThisSession = false
+        requestMissingPermissions()
     }
 
     fun closeCallLog() {
@@ -227,11 +248,20 @@ internal class CallController(
         host.requestCallPermissions(missing.toTypedArray())
     }
 
-    /** 拨号权限申请返回后调用。 */
+    /**
+     * 拨号权限申请返回后调用。
+     *
+     * 按能力分别处理，不再统一以 READ_CALL_LOG 为门槛：拿到记录权限就补一次读取，
+     * 没拿到也要落地能力变化并重绘，让「最近通话」页的空态如实反映当前状态。
+     */
     fun onPermissionsResult() {
         refreshCallCapability(render = false)
         if (callLogRepository.hasReadCallLogPermission()) {
-            openCallLog()
+            if (host.state.mode == LauncherMode.DIALER) {
+                refreshCallLog(render = true, acknowledgeNewCalls = true)
+            } else {
+                openCallLog()
+            }
         } else {
             host.render()
         }
@@ -242,6 +272,7 @@ internal class CallController(
         host.state = LauncherStateTransitions.updateCallCapability(
             state = host.state,
             hasCallPhonePermission = dialerRepository.hasCallPhonePermission(),
+            hasCallLogPermission = callLogRepository.hasReadCallLogPermission(),
         )
         if (render) {
             host.render()
