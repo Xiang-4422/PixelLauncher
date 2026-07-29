@@ -37,6 +37,46 @@ class DemoDirector(
     private var width = 0
     private var height = 0
 
+    // ── GIF 录制 ──────────────────────────────────────────────────────────────
+    private var recordedFrames: MutableList<IntArray>? = null
+    private var captureCountdown = 0
+
+    /** 录满一段后回调：宿主拿去编码保存，director 不关心格式与 IO。 */
+    var onRecordingFinished: ((width: Int, height: Int, frames: List<IntArray>) -> Unit)? = null
+
+    val isRecording: Boolean
+        get() = recordedFrames != null
+
+    val recordingProgress: Float
+        get() = (recordedFrames?.size ?: 0).toFloat() / RECORD_FRAMES
+
+    /** 长按开录：攒满 [RECORD_FRAMES] 帧自动结束。 */
+    fun startRecording() {
+        if (isRecording || width <= 0) return
+        recordedFrames = ArrayList(RECORD_FRAMES)
+        captureCountdown = 0
+        requestRepaint()
+    }
+
+    /** 自绘层每次 paint 末尾调用：按抽帧间隔拷贝画布区域。 */
+    fun captureIfRecording(buffer: PixelBuffer, offsetX: Int, offsetY: Int, w: Int, h: Int) {
+        val frames = recordedFrames ?: return
+        if (captureCountdown > 0) {
+            captureCountdown--
+            return
+        }
+        captureCountdown = CAPTURE_EVERY - 1
+        val frame = IntArray(w * h)
+        for (y in 0 until h) {
+            System.arraycopy(buffer.pixels, (offsetY + y) * buffer.width + offsetX, frame, y * w, w)
+        }
+        frames += frame
+        if (frames.size >= RECORD_FRAMES) {
+            recordedFrames = null
+            onRecordingFinished?.invoke(w, h, frames)
+        }
+    }
+
     val currentScene: DemoScene
         get() = scenes[sceneIndex]
 
@@ -114,13 +154,18 @@ class DemoDirector(
 
     private companion object {
         const val FRAME_SECONDS = 0.016f
+
+        /** 录 36 帧、每 5 个渲染帧抽 1 帧 ≈ 12fps × 3 秒。 */
+        const val RECORD_FRAMES = 36
+        const val CAPTURE_EVERY = 5
     }
 }
 
-/** 演示画布：全屏自绘层；点按/左滑下一场，右滑上一场。 */
+/** 演示画布：点按/左滑下一场，右滑上一场，长按录 3 秒 GIF。 */
 fun DemoCanvas(director: DemoDirector): Widget = GestureDetector(
     child = DemoCanvasRenderWidget(director),
     onTap = { director.nextScene() },
+    onLongPress = { director.startRecording() },
     onSwipeLeft = { director.nextScene() },
     onSwipeRight = { director.previousScene() },
     key = "demo-canvas-gesture",
@@ -152,6 +197,8 @@ private class RenderDemoCanvas(
         // 自己清屏：不依赖引擎对未标脏区域的保留策略，动画残影从源头杜绝。
         buffer.fillRect(0, 0, size.width, size.height, BACKGROUND)
         director.currentScene.render(buffer)
+        // 先抓帧再画字幕：导出的 GIF 只有纯画面。
+        director.captureIfRecording(buffer, offsetX, offsetY, size.width, size.height)
         drawChrome(buffer)
     }
 
@@ -171,10 +218,21 @@ private class RenderDemoCanvas(
             val color = if (index == director.currentIndex) PixelColor.White else CHROME_COLOR
             buffer.setPixel(x, 3, color)
         }
+        if (director.isRecording) drawRecordingBadge(buffer)
+    }
+
+    /** 录制中：REC 红点 + 底部进度线（不进导出画面，抓帧在字幕之前）。 */
+    private fun drawRecordingBadge(buffer: PixelBuffer) {
+        val y = 10
+        buffer.fillRect(2, y, 3, 3, REC_COLOR)
+        PixelBitmapFont.Default.drawText(buffer, "REC", x = 7, y = y - 2, color = REC_COLOR)
+        val progressWidth = (size.width * director.recordingProgress).toInt()
+        buffer.fillRect(0, size.height - 1, progressWidth, 1, REC_COLOR)
     }
 
     private companion object {
         val CHROME_COLOR = PixelColor.fromRgb(110, 130, 160)
         val BACKGROUND = PixelColor.fromRgb(10, 14, 26)
+        val REC_COLOR = PixelColor.fromRgb(230, 70, 60)
     }
 }

@@ -1,7 +1,13 @@
 package com.purride.pixelshowcase
 
+import android.content.ContentValues
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import java.io.File
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -62,6 +68,7 @@ class ShowcaseActivity : AppCompatActivity() {
                 StarfieldScene(),
             ),
         )
+        director.onRecordingFinished = { width, height, frames -> saveRecording(width, height, frames) }
         appHost = ShowcaseAppHost(hostView = setup.hostView, director = director)
         // 首页不跑演示帧循环；进入 DEMOS 页时由 appHost 恢复。
         director.pause()
@@ -91,7 +98,49 @@ class ShowcaseActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
+    /** 录制完成：后台线程编码 GIF 并落到相册，回主线程报结果。 */
+    private fun saveRecording(width: Int, height: Int, frames: List<IntArray>) {
+        Thread {
+            val message = try {
+                val bytes = GifEncoder.encode(width, height, frames, delayCentis = GIF_DELAY_CENTIS)
+                val name = "pixel-demo-${System.currentTimeMillis()}.gif"
+                writeGif(bytes, name)
+                "GIF SAVED: $name"
+            } catch (error: Exception) {
+                "GIF SAVE FAILED: ${error.message}"
+            }
+            runOnUiThread {
+                if (!isDestroyed) Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+            }
+        }.start()
+    }
+
+    private fun writeGif(bytes: ByteArray, name: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val values = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, name)
+                put(MediaStore.Images.Media.MIME_TYPE, "image/gif")
+                put(
+                    MediaStore.Images.Media.RELATIVE_PATH,
+                    Environment.DIRECTORY_PICTURES + "/PixelShowcase",
+                )
+            }
+            val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+                ?: throw IllegalStateException("MediaStore insert 返回 null")
+            contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
+                ?: throw IllegalStateException("无法打开输出流")
+        } else {
+            // Q 之前写公共相册需要存储权限：降级到应用外部私有 Pictures 目录。
+            val dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+                ?: throw IllegalStateException("外部存储不可用")
+            File(dir, name).writeBytes(bytes)
+        }
+    }
+
     private companion object {
         const val DOT_SIZE_PX = 8
+
+        /** GIF 帧间隔 8/100 秒 ≈ 12.5fps，与抽帧节奏一致。 */
+        const val GIF_DELAY_CENTIS = 8
     }
 }
