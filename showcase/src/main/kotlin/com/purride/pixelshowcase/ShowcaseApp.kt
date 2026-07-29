@@ -44,6 +44,8 @@ enum class ShowcaseRoute(val routeName: String) {
     HOME("home"),
     DEMOS("demos"),
     WIDGETS("widgets"),
+    TODO("todo"),
+    STOPWATCH("stopwatch"),
     ABOUT("about"),
 }
 
@@ -72,6 +74,19 @@ class ShowcaseAppHost(
     private val nameState = nameController.create()
     private val galleryScrollController = ScrollController()
     private val galleryScrollState = galleryScrollController.create()
+
+    // ── 示例应用状态 ──────────────────────────────────────────────────────────
+    private val todoState = TodoState()
+    private val todoInputController = TextEditingController()
+    private val todoInputState = todoInputController.create()
+    private val todoListController = ScrollController()
+    private val todoListState = todoListController.create()
+    private val stopwatch = StopwatchController(
+        vsync = hostView.tickerProvider,
+        onFrame = { hostView.invalidate() },
+    )
+    private val lapListController = ScrollController()
+    private val lapListState = lapListController.create()
 
     private var navigatorState: PixelNavigatorState? = null
     private var currentRoute = ShowcaseRoute.HOME
@@ -119,6 +134,7 @@ class ShowcaseAppHost(
     }
 
     private fun navigateHome() {
+        if (currentRoute == ShowcaseRoute.STOPWATCH) stopwatch.pause()
         currentRoute = ShowcaseRoute.HOME
         director.pause()
         navigatorState?.pop()
@@ -143,11 +159,26 @@ class ShowcaseAppHost(
         ShowcaseRoute.HOME -> homePage()
         ShowcaseRoute.DEMOS -> DemoCanvas(director)
         ShowcaseRoute.WIDGETS -> widgetsPage()
+        ShowcaseRoute.TODO -> TodoPage(
+            state = todoState,
+            inputState = todoInputState,
+            inputController = todoInputController,
+            listState = todoListState,
+            listController = todoListController,
+            header = pageHeader("TODO"),
+            onChanged = { mutate { } },
+        )
+        ShowcaseRoute.STOPWATCH -> StopwatchPage(
+            controller = stopwatch,
+            listState = lapListState,
+            listController = lapListController,
+            header = pageHeader("STOPWATCH"),
+        )
         ShowcaseRoute.ABOUT -> aboutPage()
     }
 
     private fun homePage(): Widget = Container(
-        fillColor = BACKGROUND,
+        fillColor = ShowcaseTheme.BACKGROUND,
         child = Padding(
             padding = EdgeInsets.symmetric(horizontal = 10, vertical = 8),
             child = Column(
@@ -156,8 +187,8 @@ class ShowcaseAppHost(
                 spacing = 3,
                 children = listOf(
                     Gap(10),
-                    Text("PIXEL ENGINE", color = TITLE, textAlign = TextAlign.CENTER),
-                    Text("SHOWCASE", color = DIM, textAlign = TextAlign.CENTER),
+                    Text("PIXEL ENGINE", color = ShowcaseTheme.TITLE, textAlign = TextAlign.CENTER),
+                    Text("SHOWCASE", color = ShowcaseTheme.DIM, textAlign = TextAlign.CENTER),
                     Gap(12),
                     menuTile(
                         title = "DEMOS",
@@ -166,8 +197,18 @@ class ShowcaseAppHost(
                     ),
                     menuTile(
                         title = "WIDGETS",
-                        subtitle = "UI COMPONENT GALLERY",
+                        subtitle = "WIDGET GALLERY",
                         route = ShowcaseRoute.WIDGETS,
+                    ),
+                    menuTile(
+                        title = "TODO",
+                        subtitle = "STATE + LIST",
+                        route = ShowcaseRoute.TODO,
+                    ),
+                    menuTile(
+                        title = "STOPWATCH",
+                        subtitle = "TICKER TIME",
+                        route = ShowcaseRoute.STOPWATCH,
                     ),
                     menuTile(
                         title = "ABOUT",
@@ -175,19 +216,19 @@ class ShowcaseAppHost(
                         route = ShowcaseRoute.ABOUT,
                     ),
                     Expanded(child = Gap(0)),
-                    Text("TAP A CARD TO ENTER", color = FAINT, textAlign = TextAlign.CENTER),
+                    Text("TAP A CARD TO ENTER", color = ShowcaseTheme.FAINT, textAlign = TextAlign.CENTER),
                 ),
             ),
         ),
     )
 
     private fun menuTile(title: String, subtitle: String, route: ShowcaseRoute): Widget = Container(
-        borderColor = BORDER,
+        borderColor = ShowcaseTheme.BORDER,
         padding = EdgeInsets.symmetric(horizontal = 4, vertical = 2),
         child = ListTile(
-            title = Text(title, color = TITLE),
-            subtitle = Text(subtitle, color = DIM),
-            trailing = Text(">", color = DIM),
+            title = Text(title, color = ShowcaseTheme.TITLE),
+            subtitle = Text(subtitle, color = ShowcaseTheme.DIM),
+            trailing = Text(">", color = ShowcaseTheme.DIM),
             onTap = { navigate(route) },
             semanticLabel = title,
         ),
@@ -197,7 +238,7 @@ class ShowcaseAppHost(
 
     private fun widgetsPage(): Widget {
         val page = Container(
-            fillColor = BACKGROUND,
+            fillColor = ShowcaseTheme.BACKGROUND,
             child = Padding(
                 padding = EdgeInsets.symmetric(horizontal = 8, vertical = 6),
                 child = Column(
@@ -251,7 +292,7 @@ class ShowcaseAppHost(
         sectionHeader("SLIDER + PROGRESS"),
         Slider(value = sliderValue, onDrag = { mutate { sliderValue = it } }),
         ProgressBar(progress = sliderValue),
-        Text("DRAG THE SLIDER, THE BAR FOLLOWS", color = FAINT),
+        Text("DRAG THE SLIDER, THE BAR FOLLOWS", color = ShowcaseTheme.FAINT),
 
         sectionHeader("INPUT"),
         TextField(
@@ -265,15 +306,15 @@ class ShowcaseAppHost(
 
         sectionHeader("LIST"),
         ListTile(
-            title = Text("FIRST ITEM", color = TITLE),
-            subtitle = Text("WITH SUBTITLE", color = DIM),
-            trailing = Text("42", color = DIM),
+            title = Text("FIRST ITEM", color = ShowcaseTheme.TITLE),
+            subtitle = Text("WITH SUBTITLE", color = ShowcaseTheme.DIM),
+            trailing = Text("42", color = ShowcaseTheme.DIM),
             onTap = {},
         ),
         Divider(),
         ListTile(
-            title = Text("SECOND ITEM", color = TITLE),
-            subtitle = Text("TAP DOES NOTHING", color = DIM),
+            title = Text("SECOND ITEM", color = ShowcaseTheme.TITLE),
+            subtitle = Text("TAP DOES NOTHING", color = ShowcaseTheme.DIM),
             onTap = {},
         ),
         Gap(8),
@@ -283,14 +324,14 @@ class ShowcaseAppHost(
         spacing = 4,
         crossAxisAlignment = CrossAxisAlignment.CENTER,
         children = listOf(
-            Expanded(child = Text(label, color = DIM)),
+            Expanded(child = Text(label, color = ShowcaseTheme.DIM)),
             control,
         ),
     )
 
     private fun sectionHeader(text: String): Widget = Padding(
         padding = EdgeInsets.only(top = 6, bottom = 1),
-        child = Text(text, color = FAINT),
+        child = Text(text, color = ShowcaseTheme.FAINT),
     )
 
     private fun pageHeader(title: String): Widget = Padding(
@@ -300,7 +341,7 @@ class ShowcaseAppHost(
             crossAxisAlignment = CrossAxisAlignment.CENTER,
             children = listOf(
                 TextButton(text = "< BACK", onPressed = { navigateHome() }),
-                Expanded(child = Text(title, color = TITLE, textAlign = TextAlign.END)),
+                Expanded(child = Text(title, color = ShowcaseTheme.TITLE, textAlign = TextAlign.END)),
             ),
         ),
     )
@@ -308,7 +349,7 @@ class ShowcaseAppHost(
     // ── ABOUT ─────────────────────────────────────────────────────────────────
 
     private fun aboutPage(): Widget = Container(
-        fillColor = BACKGROUND,
+        fillColor = ShowcaseTheme.BACKGROUND,
         child = Padding(
             padding = EdgeInsets.symmetric(horizontal = 8, vertical = 6),
             child = Column(
@@ -317,28 +358,30 @@ class ShowcaseAppHost(
                 spacing = 3,
                 children = listOf(
                     pageHeader("ABOUT"),
-                    Text("PIXEL ENGINE", color = TITLE),
-                    Text("A RETAINED-MODE UI ENGINE", color = DIM, softWrap = true, maxLines = 3),
-                    Text("WHERE EVERY UNIT IS ONE", color = DIM, softWrap = true, maxLines = 3),
-                    Text("LOGICAL PIXEL.", color = DIM, softWrap = true, maxLines = 3),
+                    Text("PIXEL ENGINE", color = ShowcaseTheme.TITLE),
+                    Text("A RETAINED-MODE UI ENGINE", color = ShowcaseTheme.DIM, softWrap = true, maxLines = 3),
+                    Text("WHERE EVERY UNIT IS ONE", color = ShowcaseTheme.DIM, softWrap = true, maxLines = 3),
+                    Text("LOGICAL PIXEL.", color = ShowcaseTheme.DIM, softWrap = true, maxLines = 3),
                     Gap(6),
-                    Text("THIS APP DEPENDS ONLY ON", color = DIM),
-                    Text("THE ENGINE MODULE.", color = DIM),
+                    Text("THIS APP DEPENDS ONLY ON", color = ShowcaseTheme.DIM),
+                    Text("THE ENGINE MODULE.", color = ShowcaseTheme.DIM),
                     Gap(6),
-                    Text("NAVIGATION, TRANSITIONS,", color = DIM),
-                    Text("WIDGETS, TEXT, GESTURES,", color = DIM),
-                    Text("AND EVERY DEMO FRAME ARE", color = DIM),
-                    Text("ALL DRAWN BY THE ENGINE.", color = DIM),
+                    Text("NAVIGATION, TRANSITIONS,", color = ShowcaseTheme.DIM),
+                    Text("WIDGETS, TEXT, GESTURES,", color = ShowcaseTheme.DIM),
+                    Text("AND EVERY DEMO FRAME ARE", color = ShowcaseTheme.DIM),
+                    Text("ALL DRAWN BY THE ENGINE.", color = ShowcaseTheme.DIM),
                 ),
             ),
         ),
     )
 
-    private companion object {
-        val BACKGROUND = PixelColor.fromRgb(10, 14, 26)
-        val TITLE = PixelColor.fromRgb(236, 244, 255)
-        val DIM = PixelColor.fromRgb(140, 165, 200)
-        val FAINT = PixelColor.fromRgb(80, 100, 130)
-        val BORDER = PixelColor.fromRgb(70, 95, 130)
-    }
+}
+
+/** showcase 的极简主题：一底四阶，全应用共享。 */
+object ShowcaseTheme {
+    val BACKGROUND = PixelColor.fromRgb(10, 14, 26)
+    val TITLE = PixelColor.fromRgb(236, 244, 255)
+    val DIM = PixelColor.fromRgb(140, 165, 200)
+    val FAINT = PixelColor.fromRgb(80, 100, 130)
+    val BORDER = PixelColor.fromRgb(70, 95, 130)
 }
