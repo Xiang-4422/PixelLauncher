@@ -41,6 +41,29 @@ class ContactListModelTest {
         assertEquals("Z", ContactListModel.initialOf(contact(name = "张三", phonetic = "zhang san")))
     }
 
+    /**
+     * provider 分桶字母优先于首字符启发：实测 MIUI 的 SORT_KEY 是汉字原文，
+     * 没有分桶字母时全部中文联系人塌进一个 # 组。
+     */
+    @Test
+    fun providerGroupLabelWinsOverFirstCharHeuristic() {
+        // 排序键是汉字，但分桶字母给出 Z → 按 Z 分组
+        assertEquals(
+            "Z",
+            ContactListModel.initialOf(contact(name = "张三", phonetic = "张三", label = "Z")),
+        )
+        // 分桶字母本身是 # 时如实归 #
+        assertEquals(
+            "#",
+            ContactListModel.initialOf(contact(name = "10086", phonetic = "10086", label = "#")),
+        )
+        // 分桶字母缺失时退回首字符启发
+        assertEquals(
+            "A",
+            ContactListModel.initialOf(contact(name = "Alice", phonetic = "alice", label = "")),
+        )
+    }
+
     @Test
     fun numberBadgeOnlyAppearsForMultipleNumbers() {
         assertEquals("", ContactListModel.numberBadge(1))
@@ -61,12 +84,13 @@ class ContactListModelTest {
         assertEquals("", ContactListModel.phoneTypeLabel(type = 99, customLabel = ""))
     }
 
-    private fun contact(name: String, phonetic: String): ContactDetail = ContactDetail(
+    private fun contact(name: String, phonetic: String, label: String = ""): ContactDetail = ContactDetail(
         contactId = name.hashCode().toLong(),
         lookupKey = "key-$name",
         rawContactId = 1L,
         displayName = name,
         phoneticName = phonetic,
+        groupLabel = label,
         numbers = listOf(ContactPhone(dataId = 1L, number = "10086", typeLabel = "MOBILE")),
     )
 }

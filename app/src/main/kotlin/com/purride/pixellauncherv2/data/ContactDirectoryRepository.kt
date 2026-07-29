@@ -45,11 +45,16 @@ class ContactDirectoryRepository(
         if (!hasReadContactsPermission()) {
             return emptyList()
         }
-        // 先带拼音排序键查；该列并非所有 ROM 都提供，失败后降级为展示名排序。
-        return query(withSortKey = true) ?: query(withSortKey = false) ?: emptyList()
+        // 三级降级：分桶字母列（隐藏 API，汉字按拼音归桶）→ 拼音排序键 → 展示名排序。
+        // 分桶字母不是锦上添花：SORT_KEY 为汉字原文的 ROM 上（实测 MIUI 如此），
+        // 没有它时全部中文联系人会塌进一个 # 组，字母分组名存实亡。
+        return query(withSortKey = true, withGroupLabel = true)
+            ?: query(withSortKey = true, withGroupLabel = false)
+            ?: query(withSortKey = false, withGroupLabel = false)
+            ?: emptyList()
     }
 
-    private fun query(withSortKey: Boolean): List<ContactDetail>? {
+    private fun query(withSortKey: Boolean, withGroupLabel: Boolean): List<ContactDetail>? {
         val projection = buildList {
             add(ContactsContract.CommonDataKinds.Phone.CONTACT_ID)
             add(ContactsContract.CommonDataKinds.Phone.LOOKUP_KEY)
@@ -60,6 +65,7 @@ class ContactDirectoryRepository(
             add(ContactsContract.CommonDataKinds.Phone.TYPE)
             add(ContactsContract.CommonDataKinds.Phone.LABEL)
             if (withSortKey) add(ContactsContract.Contacts.SORT_KEY_PRIMARY)
+            if (withGroupLabel) add(PHONEBOOK_LABEL_COLUMN)
         }.toTypedArray()
         val sortOrder = if (withSortKey) {
             "${ContactsContract.Contacts.SORT_KEY_PRIMARY} ASC"
@@ -75,7 +81,11 @@ class ContactDirectoryRepository(
                 sortOrder,
             )
         } catch (error: Throwable) {
-            Log.w(LOG_TAG, "contact directory query failed (withSortKey=$withSortKey)", error)
+            Log.w(
+                LOG_TAG,
+                "contact directory query failed (withSortKey=$withSortKey, withGroupLabel=$withGroupLabel)",
+                error,
+            )
             return null
         } ?: return null
 
@@ -92,6 +102,11 @@ class ContactDirectoryRepository(
             val idLabel = queryCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.LABEL)
             val idSortKey = if (withSortKey) {
                 queryCursor.getColumnIndex(ContactsContract.Contacts.SORT_KEY_PRIMARY)
+            } else {
+                -1
+            }
+            val idGroupLabel = if (withGroupLabel) {
+                queryCursor.getColumnIndex(PHONEBOOK_LABEL_COLUMN)
             } else {
                 -1
             }
@@ -125,6 +140,7 @@ class ContactDirectoryRepository(
                         rawContactId = if (idRawContact >= 0) queryCursor.getLong(idRawContact) else 0L,
                         displayName = queryCursor.getString(idName).orEmpty(),
                         phoneticName = if (idSortKey >= 0) queryCursor.getString(idSortKey).orEmpty() else "",
+                        groupLabel = if (idGroupLabel >= 0) queryCursor.getString(idGroupLabel).orEmpty() else "",
                         numbers = listOf(phone),
                     )
                 } else {
@@ -137,5 +153,11 @@ class ContactDirectoryRepository(
 
     private companion object {
         const val LOG_TAG = "ContactDirRepo"
+
+        /**
+         * 通讯录分桶字母列。AOSP 自 Lollipop 起存在但未收进公开常量表，
+         * 系统通讯录/拨号的字母索引都靠它；列缺失时上层降级链兜住。
+         */
+        const val PHONEBOOK_LABEL_COLUMN = "phonebook_label"
     }
 }

@@ -95,6 +95,11 @@ data class ContactDetail(
     val displayName: String,
     /** 拼音排序键；ROM 未提供时为空，分组降级用展示名。 */
     val phoneticName: String = "",
+    /**
+     * provider 给出的通讯录分桶字母（phonebook_label，汉字按拼音归桶：阿→A、爸→B）。
+     * 该列非公开 API，取不到时为空，分组降级用 [phoneticName]/[displayName] 首字符。
+     */
+    val groupLabel: String = "",
     /** 全部号码（已去重），至少一条——目录只收录有号码的联系人。 */
     val numbers: List<ContactPhone> = emptyList(),
 )
