@@ -1,6 +1,7 @@
 package com.purride.pixellauncherv2.data
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -26,7 +27,13 @@ class SmsNotificationHelper(
     /**
      * 来信通知。[recentUnread] 为该线程最近的未读消息（时间升序），
      * 用 MessagingStyle 堆叠显示，后一条不再顶掉前一条的内容。
+     *
+     * 抑制 MissingPermission：notify 之前由 [canPostNotifications] 守住（含
+     * TIRAMISU 以下的版本分支）。lint 只认同方法内内联的 checkSelfPermission，
+     * 认不出包成 helper 的检查——同一文件里内联写法的 showUnsupportedMms /
+     * showSendFailure 就不被报错，正好说明这是检测器的跨方法盲区而非真的漏检。
      */
+    @SuppressLint("MissingPermission")
     fun showIncomingMessage(entry: SmsMessageEntry, recentUnread: List<SmsMessageEntry> = emptyList()) {
         ensureChannel()
         // 入库失败或线程解析失败（threadId <= 0）时按地址编号，避免多个发件人
@@ -79,7 +86,13 @@ class SmsNotificationHelper(
         showGroupSummary()
     }
 
-    /** 多会话通知的分组摘要；点按打开应用（由宿主决定落点）。 */
+    /**
+     * 多会话通知的分组摘要；点按打开应用（由宿主决定落点）。
+     *
+     * 抑制 MissingPermission：唯一调用点在 [showIncomingMessage] 里
+     * [canPostNotifications] 守卫之后，本身不对外暴露。
+     */
+    @SuppressLint("MissingPermission")
     private fun showGroupSummary() {
         val launchIntent = Intent(context, MainActivity::class.java).apply {
             action = ACTION_OPEN_SUMMARY

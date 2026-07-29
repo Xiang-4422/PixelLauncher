@@ -1,6 +1,7 @@
 package com.purride.pixellauncherv2.data
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -28,7 +29,13 @@ class DialerRepository(
      *
      * 走 [TelecomManager.placeCall] 而不是 ACTION_CALL：前者是电话栈的正式入口，
      * 后续成为默认电话应用后同一条路径继续可用。
+     *
+     * 抑制 MissingPermission：权限检查在下面第一段就做了（[hasCallPhonePermission]），
+     * 调用方 CallController.callNumber 进来之前还查一次，runCatching 也会把
+     * SecurityException 收成 Result.failure。lint 的 PermissionDetector 不做跨方法
+     * 分析，看不穿包成 helper 的检查，也认不出 runCatching 在捕获异常。
      */
+    @SuppressLint("MissingPermission")
     fun placeCall(number: String): Result<Unit> {
         val trimmed = number.trim()
         if (trimmed.isBlank()) {
