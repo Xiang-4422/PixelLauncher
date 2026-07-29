@@ -1,0 +1,87 @@
+package com.purride.pixellauncherv2.launcher
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class DialInputModelTest {
+
+    @Test
+    fun appendAcceptsDialableCharsOnly() {
+        assertEquals("1", DialInputModel.append("", '1'))
+        assertEquals("1*", DialInputModel.append("1", '*'))
+        assertEquals("1*#", DialInputModel.append("1*", '#'))
+        assertEquals("1,", DialInputModel.append("1", ','))
+        // 字母等非可拨字符原样返回。
+        assertEquals("1", DialInputModel.append("1", 'A'))
+        assertEquals("1", DialInputModel.append("1", ' '))
+    }
+
+    @Test
+    fun appendKeepsPlusPrefixOnlyAtStart() {
+        assertEquals("+", DialInputModel.append("", '+'))
+        assertEquals("+86", DialInputModel.append("+8", '6'))
+        // 中间的 + 无意义，忽略。
+        assertEquals("86", DialInputModel.append("86", '+'))
+    }
+
+    @Test
+    fun appendStopsAtMaxLength() {
+        val full = "1".repeat(DialInputModel.MAX_LENGTH)
+        assertEquals(full, DialInputModel.append(full, '2'))
+        val nearlyFull = "1".repeat(DialInputModel.MAX_LENGTH - 1)
+        assertEquals(nearlyFull + "2", DialInputModel.append(nearlyFull, '2'))
+    }
+
+    @Test
+    fun backspaceRemovesLastCharAndToleratesEmpty() {
+        assertEquals("13", DialInputModel.backspace("138"))
+        assertEquals("", DialInputModel.backspace("1"))
+        assertEquals("", DialInputModel.backspace(""))
+    }
+
+    @Test
+    fun isCallableRequiresAtLeastOneDialableChar() {
+        assertTrue(DialInputModel.isCallable("10086"))
+        assertTrue(DialInputModel.isCallable("*#06#"))
+        assertFalse(DialInputModel.isCallable(""))
+    }
+
+    @Test
+    fun displayTextFallsBackToPlaceholder() {
+        assertEquals("10086", DialInputModel.displayText("10086"))
+        assertEquals("ENTER NUMBER", DialInputModel.displayText(""))
+        assertEquals("DIAL", DialInputModel.displayText("", placeholder = "DIAL"))
+    }
+
+    @Test
+    fun digitForKeyCodeMapsNumberRowNumpadAndSymbols() {
+        assertEquals('0', DialInputModel.digitForKeyCode(7))
+        assertEquals('9', DialInputModel.digitForKeyCode(16))
+        assertEquals('*', DialInputModel.digitForKeyCode(17))
+        assertEquals('#', DialInputModel.digitForKeyCode(18))
+        assertEquals('+', DialInputModel.digitForKeyCode(81))
+        assertEquals('0', DialInputModel.digitForKeyCode(144))
+        assertEquals('9', DialInputModel.digitForKeyCode(153))
+        // 非拨号键（此处为 KEYCODE_A）不产出字符。
+        assertNull(DialInputModel.digitForKeyCode(29))
+    }
+
+    @Test
+    fun keypadRowsCoverTwelveKeysInDialerOrder() {
+        val keys = DialInputModel.keypadRows.flatten()
+        assertEquals(12, keys.size)
+        assertEquals(listOf('1', '2', '3'), DialInputModel.keypadRows.first())
+        assertEquals(listOf('*', '0', '#'), DialInputModel.keypadRows.last())
+        assertTrue(DialInputModel.keypadRows.all { row -> row.size == 3 })
+    }
+
+    @Test
+    fun coerceCallPageKeepsIndexInRange() {
+        assertEquals(CallPageIndex.RECENT, CallPageIndex.coerce(-1))
+        assertEquals(CallPageIndex.DIAL, CallPageIndex.coerce(9))
+        assertEquals(CallPageIndex.DIAL, CallPageIndex.coerce(CallPageIndex.DIAL))
+    }
+}

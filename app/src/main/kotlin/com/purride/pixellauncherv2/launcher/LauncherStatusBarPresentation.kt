@@ -27,7 +27,7 @@ internal sealed class LauncherStatusBarPresentation {
             LauncherMode.SMS_THREADS,
             LauncherMode.SMS_THREAD_DETAIL,
             -> "SMS"
-            LauncherMode.CALL_LOG -> "CALL"
+            LauncherMode.DIALER -> "CALL"
             LauncherMode.DATA_HEALTH -> "DATA"
             LauncherMode.NOTIFICATION_SETTINGS -> "NOTIFY"
             LauncherMode.LOADING_PREVIEW -> "LOAD"

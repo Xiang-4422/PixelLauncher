@@ -78,6 +78,13 @@ data class LauncherCallbacks(
     // ── CALL ──────────────────────────────────────────────────────────────────
     /** 用户点按通话记录行 → 回电该号码。 */
     val onCallGroupPressed: (number: String) -> Unit,
+    /** 拨号模块翻页（最近通话 / 拨号盘）。 */
+    val onCallPageSelected: (Int) -> Unit,
+    /** 拨号盘按键。 */
+    val onDialDigit: (Char) -> Unit,
+    val onDialBackspace: () -> Unit,
+    val onDialClear: () -> Unit,
+    val onDialCall: () -> Unit,
 
     // ── Navigation ────────────────────────────────────────────────────────────
     /**

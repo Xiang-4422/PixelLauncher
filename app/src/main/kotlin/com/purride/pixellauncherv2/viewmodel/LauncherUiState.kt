@@ -4,6 +4,7 @@ import com.purride.pixellauncherv2.model.CallLogGroup
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.model.SmsThreadSummary
 import com.purride.pixellauncherv2.launcher.AppEntry
+import com.purride.pixellauncherv2.launcher.CallPageIndex
 import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
 import com.purride.pixellauncherv2.launcher.DrawerFocus
 import com.purride.pixellauncherv2.launcher.DrawerListAlignment
@@ -95,6 +96,12 @@ data class LauncherUiState(
     val callLogSelectedIndex: Int = 0,
     /** 是否具备发起通话的权限。 */
     val hasCallPhonePermission: Boolean = false,
+    /** 拨号模块当前页（最近通话 / 拨号盘）。 */
+    val callPageIndex: Int = CallPageIndex.RECENT,
+    /** 拨号盘当前输入的号码。 */
+    val dialInput: String = "",
+    /** 拨号盘输入命中的联系人名，未命中为空。 */
+    val dialContactName: String = "",
 
     // ── Appearance ────────────────────────────────────────────────────────────
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,

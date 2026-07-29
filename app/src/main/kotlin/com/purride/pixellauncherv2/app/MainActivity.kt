@@ -66,6 +66,8 @@ import com.purride.pixellauncherv2.launcher.NotificationSummary
 import com.purride.pixellauncherv2.launcher.PixelMatterEffectMode
 import com.purride.pixellauncherv2.launcher.PixelMatterShakeDetector
 import com.purride.pixellauncherv2.launcher.SmsLayout
+import com.purride.pixellauncherv2.launcher.CallPageIndex
+import com.purride.pixellauncherv2.launcher.DialInputModel
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuLayout
@@ -434,6 +436,11 @@ class MainActivity : AppCompatActivity() {
                 onSmsThreadMenuDelete = smsController::threadMenuDelete,
                 onSmsThreadMenuDismiss = smsController::threadMenuDismiss,
                 onCallGroupPressed   = { number -> callController.callNumber(number) },
+                onCallPageSelected   = callController::selectPage,
+                onDialDigit          = callController::appendDialDigit,
+                onDialBackspace      = callController::backspaceDialInput,
+                onDialClear          = callController::clearDialInput,
+                onDialCall           = callController::callDialInput,
                 onMainPageChanged    = ::onMainPageChanged,
                 onMainPageDragStart  = ::onMainPageDragStart,
             ),
@@ -472,7 +479,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SMS_ROLE_PROMPT -> smsController.closeModule()
                     LauncherMode.SMS_THREADS -> smsController.closeModule()
                     LauncherMode.SMS_THREAD_DETAIL -> smsController.closeThreadDetail()
-                    LauncherMode.CALL_LOG -> callController.closeCallLog()
+                    LauncherMode.DIALER -> callController.closeCallLog()
                     LauncherMode.APP_MANAGEMENT -> closeAppManagement()
                     LauncherMode.DATA_HEALTH -> closeDataHealth()
                     LauncherMode.NOTIFICATION_SETTINGS -> closeNotificationSettings()
@@ -881,6 +888,17 @@ class MainActivity : AppCompatActivity() {
             }
         }
         recordInteraction()
+        // 拨号盘页把数字与 * # + 键直接当作拨号输入，退格键删除末位。
+        if (state.mode == LauncherMode.DIALER && state.callPageIndex == CallPageIndex.DIAL) {
+            DialInputModel.digitForKeyCode(keyCode)?.let { digit ->
+                callController.appendDialDigit(digit)
+                return true
+            }
+            if (keyCode == KeyEvent.KEYCODE_DEL) {
+                callController.backspaceDialInput()
+                return true
+            }
+        }
         return when (keyCode) {
             KeyEvent.KEYCODE_DPAD_UP -> {
                 when (state.mode) {
@@ -894,7 +912,11 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
-                    LauncherMode.CALL_LOG -> callController.moveSelection(-1)
+                    LauncherMode.DIALER -> {
+                        if (state.callPageIndex == CallPageIndex.RECENT) {
+                            callController.moveSelection(-1)
+                        }
+                    }
                     LauncherMode.SETTINGS -> Unit
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
@@ -920,7 +942,11 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
-                    LauncherMode.CALL_LOG -> callController.moveSelection(1)
+                    LauncherMode.DIALER -> {
+                        if (state.callPageIndex == CallPageIndex.RECENT) {
+                            callController.moveSelection(1)
+                        }
+                    }
                     LauncherMode.SETTINGS -> Unit
                     LauncherMode.HOME -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -940,7 +966,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.HOME -> Unit
                     LauncherMode.SMS_ROLE_PROMPT,
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
-                    LauncherMode.CALL_LOG -> Unit
+                    LauncherMode.DIALER -> callController.selectPage(CallPageIndex.RECENT)
                     LauncherMode.SMS_THREADS -> smsController.selectPage(SmsPageIndex.UNREAD)
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -959,7 +985,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.HOME -> Unit
                     LauncherMode.SMS_ROLE_PROMPT,
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
-                    LauncherMode.CALL_LOG -> Unit
+                    LauncherMode.DIALER -> callController.selectPage(CallPageIndex.DIAL)
                     LauncherMode.SMS_THREADS -> smsController.selectPage(SmsPageIndex.ALL)
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -986,7 +1012,13 @@ class MainActivity : AppCompatActivity() {
                             smsController.openSelectedThread()
                         }
                     }
-                    LauncherMode.CALL_LOG -> callController.callSelected()
+                    LauncherMode.DIALER -> {
+                        if (state.callPageIndex == CallPageIndex.DIAL) {
+                            callController.callDialInput()
+                        } else {
+                            callController.callSelected()
+                        }
+                    }
                     LauncherMode.SMS_THREAD_DETAIL -> {
                         if (state.smsDraftText.isBlank()) {
                             Unit // engine TextField handles SMS draft focus
@@ -2107,7 +2139,7 @@ class MainActivity : AppCompatActivity() {
             LauncherMode.SMS_ROLE_PROMPT,
             LauncherMode.SMS_THREADS,
             LauncherMode.SMS_THREAD_DETAIL,
-            LauncherMode.CALL_LOG,
+            LauncherMode.DIALER,
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,

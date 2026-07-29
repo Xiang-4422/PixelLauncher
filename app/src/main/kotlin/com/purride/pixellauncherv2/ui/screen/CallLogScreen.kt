@@ -28,7 +28,7 @@ import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 private const val CALL_ROW_PADDING_PX = LauncherSpacing.CONTENT_HORIZONTAL
 
 /**
- * CALL_LOG 屏幕：最近通话列表。
+ * 拨号模块的「最近通话」页：通话记录列表。
  *
  * 每行两段：
  * - 顶部行：方向标记（未接/拒接用 danger 色）+ 名称或号码 + 合并次数 + 时间

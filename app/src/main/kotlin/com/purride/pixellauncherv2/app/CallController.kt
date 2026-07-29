@@ -5,6 +5,7 @@ import android.os.Handler
 import com.purride.pixellauncherv2.data.CallLogRepository
 import com.purride.pixellauncherv2.data.DialerRepository
 import com.purride.pixellauncherv2.launcher.CallLogModel
+import com.purride.pixellauncherv2.launcher.DialInputModel
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
@@ -113,6 +114,77 @@ internal class CallController(
         }
     }
 
+    // ── Dial pad ──────────────────────────────────────────────────────────────
+
+    /** 切换最近通话 / 拨号盘。 */
+    fun selectPage(index: Int) {
+        val nextState = LauncherStateTransitions.selectCallPage(host.state, index)
+        if (nextState.callPageIndex == host.state.callPageIndex) {
+            return
+        }
+        host.state = nextState
+        host.render()
+    }
+
+    /** 拨号盘按键：追加一个字符。 */
+    fun appendDialDigit(digit: Char) {
+        applyDialInput(DialInputModel.append(host.state.dialInput, digit))
+    }
+
+    /** 删除末位。 */
+    fun backspaceDialInput() {
+        applyDialInput(DialInputModel.backspace(host.state.dialInput))
+    }
+
+    /** 清空输入。 */
+    fun clearDialInput() {
+        applyDialInput("")
+    }
+
+    /** 呼叫当前拨号盘输入。 */
+    fun callDialInput() {
+        val input = host.state.dialInput
+        if (!DialInputModel.isCallable(input)) {
+            return
+        }
+        callNumber(input)
+    }
+
+    /**
+     * 落地新的拨号输入，并异步解析联系人名。
+     *
+     * 联系人查询是跨进程 IO，不能占用主线程；回填时校验输入未变，
+     * 避免快速连按后旧结果盖掉新号码对应的姓名。
+     */
+    private fun applyDialInput(input: String) {
+        val nextState = LauncherStateTransitions.updateDialInput(host.state, input)
+        if (nextState === host.state) {
+            return
+        }
+        host.state = nextState
+        host.render()
+        if (input.isBlank()) {
+            return
+        }
+        runInBackground {
+            val name = callLogRepository.contactNameFor(input)
+            if (name.isBlank()) {
+                return@runInBackground
+            }
+            mainHandler.post {
+                if (!host.isActive()) {
+                    return@post
+                }
+                host.state = LauncherStateTransitions.updateDialContactName(
+                    state = host.state,
+                    input = input,
+                    contactName = name,
+                )
+                host.render()
+            }
+        }
+    }
+
     /** 按键导航：移动选中项。 */
     fun moveSelection(delta: Int) {
         host.state = LauncherStateTransitions.moveCallLogSelection(host.state, delta)
@@ -213,7 +285,7 @@ internal class CallController(
         }
         // 只在通话记录页可见时重绘；否则静默更新数据，等下次打开即是最新。
         refreshCallLog(
-            render = host.state.mode == LauncherMode.CALL_LOG,
+            render = host.state.mode == LauncherMode.DIALER,
             acknowledgeNewCalls = false,
         )
     }

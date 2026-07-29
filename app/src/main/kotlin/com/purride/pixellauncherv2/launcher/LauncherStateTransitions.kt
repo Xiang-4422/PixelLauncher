@@ -31,7 +31,7 @@ object LauncherStateTransitions {
             LauncherMode.SMS_ROLE_PROMPT,
             LauncherMode.SMS_THREADS,
             LauncherMode.SMS_THREAD_DETAIL,
-            LauncherMode.CALL_LOG -> state.mode
+            LauncherMode.DIALER -> state.mode
 
             LauncherMode.SETTINGS,
             LauncherMode.APP_MANAGEMENT,
@@ -66,7 +66,7 @@ object LauncherStateTransitions {
             LauncherMode.SMS_ROLE_PROMPT,
             LauncherMode.SMS_THREADS,
             LauncherMode.SMS_THREAD_DETAIL,
-            LauncherMode.CALL_LOG -> state.returnMode
+            LauncherMode.DIALER -> state.returnMode
 
             LauncherMode.SETTINGS,
             LauncherMode.APP_MANAGEMENT,
@@ -168,7 +168,7 @@ object LauncherStateTransitions {
             LauncherMode.SMS_ROLE_PROMPT,
             LauncherMode.SMS_THREADS,
             LauncherMode.SMS_THREAD_DETAIL,
-            LauncherMode.CALL_LOG -> LauncherMode.SETTINGS
+            LauncherMode.DIALER -> LauncherMode.SETTINGS
         }
         return state.copy(mode = returnMode)
     }
@@ -225,15 +225,45 @@ object LauncherStateTransitions {
     /** 打开通话记录页；选中下标归零。 */
     fun showCallLog(state: LauncherState): LauncherState {
         return state.copy(
-            mode = LauncherMode.CALL_LOG,
+            mode = LauncherMode.DIALER,
             returnMode = LauncherMode.HOME,
             callLogSelectedIndex = 0,
+            callPageIndex = CallPageIndex.RECENT,
         )
     }
 
-    /** 关闭通话记录页，返回 Home。 */
+    /** 关闭拨号模块，返回 Home；拨号盘输入一并清空。 */
     fun hideCallLog(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.HOME)
+        return state.copy(
+            mode = LauncherMode.HOME,
+            dialInput = "",
+            dialContactName = "",
+        )
+    }
+
+    /** 切换拨号模块的页（最近通话 / 拨号盘）。 */
+    fun selectCallPage(state: LauncherState, index: Int): LauncherState {
+        return state.copy(callPageIndex = CallPageIndex.coerce(index))
+    }
+
+    /** 更新拨号盘输入；号码变化时联系人名先清空，由异步解析回填。 */
+    fun updateDialInput(state: LauncherState, input: String): LauncherState {
+        if (state.dialInput == input) {
+            return state
+        }
+        return state.copy(dialInput = input, dialContactName = "")
+    }
+
+    /** 回填拨号盘输入对应的联系人名；输入已变化时丢弃这次结果。 */
+    fun updateDialContactName(
+        state: LauncherState,
+        input: String,
+        contactName: String,
+    ): LauncherState {
+        if (state.dialInput != input) {
+            return state
+        }
+        return state.copy(dialContactName = contactName)
     }
 
     /** 同步通话记录数据；选中下标收敛到新列表范围内。 */

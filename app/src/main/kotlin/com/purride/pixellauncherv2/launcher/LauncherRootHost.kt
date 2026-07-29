@@ -35,7 +35,7 @@ import com.purride.pixelui.pixelRouteDestination
 import com.purride.pixelui.showItem
 import com.purride.pixellauncherv2.ui.screen.AppManagementScreen
 import com.purride.pixellauncherv2.ui.screen.DiagnosticsScreen
-import com.purride.pixellauncherv2.ui.screen.CallLogScreen
+import com.purride.pixellauncherv2.ui.screen.DialerScreen
 import com.purride.pixellauncherv2.ui.screen.DataHealthScreen
 import com.purride.pixellauncherv2.ui.screen.DrawerScreen
 import com.purride.pixellauncherv2.ui.screen.HomeScreen
@@ -136,7 +136,9 @@ internal class LauncherRootHost(
     private val threadListController = ScrollController()
     private val threadListState = threadListController.create()
 
-    // ── Call log list ─────────────────────────────────────────────────────────
+    // ── Dialer pager + call log list ──────────────────────────────────────────
+    private val callPagerController = PageController()
+    private val callPagerState = callPagerController.create(pageCount = CallPageIndex.COUNT)
     private val callLogListController = ScrollController()
     private val callLogListState = callLogListController.create()
 
@@ -237,6 +239,12 @@ internal class LauncherRootHost(
                 axis = PixelAxis.HORIZONTAL,
                 pageCount = SmsPageIndex.COUNT,
             )
+        }
+        if (state.mode == LauncherMode.DIALER) {
+            val targetCallPage = CallPageIndex.coerce(state.callPageIndex)
+            if (callPagerState.currentPage != targetCallPage) {
+                callPagerController.jumpToPage(callPagerState, targetCallPage)
+            }
         }
         if (state.mode == LauncherMode.SMS_THREADS) {
             val targetSmsPage = SmsPageIndex.coerce(state.smsPageIndex)
@@ -448,13 +456,20 @@ internal class LauncherRootHost(
             onMenuDelete = callbacks.onSmsMessageMenuDelete,
             onMenuDismiss = callbacks.onSmsMessageMenuDismiss,
         )
-        LauncherRouteDestination.CALL_LOG -> CallLogScreen(
+        LauncherRouteDestination.DIALER -> DialerScreen(
             uiState = uiState,
             theme = theme,
             vsync = routeTickerProvider,
+            pagerController = callPagerController,
+            pagerState = callPagerState,
             listState = callLogListState,
             listController = callLogListController,
+            onCallPageSelected = callbacks.onCallPageSelected,
             onCallGroupPressed = callbacks.onCallGroupPressed,
+            onDialDigit = callbacks.onDialDigit,
+            onDialBackspace = callbacks.onDialBackspace,
+            onDialClear = callbacks.onDialClear,
+            onDialCall = callbacks.onDialCall,
         )
         LauncherRouteDestination.DIAGNOSTICS -> DiagnosticsScreen(
             uiState = uiState,
@@ -773,7 +788,7 @@ internal class LauncherRootHost(
             LauncherMode.SMS_ROLE_PROMPT -> LauncherRouteDestination.SMS_ROLE_PROMPT
             LauncherMode.SMS_THREADS -> LauncherRouteDestination.SMS_THREADS
             LauncherMode.SMS_THREAD_DETAIL -> LauncherRouteDestination.SMS_THREAD_DETAIL
-            LauncherMode.CALL_LOG -> LauncherRouteDestination.CALL_LOG
+            LauncherMode.DIALER -> LauncherRouteDestination.DIALER
             LauncherMode.APP_MANAGEMENT -> LauncherRouteDestination.APP_MANAGEMENT
             LauncherMode.DATA_HEALTH -> LauncherRouteDestination.DATA_HEALTH
             LauncherMode.NOTIFICATION_SETTINGS -> LauncherRouteDestination.NOTIFICATION_SETTINGS
@@ -785,7 +800,7 @@ internal class LauncherRootHost(
         internal fun transitionFor(destination: LauncherRouteDestination): PixelRouteTransition? = when (destination) {
             LauncherRouteDestination.SMS_ROLE_PROMPT,
             LauncherRouteDestination.SMS_THREADS,
-            LauncherRouteDestination.CALL_LOG,
+            LauncherRouteDestination.DIALER,
             -> PixelRouteTransition.SlideVertical
 
             LauncherRouteDestination.MAIN,
@@ -846,7 +861,7 @@ internal enum class LauncherRouteDestination(
     SMS_ROLE_PROMPT("sms-role-prompt"),
     SMS_THREADS("sms-threads"),
     SMS_THREAD_DETAIL("sms-thread-detail"),
-    CALL_LOG("call-log"),
+    DIALER("dialer"),
     APP_MANAGEMENT("app-management"),
     DATA_HEALTH("data-health"),
     NOTIFICATION_SETTINGS("notification-settings"),

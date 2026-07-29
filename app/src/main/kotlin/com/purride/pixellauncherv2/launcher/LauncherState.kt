@@ -67,6 +67,12 @@ data class LauncherState(
     val callLogSelectedIndex: Int = 0,
     /** 是否具备发起通话的权限。 */
     val hasCallPhonePermission: Boolean = false,
+    /** 拨号模块当前页（最近通话 / 拨号盘）。 */
+    val callPageIndex: Int = CallPageIndex.RECENT,
+    /** 拨号盘当前输入的号码。 */
+    val dialInput: String = "",
+    /** 拨号盘输入命中的联系人名，未命中为空。 */
+    val dialContactName: String = "",
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = LauncherLayoutProfileFactory.defaultDotSizePx,
     val isPixelGapEnabled: Boolean = true,
@@ -132,7 +138,7 @@ enum class LauncherMode {
     SMS_ROLE_PROMPT,
     SMS_THREADS,
     SMS_THREAD_DETAIL,
-    CALL_LOG,
+    DIALER,
     APP_MANAGEMENT,
     DATA_HEALTH,
     NOTIFICATION_SETTINGS,

@@ -541,6 +541,56 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
+    fun selectCallPage_clampsToValidRange() {
+        val state = LauncherState(mode = LauncherMode.DIALER)
+
+        assertEquals(
+            CallPageIndex.DIAL,
+            LauncherStateTransitions.selectCallPage(state, 5).callPageIndex,
+        )
+        assertEquals(
+            CallPageIndex.RECENT,
+            LauncherStateTransitions.selectCallPage(state, -3).callPageIndex,
+        )
+    }
+
+    @Test
+    fun updateDialInput_clearsStaleContactName() {
+        val state = LauncherState(dialInput = "1008", dialContactName = "BANK")
+
+        val result = LauncherStateTransitions.updateDialInput(state, "10086")
+        assertEquals("10086", result.dialInput)
+        // 号码变了，旧姓名必须先清掉，避免显示成新号码的联系人。
+        assertEquals("", result.dialContactName)
+    }
+
+    @Test
+    fun updateDialContactName_ignoresResultForStaleInput() {
+        val state = LauncherState(dialInput = "10086")
+
+        val applied = LauncherStateTransitions.updateDialContactName(state, "10086", "BANK")
+        assertEquals("BANK", applied.dialContactName)
+
+        // 异步解析回来时用户已经改了号码：这次结果必须丢弃。
+        val stale = LauncherStateTransitions.updateDialContactName(state, "1008", "OLD")
+        assertEquals("", stale.dialContactName)
+    }
+
+    @Test
+    fun hideCallLog_clearsDialInput() {
+        val state = LauncherState(
+            mode = LauncherMode.DIALER,
+            dialInput = "10086",
+            dialContactName = "BANK",
+        )
+
+        val result = LauncherStateTransitions.hideCallLog(state)
+        assertEquals(LauncherMode.HOME, result.mode)
+        assertEquals("", result.dialInput)
+        assertEquals("", result.dialContactName)
+    }
+
+    @Test
     fun updateSmsMutedConversations_replacesMutedSet() {
         val result = LauncherStateTransitions.updateSmsMutedConversations(
             LauncherState(),
