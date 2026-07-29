@@ -53,3 +53,15 @@ data class CallLogGroup(
     /** 组内全部记录的 ID，删除整组时使用。 */
     val callIds: List<Long>,
 )
+
+/**
+ * T9 检索用的联系人条目。
+ */
+data class ContactEntry(
+    /** 展示名。 */
+    val displayName: String,
+    /** 号码（保留原始分隔符，展示与拨号都用它）。 */
+    val number: String,
+    /** 拼音或注音，中文联系人靠它参与 T9 匹配；ROM 未提供时为空。 */
+    val phoneticName: String = "",
+)
