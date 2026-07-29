@@ -92,6 +92,7 @@ import androidx.lifecycle.ViewModelProvider
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 
 /**
  * 启动器运行时的总编排入口。
@@ -993,7 +994,7 @@ class MainActivity : AppCompatActivity() {
             renderCurrentFrame()
         }
 
-        backgroundExecutor.execute {
+        runInBackground {
             val apps = applyAppCustomizations(appRepository.loadLaunchableApps())
             mainHandler.post {
                 if (generation != loadGeneration || isDestroyed || isFinishing) {
@@ -2374,7 +2375,7 @@ class MainActivity : AppCompatActivity() {
         render: Boolean,
         showFeedback: Boolean = false,
     ) {
-        backgroundExecutor.execute {
+        runInBackground {
             val snapshot = screenUsageRepository.readTodaySummary()
             mainHandler.post {
                 if (isDestroyed || isFinishing) {
@@ -2397,8 +2398,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * 提交后台任务。onDestroy 里 backgroundExecutor.shutdownNow() 之后，
+     * 迟到的异步回调（如短信标记已读完成后回调本类刷新计数）再提交任务会抛
+     * RejectedExecutionException；此时结果已无处落地，静默丢弃而不是杀掉进程。
+     */
+    private fun runInBackground(task: () -> Unit) {
+        try {
+            backgroundExecutor.execute { task() }
+        } catch (_: RejectedExecutionException) {
+        }
+    }
+
     private fun refreshCommunicationStatus(render: Boolean) {
-        backgroundExecutor.execute {
+        runInBackground {
             val communicationStatus = communicationStatusRepository.readStatus()
             mainHandler.post {
                 if (isDestroyed || isFinishing) {
@@ -2474,7 +2487,7 @@ class MainActivity : AppCompatActivity() {
                 return@requestBestLocation
             }
 
-            backgroundExecutor.execute {
+            runInBackground {
                 val previousSuccessfulHint = lastSuccessfulRainHintText
                 runCatching {
                     rainForecastRepository.fetchWeatherSummary(

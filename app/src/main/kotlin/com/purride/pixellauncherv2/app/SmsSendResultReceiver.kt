@@ -23,6 +23,9 @@ class SmsSendResultReceiver : BroadcastReceiver() {
         if (messageId <= 0L) {
             return
         }
+        // 认领式重发会插入复用同一 rowid 的新行：带上插入时间戳，
+        // 落库时校验，上一次发送迟到的回执不会打到新行上。
+        val messageDate = intent.getLongExtra(EXTRA_MESSAGE_DATE, -1L)
         val action = intent.action
         val resultCode = resultCode
         val pendingResult = goAsync()
@@ -34,6 +37,7 @@ class SmsSendResultReceiver : BroadcastReceiver() {
                         ACTION_SMS_SENT -> AndroidComponentDependencies.smsRepository(appContext)
                             .applySendResult(
                                 messageId = messageId,
+                                dateMillis = messageDate,
                                 success = resultCode == Activity.RESULT_OK,
                                 errorCode = resultCode,
                             )
@@ -41,6 +45,7 @@ class SmsSendResultReceiver : BroadcastReceiver() {
                         ACTION_SMS_DELIVERED -> AndroidComponentDependencies.smsRepository(appContext)
                             .applyDeliveryResult(
                                 messageId = messageId,
+                                dateMillis = messageDate,
                                 delivered = resultCode == Activity.RESULT_OK &&
                                     deliveryReportConfirms(intent),
                             )
@@ -77,6 +82,7 @@ class SmsSendResultReceiver : BroadcastReceiver() {
         const val ACTION_SMS_SENT = "com.purride.pixellauncherv2.action.SMS_SENT"
         const val ACTION_SMS_DELIVERED = "com.purride.pixellauncherv2.action.SMS_DELIVERED"
         const val EXTRA_MESSAGE_ID = "extra_message_id"
+        const val EXTRA_MESSAGE_DATE = "extra_message_date"
         private const val LOG_TAG = "SmsSendResult"
     }
 }

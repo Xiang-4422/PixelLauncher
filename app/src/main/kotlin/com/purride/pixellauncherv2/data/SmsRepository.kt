@@ -353,12 +353,12 @@ class SmsRepository(
             // 非默认短信应用时 OUTBOX 落库会失败（messageId <= 0），此时不挂回执，
             // 行为退化为“发出即认为成功”，与仅有 SEND_SMS 权限的场景保持一致。
             val sentIntent = if (messageId > 0L) {
-                buildResultPendingIntent(messageId, SmsSendResultReceiver.ACTION_SMS_SENT)
+                buildResultPendingIntent(messageId, now, SmsSendResultReceiver.ACTION_SMS_SENT)
             } else {
                 null
             }
             val deliveryIntent = if (messageId > 0L) {
-                buildResultPendingIntent(messageId, SmsSendResultReceiver.ACTION_SMS_DELIVERED)
+                buildResultPendingIntent(messageId, now, SmsSendResultReceiver.ACTION_SMS_DELIVERED)
             } else {
                 null
             }
@@ -388,7 +388,12 @@ class SmsRepository(
                 // 提交给无线电层都没成功，回执永远不会来：把刚落的 OUTBOX 记录
                 // 标成 FAILED，避免它永远停留在 SENDING。
                 if (messageId > 0L) {
-                    applySendResult(messageId, success = false, errorCode = SEND_ERROR_SUBMIT)
+                    applySendResult(
+                        messageId = messageId,
+                        dateMillis = now,
+                        success = false,
+                        errorCode = SEND_ERROR_SUBMIT,
+                    )
                 }
                 throw t
             }
@@ -413,7 +418,12 @@ class SmsRepository(
      * 发送回执到达后更新消息状态；成功 → SENT，临时性错误（无服务/飞行模式）
      * → QUEUED 等待自动重试，其余错误 → FAILED 并记录错误码。
      */
-    fun applySendResult(messageId: Long, success: Boolean, errorCode: Int): Boolean {
+    fun applySendResult(
+        messageId: Long,
+        dateMillis: Long,
+        success: Boolean,
+        errorCode: Int,
+    ): Boolean {
         if (messageId <= 0L) {
             return false
         }
@@ -437,12 +447,20 @@ class SmsRepository(
         } else {
             "${Telephony.Sms.TYPE} IN (${Telephony.Sms.MESSAGE_TYPE_OUTBOX}, ${Telephony.Sms.MESSAGE_TYPE_SENT})"
         }
+        // date 一并入条件：认领式重发会插入复用同一 rowid 的新行，只靠 _id
+        // 无法区分上一次发送迟到的回执。dateMillis <= 0 时退化为只按 _id 匹配。
+        val dateClause = if (dateMillis > 0L) " AND ${Telephony.Sms.DATE} = ?" else ""
+        val selectionArgs = if (dateMillis > 0L) {
+            arrayOf(messageId.toString(), dateMillis.toString())
+        } else {
+            arrayOf(messageId.toString())
+        }
         return runCatching {
             contentResolver.update(
                 Telephony.Sms.CONTENT_URI,
                 values,
-                "${Telephony.Sms._ID} = ? AND $allowedTypes",
-                arrayOf(messageId.toString()),
+                "${Telephony.Sms._ID} = ? AND $allowedTypes$dateClause",
+                selectionArgs,
             ) > 0
         }.getOrDefault(false)
     }
@@ -482,19 +500,25 @@ class SmsRepository(
     }
 
     /** 送达回执到达后更新 STATUS 列（详情页显示 DELIVERED 用）。 */
-    fun applyDeliveryResult(messageId: Long, delivered: Boolean): Boolean {
+    fun applyDeliveryResult(messageId: Long, dateMillis: Long, delivered: Boolean): Boolean {
         if (messageId <= 0L || !delivered) {
             return false
         }
         val values = ContentValues().apply {
             put(Telephony.Sms.STATUS, Telephony.Sms.STATUS_COMPLETE)
         }
+        val dateClause = if (dateMillis > 0L) " AND ${Telephony.Sms.DATE} = ?" else ""
+        val selectionArgs = if (dateMillis > 0L) {
+            arrayOf(messageId.toString(), dateMillis.toString())
+        } else {
+            arrayOf(messageId.toString())
+        }
         return runCatching {
             contentResolver.update(
                 Telephony.Sms.CONTENT_URI,
                 values,
-                "${Telephony.Sms._ID} = ? AND ${Telephony.Sms.TYPE} = ${Telephony.Sms.MESSAGE_TYPE_SENT}",
-                arrayOf(messageId.toString()),
+                "${Telephony.Sms._ID} = ? AND ${Telephony.Sms.TYPE} = ${Telephony.Sms.MESSAGE_TYPE_SENT}$dateClause",
+                selectionArgs,
             ) > 0
         }.getOrDefault(false)
     }
@@ -546,11 +570,19 @@ class SmsRepository(
         }.getOrNull() ?: default
     }
 
-    private fun buildResultPendingIntent(messageId: Long, action: String): PendingIntent {
+    private fun buildResultPendingIntent(
+        messageId: Long,
+        dateMillis: Long,
+        action: String,
+    ): PendingIntent {
         val intent = Intent(context, SmsSendResultReceiver::class.java)
             .setAction(action)
+            // 插入时间戳同时放进 data：PendingIntent 的相等性只看 filterEquals
+            // （忽略 extras），只有 data 不同才能保证上一次发送的在途回执不会被
+            // FLAG_UPDATE_CURRENT 改写成新一次的 token。
+            .setData(Uri.parse("pixellauncher-sms://receipt/$messageId/$dateMillis"))
             .putExtra(SmsSendResultReceiver.EXTRA_MESSAGE_ID, messageId)
-        // requestCode 都用 messageId：action 不同即视为不同 PendingIntent，互不覆盖。
+            .putExtra(SmsSendResultReceiver.EXTRA_MESSAGE_DATE, dateMillis)
         return PendingIntent.getBroadcast(
             context,
             messageId.toInt(),
