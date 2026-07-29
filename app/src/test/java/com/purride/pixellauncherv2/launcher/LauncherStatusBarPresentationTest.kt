@@ -33,6 +33,7 @@ class LauncherStatusBarPresentationTest {
             LauncherMode.NOTIFICATION_SETTINGS to "NOTIFY",
             LauncherMode.LOADING_PREVIEW to "LOAD",
             LauncherMode.DIAGNOSTICS to "DIAG",
+            LauncherMode.SNAKE to "SNAKE",
             LauncherMode.IDLE to "IDLE",
         )
 

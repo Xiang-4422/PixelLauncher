@@ -337,6 +337,15 @@ class SettingsScreen(
             )
             add(
                 SettingsActionRow(
+                    title = "SNAKE",
+                    valueLabel = "PLAY",
+                    theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
+                    onPressed = { widget.onItemAction(SettingsMenuItem.SNAKE, +1) },
+                ),
+            )
+            add(
+                SettingsActionRow(
                     title = "ADVANCED",
                     valueLabel = "OPEN",
                     theme = t,

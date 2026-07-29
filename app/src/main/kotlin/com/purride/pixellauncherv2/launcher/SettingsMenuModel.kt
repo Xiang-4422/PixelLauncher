@@ -27,6 +27,7 @@ enum class SettingsMenuItem {
     PIXEL_MATTER_EFFECT_MODE,
     PIXEL_MATTER_HAND_CONTROL,
     PIXEL_MATTER_HAND_DEBUG,
+    SNAKE,
     ADVANCED,
 }
 
@@ -245,6 +246,14 @@ object SettingsMenuModel {
                     item = SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG,
                     title = "HAND DEBUG",
                     value = onOffLabel(state.isPixelMatterHandDebugEnabled),
+                    section = SettingsSection.ADVANCED,
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.SNAKE,
+                    title = "SNAKE",
+                    value = "PLAY",
                     section = SettingsSection.ADVANCED,
                 ),
             )

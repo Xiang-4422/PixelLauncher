@@ -34,6 +34,7 @@ internal sealed class LauncherStatusBarPresentation {
             LauncherMode.NOTIFICATION_SETTINGS -> "NOTIFY"
             LauncherMode.LOADING_PREVIEW -> "LOAD"
             LauncherMode.DIAGNOSTICS -> "DIAG"
+            LauncherMode.SNAKE -> "SNAKE"
             LauncherMode.IDLE -> "IDLE"
         }
 

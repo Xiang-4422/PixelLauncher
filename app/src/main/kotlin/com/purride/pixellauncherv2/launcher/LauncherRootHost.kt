@@ -47,6 +47,7 @@ import com.purride.pixellauncherv2.ui.screen.NotificationSettingsScreen
 import com.purride.pixellauncherv2.ui.screen.SmsRolePromptScreen
 import com.purride.pixellauncherv2.ui.screen.SmsThreadDetailScreen
 import com.purride.pixellauncherv2.ui.screen.SmsThreadsScreen
+import com.purride.pixellauncherv2.ui.screen.SnakeScreen
 import com.purride.pixellauncherv2.ui.text.PreparedLauncherFont
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.theme.LauncherThemes
@@ -118,6 +119,11 @@ internal class LauncherRootHost(
     )
     /** 沙钟：待机页的时间由沙粒堆成，分钟变化时坍塌重组。 */
     private val sandClockController = SandClockController(
+        vsync = routeTickerProvider,
+        onFrame = { hostView.postInvalidateOnAnimation() },
+    )
+    /** 贪吃蛇：设置页入口的游戏彩蛋。 */
+    private val snakeController = SnakeController(
         vsync = routeTickerProvider,
         onFrame = { hostView.postInvalidateOnAnimation() },
     )
@@ -204,6 +210,7 @@ internal class LauncherRootHost(
         isDisposed = true
         pixelMatterController.clear()
         sandClockController.dispose()
+        snakeController.dispose()
         setup.dispose()
         navigatorState = null
     }
@@ -317,6 +324,9 @@ internal class LauncherRootHost(
         // ── Sand clock lifecycle ──────────────────────────────────────────────
         syncSandClock()
 
+        // ── Snake lifecycle ───────────────────────────────────────────────────
+        syncSnake()
+
         setup.hostView.invalidate()
     }
 
@@ -349,6 +359,11 @@ internal class LauncherRootHost(
                 ),
             ),
         )
+    }
+
+    /** 硬件方向键操控贪吃蛇（次要通路，按钮是主通路）。 */
+    fun turnSnake(direction: SnakeModel.Direction) {
+        snakeController.turn(direction)
     }
 
     fun updatePixelMatterMotion(snapshot: DeviceMotionSnapshot) {
@@ -558,6 +573,11 @@ internal class LauncherRootHost(
             onSave = callbacks.onAppEditorSave,
             onReset = callbacks.onAppEditorReset,
             onCacheReset = callbacks.onAppCacheReset,
+        )
+        LauncherRouteDestination.SNAKE -> SnakeScreen(
+            controller = snakeController,
+            preparedFont = preparedFont,
+            theme = theme,
         )
         LauncherRouteDestination.IDLE -> IdleScreen(
             uiState = uiState,
@@ -825,6 +845,12 @@ internal class LauncherRootHost(
      * 离开立即释放粒子并停帧。种子在这里构造——只有宿主同时知道字体、主题与
      * 屏幕轮廓，控制器保持对渲染环境无知。
      */
+    private fun syncSnake() {
+        if (uiState.mode != LauncherMode.SNAKE) {
+            snakeController.clear()
+        }
+    }
+
     private fun syncSandClock() {
         if (uiState.mode != LauncherMode.IDLE) {
             sandClockController.clear()
@@ -915,6 +941,7 @@ internal class LauncherRootHost(
             LauncherMode.NOTIFICATION_SETTINGS -> LauncherRouteDestination.NOTIFICATION_SETTINGS
             LauncherMode.LOADING_PREVIEW -> LauncherRouteDestination.LOADING_PREVIEW
             LauncherMode.DIAGNOSTICS -> LauncherRouteDestination.DIAGNOSTICS
+            LauncherMode.SNAKE -> LauncherRouteDestination.SNAKE
             LauncherMode.IDLE -> LauncherRouteDestination.IDLE
         }
 
@@ -933,6 +960,7 @@ internal class LauncherRootHost(
             LauncherRouteDestination.NOTIFICATION_SETTINGS,
             LauncherRouteDestination.LOADING_PREVIEW,
             LauncherRouteDestination.DIAGNOSTICS,
+            LauncherRouteDestination.SNAKE,
             LauncherRouteDestination.IDLE,
             -> null
         }
@@ -992,5 +1020,6 @@ internal enum class LauncherRouteDestination(
     NOTIFICATION_SETTINGS("notification-settings"),
     LOADING_PREVIEW("loading-preview"),
     DIAGNOSTICS("diagnostics"),
+    SNAKE("snake"),
     IDLE("idle"),
 }

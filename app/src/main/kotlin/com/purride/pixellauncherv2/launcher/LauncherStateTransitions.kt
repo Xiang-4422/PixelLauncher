@@ -42,7 +42,8 @@ object LauncherStateTransitions {
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,
             LauncherMode.LOADING_PREVIEW,
-            LauncherMode.DIAGNOSTICS -> state.returnMode
+            LauncherMode.DIAGNOSTICS,
+            LauncherMode.SNAKE -> state.returnMode
         }
         val maxIndex = SettingsMenuModel.rows(state).lastIndex.coerceAtLeast(0)
         return syncSettingsWindow(
@@ -79,13 +80,24 @@ object LauncherStateTransitions {
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,
             LauncherMode.LOADING_PREVIEW,
-            LauncherMode.DIAGNOSTICS -> LauncherMode.HOME
+            LauncherMode.DIAGNOSTICS,
+            LauncherMode.SNAKE -> LauncherMode.HOME
         }
         return state.copy(
             mode = fallbackMode,
             returnMode = fallbackMode,
             isAppActionMenuVisible = false,
         )
+    }
+
+    /** 从设置页进入贪吃蛇。 */
+    fun showSnake(state: LauncherState): LauncherState {
+        return state.copy(mode = LauncherMode.SNAKE)
+    }
+
+    /** 关闭贪吃蛇，返回设置页。 */
+    fun hideSnake(state: LauncherState): LauncherState {
+        return state.copy(mode = LauncherMode.SETTINGS)
     }
 
     /** 从设置页进入轻量 diagnostics 页面。 */
@@ -176,7 +188,8 @@ object LauncherStateTransitions {
             LauncherMode.SMS_THREAD_DETAIL,
             LauncherMode.DIALER,
             LauncherMode.CONTACT_DETAIL,
-            LauncherMode.CONTACT_EDITOR -> LauncherMode.SETTINGS
+            LauncherMode.CONTACT_EDITOR,
+            LauncherMode.SNAKE -> LauncherMode.SETTINGS
         }
         return state.copy(mode = returnMode)
     }

@@ -166,6 +166,7 @@ enum class LauncherMode {
     NOTIFICATION_SETTINGS,
     LOADING_PREVIEW,
     DIAGNOSTICS,
+    SNAKE,
     IDLE,
 }
 

@@ -71,6 +71,7 @@ import com.purride.pixellauncherv2.launcher.SmsLayout
 import com.purride.pixellauncherv2.launcher.CallPageIndex
 import com.purride.pixellauncherv2.launcher.DialInputModel
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
+import com.purride.pixellauncherv2.launcher.SnakeModel
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuLayout
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
@@ -455,6 +456,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.NOTIFICATION_SETTINGS -> closeNotificationSettings()
                     LauncherMode.LOADING_PREVIEW -> closeLoadingPreview()
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
+                    LauncherMode.SNAKE -> closeSnake()
                     LauncherMode.APP_DRAWER -> {
                         settleDrawerMotionBeforeExplicitAction()
                         state = if (state.isAppActionMenuVisible) {
@@ -1028,6 +1030,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.DIALER -> Unit
                     LauncherMode.CONTACT_DETAIL -> Unit
                     LauncherMode.CONTACT_EDITOR -> Unit
+                    LauncherMode.SNAKE -> launcherRootHost.turnSnake(SnakeModel.Direction.UP)
                     LauncherMode.SETTINGS -> Unit
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
@@ -1056,6 +1059,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.DIALER -> Unit
                     LauncherMode.CONTACT_DETAIL -> Unit
                     LauncherMode.CONTACT_EDITOR -> Unit
+                    LauncherMode.SNAKE -> launcherRootHost.turnSnake(SnakeModel.Direction.DOWN)
                     LauncherMode.SETTINGS -> Unit
                     LauncherMode.HOME -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -1078,6 +1082,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.DIALER -> callController.selectPage(state.callPageIndex - 1)
                     LauncherMode.CONTACT_DETAIL -> Unit
                     LauncherMode.CONTACT_EDITOR -> Unit
+                    LauncherMode.SNAKE -> launcherRootHost.turnSnake(SnakeModel.Direction.LEFT)
                     LauncherMode.SMS_THREADS -> smsController.selectPage(SmsPageIndex.UNREAD)
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -1099,6 +1104,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.DIALER -> callController.selectPage(state.callPageIndex + 1)
                     LauncherMode.CONTACT_DETAIL -> Unit
                     LauncherMode.CONTACT_EDITOR -> Unit
+                    LauncherMode.SNAKE -> launcherRootHost.turnSnake(SnakeModel.Direction.RIGHT)
                     LauncherMode.SMS_THREADS -> smsController.selectPage(SmsPageIndex.ALL)
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -1135,6 +1141,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     LauncherMode.CONTACT_DETAIL -> Unit
                     LauncherMode.CONTACT_EDITOR -> Unit
+                    LauncherMode.SNAKE -> Unit
                     LauncherMode.SMS_THREAD_DETAIL -> {
                         if (state.smsDraftText.isBlank()) {
                             Unit // engine TextField handles SMS draft focus
@@ -1147,6 +1154,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.LOADING_PREVIEW -> closeLoadingPreview()
                     LauncherMode.APP_MANAGEMENT -> onAppEditorSave()
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
+                    LauncherMode.SNAKE -> closeSnake()
                     LauncherMode.HOME -> Unit
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.IDLE -> Unit
@@ -1472,6 +1480,10 @@ class MainActivity : AppCompatActivity() {
             SettingsMenuItem.NOTIFICATIONS -> openNotificationSettings()
             SettingsMenuItem.DATA_HEALTH -> openDataHealth()
             SettingsMenuItem.LOADING_PREVIEW -> openLoadingPreview()
+            SettingsMenuItem.SNAKE -> {
+                state = LauncherStateTransitions.showSnake(state)
+                renderCurrentFrame()
+            }
             SettingsMenuItem.ADVANCED -> openDiagnostics()
         }
     }
@@ -1493,6 +1505,11 @@ class MainActivity : AppCompatActivity() {
     // ── HOME callbacks (called from LauncherCallbacks) ────────────────────────
 
     /** CALL 按钮：打开拨号模块，联系人目录随之后台刷新。 */
+    private fun closeSnake() {
+        state = LauncherStateTransitions.hideSnake(state)
+        renderCurrentFrame()
+    }
+
     private fun onHomeOpenCall() {
         callController.openCallLog()
         contactsController.refreshContacts()
@@ -2280,6 +2297,7 @@ class MainActivity : AppCompatActivity() {
             LauncherMode.DIALER,
             LauncherMode.CONTACT_DETAIL,
             LauncherMode.CONTACT_EDITOR,
+            LauncherMode.SNAKE,
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,
