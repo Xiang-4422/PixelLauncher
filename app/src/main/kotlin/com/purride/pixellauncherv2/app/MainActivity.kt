@@ -2899,11 +2899,14 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val LOW_BATTERY_THRESHOLD = 15
+        // 权限/角色请求码必须两两不同：onRequestPermissionsResult 用 when 按顺序匹配，
+        // 撞号会让后面的分支永久不可达，并把回调派发给错误的模块。
+        // 编译器不会对重复的 const 值报错，由 MainActivityRequestCodeContractTest 守。
         const val homeDataPermissionRequestCode = 1001
-        const val callPermissionRequestCode = 1004
         const val smsPermissionRequestCode = 1002
         const val smsRoleRequestCode = 1003
         const val cameraPermissionRequestCode = 1004
+        const val callPermissionRequestCode = 1005
         const val rainRefreshIntervalMs: Long = 30 * 60 * 1000L
         const val rainRefreshDistanceThresholdMeters = 1_000f
         const val rainLocationPromptText = "LOC"
