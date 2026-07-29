@@ -495,6 +495,52 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
+    fun showSmsThreadDetail_dismissesThreadMenu() {
+        val state = LauncherState(
+            mode = LauncherMode.SMS_THREADS,
+            isSmsThreadMenuVisible = true,
+            smsThreadMenuConversationKey = "person:10086",
+        )
+
+        val result = LauncherStateTransitions.showSmsThreadDetail(
+            state = state,
+            conversationKey = "person:10086",
+            conversationTitle = "10086",
+            isServiceConversation = false,
+            threadId = 1L,
+            address = "10086",
+        )
+        // 否则从详情页返回列表时菜单会凭空复活。
+        assertFalse(result.isSmsThreadMenuVisible)
+        assertEquals("", result.smsThreadMenuConversationKey)
+    }
+
+    @Test
+    fun selectSmsPage_dismissesThreadMenu() {
+        val state = LauncherState(
+            mode = LauncherMode.SMS_THREADS,
+            smsPageIndex = SmsPageIndex.ALL,
+            unreadSmsEntries = listOf(
+                SmsMessageEntry(
+                    messageId = 1L,
+                    threadId = 1L,
+                    address = "10086",
+                    body = "BODY",
+                    dateMillis = 1L,
+                    type = 1,
+                    isRead = false,
+                ),
+            ),
+            isSmsThreadMenuVisible = true,
+            smsThreadMenuConversationKey = "person:10086",
+        )
+
+        val result = LauncherStateTransitions.selectSmsPage(state, SmsPageIndex.UNREAD)
+        assertEquals(SmsPageIndex.UNREAD, result.smsPageIndex)
+        assertFalse(result.isSmsThreadMenuVisible)
+    }
+
+    @Test
     fun updateSmsMutedConversations_replacesMutedSet() {
         val result = LauncherStateTransitions.updateSmsMutedConversations(
             LauncherState(),

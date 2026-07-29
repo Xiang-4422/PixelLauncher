@@ -200,6 +200,13 @@ private fun smsMessageActionMenu(
         ),
         fillColor = theme.surface.panel,
         borderColor = theme.button.border,
+        // onDismissRequest 接回 BACK：不传时引擎按 consumeUnhandledDismissRequest
+        // 直接吞掉返回键，菜单只能靠 CANCEL 退出。
+        onDismissRequest = onDismiss,
+        // modal=false：modal 会把浮层之外的全部命中目标过滤掉，垫在下面的
+        // 全屏遮罩就再也收不到点击，UI 规范要求的“点击外部关闭”会失效。
+        // 遮罩本身已覆盖全屏并按 z 序拦截，背景不会被误触。
+        modal = false,
     )
 }
 

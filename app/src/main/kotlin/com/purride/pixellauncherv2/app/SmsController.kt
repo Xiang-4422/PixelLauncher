@@ -881,6 +881,13 @@ internal class SmsController(
             visibleRows = host.smsInboxVisibleRows(),
         )
         scheduleQueuedRetryIfNeeded(messages)
+        // 菜单指向的会话可能已被删除/合并：标志残留会让菜单无声消失，
+        // 之后第一次返回键被消耗在关闭一个不可见的菜单上。
+        if (nextState.isSmsThreadMenuVisible &&
+            threads.none { it.conversationKey == nextState.smsThreadMenuConversationKey }
+        ) {
+            nextState = LauncherStateTransitions.hideSmsThreadMenu(nextState)
+        }
         if (nextState.mode == LauncherMode.SMS_THREAD_DETAIL && nextState.smsCurrentConversationKey.isNotBlank()) {
             val conversationMessages = SmsConversationModel.messages(
                 allMessages = messages,
@@ -897,6 +904,13 @@ internal class SmsController(
                 address = latest?.address ?: nextState.smsCurrentAddress,
                 messages = conversationMessages,
             )
+            // 菜单指向的消息可能已被删除（如 QUEUED 消息被自动补发换了新 id）：
+            // 同样要清标志，避免菜单无声消失后返回键被白白消耗一次。
+            if (nextState.isSmsMessageMenuVisible &&
+                conversationMessages.none { it.messageId == nextState.smsMessageMenuMessageId }
+            ) {
+                nextState = LauncherStateTransitions.hideSmsMessageMenu(nextState)
+            }
         }
         host.state = nextState
     }

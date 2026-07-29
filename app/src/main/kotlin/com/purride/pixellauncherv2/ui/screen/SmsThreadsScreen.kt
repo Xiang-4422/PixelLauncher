@@ -226,6 +226,10 @@ private fun smsThreadActionMenu(
         ),
         fillColor = theme.surface.panel,
         borderColor = theme.button.border,
+        // 同消息菜单：onDismissRequest 接回 BACK，modal=false 让全屏遮罩仍能
+        // 收到“点击外部关闭”的点击（modal 会过滤掉浮层外的全部命中目标）。
+        onDismissRequest = onDismiss,
+        modal = false,
     )
 }
 

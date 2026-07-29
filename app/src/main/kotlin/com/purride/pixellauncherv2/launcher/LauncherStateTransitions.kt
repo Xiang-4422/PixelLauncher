@@ -286,6 +286,9 @@ object LauncherStateTransitions {
             smsSendStatus = SmsSendStatus.NONE,
             isSmsMessageMenuVisible = false,
             smsMessageMenuMessageId = -1L,
+            // 会话列表的菜单标志同样要清：否则从详情页返回列表时菜单会凭空复活。
+            isSmsThreadMenuVisible = false,
+            smsThreadMenuConversationKey = "",
         )
     }
 
@@ -345,6 +348,8 @@ object LauncherStateTransitions {
             smsSendStatus = SmsSendStatus.NONE,
             isSmsMessageMenuVisible = false,
             smsMessageMenuMessageId = -1L,
+            isSmsThreadMenuVisible = false,
+            smsThreadMenuConversationKey = "",
         )
     }
 
@@ -766,7 +771,12 @@ object LauncherStateTransitions {
             } else {
                 requestedPageIndex
             }
-        return state.copy(smsPageIndex = nextPageIndex)
+        // 切页后原会话菜单不再有对应上下文（UNREAD 页也没有长按入口），一并关闭。
+        return state.copy(
+            smsPageIndex = nextPageIndex,
+            isSmsThreadMenuVisible = false,
+            smsThreadMenuConversationKey = "",
+        )
     }
 
     /** 按相对行数移动短信页内部焦点。 */

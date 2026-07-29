@@ -823,6 +823,20 @@ class MainActivity : AppCompatActivity() {
             }
         }
         recordInteraction()
+        // 短信浮层菜单打开时，方向键与确认键只作用于菜单本身：直接消费掉，
+        // 否则它们会操作被浮层遮住的底层列表（甚至触发发送）。
+        // BACK 不走 onKeyDown，仍由 onBackPressed 关闭菜单。
+        if (state.isSmsThreadMenuVisible || state.isSmsMessageMenuVisible) {
+            when (keyCode) {
+                KeyEvent.KEYCODE_DPAD_UP,
+                KeyEvent.KEYCODE_DPAD_DOWN,
+                KeyEvent.KEYCODE_DPAD_LEFT,
+                KeyEvent.KEYCODE_DPAD_RIGHT,
+                KeyEvent.KEYCODE_DPAD_CENTER,
+                KeyEvent.KEYCODE_ENTER,
+                KeyEvent.KEYCODE_NUMPAD_ENTER -> return true
+            }
+        }
         return when (keyCode) {
             KeyEvent.KEYCODE_DPAD_UP -> {
                 when (state.mode) {
