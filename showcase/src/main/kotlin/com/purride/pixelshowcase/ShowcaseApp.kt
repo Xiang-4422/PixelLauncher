@@ -8,7 +8,13 @@ import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Checkbox
 import com.purride.pixelui.CustomPaint
+import com.purride.pixelui.PixelDebugOverlay
+import com.purride.pixelui.PixelHostFrameStats
 import com.purride.pixelui.PixelTheme
+import com.purride.pixelui.Positioned
+import com.purride.pixelui.SizedBox
+import com.purride.pixelui.ValueListenableBuilder
+import com.purride.pixelui.ValueNotifier
 import com.purride.pixelui.Divider
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
@@ -107,6 +113,24 @@ class ShowcaseAppHost(
     private val homeScrollController = ScrollController()
     private val homeScrollState = homeScrollController.create()
 
+    // ── 性能 HUD ──────────────────────────────────────────────────────────────
+    private var hudVisible = false
+    private val frameStats = ValueNotifier<PixelHostFrameStats?>(null)
+
+    /** 打开时挂帧统计观察者并开启完整诊断采样；关闭全部还原，零热路径成本。 */
+    private fun setHudVisible(visible: Boolean) {
+        hudVisible = visible
+        if (visible) {
+            hostView.frameDiagnosticsEnabled = true
+            hostView.frameStatsObserver = { frameStats.value = it }
+        } else {
+            hostView.frameStatsObserver = null
+            hostView.frameDiagnosticsEnabled = false
+            frameStats.value = null
+        }
+        hostView.invalidate()
+    }
+
     private var navigatorState: PixelNavigatorState? = null
     private var currentRoute = ShowcaseRoute.HOME
 
@@ -125,12 +149,28 @@ class ShowcaseAppHost(
     /** 根 widget：主题 provider 包住 Navigator——换 palette 时引擎组件全树跟随。 */
     fun buildRoot(): Widget = PixelTheme(
         tokens = ShowcaseTheme.palette.engineTokens,
-        child = PixelNavigator(
-            initialRequest = requestFor(ShowcaseRoute.HOME),
-            vsync = hostView.tickerProvider,
-            transitionDuration = 220.milliseconds,
-            defaultTransition = PixelRouteTransition.SlideHorizontal,
-            key = "showcase-navigator",
+        child = Stack(
+            children = listOf(
+                PixelNavigator(
+                    initialRequest = requestFor(ShowcaseRoute.HOME),
+                    vsync = hostView.tickerProvider,
+                    transitionDuration = 220.milliseconds,
+                    defaultTransition = PixelRouteTransition.SlideHorizontal,
+                    key = "showcase-navigator",
+                ),
+                Positioned(
+                    top = 0,
+                    right = 0,
+                    key = "hud-anchor",
+                    child = ValueListenableBuilder(frameStats, key = "hud") { _, stats ->
+                        if (hudVisible) {
+                            PixelDebugOverlay(stats, inspector = hostView.inspect())
+                        } else {
+                            SizedBox(width = 0, height = 0)
+                        }
+                    },
+                ),
+            ),
         ),
     )
 
@@ -481,6 +521,13 @@ class ShowcaseAppHost(
                     Text("WIDGETS, TEXT, GESTURES,", color = ShowcaseTheme.DIM),
                     Text("AND EVERY DEMO FRAME ARE", color = ShowcaseTheme.DIM),
                     Text("ALL DRAWN BY THE ENGINE.", color = ShowcaseTheme.DIM),
+                    Gap(8),
+                    Divider(),
+                    labeledRow(
+                        "PERF HUD",
+                        Switch(checked = hudVisible, onChanged = { setHudVisible(it) }),
+                    ),
+                    Text("FPS / FRAME PHASES / DROPS", color = ShowcaseTheme.FAINT),
                 ),
             ),
         ),
