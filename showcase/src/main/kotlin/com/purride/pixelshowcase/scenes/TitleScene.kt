@@ -56,6 +56,13 @@ class TitleScene : DemoScene {
         }
         particles.forEach { p ->
             val t = ((elapsed - p.delay) / GATHER_SECONDS).coerceIn(0f, 1f)
+            if (t >= 1f) {
+                // 到位即吸附：渐近插值永远差一点点，toInt 截断后就是字形边缘
+                // 上随机的 ±1px 毛刺。
+                p.x = p.targetX
+                p.y = p.targetY
+                return@forEach
+            }
             val ease = 1f - (1f - t) * (1f - t) * (1f - t)
             p.x += (p.targetX - p.x) * ease * min(1f, dt * 10f)
             p.y += (p.targetY - p.y) * ease * min(1f, dt * 10f)
@@ -63,11 +70,16 @@ class TitleScene : DemoScene {
     }
 
     override fun render(buffer: PixelBuffer) {
-        val breath = if (elapsed in BREATH_FROM..SCATTER_AT) sin((elapsed - BREATH_FROM) * 2.4f) * 1.5f else 0f
+        // 呼吸 = 整字同相位的垂直浮动。逐行错位的摆动在动画里是波浪、
+        // 在任何单帧里都是"字被撕裂"——字形完整性优先于动态感，
+        // 且幅度必须小于一个粒子块，错位一旦超过块尺寸就读作断裂。
+        val breath = if (elapsed in BREATH_FROM..SCATTER_AT) {
+            sin((elapsed - BREATH_FROM) * 1.6f) * (SCALE - 1f)
+        } else {
+            0f
+        }
         particles.forEach { p ->
-            val x = (p.x + if (breath != 0f) breath * ((p.targetY - height / 2f) / height) * 4f else 0f).toInt()
-            val y = p.y.toInt()
-            buffer.fillRect(x, y, SCALE, SCALE, INK)
+            buffer.fillRect(p.x.toInt(), (p.y + breath).toInt(), SCALE, SCALE, INK)
         }
     }
 
