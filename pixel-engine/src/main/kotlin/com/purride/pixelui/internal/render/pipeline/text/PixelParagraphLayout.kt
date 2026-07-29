@@ -134,7 +134,7 @@ internal object PixelParagraphLayouter {
                     availableWidth = availableWidth,
                     defaultTextRasterizer = input.defaultTextRasterizer,
                 )
-            } else if (input.overflow == PixelTextOverflow.ELLIPSIS) {
+            } else if (input.overflow.ellipsizes) {
                 // 单行省略号必须先取得 pair 修正后的完整宽度，才能判断是否需要截断。
                 listOf(
                     physicalLine.copy(
@@ -151,7 +151,7 @@ internal object PixelParagraphLayouter {
         }.map { line ->
             if (
                 !input.softWrap &&
-                input.overflow == PixelTextOverflow.ELLIPSIS &&
+                input.overflow.ellipsizes &&
                 line.width > availableWidth
             ) {
                 ellipsize(
@@ -159,6 +159,7 @@ internal object PixelParagraphLayouter {
                     availableWidth = availableWidth,
                     defaultTextRasterizer = input.defaultTextRasterizer,
                     textDirection = input.textDirection,
+                    fromStart = input.overflow.ellipsizesFromStart,
                 )
             } else {
                 line
@@ -177,7 +178,9 @@ internal object PixelParagraphLayouter {
         for (lineIndex in 0 until visibleLineCount) {
             visibleLines += wrappedLines[lineIndex]
         }
-        if (truncated && input.overflow == PixelTextOverflow.ELLIPSIS && visibleLines.isNotEmpty()) {
+        // 多行按行截断时一律丢弃末尾行、在最后一行尾部加省略号：ELLIPSIS_START 的
+        // "保留末尾"只对单行有定义，多行语境下强行定义会让调用方难以预期（见其 KDoc）。
+        if (truncated && input.overflow.ellipsizes && visibleLines.isNotEmpty()) {
             visibleLines[visibleLines.lastIndex] = ellipsize(
                 line = visibleLines.last(),
                 availableWidth = availableWidth,
@@ -332,18 +335,28 @@ internal object PixelParagraphLayouter {
         return lines
     }
 
-    /** 只按完整 cluster 删除，直到三点省略号可以放入。 */
+    /**
+     * 只按完整 cluster 删除，直到三点省略号可以放入。
+     *
+     * [fromStart] 为 true 时从逻辑**开头**删除并把省略号放在开头，用于保留末尾
+     * （正在输入的号码等末位才是核对依据的文本）。
+     */
     private fun ellipsize(
         line: LogicalParagraphLine,
         availableWidth: Int,
         defaultTextRasterizer: PixelTextRasterizer,
         textDirection: TextDirection,
+        fromStart: Boolean = false,
     ): LogicalParagraphLine {
+        /** 省略号继承被截断那一端的簇：从头截断时取逻辑开头，否则取逻辑末尾。 */
+        val anchorCluster = if (fromStart) line.clusters.firstOrNull() else line.clusters.lastOrNull()
         /** Style inherited by the generated ellipsis. */
-        val ellipsisStyle = line.clusters.lastOrNull()?.style ?: line.fallbackStyle
-        /** Display-generated dots inherit the resolved logical-end level or paragraph base level. */
-        val ellipsisLevel = line.clusters.lastOrNull()?.bidiLevel
+        val ellipsisStyle = anchorCluster?.style ?: line.fallbackStyle
+        /** Display-generated dots inherit the resolved anchor level or paragraph base level. */
+        val ellipsisLevel = anchorCluster?.bidiLevel
             ?: if (textDirection == TextDirection.RTL) 1 else 0
+        /** 合成簇折叠到被截断那一端的源边界，保持源映射单调。 */
+        val ellipsisOffset = if (fromStart) line.sourceStart else line.sourceEnd
         /** Three synthetic dot clusters preserving the historical visible ellipsis string. */
         val ellipsisClusters = ParagraphLayoutSupport.Ellipsis.map { dot ->
             /** Renderable one-scalar dot text. */
@@ -352,8 +365,8 @@ internal object PixelParagraphLayouter {
                 sourceText = "",
                 renderText = dotText,
                 style = ellipsisStyle,
-                sourceStart = line.sourceEnd,
-                sourceEnd = line.sourceEnd,
+                sourceStart = ellipsisOffset,
+                sourceEnd = ellipsisOffset,
                 width = measureStyledCluster(dotText, ellipsisStyle, defaultTextRasterizer),
                 bidiLevel = ellipsisLevel,
                 isSynthetic = true,
@@ -369,12 +382,14 @@ internal object PixelParagraphLayouter {
         /** Current source-cluster width reduced one complete grapheme at a time. */
         var resultWidth = result.sumOf { cluster -> cluster.width }
         while (result.isNotEmpty() && resultWidth + ellipsisWidth > availableWidth) {
-            /** Whole cluster removed from the logical end. */
-            val removed = result.removeAt(result.lastIndex)
+            /** Whole cluster removed from the truncated end. */
+            val removed = if (fromStart) result.removeAt(0) else result.removeAt(result.lastIndex)
             resultWidth -= removed.width
         }
+        /** 省略号所在的一端由 [fromStart] 决定；重测必须在拼接之后，pair 修正依赖相邻顺序。 */
+        val ordered = if (fromStart) ellipsisClusters + result else result + ellipsisClusters
         return line.copy(
-            clusters = remeasureClusterSequence(result + ellipsisClusters, defaultTextRasterizer),
+            clusters = remeasureClusterSequence(ordered, defaultTextRasterizer),
         )
     }
 

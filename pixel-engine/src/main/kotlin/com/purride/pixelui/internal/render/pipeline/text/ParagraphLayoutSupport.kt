@@ -60,13 +60,14 @@ internal object ParagraphLayoutSupport {
                 return emptyList()
             }
             return listOf(
-                if (overflow == PixelTextOverflow.CLIP || rasterizer.measureText(singleLineText) <= availableWidth) {
+                if (!overflow.ellipsizes || rasterizer.measureText(singleLineText) <= availableWidth) {
                     singleLineText
                 } else {
                     ellipsizePlainText(
                         text = singleLineText,
                         rasterizer = rasterizer,
                         availableWidth = availableWidth,
+                        fromStart = overflow.ellipsizesFromStart,
                     )
                 },
             ).filter(String::isNotEmpty)
@@ -83,7 +84,8 @@ internal object ParagraphLayoutSupport {
         }
         val truncated = wrappedLines.size > maxLines
         val visibleLines = wrappedLines.take(maxLines).toMutableList()
-        if (truncated && overflow == PixelTextOverflow.ELLIPSIS && visibleLines.isNotEmpty()) {
+        // 多行按行截断与 ELLIPSIS 一致：ELLIPSIS_START 的"保留末尾"只对单行有定义。
+        if (truncated && overflow.ellipsizes && visibleLines.isNotEmpty()) {
             visibleLines[visibleLines.lastIndex] = ellipsizePlainText(
                 text = visibleLines.last(),
                 rasterizer = rasterizer,
@@ -135,9 +137,14 @@ internal object ParagraphLayoutSupport {
         rasterizer: PixelTextRasterizer,
         /** 可绘制的最大宽度。 */
         availableWidth: Int,
+        /** true 时保留末尾、省略号置于开头（末位才是核对依据的文本）。 */
+        fromStart: Boolean = false,
     ): String {
         if (rasterizer.measureText(Ellipsis) > availableWidth) {
             return ""
+        }
+        if (fromStart) {
+            return ellipsizePlainTextKeepingEnd(text, rasterizer, availableWidth)
         }
         /** 已确认能够与省略号共同放入宽度的完整 cluster prefix。 */
         val builder = StringBuilder()
@@ -150,6 +157,35 @@ internal object ParagraphLayoutSupport {
             builder.append(cluster)
         }
         return builder.toString()
+    }
+
+    /**
+     * 从末尾向前收集完整 cluster，省略号置于开头。
+     *
+     * 与前缀版本一样按完整 cluster 边界推进，绝不在 grapheme 中间切断；测量始终针对
+     * "省略号 + 候选后缀"的完整串，避免逐段累加导致的 pair 修正误差。
+     */
+    private fun ellipsizePlainTextKeepingEnd(
+        text: String,
+        rasterizer: PixelTextRasterizer,
+        availableWidth: Int,
+    ): String {
+        /** 逻辑顺序的完整 cluster 序列。 */
+        val clusters = ArrayList<String>()
+        forEachGrapheme(text) { cluster -> clusters += cluster }
+        /** 已确认能与省略号共同放入宽度的后缀起点（clusters 下标）。 */
+        var startIndex = clusters.size
+        for (index in clusters.indices.reversed()) {
+            val candidate = Ellipsis + clusters.subList(index, clusters.size).joinToString(separator = "")
+            if (rasterizer.measureText(candidate) > availableWidth) {
+                break
+            }
+            startIndex = index
+        }
+        if (startIndex >= clusters.size) {
+            return Ellipsis
+        }
+        return Ellipsis + clusters.subList(startIndex, clusters.size).joinToString(separator = "")
     }
 
     /** 按 LF/CR/CRLF/NEL/LS/PS 拆分，并保留首尾及连续空行。 */

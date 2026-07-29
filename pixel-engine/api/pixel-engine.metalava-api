@@ -5499,6 +5499,7 @@ package com.purride.pixelui {
   public enum PixelTextOverflow {
     enum_constant public static final com.purride.pixelui.PixelTextOverflow CLIP;
     enum_constant public static final com.purride.pixelui.PixelTextOverflow ELLIPSIS;
+    enum_constant public static final com.purride.pixelui.PixelTextOverflow ELLIPSIS_START;
   }
 
   public final class PixelTextSpan {

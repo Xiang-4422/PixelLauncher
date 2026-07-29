@@ -208,6 +208,9 @@ private fun dialNumberRow(
                     theme.text.primary
                 },
                 theme = theme,
+                // 号码保尾截头：尾号是用户核对刚按下数字的唯一依据，从尾部截断等于
+                // 把刚输入的内容藏起来。截断点由引擎按真实可用宽度决定，UI 层不猜字符数。
+                overflow = TextOverflow.ELLIPSIS_START,
             ),
         ),
         GestureDetector(
@@ -358,6 +361,7 @@ private fun dialText(
     theme: LauncherTheme,
     align: TextAlign = TextAlign.START,
     role: LauncherTextRole? = null,
+    overflow: TextOverflow = TextOverflow.ELLIPSIS,
 ): Widget = Text(
     text,
     style = if (role == null) {
@@ -366,7 +370,7 @@ private fun dialText(
         theme.typography.textStyle(color = color, role = role)
     },
     textAlign = align,
-    overflow = TextOverflow.ELLIPSIS,
+    overflow = overflow,
     softWrap = false,
     maxLines = 1,
 )
