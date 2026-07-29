@@ -268,6 +268,15 @@ internal interface PixelMatterSimulation {
     fun particlePosition(index: Int): Pair<Float, Float>
     fun originPosition(index: Int): Pair<Int, Int>
     fun forceRestoreToOrigin()
+
+    /**
+     * 把粒子散布到场地**上方**（x 随机、y 在场外负区间）。
+     *
+     * 与 [beginRestore]/[applyRestore] 组合即"落沙成形"：散布后开始 restore，
+     * 粒子从天而降插值到各自 origin。散布态不参与物理 step，格子占用不需要
+     * 同步；回到物理前必须先 [forceRestoreToOrigin] 对齐。
+     */
+    fun scatterAboveField(random: Random)
 }
 
 internal data class PixelMatterSeed(
@@ -432,6 +441,15 @@ private abstract class BasePixelMatterSimulation(
         for (index in colors.indices) {
             x[index] = originX[index].toFloat()
             y[index] = originY[index].toFloat()
+            clearParticleMotion(index)
+        }
+    }
+
+    override fun scatterAboveField(random: Random) {
+        for (index in colors.indices) {
+            x[index] = random.nextInt(width).toFloat()
+            // 每粒不同的负深度：restore 同步插值时才有先后落地的层次感。
+            y[index] = -random.nextInt(1, height.coerceAtLeast(2)).toFloat()
             clearParticleMotion(index)
         }
     }

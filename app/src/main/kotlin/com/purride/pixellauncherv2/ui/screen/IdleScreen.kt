@@ -15,7 +15,12 @@ import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
+import com.purride.pixelui.GestureDetector
+import com.purride.pixelui.PositionedFill
+import com.purride.pixelui.Stack
 import com.purride.pixellauncherv2.launcher.IdlePresentationModel
+import com.purride.pixellauncherv2.launcher.SandClockController
+import com.purride.pixellauncherv2.launcher.SandClockLayer
 import com.purride.pixellauncherv2.launcher.IdleStatusKind
 import com.purride.pixellauncherv2.launcher.IdleStatusModel
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
@@ -25,10 +30,15 @@ import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 /**
  * IDLE 屏幕：只保留低信息密度状态。
  * 旧 IdleFluidEngine 已废弃；本页完全通过 pixel-engine widget 组合表达。
+ *
+ * [sandClockSimulation] 非空时，时间由沙粒堆成（沙钟）：粒子层垫底铺满全页，
+ * 文本时间行让位（数字改由沙粒呈现），其余状态信息下沉到页面下半部。
+ * 点按粒子层触发一次坍塌重组（彩蛋）。
  */
-fun IdleScreen(
+internal fun IdleScreen(
     uiState: LauncherUiState,
     theme: LauncherTheme,
+    sandClockController: SandClockController? = null,
 ): Widget {
     val subtitle = listOf(uiState.currentWeekdayText, uiState.currentDateText)
         .filter { it.isNotBlank() }
@@ -48,7 +58,8 @@ fun IdleScreen(
     val statusBodyColor = if (presentation.isNight) theme.text.secondary else theme.text.primary
     val statusFillColor = if (presentation.isNight) PixelColor.Transparent else theme.surface.panelSubtle
 
-    return Padding(
+    val showSandClock = sandClockController != null
+    val content = Padding(
         padding = EdgeInsets.only(
             left = LauncherSpacing.CONTENT_HORIZONTAL,
             top = LauncherSpacing.CONTENT_VERTICAL,
@@ -59,12 +70,14 @@ fun IdleScreen(
             mainAxisSize = MainAxisSize.MAX,
             crossAxisAlignment = CrossAxisAlignment.STRETCH,
             spacing = LauncherSpacing.ROW_SPACING * 2,
-            children = listOf(
-                Expanded(child = SizedBox(width = 0, height = 0)),
+            children = listOfNotNull(
+                // 沙钟态：数字占据上部（种子锚定在场高约 1/3 处），
+                // 文本信息整体下沉，flex 比例把上部让给沙粒。
+                Expanded(flex = if (showSandClock) 3 else 1, child = SizedBox(width = 0, height = 0)),
                 idleText(
                     text = uiState.currentTimeText.ifEmpty { "--:--" },
                     color = timeColor,
-                ),
+                ).takeUnless { showSandClock },
                 idleText(
                     text = subtitle,
                     color = subtitleColor,
@@ -92,9 +105,30 @@ fun IdleScreen(
                         ),
                     ),
                 ),
-                Expanded(child = SizedBox(width = 0, height = 0)),
+                Expanded(flex = 1, child = SizedBox(width = 0, height = 0)),
             ) + idleFooter(uiState, theme, presentation.showFooter),
         ),
+    )
+    if (!showSandClock) {
+        return content
+    }
+    // 手势包在整页最外层：前景 Column 会拦截命中测试，包在粒子层上点不到。
+    // 待机页没有其它点击语义，点任意处触发一次坍塌重组正好是更好的彩蛋。
+    return GestureDetector(
+        onTap = { sandClockController!!.requestCollapse() },
+        child = Stack(
+            children = listOf(
+                PositionedFill(
+                    child = SandClockLayer(
+                        controller = sandClockController!!,
+                        key = "sand-clock-layer",
+                    ),
+                ),
+                content,
+            ),
+            key = "idle-sand-clock-stack",
+        ),
+        key = "idle-sand-clock-gesture",
     )
 }
 

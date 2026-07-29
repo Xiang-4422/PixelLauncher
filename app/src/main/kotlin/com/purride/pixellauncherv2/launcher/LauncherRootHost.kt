@@ -116,6 +116,12 @@ internal class LauncherRootHost(
             onPixelMatterEffectClear()
         },
     )
+    /** 沙钟：待机页的时间由沙粒堆成，分钟变化时坍塌重组。 */
+    private val sandClockController = SandClockController(
+        vsync = routeTickerProvider,
+        onFrame = { hostView.postInvalidateOnAnimation() },
+    )
+
     /** 当前 Widget 树中的 typed Navigator 状态。 */
     private var navigatorState: PixelNavigatorState? = null
     /** 当前业务状态映射到的目的地。 */
@@ -197,6 +203,7 @@ internal class LauncherRootHost(
         if (isDisposed) return
         isDisposed = true
         pixelMatterController.clear()
+        sandClockController.dispose()
         setup.dispose()
         navigatorState = null
     }
@@ -307,6 +314,9 @@ internal class LauncherRootHost(
         // ── Sync contact editor fields ────────────────────────────────────────
         syncContactEditorState()
 
+        // ── Sand clock lifecycle ──────────────────────────────────────────────
+        syncSandClock()
+
         setup.hostView.invalidate()
     }
 
@@ -343,6 +353,7 @@ internal class LauncherRootHost(
 
     fun updatePixelMatterMotion(snapshot: DeviceMotionSnapshot) {
         pixelMatterController.updateMotion(snapshot)
+        sandClockController.updateMotion(snapshot)
     }
 
     fun updatePixelMatterHandInput(snapshot: PixelMatterHandSnapshot?) {
@@ -551,6 +562,7 @@ internal class LauncherRootHost(
         LauncherRouteDestination.IDLE -> IdleScreen(
             uiState = uiState,
             theme = theme,
+            sandClockController = sandClockController.takeIf { it.isVisible() },
         )
     }
 
@@ -805,6 +817,38 @@ internal class LauncherRootHost(
                 uiState.smsPageIndex == SmsPageIndex.ALL
         if (!searchIsVisible) {
             smsSearchController.requestBlur(smsSearchState)
+        }
+    }
+
+    /**
+     * 沙钟只活在待机页：进入时以当前时间落沙成形，驻留时分钟变化触发坍塌重组，
+     * 离开立即释放粒子并停帧。种子在这里构造——只有宿主同时知道字体、主题与
+     * 屏幕轮廓，控制器保持对渲染环境无知。
+     */
+    private fun syncSandClock() {
+        if (uiState.mode != LauncherMode.IDLE) {
+            sandClockController.clear()
+            return
+        }
+        val fieldWidth = screenProfile.logicalWidth
+        val fieldHeight = screenProfile.logicalHeight - LauncherHeaderLayout.statusBarHeight(screenProfile)
+        if (fieldWidth <= 0 || fieldHeight <= 0) {
+            return
+        }
+        val sandColor = if (IdlePresentationModel.presentation(uiState).isNight) {
+            theme.text.secondary
+        } else {
+            theme.text.primary
+        }
+        val rasterizer = preparedFont.defaultRasterizer
+        sandClockController.sync(uiState.currentTimeText) { text ->
+            SandClockSeedRenderer.renderTimeSeed(
+                text = text,
+                rasterizer = rasterizer,
+                fieldWidth = fieldWidth,
+                fieldHeight = fieldHeight,
+                color = sandColor,
+            )
         }
     }
 
