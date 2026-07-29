@@ -17,6 +17,7 @@ import com.purride.pixellauncherv2.R
 import com.purride.pixellauncherv2.app.MainActivity
 import com.purride.pixellauncherv2.app.SmsNotificationActionReceiver
 import com.purride.pixellauncherv2.model.SmsMessageEntry
+import java.util.concurrent.ConcurrentHashMap
 
 class SmsNotificationHelper(
     private val context: Context,
@@ -28,14 +29,20 @@ class SmsNotificationHelper(
      */
     fun showIncomingMessage(entry: SmsMessageEntry, recentUnread: List<SmsMessageEntry> = emptyList()) {
         ensureChannel()
+        // 入库失败或线程解析失败（threadId <= 0）时按地址编号，避免多个发件人
+        // 的降级通知共用同一 id 互相覆盖。
+        val notificationId = notificationIdFor(entry)
         val launchIntent = Intent(context, MainActivity::class.java).apply {
+            // 独有 action 让不同种类通知的 PendingIntent 在 filterEquals 意义上互不相等，
+            // requestCode 撞车时不会互相改写 extras。
+            action = ACTION_OPEN_THREAD
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             putExtra(MainActivity.EXTRA_OPEN_SMS_THREAD_ID, entry.threadId)
             putExtra(MainActivity.EXTRA_OPEN_SMS_ADDRESS, entry.address)
         }
         val pendingIntent = PendingIntent.getActivity(
             context,
-            entry.threadId.toInt(),
+            notificationId,
             launchIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -65,13 +72,17 @@ class SmsNotificationHelper(
         if (!canPostNotifications()) {
             return
         }
-        NotificationManagerCompat.from(context).notify(entry.threadId.toInt(), builder.build())
+        // 会话通知走专属 tag：与组摘要、发送失败等通知彻底分开命名空间，
+        // threadId 恰好等于摘要 id 时也不会互相覆盖。
+        activeThreadNotificationIds.add(notificationId)
+        NotificationManagerCompat.from(context).notify(THREAD_TAG, notificationId, builder.build())
         showGroupSummary()
     }
 
     /** 多会话通知的分组摘要；点按打开应用（由宿主决定落点）。 */
     private fun showGroupSummary() {
         val launchIntent = Intent(context, MainActivity::class.java).apply {
+            action = ACTION_OPEN_SUMMARY
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
         val pendingIntent = PendingIntent.getActivity(
@@ -116,21 +127,38 @@ class SmsNotificationHelper(
 
     /** 会话被打开或标记已读后，撤下它挂着的通知（通知 id 与 threadId 一一对应）。 */
     fun cancelForThread(threadId: Long) {
-        NotificationManagerCompat.from(context).cancel(threadId.toInt())
-        cancelSummaryIfAlone()
+        if (threadId <= 0L) {
+            return
+        }
+        cancelThreadNotification(threadId.toInt())
     }
 
-    /** 组内最后一个会话通知被撤下后，孤儿摘要也要一并清掉。 */
-    private fun cancelSummaryIfAlone() {
-        val manager = context.getSystemService(NotificationManager::class.java) ?: return
-        val active = runCatching { manager.activeNotifications }.getOrNull() ?: return
-        val hasThreadNotification = active.any {
-            it.notification.group == GROUP_KEY_SMS && it.id != GROUP_SUMMARY_NOTIFICATION_ID
+    /** 撤下入库失败降级路径按地址编号的来信通知（打开该会话时调用）。 */
+    fun cancelForAddress(address: String) {
+        if (address.isBlank()) {
+            return
         }
-        if (!hasThreadNotification) {
-            NotificationManagerCompat.from(context).cancel(GROUP_SUMMARY_NOTIFICATION_ID)
+        cancelThreadNotification(fallbackNotificationId(address))
+    }
+
+    private fun cancelThreadNotification(notificationId: Int) {
+        val manager = NotificationManagerCompat.from(context)
+        manager.cancel(THREAD_TAG, notificationId)
+        // NotificationManager 的 cancel 在服务端是异步执行的，紧随其后读
+        // activeNotifications 往往仍能看到刚撤销的那条，会把孤儿摘要留在通知栏。
+        // 因此改为自行维护活跃集合来判断组内是否还有子通知。
+        activeThreadNotificationIds.remove(notificationId)
+        if (activeThreadNotificationIds.isEmpty()) {
+            manager.cancel(GROUP_SUMMARY_NOTIFICATION_ID)
         }
     }
+
+    private fun notificationIdFor(entry: SmsMessageEntry): Int =
+        if (entry.threadId > 0L) entry.threadId.toInt() else fallbackNotificationId(entry.address)
+
+    /** 降级通知 id：按地址取号，与真实 threadId 区间错开以免碰撞。 */
+    private fun fallbackNotificationId(address: String): Int =
+        FALLBACK_ID_BASE + (address.hashCode() and FALLBACK_ID_MASK)
 
     private fun canPostNotifications(): Boolean {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
@@ -142,6 +170,7 @@ class SmsNotificationHelper(
     fun showSendFailure(address: String) {
         ensureChannel()
         val launchIntent = Intent(context, MainActivity::class.java).apply {
+            action = ACTION_OPEN_SEND_FAILURE
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             putExtra(MainActivity.EXTRA_OPEN_SMS_ADDRESS, address)
         }
@@ -185,7 +214,7 @@ class SmsNotificationHelper(
         }
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            entry.threadId.toInt(),
+            notificationIdFor(entry),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or mutabilityFlag,
         )
@@ -201,7 +230,7 @@ class SmsNotificationHelper(
             .putExtra(SmsNotificationActionReceiver.EXTRA_THREAD_ID, entry.threadId)
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            entry.threadId.toInt(),
+            notificationIdFor(entry),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -231,10 +260,27 @@ class SmsNotificationHelper(
 
     private companion object {
         const val channelId = "sms_incoming"
+        const val THREAD_TAG = "sms_thread"
         const val SEND_FAILURE_TAG = "sms_send_failure"
         const val UNSUPPORTED_MMS_TAG = "mms_unsupported"
         const val GROUP_KEY_SMS = "sms_incoming_group"
         const val GROUP_SUMMARY_NOTIFICATION_ID = 7999
         const val MAX_STACKED_MESSAGES = 5
+
+        /** 各类通知 PendingIntent 的独有 action，避免 requestCode 撞车时互相改写 extras。 */
+        const val ACTION_OPEN_THREAD = "com.purride.pixellauncherv2.action.OPEN_SMS_THREAD"
+        const val ACTION_OPEN_SUMMARY = "com.purride.pixellauncherv2.action.OPEN_SMS_SUMMARY"
+        const val ACTION_OPEN_SEND_FAILURE = "com.purride.pixellauncherv2.action.OPEN_SMS_SEND_FAILURE"
+
+        /** 降级通知 id 取号区间，与真实 threadId（自增小整数）错开。 */
+        const val FALLBACK_ID_BASE = 1 shl 20
+        const val FALLBACK_ID_MASK = 0xFFFF
+
+        /**
+         * 进程内仍在显示的会话通知 id。辅助类每次调用都新建实例，故存放在伴生对象；
+         * 接收器工作线程会并发读写，使用并发集合。进程重启后集合为空——此时撤销
+         * 会话通知会顺带撤掉摘要，子通知仍可见，比留下孤儿摘要更可接受。
+         */
+        val activeThreadNotificationIds: MutableSet<Int> = ConcurrentHashMap.newKeySet()
     }
 }

@@ -821,6 +821,8 @@ internal class SmsController(
         host.render()
         host.updateTextInputFocus()
         threadId?.let(smsNotificationHelper::cancelForThread)
+        // 入库失败的降级通知按地址编号，打开会话时一并撤下。
+        smsNotificationHelper.cancelForAddress(address)
         val unreadIds = SmsConversationModel.unread(messages).map { it.messageId }
         if (unreadIds.isNotEmpty()) {
             runInBackground {

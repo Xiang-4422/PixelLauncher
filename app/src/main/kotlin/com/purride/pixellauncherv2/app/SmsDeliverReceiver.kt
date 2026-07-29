@@ -38,10 +38,13 @@ class SmsDeliverReceiver : BroadcastReceiver() {
             .isMuted(entry.conversationKey)
         if (!muted) {
             // 取该线程最近未读用于通知堆叠；入库失败（threadId <= 0）时自然为空。
+            // 必须再按 conversationKey 过滤：服务号会话键取决于每条消息的【来源】
+            // 前缀，同一 threadId 可分属多个会话，否则被静音会话的消息会以错误的
+            // 发件人身份出现在这条通知里。
             val recentUnread = repository.recentUnreadInboxMessages(
                 threadId = entry.threadId,
                 limit = 5,
-            )
+            ).filter { it.conversationKey == entry.conversationKey }
             AndroidComponentDependencies.smsNotificationHelper(appContext)
                 .showIncomingMessage(entry, recentUnread)
         }
