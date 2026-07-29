@@ -72,6 +72,20 @@ class DemoDirector(
         requestRepaint()
     }
 
+    /** 离开演示页：停帧省电；场景状态原样保留。 */
+    fun pause() {
+        ticker.stop()
+        lastElapsedNanos = -1L
+    }
+
+    /** 回到演示页：继续演出。 */
+    fun resume() {
+        if (width > 0) {
+            ticker.start()
+            requestRepaint()
+        }
+    }
+
     fun dispose() {
         ticker.dispose()
     }

@@ -1,6 +1,7 @@
 package com.purride.pixelshowcase
 
 import android.os.Bundle
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -31,6 +32,7 @@ class ShowcaseActivity : AppCompatActivity() {
 
     private lateinit var setup: PixelHostSetup
     private lateinit var director: DemoDirector
+    private lateinit var appHost: ShowcaseAppHost
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,7 +43,7 @@ class ShowcaseActivity : AppCompatActivity() {
             config = PixelHostSetupConfig(
                 // 一个逻辑像素 = 8 物理像素：颗粒感是这个 demo 的主角。
                 profilePolicy = PixelHostProfilePolicy.AdaptivePixels(dotSizePx = DOT_SIZE_PX),
-                content = { DemoCanvas(director) },
+                content = { appHost.buildRoot() },
             ),
         )
         director = DemoDirector(
@@ -59,6 +61,19 @@ class ShowcaseActivity : AppCompatActivity() {
                 LifeScene(),
                 StarfieldScene(),
             ),
+        )
+        appHost = ShowcaseAppHost(hostView = setup.hostView, director = director)
+        // 首页不跑演示帧循环；进入 DEMOS 页时由 appHost 恢复。
+        director.pause()
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (!appHost.handleBack()) {
+                        finish()
+                    }
+                }
+            },
         )
         setContentView(setup.rootView)
         // 沉浸式：demo 的画布就是全部，系统栏只会打断颗粒感。
