@@ -61,6 +61,23 @@ class PixelIndexedGlyphPackTest {
         assertArrayEquals(expected.pixels, actual.pixels)
     }
 
+    /** V2 parser 必须拒绝与 width/height 不一致的压缩长度。 */
+    @Test(expected = IllegalArgumentException::class)
+    fun indexedV2RejectsInvalidBitmapLength() {
+        val binary = buildV2Binary().copyOf().also { bytes ->
+            /** V2 首记录 dataLength 位于 40..43。 */
+            bytes[43] = 1
+        }
+        PixelIndexedGlyphPackParser.parseBinary(sampleManifest(), ByteArrayInputStream(binary))
+    }
+
+    /** V2 parser 必须拒绝最后一条记录之后的任意尾随数据。 */
+    @Test(expected = IllegalArgumentException::class)
+    fun indexedV2RejectsTrailingData() {
+        val binary = buildV2Binary() + byteArrayOf(0)
+        PixelIndexedGlyphPackParser.parseBinary(sampleManifest(), ByteArrayInputStream(binary))
+    }
+
     /** 创建一个带 placement 且高度超过行框的 PGLY v2 字形。 */
     private fun buildV2Binary(): ByteArray {
         val output = ByteArrayOutputStream()

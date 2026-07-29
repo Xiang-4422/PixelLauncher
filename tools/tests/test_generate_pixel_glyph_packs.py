@@ -124,18 +124,18 @@ class GlyphPackConverterTest(unittest.TestCase):
 
         from fontTools.ttLib import TTFont
 
-        font = TTFont("app/src/main/assets/fonts/fusion-pixel-8px-monospaced-latin.ttf")
+        font = TTFont("tools/font_sources/boutique_bitmap_7/current-2026.03.30/BoutiqueBitmap7x7.ttf")
         cmap = font.getBestCmap() or {}
         rendered = converter.render_outline_glyph(
             glyph_set=font.getGlyphSet(),
             glyph_name=cmap[ord("i")],
             units_per_em=font["head"].unitsPerEm,
             pixels_per_em=8,
-            baseline=7,
-            pack_id="fusion_test",
+            baseline=6,
+            pack_id="boutique_7_test",
             code_point=ord("i"),
         )
-        self.assertEqual(4, rendered.advance_width)
+        self.assertEqual(2, rendered.advance_width)
         self.assertTrue(any(rendered.pixels))
         self.assertEqual(0, rendered.bitmap_offset_x)
         font.close()
@@ -163,6 +163,30 @@ class GlyphPackConverterTest(unittest.TestCase):
                 break
         font.close()
         self.assertIsNotNone(negative)
+
+    def test_outline_off_grid_requires_reviewed_exception(self) -> None:
+        """原生网格之外的轮廓必须逐码点声明，禁止整个字体静默放宽。"""
+
+        from fontTools.ttLib import TTFont
+
+        font = TTFont("tools/font_sources/boutique_bitmap_9/1.93/BoutiqueBitmap9x9_1.93.ttf")
+        cmap = font.getBestCmap() or {}
+        arguments = {
+            "glyph_set": font.getGlyphSet(),
+            "glyph_name": cmap[0x8646],
+            "units_per_em": font["head"].unitsPerEm,
+            "pixels_per_em": 10,
+            "baseline": 8,
+            "pack_id": "boutique_9_test",
+            "code_point": 0x8646,
+        }
+        with self.assertRaisesRegex(ValueError, "off the native grid"):
+            converter.render_outline_glyph(**arguments)
+        reviewed = converter.render_outline_glyph(**arguments, allow_off_grid=True)
+        font.close()
+
+        self.assertTrue(reviewed.used_reviewed_exception)
+        self.assertTrue(any(reviewed.pixels))
 
     def test_dot_grid_otf_restores_every_source_dot_without_rasterization(self) -> None:
         """Dotted 的 A/中应按轮廓数恢复全部逻辑点，且重复生成字节一致。"""

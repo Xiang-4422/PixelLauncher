@@ -81,7 +81,7 @@ class SettingsMenuModelTest {
             LauncherFontSelection(
                 family = LauncherFontFamily.CUBIC_11,
                 widthMode = LauncherFontWidthMode.PROPORTIONAL,
-                size = PixelFontSize.PX_11,
+                size = PixelFontSize.PX_12,
             ),
             SettingsMenuModel.nextFontFamily(
                 fusion8.copy(family = LauncherFontFamily.ARK, size = PixelFontSize.PX_10),

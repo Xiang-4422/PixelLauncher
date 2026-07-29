@@ -16,9 +16,9 @@ class DiagnosticsBoundsModelTest {
 
         assertTrue(snapshot.geometryOk)
         assertEquals(116, snapshot.contentWidthPx)
-        assertEquals(224, snapshot.bodyHeightPx)
-        assertEquals(18, snapshot.visibleRowCount)
-        assertEquals("OK 18 ROW", snapshot.summary)
+        assertEquals(221, snapshot.bodyHeightPx)
+        assertEquals(13, snapshot.visibleRowCount)
+        assertEquals("OK 13 ROW", snapshot.summary)
     }
 
     @Test

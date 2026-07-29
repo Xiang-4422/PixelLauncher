@@ -5,12 +5,34 @@ import com.purride.pixellauncherv2.launcher.LauncherFontFamily
 import com.purride.pixellauncherv2.launcher.LauncherFontSelection
 import com.purride.pixellauncherv2.launcher.LauncherFontWidthMode
 import com.purride.pixellauncherv2.launcher.PixelFontSize
+import com.purride.pixellauncherv2.launcher.LauncherTextRole
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Test
 
 /** 验证 UI 显式字号覆盖仍被限制在当前字体家族与宽度模式内。 */
 class LauncherTypographyTest {
+
+    /** 语义 chrome 必须解析到当前家族声明的原生 face。 */
+    @Test
+    fun rasterizer_usesNativeChromeRole() {
+        val resolvedSelections = mutableListOf<LauncherFontSelection>()
+        val typography = LauncherTypography(
+            selection = LauncherFontSelection(
+                family = LauncherFontFamily.PIX32,
+                widthMode = LauncherFontWidthMode.MONOSPACED,
+                size = PixelFontSize.PX_12,
+            ),
+            rasterizerResolver = { selection ->
+                resolvedSelections += selection
+                PixelBitmapFont.Default
+            },
+        )
+
+        typography.rasterizer(LauncherTextRole.CHROME)
+
+        assertEquals(PixelFontSize.PX_12, resolvedSelections.single().size)
+    }
 
     /** 支持的显式字号应原样交给栅格器解析器。 */
     @Test

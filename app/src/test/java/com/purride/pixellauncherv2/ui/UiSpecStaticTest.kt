@@ -527,7 +527,7 @@ class UiSpecStaticTest {
             homeSource.contains("borderColor = theme.button.border") &&
                 homeSource.contains("fillColor = theme.button.border") &&
                 homeSource.contains("color = theme.surface.offPixelColor") &&
-                homeSource.contains("size = PixelFontSize.PX_10") &&
+                homeSource.contains("role = LauncherTextRole.CHROME") &&
                 homeSource.contains("HOME_ACTION_DIVIDER_PX = 1"),
         )
         val mediaBarSource = Regex(

@@ -29,6 +29,7 @@ class DiagnosticsModelTest {
                 "FONT",
                 "FONT ID",
                 "FONT SRC",
+                "FONT TYPE",
                 "FONT PACK",
                 "FONT RANGE",
                 "FONT LOAD",
@@ -96,7 +97,7 @@ class DiagnosticsModelTest {
         val profileWithStatus = profile.copy(statusBarHeight = 14)
         val byTitle = DiagnosticsModel.lines(state, profileWithStatus).associate { it.title to it.value }
         assertEquals("120X240", byTitle["DISPLAY"])
-        assertEquals("14/14", byTitle["STATUS"])
+        assertEquals("14/15", byTitle["STATUS"])
         assertEquals("80% CHG", byTitle["POWER"])
     }
 
@@ -105,15 +106,15 @@ class DiagnosticsModelTest {
         val byTitle = DiagnosticsModel.lines(LauncherState(), profile).associate { it.title to it.value }
 
         assertEquals("FUSION PROP 10PX", byTitle["FONT"])
-        assertEquals("C8 B7 A4/8", byTitle["8PX"])
-        assertEquals("C10 B9 A6/10", byTitle["10PX"])
-        assertEquals("C12 B11 A8/12", byTitle["12PX"])
+        assertEquals("C12 B9 A4/8", byTitle["8PX"])
+        assertEquals("C14 B11 A6/10", byTitle["10PX"])
+        assertEquals("C16 B13 A8/12", byTitle["12PX"])
         assertEquals("RISK 1 138/116", byTitle["TEXT"])
         assertEquals("NO ACCESS", byTitle["USAGE"])
         assertEquals("DATA 138/116", byTitle["TEXT MAX"])
         assertEquals("1", byTitle["TEXT RISK"])
-        assertEquals("0/11", byTitle["STATUS"])
-        assertEquals("OK 18 ROW", byTitle["BOUNDS"])
+        assertEquals("0/15", byTitle["STATUS"])
+        assertEquals("OK 13 ROW", byTitle["BOUNDS"])
         assertEquals("DATA HEALTH", byTitle["DEBUG"])
     }
 

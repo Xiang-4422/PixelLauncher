@@ -71,15 +71,15 @@ class PixelFontCatalogTest {
             )
         }
         assertEquals(
-            listOf(PixelFontSize.PX_11),
+            listOf(PixelFontSize.PX_12),
             PixelFontCatalog.fontSizeOptions(LauncherFontFamily.CUBIC_11, LauncherFontWidthMode.PROPORTIONAL),
         )
         assertEquals(
-            listOf(PixelFontSize.PX_7),
+            listOf(PixelFontSize.PX_8),
             PixelFontCatalog.fontSizeOptions(LauncherFontFamily.BOUTIQUE_7, LauncherFontWidthMode.PROPORTIONAL),
         )
         assertEquals(
-            listOf(PixelFontSize.PX_9),
+            listOf(PixelFontSize.PX_10),
             PixelFontCatalog.fontSizeOptions(LauncherFontFamily.BOUTIQUE_9, LauncherFontWidthMode.PROPORTIONAL),
         )
         assertEquals(
@@ -125,7 +125,7 @@ class PixelFontCatalogTest {
     /** 度量标签必须来自完整 face，而不是脱离家族的全局字号。 */
     @Test
     fun metricsLabel_formatsCellBaselineAndAdvance() {
-        assertEquals("C10 B8 A5/10", PixelFontCatalog.metricsLabel(
+        assertEquals("C14 B11 A5/10", PixelFontCatalog.metricsLabel(
             LauncherFontSelection(LauncherFontFamily.ARK, LauncherFontWidthMode.PROPORTIONAL, PixelFontSize.PX_10),
         ))
         assertEquals("C14 B10 A9/13", PixelFontCatalog.metricsLabel(
@@ -133,10 +133,35 @@ class PixelFontCatalogTest {
         ))
     }
 
+    /** 设置页字体信息必须同时显示原生字号、行框、基线和生产源类型。 */
+    @Test
+    fun fontInfoLabel_exposesNativeSourceType() {
+        assertEquals(
+            "10PX C14 B11 BDF",
+            PixelFontCatalog.fontInfoLabel(
+                LauncherFontSelection(
+                    LauncherFontFamily.FUSION,
+                    LauncherFontWidthMode.PROPORTIONAL,
+                    PixelFontSize.PX_10,
+                ),
+            ),
+        )
+        assertEquals(
+            "12PX C14 B10 OUTLINE",
+            PixelFontCatalog.fontInfoLabel(
+                LauncherFontSelection(
+                    LauncherFontFamily.CUBIC_11,
+                    LauncherFontWidthMode.PROPORTIONAL,
+                    PixelFontSize.PX_12,
+                ),
+            ),
+        )
+    }
+
     /** 完整选择应使用对应官方变体的基线和窄字符宽度。 */
     @Test
     fun metrics_usesSelectedFamilyAndWidthVariant() {
-        /** Ark 10px 比例变体为保护常用下行笔画而使用第 8 行基线。 */
+        /** Ark 10px 比例变体使用官方 BDF 的 11/3 ascent/descent。 */
         val arkProportional = PixelFontCatalog.metrics(
             LauncherFontSelection(
                 family = LauncherFontFamily.ARK,
@@ -153,18 +178,28 @@ class PixelFontCatalogTest {
             ),
         )
 
-        assertEquals(PixelFontMetrics(PixelFontSize.PX_10, 10, 8, 5, 10), arkProportional)
+        assertEquals(PixelFontMetrics(PixelFontSize.PX_10, 14, 11, 5, 10), arkProportional)
         assertEquals(PixelFontMetrics(PixelFontSize.PX_12, 12, 10, 6, 12), fusionMonospaced)
     }
 
-    /** 每个字体都应提供同家族 10px chrome 资源，但不把它混入原生 SIZE 选项。 */
+    /** 每个字体都应把 chrome 映射到同家族声明的原生 face。 */
     @Test
     fun renderableSelections_includePrivateChromeSizeForEveryFamily() {
+        val expectedSizes = mapOf(
+            LauncherFontFamily.FUSION to PixelFontSize.PX_10,
+            LauncherFontFamily.ARK to PixelFontSize.PX_10,
+            LauncherFontFamily.CUBIC_11 to PixelFontSize.PX_12,
+            LauncherFontFamily.BOUTIQUE_7 to PixelFontSize.PX_8,
+            LauncherFontFamily.BOUTIQUE_9 to PixelFontSize.PX_10,
+            LauncherFontFamily.DOTTED to PixelFontSize.PX_13,
+            LauncherFontFamily.GNU_UNIFONT to PixelFontSize.PX_16,
+            LauncherFontFamily.PIX32 to PixelFontSize.PX_12,
+        )
         LauncherFontFamily.entries.forEach { family ->
             PixelFontCatalog.widthModeOptions(family).forEach { widthMode ->
                 assertEquals(
-                    PixelFontSize.PX_10,
-                    PixelFontCatalog.selectionForRole(family, widthMode, LauncherTextRole.CHROME_10).size,
+                    expectedSizes.getValue(family),
+                    PixelFontCatalog.selectionForRole(family, widthMode, LauncherTextRole.CHROME).size,
                 )
             }
         }
@@ -173,7 +208,7 @@ class PixelFontCatalogTest {
             PixelFontCatalog.fontSizeOptions(LauncherFontFamily.PIX32, LauncherFontWidthMode.MONOSPACED),
         )
         assertEquals(
-            PixelFontMetrics(PixelFontSize.PX_12, 14, 11, 6, 12),
+            PixelFontMetrics(PixelFontSize.PX_12, 12, 11, 6, 12),
             PixelFontCatalog.metrics(
                 LauncherFontSelection(
                     LauncherFontFamily.PIX32,

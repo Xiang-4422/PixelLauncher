@@ -29,7 +29,7 @@ class ListRowGeometryTest {
             SmsThreadGeometry.ROW_EXTENT_PX + SmsThreadGeometry.ROW_SPACING_PX,
             SmsThreadGeometry.ROW_PITCH_PX,
         )
-        assertEquals(26, SmsThreadGeometry.rowPitch(PixelFontCatalog.defaultUiFontSelection))
+        assertEquals(34, SmsThreadGeometry.rowPitch(PixelFontCatalog.defaultUiFontSelection))
         assertEquals(
             34,
             SmsThreadGeometry.rowPitch(

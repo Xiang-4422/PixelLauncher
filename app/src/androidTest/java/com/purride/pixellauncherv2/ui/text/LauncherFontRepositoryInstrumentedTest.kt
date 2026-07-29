@@ -9,6 +9,7 @@ import com.purride.pixellauncherv2.launcher.LauncherFontSelection
 import com.purride.pixellauncherv2.launcher.LauncherFontWidthMode
 import com.purride.pixellauncherv2.launcher.PixelFontCatalog
 import com.purride.pixellauncherv2.launcher.PixelFontSize
+import com.purride.pixellauncherv2.launcher.LauncherTextRole
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -44,7 +45,7 @@ class LauncherFontRepositoryInstrumentedTest {
                 )
                 assertTrue(
                     "chrome face must measure text for $selection",
-                    prepared.rasterizer(selection.copy(size = PixelFontSize.PX_10)).measureText("STATUS") > 0,
+                    prepared.typography.rasterizer(LauncherTextRole.CHROME).measureText("STATUS") > 0,
                 )
             }
         } finally {
@@ -75,7 +76,7 @@ class LauncherFontRepositoryInstrumentedTest {
             val prepared = requireNotNull(result).getOrThrow()
             assertEquals(selection, prepared.selection)
             assertTrue(prepared.defaultRasterizer.measureText("ABC 中文") > 0)
-            assertTrue(prepared.rasterizer(selection.copy(size = PixelFontSize.PX_10)).measureText("ABC") > 0)
+            assertTrue(prepared.typography.rasterizer(LauncherTextRole.CHROME).measureText("ABC") > 0)
             runCatching { prepared.rasterizer(selection.copy(size = PixelFontSize.PX_11)) }
                 .onSuccess { error("unsupported exact size must not resolve") }
         } finally {
