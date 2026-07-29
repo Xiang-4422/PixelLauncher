@@ -243,6 +243,10 @@ private fun drawerActionMenu(
         ),
         fillColor = theme.surface.panel,
         borderColor = theme.button.border,
+        // 不传 onDismissRequest 时引擎按 consumeUnhandledDismissRequest 吞掉 BACK；
+        // modal=true 又会滤掉浮层外的命中目标让全屏遮罩收不到点击。两者都要改。
+        onDismissRequest = onDismiss,
+        modal = false,
     )
 }
 

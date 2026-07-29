@@ -364,6 +364,9 @@ private fun buildAllThreadsPage(
                     controller = searchController,
                     placeholder = "SEARCH ALL SMS",
                     style = smsTextFieldStyle(theme),
+                    // 会话菜单打开时禁用：否则点击菜单外的搜索区会被输入目标抢走
+                    // （抬手时输入目标优先于点击目标），遮罩收不到点击、菜单关不掉。
+                    enabled = !uiState.isSmsThreadMenuVisible,
                     textInputAction = TextInputAction.SEARCH,
                     onChanged = onSearchChanged,
                 ),

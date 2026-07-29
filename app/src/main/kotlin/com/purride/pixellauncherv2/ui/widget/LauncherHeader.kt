@@ -578,6 +578,11 @@ fun LauncherSearchHeader(
     placeholder: String,
     placeholderLeadingInkInset: Int,
     autofocus: Boolean,
+    /**
+     * 浮层菜单打开时传 false：禁用后不再产出文本输入目标，点击才能落到
+     * 菜单的全屏遮罩上（抬手时输入目标优先于点击目标并直接消费手势）。
+     */
+    enabled: Boolean = true,
     textAlign: TextAlign = TextAlign.START,
     batteryLevel: Int,
     isCharging: Boolean,
@@ -599,6 +604,7 @@ fun LauncherSearchHeader(
                 placeholder = placeholder,
                 placeholderLeadingInkInset = placeholderLeadingInkInset,
                 autofocus = autofocus,
+                enabled = enabled,
                 textAlign = textAlign,
                 theme = theme,
                 onChanged = onChanged,
@@ -625,6 +631,7 @@ private fun statusBarSearchRow(
     placeholder: String,
     placeholderLeadingInkInset: Int,
     autofocus: Boolean,
+    enabled: Boolean,
     textAlign: TextAlign,
     theme: LauncherTheme,
     onChanged: (String) -> Unit,
@@ -642,6 +649,7 @@ private fun statusBarSearchRow(
                     state = state,
                     controller = controller,
                     placeholder = placeholder,
+                    enabled = enabled,
                     autofocus = autofocus,
                     inputType = PixelInputType.ASCII,
                     textAlign = textAlign,

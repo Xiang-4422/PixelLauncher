@@ -264,6 +264,8 @@ private fun buildComposeArea(
                                 controller = draftController,
                                 placeholder = "TYPE MSG",
                                 style = smsTextFieldStyle(theme),
+                                // 消息菜单打开时禁用，理由同会话页搜索框。
+                                enabled = !uiState.isSmsMessageMenuVisible,
                                 textInputAction = TextInputAction.SEND,
                                 onChanged = onDraftChanged,
                                 onSubmitted = { onSendDraft() },
