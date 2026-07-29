@@ -81,6 +81,12 @@ data class LauncherState(
     val hasContactsPermission: Boolean = false,
     /** 详情页当前联系人的 lookupKey；详情不可见时为空。数据从 [contacts] 现场解析，单一真值。 */
     val contactDetailLookupKey: String = "",
+    /** 编辑器目标联系人的 lookupKey；新建时为空串。 */
+    val contactEditorLookupKey: String = "",
+    /** 编辑器姓名草稿。 */
+    val contactEditorNameDraft: String = "",
+    /** 编辑器"新增号码"草稿；编辑既有联系人时该字段留空表示不加号码。 */
+    val contactEditorNumberDraft: String = "",
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = LauncherLayoutProfileFactory.defaultDotSizePx,
     val isPixelGapEnabled: Boolean = true,
@@ -154,6 +160,7 @@ enum class LauncherMode {
     SMS_THREAD_DETAIL,
     DIALER,
     CONTACT_DETAIL,
+    CONTACT_EDITOR,
     APP_MANAGEMENT,
     DATA_HEALTH,
     NOTIFICATION_SETTINGS,

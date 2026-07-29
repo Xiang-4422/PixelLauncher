@@ -244,6 +244,15 @@ class MainActivity : AppCompatActivity() {
         override fun render() = renderCurrentFrame()
 
         override fun isActive(): Boolean = !(isDestroyed || isFinishing)
+
+        override fun showStatusBarMessage(message: String) =
+            this@MainActivity.showStatusBarMessage(message)
+
+        override fun requestContactsWritePermission() =
+            requestPermissions(
+                arrayOf(Manifest.permission.WRITE_CONTACTS),
+                callPermissionRequestCode,
+            )
     }
 
     private val clockTicker = object : Runnable {
@@ -344,12 +353,14 @@ class MainActivity : AppCompatActivity() {
             callLogRepository = appContainer.callLogRepository,
             dialerRepository = appContainer.dialerRepository,
             contactSearchRepository = appContainer.contactSearchRepository,
+            contactDirectoryRepository = appContainer.contactDirectoryRepository,
             backgroundExecutor = backgroundExecutor,
             mainHandler = mainHandler,
             host = callHost,
         )
         contactsController = ContactsController(
             contactDirectoryRepository = appContainer.contactDirectoryRepository,
+            contactSearchRepository = appContainer.contactSearchRepository,
             backgroundExecutor = backgroundExecutor,
             mainHandler = mainHandler,
             host = contactsHost,
@@ -438,6 +449,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SMS_THREAD_DETAIL -> smsController.closeThreadDetail()
                     LauncherMode.DIALER -> callController.closeCallLog()
                     LauncherMode.CONTACT_DETAIL -> contactsController.closeContact()
+                    LauncherMode.CONTACT_EDITOR -> contactsController.closeEditor()
                     LauncherMode.APP_MANAGEMENT -> closeAppManagement()
                     LauncherMode.DATA_HEALTH -> closeDataHealth()
                     LauncherMode.NOTIFICATION_SETTINGS -> closeNotificationSettings()
@@ -571,6 +583,12 @@ class MainActivity : AppCompatActivity() {
         onRequestContactsPermission = callController::retryCallPermissions,
         onContactCallNumber = callController::callNumber,
         onContactSmsNumber = smsController::composeNewThread,
+        onCreateContact = { contactsController.openEditor("") },
+        onEditContact = contactsController::openEditor,
+        onContactEditorNameChanged = contactsController::updateEditorName,
+        onContactEditorNumberChanged = contactsController::updateEditorNumber,
+        onContactEditorDeleteNumber = contactsController::deleteNumber,
+        onContactEditorSave = contactsController::saveEditor,
         onCallPageSelected = callController::selectPage,
         onDialDigit = callController::appendDialDigit,
         onDialBackspace = callController::backspaceDialInput,
@@ -607,7 +625,8 @@ class MainActivity : AppCompatActivity() {
             state.mode != LauncherMode.SMS_THREADS &&
             state.mode != LauncherMode.SMS_THREAD_DETAIL &&
             state.mode != LauncherMode.DIALER &&
-            state.mode != LauncherMode.CONTACT_DETAIL
+            state.mode != LauncherMode.CONTACT_DETAIL &&
+            state.mode != LauncherMode.CONTACT_EDITOR
         ) {
             state = LauncherStateTransitions.showHome(state)
         }
@@ -1008,6 +1027,7 @@ class MainActivity : AppCompatActivity() {
                     // 通话记录页无选中态呈现，方向键不再驱动一个看不见的选中项。
                     LauncherMode.DIALER -> Unit
                     LauncherMode.CONTACT_DETAIL -> Unit
+                    LauncherMode.CONTACT_EDITOR -> Unit
                     LauncherMode.SETTINGS -> Unit
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
@@ -1035,6 +1055,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
                     LauncherMode.DIALER -> Unit
                     LauncherMode.CONTACT_DETAIL -> Unit
+                    LauncherMode.CONTACT_EDITOR -> Unit
                     LauncherMode.SETTINGS -> Unit
                     LauncherMode.HOME -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -1056,6 +1077,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
                     LauncherMode.DIALER -> callController.selectPage(state.callPageIndex - 1)
                     LauncherMode.CONTACT_DETAIL -> Unit
+                    LauncherMode.CONTACT_EDITOR -> Unit
                     LauncherMode.SMS_THREADS -> smsController.selectPage(SmsPageIndex.UNREAD)
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -1076,6 +1098,7 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
                     LauncherMode.DIALER -> callController.selectPage(state.callPageIndex + 1)
                     LauncherMode.CONTACT_DETAIL -> Unit
+                    LauncherMode.CONTACT_EDITOR -> Unit
                     LauncherMode.SMS_THREADS -> smsController.selectPage(SmsPageIndex.ALL)
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -1111,6 +1134,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     LauncherMode.CONTACT_DETAIL -> Unit
+                    LauncherMode.CONTACT_EDITOR -> Unit
                     LauncherMode.SMS_THREAD_DETAIL -> {
                         if (state.smsDraftText.isBlank()) {
                             Unit // engine TextField handles SMS draft focus
@@ -2255,6 +2279,7 @@ class MainActivity : AppCompatActivity() {
             LauncherMode.SMS_THREAD_DETAIL,
             LauncherMode.DIALER,
             LauncherMode.CONTACT_DETAIL,
+            LauncherMode.CONTACT_EDITOR,
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,

@@ -5,6 +5,7 @@ import android.os.Handler
 import android.os.SystemClock
 import android.util.Log
 import com.purride.pixellauncherv2.data.CallLogRepository
+import com.purride.pixellauncherv2.data.ContactDirectoryRepository
 import com.purride.pixellauncherv2.data.ContactSearchRepository
 import com.purride.pixellauncherv2.data.DialerRepository
 import com.purride.pixellauncherv2.launcher.CallLogModel
@@ -25,6 +26,7 @@ internal class CallController(
     private val callLogRepository: CallLogRepository,
     private val dialerRepository: DialerRepository,
     private val contactSearchRepository: ContactSearchRepository,
+    private val contactDirectoryRepository: ContactDirectoryRepository,
     private val backgroundExecutor: ExecutorService,
     private val mainHandler: Handler,
     private val host: Host,
@@ -266,6 +268,10 @@ internal class CallController(
             // 拨号、没走过短信授权流程的用户会以为智能拨号根本没做。
             if (!contactSearchRepository.hasReadContactsPermission()) {
                 add(Manifest.permission.READ_CONTACTS)
+            }
+            // 与 READ 同组：一起请求只弹同一个框；漏掉它则联系人编辑器恒不可写。
+            if (!contactDirectoryRepository.hasWriteContactsPermission()) {
+                add(Manifest.permission.WRITE_CONTACTS)
             }
         }
         if (missing.isEmpty()) {

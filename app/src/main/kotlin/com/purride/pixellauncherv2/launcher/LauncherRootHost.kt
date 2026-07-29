@@ -35,6 +35,7 @@ import com.purride.pixelui.pixelRouteDestination
 import com.purride.pixelui.showItem
 import com.purride.pixellauncherv2.ui.screen.AppManagementScreen
 import com.purride.pixellauncherv2.ui.screen.ContactDetailScreen
+import com.purride.pixellauncherv2.ui.screen.ContactEditorScreen
 import com.purride.pixellauncherv2.ui.screen.DiagnosticsScreen
 import com.purride.pixellauncherv2.ui.screen.DialerScreen
 import com.purride.pixellauncherv2.ui.screen.DataHealthScreen
@@ -147,6 +148,10 @@ internal class LauncherRootHost(
     private val callLogListState = callLogListController.create()
     private val contactsListController = ScrollController()
     private val contactsListState = contactsListController.create()
+    private val contactNameController = TextEditingController()
+    private val contactNameState = contactNameController.create()
+    private val contactNumberController = TextEditingController()
+    private val contactNumberState = contactNumberController.create()
 
     // ── SMS search + detail message list + draft ──────────────────────────────
     private val msgListController = ScrollController()
@@ -298,6 +303,9 @@ internal class LauncherRootHost(
 
         // ── Sync app editor fields ────────────────────────────────────────────
         syncAppEditorState()
+
+        // ── Sync contact editor fields ────────────────────────────────────────
+        syncContactEditorState()
 
         setup.hostView.invalidate()
     }
@@ -477,6 +485,7 @@ internal class LauncherRootHost(
             onCallGroupPressed = callbacks.onCallGroupPressed,
             onRequestCallLogPermission = callbacks.onRequestCallLogPermission,
             onContactPressed = callbacks.onContactPressed,
+            onCreateContact = callbacks.onCreateContact,
             onRequestContactsPermission = callbacks.onRequestContactsPermission,
             onDialDigit = callbacks.onDialDigit,
             onDialBackspace = callbacks.onDialBackspace,
@@ -489,6 +498,19 @@ internal class LauncherRootHost(
             theme = theme,
             onCallNumber = callbacks.onContactCallNumber,
             onSmsNumber = callbacks.onContactSmsNumber,
+            onEditContact = callbacks.onEditContact,
+        )
+        LauncherRouteDestination.CONTACT_EDITOR -> ContactEditorScreen(
+            uiState = uiState,
+            theme = theme,
+            nameController = contactNameController,
+            nameState = contactNameState,
+            numberController = contactNumberController,
+            numberState = contactNumberState,
+            onNameChanged = callbacks.onContactEditorNameChanged,
+            onNumberChanged = callbacks.onContactEditorNumberChanged,
+            onDeleteNumber = callbacks.onContactEditorDeleteNumber,
+            onSave = callbacks.onContactEditorSave,
         )
         LauncherRouteDestination.DIAGNOSTICS -> DiagnosticsScreen(
             uiState = uiState,
@@ -786,6 +808,23 @@ internal class LauncherRootHost(
         }
     }
 
+    private fun syncContactEditorState() {
+        if (contactNameState.text != uiState.contactEditorNameDraft) {
+            contactNameController.updateText(
+                state = contactNameState,
+                text = uiState.contactEditorNameDraft,
+                selectionStart = uiState.contactEditorNameDraft.length,
+            )
+        }
+        if (contactNumberState.text != uiState.contactEditorNumberDraft) {
+            contactNumberController.updateText(
+                state = contactNumberState,
+                text = uiState.contactEditorNumberDraft,
+                selectionStart = uiState.contactEditorNumberDraft.length,
+            )
+        }
+    }
+
     private fun syncAppEditorState() {
         if (appNameState.text != uiState.appEditorNameDraft) {
             appNameController.updateText(
@@ -826,6 +865,7 @@ internal class LauncherRootHost(
             LauncherMode.SMS_THREAD_DETAIL -> LauncherRouteDestination.SMS_THREAD_DETAIL
             LauncherMode.DIALER -> LauncherRouteDestination.DIALER
             LauncherMode.CONTACT_DETAIL -> LauncherRouteDestination.CONTACT_DETAIL
+            LauncherMode.CONTACT_EDITOR -> LauncherRouteDestination.CONTACT_EDITOR
             LauncherMode.APP_MANAGEMENT -> LauncherRouteDestination.APP_MANAGEMENT
             LauncherMode.DATA_HEALTH -> LauncherRouteDestination.DATA_HEALTH
             LauncherMode.NOTIFICATION_SETTINGS -> LauncherRouteDestination.NOTIFICATION_SETTINGS
@@ -843,6 +883,7 @@ internal class LauncherRootHost(
             LauncherRouteDestination.MAIN,
             LauncherRouteDestination.SMS_THREAD_DETAIL,
             LauncherRouteDestination.CONTACT_DETAIL,
+            LauncherRouteDestination.CONTACT_EDITOR,
             LauncherRouteDestination.APP_MANAGEMENT,
             LauncherRouteDestination.DATA_HEALTH,
             LauncherRouteDestination.NOTIFICATION_SETTINGS,
@@ -901,6 +942,7 @@ internal enum class LauncherRouteDestination(
     SMS_THREAD_DETAIL("sms-thread-detail"),
     DIALER("dialer"),
     CONTACT_DETAIL("contact-detail"),
+    CONTACT_EDITOR("contact-editor"),
     APP_MANAGEMENT("app-management"),
     DATA_HEALTH("data-health"),
     NOTIFICATION_SETTINGS("notification-settings"),

@@ -639,6 +639,33 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
+    fun contactEditor_openPrefillsNameAndCloseReturnsByOrigin() {
+        val contact = ContactDetail(
+            contactId = 1L,
+            lookupKey = "lk-1",
+            rawContactId = 1L,
+            displayName = "Alice",
+        )
+        val base = LauncherState(mode = LauncherMode.DIALER, contacts = listOf(contact))
+
+        // 新建：空 lookupKey，草稿全空；关闭回联系人页
+        val creating = LauncherStateTransitions.showContactEditor(base, "")
+        assertEquals(LauncherMode.CONTACT_EDITOR, creating.mode)
+        assertEquals("", creating.contactEditorNameDraft)
+        val closedFromCreate = LauncherStateTransitions.hideContactEditor(creating)
+        assertEquals(LauncherMode.DIALER, closedFromCreate.mode)
+        assertEquals(CallPageIndex.CONTACTS, closedFromCreate.callPageIndex)
+
+        // 编辑：姓名预填；关闭回该联系人详情
+        val editing = LauncherStateTransitions.showContactEditor(base, "lk-1")
+        assertEquals("Alice", editing.contactEditorNameDraft)
+        val closedFromEdit = LauncherStateTransitions.hideContactEditor(editing)
+        assertEquals(LauncherMode.CONTACT_DETAIL, closedFromEdit.mode)
+        assertEquals("lk-1", closedFromEdit.contactDetailLookupKey)
+        assertEquals("", closedFromEdit.contactEditorLookupKey)
+    }
+
+    @Test
     fun updateContacts_landsDataPermissionAndClearsLoading() {
         val loading = LauncherStateTransitions.beginContactsLoading(LauncherState())
         assertTrue(loading.isContactsLoading)

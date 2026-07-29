@@ -3,6 +3,8 @@ package com.purride.pixellauncherv2.app
 import android.os.Handler
 import android.util.Log
 import com.purride.pixellauncherv2.data.ContactDirectoryRepository
+import com.purride.pixellauncherv2.data.ContactSearchRepository
+import com.purride.pixellauncherv2.launcher.ContactEditorModel
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
 import java.util.concurrent.ExecutorService
@@ -16,6 +18,7 @@ import java.util.concurrent.RejectedExecutionException
  */
 internal class ContactsController(
     private val contactDirectoryRepository: ContactDirectoryRepository,
+    private val contactSearchRepository: ContactSearchRepository,
     private val backgroundExecutor: ExecutorService,
     private val mainHandler: Handler,
     private val host: Host,
@@ -31,6 +34,12 @@ internal class ContactsController(
 
         /** Activity 仍存活（未销毁/未结束）时为 true，用于异步回调的有效性校验。 */
         fun isActive(): Boolean
+
+        /** 全局状态栏临时消息（自动消失）。 */
+        fun showStatusBarMessage(message: String)
+
+        /** 申请 WRITE_CONTACTS（与 READ 同组，已授读时免弹窗补授）。 */
+        fun requestContactsWritePermission()
     }
 
     /** 递增的加载代次，用于丢弃过期的异步结果。 */
@@ -59,6 +68,101 @@ internal class ContactsController(
                     contacts = contacts,
                 )
                 host.render()
+            }
+        }
+    }
+
+    /** 打开编辑器；[lookupKey] 为空串时是新建。 */
+    fun openEditor(lookupKey: String) {
+        host.state = LauncherStateTransitions.showContactEditor(host.state, lookupKey)
+        host.render()
+    }
+
+    /** 放弃编辑：编辑既有联系人回详情，新建回联系人页。 */
+    fun closeEditor() {
+        host.state = LauncherStateTransitions.hideContactEditor(host.state)
+        host.render()
+    }
+
+    /** 编辑器姓名草稿变更（TextField onChanged 回调）。 */
+    fun updateEditorName(name: String) {
+        host.state = LauncherStateTransitions.updateContactEditorName(host.state, name)
+    }
+
+    /** 编辑器号码草稿变更。 */
+    fun updateEditorNumber(number: String) {
+        host.state = LauncherStateTransitions.updateContactEditorNumber(host.state, number)
+    }
+
+    /**
+     * 保存编辑器：新建 = 姓名 + 号码整体创建；编辑 = 改名（若变化）+ 追加号码（若填写）。
+     *
+     * 写库在后台线程；成功后丢弃 T9 快照并重读目录，让新联系人立即可被智能拨号命中。
+     * 任何一步失败都在状态栏出声——静默失败等于骗用户"已保存"。
+     */
+    fun saveEditor() {
+        val lookupKey = host.state.contactEditorLookupKey
+        val name = host.state.contactEditorNameDraft.trim()
+        val number = host.state.contactEditorNumberDraft.trim()
+        val existing = host.state.contacts.firstOrNull { contact -> contact.lookupKey == lookupKey }
+        if (!ContactEditorModel.canSave(name, number, hasExistingContact = existing != null)) {
+            host.showStatusBarMessage(STATUS_INVALID_CONTACT)
+            return
+        }
+        if (!contactDirectoryRepository.hasWriteContactsPermission()) {
+            host.requestContactsWritePermission()
+            return
+        }
+        runInBackground {
+            val saved = if (existing == null) {
+                contactDirectoryRepository.createContact(name, number)
+            } else {
+                val renamed = if (name != existing.displayName.trim()) {
+                    contactDirectoryRepository.renameContact(existing.rawContactId, name)
+                } else {
+                    true
+                }
+                val added = if (number.isNotEmpty()) {
+                    contactDirectoryRepository.addNumber(existing.rawContactId, number)
+                } else {
+                    true
+                }
+                renamed && added
+            }
+            mainHandler.post {
+                if (!host.isActive()) {
+                    return@post
+                }
+                if (saved) {
+                    contactSearchRepository.invalidate()
+                    host.state = LauncherStateTransitions.hideContactEditor(host.state)
+                    host.render()
+                    refreshContacts()
+                } else {
+                    host.showStatusBarMessage(STATUS_SAVE_FAILED)
+                }
+            }
+        }
+    }
+
+    /** 编辑器里删除一个既有号码；改号 = 删旧 + 加新。 */
+    fun deleteNumber(dataId: Long) {
+        if (!contactDirectoryRepository.hasWriteContactsPermission()) {
+            host.requestContactsWritePermission()
+            return
+        }
+        runInBackground {
+            val deleted = contactDirectoryRepository.deleteNumber(dataId)
+            mainHandler.post {
+                if (!host.isActive()) {
+                    return@post
+                }
+                if (deleted) {
+                    contactSearchRepository.invalidate()
+                    refreshContacts()
+                } else {
+                    host.showStatusBarMessage(STATUS_SAVE_FAILED)
+                }
             }
         }
     }
@@ -98,5 +202,7 @@ internal class ContactsController(
 
     private companion object {
         const val LOG_TAG = "ContactsController"
+        const val STATUS_INVALID_CONTACT = "NAME AND NUMBER REQUIRED"
+        const val STATUS_SAVE_FAILED = "SAVE FAILED"
     }
 }

@@ -90,6 +90,17 @@ data class LauncherCallbacks(
     val onContactCallNumber: (number: String) -> Unit,
     /** 详情页给某个号码发短信。 */
     val onContactSmsNumber: (number: String) -> Unit,
+    /** 列表页"+ NEW" → 打开新建编辑器。 */
+    val onCreateContact: () -> Unit,
+    /** 详情页 EDIT → 打开编辑器。 */
+    val onEditContact: (lookupKey: String) -> Unit,
+    /** 编辑器姓名/号码草稿变更。 */
+    val onContactEditorNameChanged: (String) -> Unit,
+    val onContactEditorNumberChanged: (String) -> Unit,
+    /** 编辑器删除既有号码。 */
+    val onContactEditorDeleteNumber: (dataId: Long) -> Unit,
+    /** 编辑器保存。 */
+    val onContactEditorSave: () -> Unit,
     /** 拨号盘按键。 */
     val onDialDigit: (Char) -> Unit,
     val onDialBackspace: () -> Unit,

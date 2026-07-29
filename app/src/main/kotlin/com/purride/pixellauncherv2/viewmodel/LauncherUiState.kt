@@ -112,6 +112,12 @@ data class LauncherUiState(
     val hasContactsPermission: Boolean = false,
     /** 详情页当前联系人的 lookupKey；详情不可见时为空。 */
     val contactDetailLookupKey: String = "",
+    /** 编辑器目标联系人的 lookupKey；新建时为空串。 */
+    val contactEditorLookupKey: String = "",
+    /** 编辑器姓名草稿。 */
+    val contactEditorNameDraft: String = "",
+    /** 编辑器"新增号码"草稿。 */
+    val contactEditorNumberDraft: String = "",
 
     // ── Appearance ────────────────────────────────────────────────────────────
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,

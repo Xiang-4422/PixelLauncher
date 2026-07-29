@@ -59,6 +59,7 @@ fun DialerScreen(
     onCallGroupPressed: (number: String) -> Unit,
     onRequestCallLogPermission: () -> Unit,
     onContactPressed: (lookupKey: String) -> Unit,
+    onCreateContact: () -> Unit,
     onRequestContactsPermission: () -> Unit,
     onDialDigit: (Char) -> Unit,
     onDialBackspace: () -> Unit,
@@ -97,6 +98,7 @@ fun DialerScreen(
                         listState = contactsListState,
                         listController = contactsListController,
                         onContactPressed = onContactPressed,
+                        onCreateContact = onCreateContact,
                         onRequestContactsPermission = onRequestContactsPermission,
                     ),
                     dialPadPage(

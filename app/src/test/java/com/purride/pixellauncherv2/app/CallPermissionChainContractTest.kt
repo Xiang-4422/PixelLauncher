@@ -30,6 +30,11 @@ class CallPermissionChainContractTest {
                 "without it T9 contact search silently returns nothing.",
             source.contains("Manifest.permission.READ_CONTACTS"),
         )
+        assertTrue(
+            "CallController.requestMissingPermissions must request WRITE_CONTACTS alongside READ " +
+                "(same group, same dialog); without it the contact editor can never write.",
+            source.contains("Manifest.permission.WRITE_CONTACTS"),
+        )
     }
 
     /**

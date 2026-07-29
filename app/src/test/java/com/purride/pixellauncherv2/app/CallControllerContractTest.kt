@@ -2,6 +2,7 @@ package com.purride.pixellauncherv2.app
 
 import android.os.Handler
 import com.purride.pixellauncherv2.data.CallLogRepository
+import com.purride.pixellauncherv2.data.ContactDirectoryRepository
 import com.purride.pixellauncherv2.data.ContactSearchRepository
 import com.purride.pixellauncherv2.data.DialerRepository
 import org.junit.Assert.assertEquals
@@ -25,6 +26,7 @@ class CallControllerContractTest {
             CallLogRepository::class.java,
             DialerRepository::class.java,
             ContactSearchRepository::class.java,
+            ContactDirectoryRepository::class.java,
             ExecutorService::class.java,
             Handler::class.java,
             CallController.Host::class.java,

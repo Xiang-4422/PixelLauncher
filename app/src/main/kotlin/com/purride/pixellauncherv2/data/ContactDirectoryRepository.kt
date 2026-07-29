@@ -151,6 +151,115 @@ class ContactDirectoryRepository(
         }
     }
 
+    // ── Writes ────────────────────────────────────────────────────────────────
+
+    /**
+     * 新建联系人（本地账户）：一个姓名 + 一个手机号。
+     *
+     * 三条 op 打包成一个 applyBatch——半成品联系人（有名无号/有号无名）比失败更糟，
+     * 要么全成要么全不成。
+     */
+    fun createContact(name: String, number: String): Boolean {
+        if (!hasWriteContactsPermission()) {
+            Log.w(LOG_TAG, "createContact skipped: WRITE_CONTACTS not granted")
+            return false
+        }
+        val operations = arrayListOf(
+            android.content.ContentProviderOperation
+                .newInsert(ContactsContract.RawContacts.CONTENT_URI)
+                .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null)
+                .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null)
+                .build(),
+            android.content.ContentProviderOperation
+                .newInsert(ContactsContract.Data.CONTENT_URI)
+                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
+                .withValue(
+                    ContactsContract.Data.MIMETYPE,
+                    ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE,
+                )
+                .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name.trim())
+                .build(),
+            android.content.ContentProviderOperation
+                .newInsert(ContactsContract.Data.CONTENT_URI)
+                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
+                .withValue(
+                    ContactsContract.Data.MIMETYPE,
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE,
+                )
+                .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, number.trim())
+                .withValue(
+                    ContactsContract.CommonDataKinds.Phone.TYPE,
+                    ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE,
+                )
+                .build(),
+        )
+        return runCatching { contentResolver.applyBatch(ContactsContract.AUTHORITY, operations) }
+            .onFailure { error -> Log.w(LOG_TAG, "createContact failed", error) }
+            .isSuccess
+    }
+
+    /** 改名：更新该 raw contact 的 StructuredName 行；provider 负责重新拆分姓与名。 */
+    fun renameContact(rawContactId: Long, name: String): Boolean {
+        if (!hasWriteContactsPermission()) {
+            Log.w(LOG_TAG, "renameContact skipped: WRITE_CONTACTS not granted")
+            return false
+        }
+        val values = android.content.ContentValues().apply {
+            put(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name.trim())
+        }
+        return runCatching {
+            contentResolver.update(
+                ContactsContract.Data.CONTENT_URI,
+                values,
+                "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
+                arrayOf(
+                    rawContactId.toString(),
+                    ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE,
+                ),
+            ) > 0
+        }.onFailure { error -> Log.w(LOG_TAG, "renameContact failed", error) }
+            .getOrDefault(false)
+    }
+
+    /** 给既有联系人追加一个手机号。 */
+    fun addNumber(rawContactId: Long, number: String): Boolean {
+        if (!hasWriteContactsPermission()) {
+            Log.w(LOG_TAG, "addNumber skipped: WRITE_CONTACTS not granted")
+            return false
+        }
+        val values = android.content.ContentValues().apply {
+            put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
+            put(
+                ContactsContract.Data.MIMETYPE,
+                ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE,
+            )
+            put(ContactsContract.CommonDataKinds.Phone.NUMBER, number.trim())
+            put(
+                ContactsContract.CommonDataKinds.Phone.TYPE,
+                ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE,
+            )
+        }
+        return runCatching { contentResolver.insert(ContactsContract.Data.CONTENT_URI, values) != null }
+            .onFailure { error -> Log.w(LOG_TAG, "addNumber failed", error) }
+            .getOrDefault(false)
+    }
+
+    /** 删除一个号码（Data 行）。联系人本身保留；号码删光后它只是从本目录消失。 */
+    fun deleteNumber(dataId: Long): Boolean {
+        if (!hasWriteContactsPermission()) {
+            Log.w(LOG_TAG, "deleteNumber skipped: WRITE_CONTACTS not granted")
+            return false
+        }
+        return runCatching {
+            contentResolver.delete(
+                ContactsContract.Data.CONTENT_URI,
+                "${ContactsContract.Data._ID} = ?",
+                arrayOf(dataId.toString()),
+            ) > 0
+        }.onFailure { error -> Log.w(LOG_TAG, "deleteNumber failed", error) }
+            .getOrDefault(false)
+    }
+
     private companion object {
         const val LOG_TAG = "ContactDirRepo"
 

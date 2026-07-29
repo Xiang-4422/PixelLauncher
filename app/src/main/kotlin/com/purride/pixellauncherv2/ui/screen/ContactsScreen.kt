@@ -40,6 +40,7 @@ fun ContactsPage(
     listState: PixelListState,
     listController: PixelListController,
     onContactPressed: (lookupKey: String) -> Unit,
+    onCreateContact: () -> Unit,
     onRequestContactsPermission: () -> Unit,
 ): Widget {
     // 缺权限与"通讯录为空"是两件事：前者可操作，必须给出恢复路径。
@@ -50,22 +51,44 @@ fun ContactsPage(
     if (uiState.isContactsLoading && rows.isEmpty()) {
         return centeredContactsLoading(theme, vsync)
     }
-    if (rows.isEmpty()) {
-        return centeredContactsStatus("NO CONTACTS", theme)
-    }
+    // 空目录时"+ NEW"依旧可用——新装用户正是从这里录第一个联系人。
     return ListViewBuilder(
-        itemCount = rows.size,
+        // 第 0 项固定为"+ NEW"入口行。
+        itemCount = rows.size + 1,
         state = listState,
         controller = listController,
         spacing = LauncherSpacing.ROW_SPACING,
         itemBuilder = { index ->
-            when (val row = rows[index]) {
+            if (index == 0) {
+                return@ListViewBuilder newContactRow(theme, onCreateContact)
+            }
+            when (val row = rows[index - 1]) {
                 is ContactListModel.Row.Header -> contactGroupHeader(row.letter, theme)
                 is ContactListModel.Row.Person -> contactRow(row.contact, theme, onContactPressed)
             }
         },
     )
 }
+
+/** 新建入口行：边框弱化处理，不与联系人条目争夺视觉权重。 */
+private fun newContactRow(theme: LauncherTheme, onCreateContact: () -> Unit): Widget = Padding(
+    horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+    child = Semantics(
+        label = "NEW CONTACT",
+        role = PixelSemanticRole.BUTTON,
+        child = GestureDetector(
+            onTap = onCreateContact,
+            child = Container(
+                borderColor = theme.button.border,
+                padding = EdgeInsets.symmetric(
+                    horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+                    vertical = LauncherSpacing.ROW_SPACING,
+                ),
+                child = contactText(text = "+ NEW", color = theme.button.text, theme = theme),
+            ),
+        ),
+    ),
+)
 
 /** 分组字母头：低对比、不可点。 */
 private fun contactGroupHeader(letter: String, theme: LauncherTheme): Widget = Padding(
@@ -126,6 +149,7 @@ fun ContactDetailScreen(
     theme: LauncherTheme,
     onCallNumber: (number: String) -> Unit,
     onSmsNumber: (number: String) -> Unit,
+    onEditContact: (lookupKey: String) -> Unit,
 ): Widget {
     val contact = uiState.contacts.firstOrNull { entry ->
         entry.lookupKey == uiState.contactDetailLookupKey
@@ -148,6 +172,26 @@ fun ContactDetailScreen(
                 contact.numbers.forEach { phone ->
                     add(contactNumberBlock(phone.typeLabel, phone.number, theme, onCallNumber, onSmsNumber))
                 }
+                // 撑开剩余空间，把 EDIT 沉到屏底——它是低频动作，不与号码动作抢位置。
+                add(Expanded(child = Column(mainAxisSize = MainAxisSize.MAX, spacing = 0, children = emptyList())))
+                add(
+                    Semantics(
+                        label = "EDIT",
+                        role = PixelSemanticRole.BUTTON,
+                        child = GestureDetector(
+                            onTap = { onEditContact(contact.lookupKey) },
+                            child = Container(
+                                alignment = com.purride.pixelui.Alignment.CENTER,
+                                borderColor = theme.button.border,
+                                padding = EdgeInsets.symmetric(
+                                    horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
+                                    vertical = LauncherSpacing.ROW_SPACING,
+                                ),
+                                child = contactText(text = "EDIT", color = theme.button.text, theme = theme),
+                            ),
+                        ),
+                    ),
+                )
             },
         ),
     )

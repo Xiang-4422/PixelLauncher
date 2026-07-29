@@ -34,7 +34,8 @@ object LauncherStateTransitions {
             LauncherMode.SMS_THREADS,
             LauncherMode.SMS_THREAD_DETAIL,
             LauncherMode.DIALER,
-            LauncherMode.CONTACT_DETAIL -> state.mode
+            LauncherMode.CONTACT_DETAIL,
+            LauncherMode.CONTACT_EDITOR -> state.mode
 
             LauncherMode.SETTINGS,
             LauncherMode.APP_MANAGEMENT,
@@ -70,7 +71,8 @@ object LauncherStateTransitions {
             LauncherMode.SMS_THREADS,
             LauncherMode.SMS_THREAD_DETAIL,
             LauncherMode.DIALER,
-            LauncherMode.CONTACT_DETAIL -> state.returnMode
+            LauncherMode.CONTACT_DETAIL,
+            LauncherMode.CONTACT_EDITOR -> state.returnMode
 
             LauncherMode.SETTINGS,
             LauncherMode.APP_MANAGEMENT,
@@ -173,7 +175,8 @@ object LauncherStateTransitions {
             LauncherMode.SMS_THREADS,
             LauncherMode.SMS_THREAD_DETAIL,
             LauncherMode.DIALER,
-            LauncherMode.CONTACT_DETAIL -> LauncherMode.SETTINGS
+            LauncherMode.CONTACT_DETAIL,
+            LauncherMode.CONTACT_EDITOR -> LauncherMode.SETTINGS
         }
         return state.copy(mode = returnMode)
     }
@@ -301,6 +304,46 @@ object LauncherStateTransitions {
             callPageIndex = CallPageIndex.CONTACTS,
             contactDetailLookupKey = "",
         )
+    }
+
+    /**
+     * 打开联系人编辑器。[lookupKey] 为空串时是新建；编辑既有联系人时
+     * 姓名草稿预填当前名，"新增号码"草稿始终从空开始。
+     */
+    fun showContactEditor(state: LauncherState, lookupKey: String): LauncherState {
+        val existingName = state.contacts
+            .firstOrNull { contact -> contact.lookupKey == lookupKey }
+            ?.displayName
+            .orEmpty()
+        return state.copy(
+            mode = LauncherMode.CONTACT_EDITOR,
+            contactEditorLookupKey = lookupKey,
+            contactEditorNameDraft = existingName,
+            contactEditorNumberDraft = "",
+        )
+    }
+
+    /** 关闭编辑器：编辑既有联系人回其详情，新建回联系人页；草稿一并丢弃。 */
+    fun hideContactEditor(state: LauncherState): LauncherState {
+        val editedExisting = state.contactEditorLookupKey.isNotBlank()
+        return state.copy(
+            mode = if (editedExisting) LauncherMode.CONTACT_DETAIL else LauncherMode.DIALER,
+            callPageIndex = if (editedExisting) state.callPageIndex else CallPageIndex.CONTACTS,
+            contactDetailLookupKey = if (editedExisting) state.contactEditorLookupKey else "",
+            contactEditorLookupKey = "",
+            contactEditorNameDraft = "",
+            contactEditorNumberDraft = "",
+        )
+    }
+
+    /** 编辑器姓名草稿。 */
+    fun updateContactEditorName(state: LauncherState, name: String): LauncherState {
+        return state.copy(contactEditorNameDraft = name)
+    }
+
+    /** 编辑器"新增号码"草稿。 */
+    fun updateContactEditorNumber(state: LauncherState, number: String): LauncherState {
+        return state.copy(contactEditorNumberDraft = number)
     }
 
     /** 联系人目录开始加载；已有数据时不清空，静默换新避免列表闪空。 */
