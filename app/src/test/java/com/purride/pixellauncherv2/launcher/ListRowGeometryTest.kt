@@ -31,12 +31,12 @@ class ListRowGeometryTest {
         )
         assertEquals(26, SmsThreadGeometry.rowPitch(PixelFontCatalog.defaultUiFontSelection))
         assertEquals(
-            42,
+            34,
             SmsThreadGeometry.rowPitch(
                 LauncherFontSelection(
-                    family = LauncherFontFamily.DOTTED_CIRCLE,
+                    family = LauncherFontFamily.DOTTED,
                     widthMode = LauncherFontWidthMode.PROPORTIONAL,
-                    size = PixelFontSize.PX_16,
+                    size = PixelFontSize.PX_13,
                 ),
             ),
         )

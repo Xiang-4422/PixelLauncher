@@ -18,6 +18,8 @@ FONT_SOURCE_DIR = ROOT_DIR / "tools" / "font_sources"
 
 MAGIC = 0x50474C59  # PGLY
 VERSION = 1
+# FontForge 清理 OTF 时会把理论网格坐标取整，允许不超过半个字体单位的误差。
+DOT_GRID_COORDINATE_TOLERANCE = 0.02
 
 
 @dataclass(frozen=True)
@@ -78,6 +80,20 @@ class BdfPackSpec:
     pack_id: str
     display_name: str
     font_path: Path
+    cell_height: int
+    baseline: int
+    default_advance: int
+    supported_ranges: list[RangeSpec]
+
+
+@dataclass(frozen=True)
+class DotGridPackSpec:
+    """描述一个从点阵矢量轮廓反解原始逻辑点的字形包。"""
+
+    pack_id: str
+    display_name: str
+    font_path: Path
+    grid_height: int
     cell_height: int
     baseline: int
     default_advance: int
@@ -336,26 +352,6 @@ ADDITIONAL_TTF_PACKS = [
         baseline=7,
         default_advance=6,
     ),
-    *[
-        ttf_pack_spec(
-            family_id=f"dotted_{variant_id}",
-            display_name=f"Dotted Songti {variant_id.title()}",
-            font_path=FONT_SOURCE_DIR / "dotted_songti" / "0.1" / file_name,
-            nominal_size=nominal_size,
-            cell_height=cell_height,
-            baseline=baseline,
-            default_advance=default_advance,
-        )
-        for variant_id, file_name in [
-            ("circle", "DottedSongtiCircleRegular.otf"),
-            ("square", "DottedSongtiSquareRegular.otf"),
-            ("diamond", "DottedSongtiDiamondRegular.otf"),
-        ]
-        for nominal_size, cell_height, baseline, default_advance in [
-            (10, 10, 7, 7),
-            (16, 18, 13, 11),
-        ]
-    ],
     ttf_pack_spec(
         family_id="gnu_unifont",
         display_name="GNU Unifont",
@@ -410,11 +406,13 @@ def main(argv: Sequence[str] | None = None) -> None:
     args = parser.parse_args(argv)
     if args.input is None:
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-        ttf_packs, bdf_packs = load_catalog_pack_specs()
+        ttf_packs, bdf_packs, dot_grid_packs = load_catalog_pack_specs()
         for pack in ttf_packs:
             generate_ttf_builtin_pack(pack)
         for pack in bdf_packs:
             generate_bdf_builtin_pack(pack)
+        for pack in dot_grid_packs:
+            generate_dot_grid_builtin_pack(pack)
         return
 
     try:
@@ -511,7 +509,7 @@ def generate_ttf_builtin_pack(spec: TtfPackSpec) -> None:
     )
 
 
-def load_catalog_pack_specs() -> tuple[list[TtfPackSpec], list[BdfPackSpec]]:
+def load_catalog_pack_specs() -> tuple[list[TtfPackSpec], list[BdfPackSpec], list[DotGridPackSpec]]:
     """从唯一字体目录展开全部内置 pack，并校验字体源摘要。"""
 
     catalog_path = ROOT_DIR / "fonts" / "font_catalog.json"
@@ -522,6 +520,7 @@ def load_catalog_pack_specs() -> tuple[list[TtfPackSpec], list[BdfPackSpec]]:
     }
     ttf_packs: list[TtfPackSpec] = []
     bdf_packs: list[BdfPackSpec] = []
+    dot_grid_packs: list[DotGridPackSpec] = []
     for family in catalog["families"]:
         for face in family["faces"]:
             allowed_advances = tuple(face["allowedAdvances"]) if "allowedAdvances" in face else None
@@ -548,9 +547,18 @@ def load_catalog_pack_specs() -> tuple[list[TtfPackSpec], list[BdfPackSpec]]:
                             **common,
                         ),
                     )
-                else:
+                elif pack["type"] == "bdf":
                     bdf_packs.append(BdfPackSpec(**common))
-    return ttf_packs, bdf_packs
+                elif pack["type"] == "dot_grid_otf":
+                    dot_grid_packs.append(
+                        DotGridPackSpec(
+                            grid_height=pack["gridHeight"],
+                            **common,
+                        ),
+                    )
+                else:
+                    raise ValueError(f"unsupported catalog pack type: {pack['type']}")
+    return ttf_packs, bdf_packs, dot_grid_packs
 
 
 def parse_range_label(label: str) -> RangeSpec:
@@ -568,6 +576,22 @@ def generate_bdf_builtin_pack(spec: BdfPackSpec) -> None:
         output_dir=OUTPUT_DIR,
         pack_id=spec.pack_id,
         display_name=spec.display_name,
+        cell_height=spec.cell_height,
+        baseline=spec.baseline,
+        default_advance=spec.default_advance,
+        supported_ranges=spec.supported_ranges,
+    )
+
+
+def generate_dot_grid_builtin_pack(spec: DotGridPackSpec) -> None:
+    """从点阵矢量 OTF 的轮廓中心恢复一源点一像素字形包。"""
+
+    generate_dot_grid_pack(
+        font_path=spec.font_path,
+        output_dir=OUTPUT_DIR,
+        pack_id=spec.pack_id,
+        display_name=spec.display_name,
+        grid_height=spec.grid_height,
         cell_height=spec.cell_height,
         baseline=spec.baseline,
         default_advance=spec.default_advance,
@@ -646,6 +670,126 @@ def generate_ttf_pack(
         supported_ranges=summarize_ranges([code_point for code_point, *_ in records]),
         records=records,
     )
+
+
+def generate_dot_grid_pack(
+    font_path: Path,
+    output_dir: Path,
+    pack_id: str,
+    display_name: str,
+    grid_height: int,
+    cell_height: int,
+    baseline: int,
+    default_advance: int,
+    supported_ranges: list[RangeSpec],
+) -> None:
+    """把每个独立点轮廓恢复到原始整数网格，避免低字号轮廓采样丢点。"""
+
+    from fontTools.pens.recordingPen import RecordingPen
+    from fontTools.ttLib import TTFont
+
+    source_font = TTFont(font_path, lazy=False)
+    try:
+        source_code_points = source_font.getBestCmap() or {}
+        glyph_set = source_font.getGlyphSet()
+        units_per_em = float(source_font["head"].unitsPerEm)
+        grid_unit = units_per_em / grid_height
+        grid_top = float(source_font["hhea"].ascent)
+        records: list[tuple[int, int, int, bytes]] = []
+        for code_point in iter_code_points(supported_ranges):
+            glyph_name = source_code_points.get(code_point)
+            if glyph_name is None:
+                continue
+            glyph = glyph_set[glyph_name]
+            advance_width = grid_coordinate(glyph.width / grid_unit, pack_id, code_point, "advance")
+            advance_width = max(1, advance_width)
+            pen = RecordingPen()
+            glyph.draw(pen)
+            points = dot_grid_points(
+                operations=pen.value,
+                grid_unit=grid_unit,
+                grid_top=grid_top,
+                pack_id=pack_id,
+                code_point=code_point,
+            )
+            if not points and not chr(code_point).isspace():
+                continue
+            max_x = max((point[0] for point in points), default=-1)
+            bitmap_width = max(1, advance_width, max_x + 1)
+            pixels = bytearray(bitmap_width * cell_height)
+            for x, y in points:
+                if x < 0 or x >= bitmap_width or y < 0 or y >= cell_height:
+                    raise ValueError(
+                        f"{pack_id} U+{code_point:04X} dot ({x},{y}) exceeds "
+                        f"{bitmap_width}x{cell_height} grid",
+                    )
+                pixels[(y * bitmap_width) + x] = 1
+            records.append((code_point, advance_width, bitmap_width, pack_bits(pixels)))
+    finally:
+        source_font.close()
+
+    write_pack(
+        output_dir=output_dir,
+        pack_id=pack_id,
+        display_name=display_name,
+        cell_height=cell_height,
+        baseline=baseline,
+        default_advance=default_advance,
+        supported_ranges=summarize_ranges([code_point for code_point, *_ in records]),
+        records=records,
+    )
+
+
+def dot_grid_points(
+    operations: list[tuple[str, tuple[Any, ...]]],
+    grid_unit: float,
+    grid_top: float,
+    pack_id: str,
+    code_point: int,
+) -> set[tuple[int, int]]:
+    """把 RecordingPen 的每个封闭轮廓中心映射为一个逻辑点。"""
+
+    contours: list[list[tuple[float, float]]] = []
+    current: list[tuple[float, float]] = []
+    for operation, arguments in operations:
+        if operation == "moveTo" and current:
+            contours.append(current)
+            current = []
+        if operation in {"moveTo", "lineTo", "curveTo", "qCurveTo"}:
+            current.extend(point for point in arguments if isinstance(point, tuple))
+        elif operation in {"closePath", "endPath"} and current:
+            contours.append(current)
+            current = []
+        elif operation == "addComponent":
+            raise ValueError(f"{pack_id} U+{code_point:04X} contains unsupported component contour")
+    if current:
+        contours.append(current)
+
+    points: set[tuple[int, int]] = set()
+    for contour in contours:
+        left = min(point[0] for point in contour)
+        right = max(point[0] for point in contour)
+        bottom = min(point[1] for point in contour)
+        top = max(point[1] for point in contour)
+        center_x = (left + right) / 2.0
+        center_y = (bottom + top) / 2.0
+        x = grid_coordinate((center_x / grid_unit) - 0.5, pack_id, code_point, "x")
+        y = grid_coordinate(((grid_top - center_y) / grid_unit) - 0.5, pack_id, code_point, "y")
+        if (x, y) in points:
+            raise ValueError(f"{pack_id} U+{code_point:04X} has duplicate dot ({x},{y})")
+        points.add((x, y))
+    return points
+
+
+def grid_coordinate(value: float, pack_id: str, code_point: int, axis: str) -> int:
+    """把接近整数的轮廓坐标收敛到网格，并拒绝非点阵轮廓。"""
+
+    rounded = int(round(value))
+    if abs(value - rounded) > DOT_GRID_COORDINATE_TOLERANCE:
+        raise ValueError(
+            f"{pack_id} U+{code_point:04X} {axis} coordinate {value:.4f} is off the dot grid",
+        )
+    return rounded
 
 
 def generate_bdf_pack(

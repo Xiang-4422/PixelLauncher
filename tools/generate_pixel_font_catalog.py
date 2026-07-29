@@ -94,6 +94,21 @@ def load_and_validate(path: Path) -> dict[str, Any]:
                     raise ValueError(f"字体源摘要不匹配: {pack_id}")
                 if pack.get("rangeSet") not in range_sets:
                     raise ValueError(f"未知 rangeSet: {pack_id}")
+                pack_type = pack.get("type")
+                if pack_type not in {"ttf", "otf", "bdf", "dot_grid_otf"}:
+                    raise ValueError(f"未知字体源类型: {pack_id}/{pack_type}")
+                if pack_type == "dot_grid_otf":
+                    grid_height = pack.get("gridHeight")
+                    if not isinstance(grid_height, int) or grid_height <= 0:
+                        raise ValueError(f"点阵轮廓必须声明正整数 gridHeight: {pack_id}")
+                    expected_counts = pack.get("expectedPixelCounts")
+                    if not isinstance(expected_counts, dict) or not expected_counts:
+                        raise ValueError(f"点阵轮廓必须声明逐像素审阅样例: {pack_id}")
+                    for code_point, pixel_count in expected_counts.items():
+                        if not re.fullmatch(r"[0-9A-F]{4,6}", code_point):
+                            raise ValueError(f"逐像素样例码点非法: {pack_id}/{code_point}")
+                        if not isinstance(pixel_count, int) or pixel_count <= 0:
+                            raise ValueError(f"逐像素样例数量非法: {pack_id}/{code_point}")
         default_key = (family.get("defaultWidth"), family.get("defaultSize"))
         if default_key not in face_keys or not next(
             face["settingsVisible"] for face in faces if (face["width"], face["size"]) == default_key

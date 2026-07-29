@@ -1,5 +1,5 @@
 {
-  "catalogSha256": "d248fcb07d89adacf4ab220db3a78028221714e6ae9f389ffb33b555dc730c89",
+  "catalogSha256": "45e36827b73dc2d9552384c26f416bf2adada516f0d27bf59b5e62b51f93885d",
   "packs": {
     "ark_pixel_10px_monospaced_zh_cn": {
       "glyphsSha256": "a61faf124e766a3e111987538cf0bf9a51b3a5d6b05c0c6d243ddf37ecf04731",
@@ -49,29 +49,13 @@
       "glyphsSha256": "6b4838d9c7b3ad028a32fadc05f9b2cf30ef77940dbad3b23a587e348f0f2e82",
       "manifestSha256": "a0e8a7e4d8c5c05df538d9650d7c0f0a701470b242f0210f5d3ef82d1b80365c"
     },
-    "dotted_circle_10px_proportional": {
-      "glyphsSha256": "de2a92764e3f864592d52a118e98dfe3402b511dea75c78751ed3ecb5a0c8c2d",
-      "manifestSha256": "8c9f19fe5b87a902fde955a088e8a1583da05de615c88b2c1350efc32e1ee42b"
+    "dotted_10px_proportional": {
+      "glyphsSha256": "7168e4d490e34da52fbfe37283eb474c464b614941c3d2d5c76269e6c52cf50c",
+      "manifestSha256": "6f182f6a936c8106fdba933e1a193649a5864df1e1226aea7bd0d77568067584"
     },
-    "dotted_circle_16px_proportional": {
-      "glyphsSha256": "1e9b708d6a83f4293ea551545d1e25248f71e4f78bce8a4267fa4e3d3d090c54",
-      "manifestSha256": "12ffed8dc3118f57c10d74bcb188c3c2c2a83733445d941d666e62c046587247"
-    },
-    "dotted_diamond_10px_proportional": {
-      "glyphsSha256": "3d9da4c24dda5e45f91dbc7bce0d88db3f5793f94d7ec241157eea42a9429508",
-      "manifestSha256": "4a41203a24b1c72851b946b5e27f5c3520eb33682d5c21176cbfb19f60552a9b"
-    },
-    "dotted_diamond_16px_proportional": {
-      "glyphsSha256": "8e07d49c85efc3caa1ebb9e26594a08262ff816945324283ca344e747f630518",
-      "manifestSha256": "28530b54ea6bcb33b8bbba910552aa9645d26bf04f07c7dad41d7a9e0e21ed1e"
-    },
-    "dotted_square_10px_proportional": {
-      "glyphsSha256": "0b973db8dcb4b5a565d628341c9fed9d06ec2ffa477a36f2606726f59825a871",
-      "manifestSha256": "fc466c0df90f9227dc2e2110b91ce6f422e04ec16f90b43fa4465dbd95532f3e"
-    },
-    "dotted_square_16px_proportional": {
-      "glyphsSha256": "ff624b5253c030587e2831c415519e0b47fecc70a514e5ef0433b2fefd07295b",
-      "manifestSha256": "82e7912e811c6afedadd8d44d788c2e8374daac97931b8c9e48c648c6b89ea82"
+    "dotted_13px_proportional": {
+      "glyphsSha256": "7168e4d490e34da52fbfe37283eb474c464b614941c3d2d5c76269e6c52cf50c",
+      "manifestSha256": "4d017bcb7dbaad6af0d44f8cdc9ca7e8005ec8e36ec177f845d773d75209a1e5"
     },
     "fusion_pixel_10px_monospaced_latin": {
       "glyphsSha256": "0f77517aff0646603fcd77071745996d2c376dc21de24124fc88440ac1cc7a9c",

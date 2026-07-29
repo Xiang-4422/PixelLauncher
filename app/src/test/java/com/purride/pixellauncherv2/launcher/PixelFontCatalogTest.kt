@@ -7,6 +7,24 @@ import org.junit.Test
 /** 验证字体能力矩阵、默认选择和不跨家族归一化规则。 */
 class PixelFontCatalogTest {
 
+    /** 三个低分辨率矢量点形应合并为唯一、可逐点验证的 Dotted 家族。 */
+    @Test
+    fun dotted_exposesOnlyCanonicalPointGridFamily() {
+        assertEquals(8, PixelFontCatalog.fontFamilyOptions().size)
+        assertEquals(1, PixelFontCatalog.fontFamilyOptions().count { family -> family == LauncherFontFamily.DOTTED })
+        assertEquals("DOTTED", PixelFontCatalog.familyLabel(LauncherFontFamily.DOTTED))
+        assertEquals(
+            PixelFontMetrics(PixelFontSize.PX_13, 14, 10, 9, 13),
+            PixelFontCatalog.metrics(
+                LauncherFontSelection(
+                    LauncherFontFamily.DOTTED,
+                    LauncherFontWidthMode.PROPORTIONAL,
+                    PixelFontSize.PX_13,
+                ),
+            ),
+        )
+    }
+
     /** 字号标签应使用稳定的 PX 表示。 */
     @Test
     fun sizeLabel_mapsPixelSizes() {
@@ -16,6 +34,7 @@ class PixelFontCatalogTest {
         assertEquals("10PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_10))
         assertEquals("11PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_11))
         assertEquals("12PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_12))
+        assertEquals("13PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_13))
         assertEquals("16PX", PixelFontCatalog.sizeLabel(PixelFontSize.PX_16))
     }
 
@@ -64,6 +83,10 @@ class PixelFontCatalogTest {
             PixelFontCatalog.fontSizeOptions(LauncherFontFamily.BOUTIQUE_9, LauncherFontWidthMode.PROPORTIONAL),
         )
         assertEquals(
+            listOf(PixelFontSize.PX_13),
+            PixelFontCatalog.fontSizeOptions(LauncherFontFamily.DOTTED, LauncherFontWidthMode.PROPORTIONAL),
+        )
+        assertEquals(
             listOf(PixelFontSize.PX_16),
             PixelFontCatalog.fontSizeOptions(LauncherFontFamily.GNU_UNIFONT, LauncherFontWidthMode.MONOSPACED),
         )
@@ -105,8 +128,8 @@ class PixelFontCatalogTest {
         assertEquals("C10 B8 A5/10", PixelFontCatalog.metricsLabel(
             LauncherFontSelection(LauncherFontFamily.ARK, LauncherFontWidthMode.PROPORTIONAL, PixelFontSize.PX_10),
         ))
-        assertEquals("C18 B13 A11/16", PixelFontCatalog.metricsLabel(
-            LauncherFontSelection(LauncherFontFamily.DOTTED_CIRCLE, LauncherFontWidthMode.PROPORTIONAL, PixelFontSize.PX_16),
+        assertEquals("C14 B10 A9/13", PixelFontCatalog.metricsLabel(
+            LauncherFontSelection(LauncherFontFamily.DOTTED, LauncherFontWidthMode.PROPORTIONAL, PixelFontSize.PX_13),
         ))
     }
 

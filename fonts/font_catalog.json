@@ -69,24 +69,10 @@
       ]
     },
     {
-      "id": "dotted_circle", "constant": "DOTTED_CIRCLE", "label": "DOTTED O", "assetFamilyId": "dotted_circle", "sourceVersion": "0.1", "licenseId": "OFL-1.1", "negativeBearingPolicy": "shift", "defaultWidth": "proportional", "defaultSize": 16,
+      "id": "dotted", "constant": "DOTTED", "label": "DOTTED", "assetFamilyId": "dotted", "sourceVersion": "0.1", "licenseId": "GPL-2.0", "defaultWidth": "proportional", "defaultSize": 13,
       "faces": [
-        {"width": "proportional", "size": 10, "settingsVisible": false, "roles": ["chrome"], "cellHeight": 10, "baseline": 7, "narrowAdvance": 7, "wideAdvance": 10, "packs": [{"id": "dotted_circle_10px_proportional", "type": "otf", "source": "tools/font_sources/dotted_songti/0.1/DottedSongtiCircleRegular.otf", "sourceSha256": "7b2c41e821d7091bed42df0158c130d62aeabdda7fde31b2754b1b7017cfb2d1", "fontSize": 10, "defaultAdvance": 7, "rangeSet": "bmp"}]},
-        {"width": "proportional", "size": 16, "settingsVisible": true, "roles": [], "cellHeight": 18, "baseline": 13, "narrowAdvance": 11, "wideAdvance": 16, "packs": [{"id": "dotted_circle_16px_proportional", "type": "otf", "source": "tools/font_sources/dotted_songti/0.1/DottedSongtiCircleRegular.otf", "sourceSha256": "7b2c41e821d7091bed42df0158c130d62aeabdda7fde31b2754b1b7017cfb2d1", "fontSize": 16, "defaultAdvance": 11, "rangeSet": "bmp"}]}
-      ]
-    },
-    {
-      "id": "dotted_square", "constant": "DOTTED_SQUARE", "label": "DOTTED []", "assetFamilyId": "dotted_square", "sourceVersion": "0.1", "licenseId": "OFL-1.1", "defaultWidth": "proportional", "defaultSize": 16,
-      "faces": [
-        {"width": "proportional", "size": 10, "settingsVisible": false, "roles": ["chrome"], "cellHeight": 10, "baseline": 7, "narrowAdvance": 7, "wideAdvance": 10, "packs": [{"id": "dotted_square_10px_proportional", "type": "otf", "source": "tools/font_sources/dotted_songti/0.1/DottedSongtiSquareRegular.otf", "sourceSha256": "c5823b88b35937b638b85cf8ba35d4b9a94b4d3b58c981550ddca7cb39c86714", "fontSize": 10, "defaultAdvance": 7, "rangeSet": "bmp"}]},
-        {"width": "proportional", "size": 16, "settingsVisible": true, "roles": [], "cellHeight": 18, "baseline": 13, "narrowAdvance": 11, "wideAdvance": 16, "packs": [{"id": "dotted_square_16px_proportional", "type": "otf", "source": "tools/font_sources/dotted_songti/0.1/DottedSongtiSquareRegular.otf", "sourceSha256": "c5823b88b35937b638b85cf8ba35d4b9a94b4d3b58c981550ddca7cb39c86714", "fontSize": 16, "defaultAdvance": 11, "rangeSet": "bmp"}]}
-      ]
-    },
-    {
-      "id": "dotted_diamond", "constant": "DOTTED_DIAMOND", "label": "DOTTED <>", "assetFamilyId": "dotted_diamond", "sourceVersion": "0.1", "licenseId": "OFL-1.1", "defaultWidth": "proportional", "defaultSize": 16,
-      "faces": [
-        {"width": "proportional", "size": 10, "settingsVisible": false, "roles": ["chrome"], "cellHeight": 10, "baseline": 7, "narrowAdvance": 7, "wideAdvance": 10, "packs": [{"id": "dotted_diamond_10px_proportional", "type": "otf", "source": "tools/font_sources/dotted_songti/0.1/DottedSongtiDiamondRegular.otf", "sourceSha256": "9a82a5d521ea0e3d131570750d3ecaa9ab226c94615c15163cddb08e6dd9f7d0", "fontSize": 10, "defaultAdvance": 7, "rangeSet": "bmp"}]},
-        {"width": "proportional", "size": 16, "settingsVisible": true, "roles": [], "cellHeight": 18, "baseline": 13, "narrowAdvance": 11, "wideAdvance": 16, "packs": [{"id": "dotted_diamond_16px_proportional", "type": "otf", "source": "tools/font_sources/dotted_songti/0.1/DottedSongtiDiamondRegular.otf", "sourceSha256": "9a82a5d521ea0e3d131570750d3ecaa9ab226c94615c15163cddb08e6dd9f7d0", "fontSize": 16, "defaultAdvance": 11, "rangeSet": "bmp"}]}
+        {"width": "proportional", "size": 10, "settingsVisible": false, "roles": ["chrome"], "cellHeight": 14, "baseline": 10, "narrowAdvance": 9, "wideAdvance": 13, "packs": [{"id": "dotted_10px_proportional", "type": "dot_grid_otf", "source": "tools/font_sources/dotted_songti/0.1/DottedSongtiSquareRegular.otf", "sourceSha256": "c5823b88b35937b638b85cf8ba35d4b9a94b4d3b58c981550ddca7cb39c86714", "gridHeight": 13, "defaultAdvance": 9, "rangeSet": "bmp", "expectedPixelCounts": {"0041": 22, "4E2D": 38}}]},
+        {"width": "proportional", "size": 13, "settingsVisible": true, "roles": [], "cellHeight": 14, "baseline": 10, "narrowAdvance": 9, "wideAdvance": 13, "packs": [{"id": "dotted_13px_proportional", "type": "dot_grid_otf", "source": "tools/font_sources/dotted_songti/0.1/DottedSongtiSquareRegular.otf", "sourceSha256": "c5823b88b35937b638b85cf8ba35d4b9a94b4d3b58c981550ddca7cb39c86714", "gridHeight": 13, "defaultAdvance": 9, "rangeSet": "bmp", "expectedPixelCounts": {"0041": 22, "4E2D": 38}}]}
       ]
     },
     {

@@ -159,12 +159,62 @@ class GlyphPackConverterTest(unittest.TestCase):
         )
         self.assertIsNotNone(shifted)
 
+    def test_dot_grid_otf_restores_every_source_dot_without_rasterization(self) -> None:
+        """Dotted 的 A/中应按轮廓数恢复全部逻辑点，且重复生成字节一致。"""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = Path("tools/font_sources/dotted_songti/0.1/DottedSongtiSquareRegular.otf")
+            ranges = [converter.RangeSpec(0x41, 0x41), converter.RangeSpec(0x4E2D, 0x4E2D)]
+            for output_name in ("first", "second"):
+                converter.generate_dot_grid_pack(
+                    font_path=source,
+                    output_dir=root / output_name,
+                    pack_id="dotted_test",
+                    display_name="Dotted Test",
+                    grid_height=13,
+                    cell_height=14,
+                    baseline=10,
+                    default_advance=9,
+                    supported_ranges=ranges,
+                )
+
+            first = (root / "first" / "dotted_test" / "glyphs.bin").read_bytes()
+            second = (root / "second" / "dotted_test" / "glyphs.bin").read_bytes()
+            records = unpack_records(first)
+
+            self.assertEqual(first, second)
+            self.assertEqual((9, 9, 22), records[0x41])
+            self.assertEqual((13, 13, 38), records[0x4E2D])
+
+    def test_dot_grid_rejects_non_grid_coordinate(self) -> None:
+        """无法映射到整数点阵的轮廓必须失败，禁止静默近似。"""
+
+        with self.assertRaisesRegex(ValueError, "off the dot grid"):
+            converter.grid_coordinate(2.25, "broken", 0x41, "x")
+
 
 def unpack_bits(packed: bytes, pixel_count: int) -> str:
     return "".join(
         "1" if packed[index // 8] & (1 << (7 - (index % 8))) else "0"
         for index in range(pixel_count)
     )
+
+
+def unpack_records(binary: bytes) -> dict[int, tuple[int, int, int]]:
+    """返回测试关心的 code point、advance、宽度和亮点数量。"""
+
+    _, _, cell_height, glyph_count = struct.unpack_from(">IIII", binary, 0)
+    offset = 16
+    records: dict[int, tuple[int, int, int]] = {}
+    for _ in range(glyph_count):
+        code_point, advance, width, data_length = struct.unpack_from(">IIII", binary, offset)
+        offset += 16
+        packed = binary[offset : offset + data_length]
+        offset += data_length
+        pixels = unpack_bits(packed, width * cell_height)
+        records[code_point] = (advance, width, pixels.count("1"))
+    return records
 
 
 if __name__ == "__main__":

@@ -29,9 +29,8 @@ value class LauncherFontFamily(
         val CUBIC_11: LauncherFontFamily = LauncherFontFamily("cubic_11")
         val BOUTIQUE_7: LauncherFontFamily = LauncherFontFamily("boutique_7")
         val BOUTIQUE_9: LauncherFontFamily = LauncherFontFamily("boutique_9")
-        val DOTTED_CIRCLE: LauncherFontFamily = LauncherFontFamily("dotted_circle")
-        val DOTTED_SQUARE: LauncherFontFamily = LauncherFontFamily("dotted_square")
-        val DOTTED_DIAMOND: LauncherFontFamily = LauncherFontFamily("dotted_diamond")
+        /** 直接从原始 13 格点阵轮廓恢复的一像素 Dotted 家族。 */
+        val DOTTED: LauncherFontFamily = LauncherFontFamily("dotted")
         val GNU_UNIFONT: LauncherFontFamily = LauncherFontFamily("gnu_unifont")
         val PIX32: LauncherFontFamily = LauncherFontFamily("pix32")
 
@@ -83,6 +82,7 @@ value class PixelFontSize(
         val PX_10 = PixelFontSize(10)
         val PX_11 = PixelFontSize(11)
         val PX_12 = PixelFontSize(12)
+        val PX_13 = PixelFontSize(13)
         val PX_16 = PixelFontSize(16)
 
         /** 返回 catalog 实际声明的全部字号。 */

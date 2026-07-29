@@ -5,3 +5,7 @@
 - Imported variants: circle, square, and diamond OpenType fonts
 - License: GPL 2.0; see `LICENSE`
 - Runtime format: generated glyph packs; the OTF files are build inputs only
+- Runtime policy: the square OTF is the canonical source because every closed
+  contour represents exactly one point from the upstream 13-pixel bitmap grid.
+  The generator recovers those contour centers directly and does not rasterize
+  or preserve the vector dot shape.
