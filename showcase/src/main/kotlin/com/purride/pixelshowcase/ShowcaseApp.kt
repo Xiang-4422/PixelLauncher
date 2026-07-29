@@ -154,8 +154,9 @@ class ShowcaseAppHost(
                 PixelNavigator(
                     initialRequest = requestFor(ShowcaseRoute.HOME),
                     vsync = hostView.tickerProvider,
-                    transitionDuration = 220.milliseconds,
+                    transitionDuration = 420.milliseconds,
                     defaultTransition = PixelRouteTransition.SlideHorizontal,
+                    transitionBuilder = ParticleRouteTransition,
                     key = "showcase-navigator",
                 ),
                 Positioned(
