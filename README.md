@@ -1,11 +1,12 @@
 # PixelLauncher
 
-PixelLauncher 是一个 Android 启动器应用，同时内置可复用的像素 UI 引擎。主工程只保留两个 Gradle 模块：
+PixelLauncher 是一个 Android 启动器应用，同时内置可复用的像素 UI 引擎。主工程维护三个 Gradle 模块：
 
 - `app`：Launcher 产品、页面状态和 Android 应用入口。
 - `pixel-engine`：像素渲染、组件、动画、路由、Android Host、测试 DSL 与诊断能力。
+- `showcase`：脱离 Launcher 独立运行的 Pixel Engine 展示应用。
 
-模块间只有一条依赖：`app -> pixel-engine`。SDK 对外也只发布
+两个应用模块都只依赖引擎：`app -> pixel-engine`、`showcase -> pixel-engine`。SDK 对外仍只发布
 `com.purride:pixel-engine:1.0.0` 一个坐标，避免消费者拼装多个内部产物。
 
 ## 环境
@@ -17,10 +18,11 @@ PixelLauncher 是一个 Android 启动器应用，同时内置可复用的像素
 ```bash
 ./gradlew projects
 ./gradlew :app:assembleDebug
+./gradlew :showcase:assembleDebug
 ./gradlew :pixel-engine:testDebugUnitTest
 ```
 
-`./gradlew projects` 应只列出 `:app` 和 `:pixel-engine`。
+`./gradlew projects` 应只列出 `:app`、`:pixel-engine` 和 `:showcase`。
 
 ## 运行
 
@@ -28,10 +30,17 @@ PixelLauncher 是一个 Android 启动器应用，同时内置可复用的像素
 
 ```bash
 ./gradlew :app:installDebug
-adb shell am start -n com.purride.pixellauncherv2/.MainActivity
+adb shell am start -n com.purride.pixellauncherv2.debug/com.purride.pixellauncherv2.app.MainActivity
 ```
 
 Android Studio 直接选择 `app` 配置即可编译和运行。
+
+如需运行独立的引擎展示应用，可选择 `showcase` 配置，或执行：
+
+```bash
+./gradlew :showcase:installDebug
+adb shell am start -n com.purride.pixelshowcase/.ShowcaseActivity
+```
 
 ## SDK 接入
 
@@ -85,6 +94,7 @@ pixel-engine/                像素引擎 SDK
   src/main/                  引擎实现
   src/test/                  JVM 测试
   src/androidTest/           Android Host 测试
+showcase/                    Pixel Engine 独立展示应用
 compatibility/               隔离 Maven 消费者与当前公开 API 验证工程
 docs/                        项目级文档
 tools/                       CI、发布、供应链与文档工具
