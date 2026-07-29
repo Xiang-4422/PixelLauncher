@@ -1,9 +1,9 @@
 {
-  "packId": "cubic_11_10px_proportional",
-  "displayName": "CUBIC 11 10px Proportional",
-  "cellHeight": 10,
-  "baseline": 8,
-  "defaultAdvance": 7,
+  "packId": "cubic_11_12px_proportional",
+  "displayName": "CUBIC 11 12px Proportional",
+  "cellHeight": 14,
+  "baseline": 10,
+  "defaultAdvance": 4,
   "supportedRanges": [
     "0020-007E",
     "00A0-00FF",

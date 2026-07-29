@@ -12,7 +12,6 @@ from typing import Any, Iterable, Sequence
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 ASSETS_DIR = ROOT_DIR / "app" / "src" / "main" / "assets"
-FONT_DIR = ASSETS_DIR / "fonts"
 OUTPUT_DIR = ASSETS_DIR / "glyphpacks"
 FONT_SOURCE_DIR = ROOT_DIR / "tools" / "font_sources"
 
@@ -71,6 +70,8 @@ class TtfPackSpec:
     allowed_advances: tuple[int, ...] | None = None
     # 仅在 catalog 明确声明时把负 bearing 字形整体移入 v1 bitmap。
     shift_negative_bearing: bool = False
+    # 原生网格中经人工审阅、确实带非整数轮廓坐标的码点。
+    reviewed_off_grid_code_points: frozenset[int] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -121,301 +122,22 @@ class RenderedTtfGlyph:
     bitmap_offset_x: int
     bitmap_offset_y: int
     advance_width: int
-
-
-FUSION_PACKS = [
-    TtfPackSpec(
-        pack_id="fusion_pixel_8px_monospaced_latin",
-        display_name="Fusion Pixel 8px Monospaced (latin)",
-        font_path=FONT_DIR / "fusion-pixel-8px-monospaced-latin.ttf",
-        font_size=8,
-        baseline=7,
-        default_advance=8,
-        supported_ranges=SUPPORTED_RANGES,
-    ),
-    TtfPackSpec(
-        pack_id="fusion_pixel_8px_monospaced_zh_hans",
-        display_name="Fusion Pixel 8px Monospaced (zh_hans)",
-        font_path=FONT_DIR / "fusion-pixel-8px-monospaced-zh_hans.ttf",
-        font_size=8,
-        baseline=7,
-        default_advance=8,
-        supported_ranges=SUPPORTED_RANGES,
-    ),
-    TtfPackSpec(
-        pack_id="fusion_pixel_8px_proportional_latin",
-        display_name="Fusion Pixel 8px Proportional (latin)",
-        font_path=FONT_DIR / "fusion-pixel-8px-proportional-latin.ttf",
-        font_size=8,
-        baseline=7,
-        default_advance=4,
-        supported_ranges=SUPPORTED_RANGES,
-    ),
-    TtfPackSpec(
-        pack_id="fusion_pixel_8px_proportional_zh_hans",
-        display_name="Fusion Pixel 8px Proportional (zh_hans)",
-        font_path=FONT_DIR / "fusion-pixel-8px-proportional-zh_hans.ttf",
-        font_size=8,
-        baseline=7,
-        default_advance=8,
-        supported_ranges=SUPPORTED_RANGES,
-    ),
-    TtfPackSpec(
-        pack_id="fusion_pixel_10px_monospaced_latin",
-        display_name="Fusion Pixel 10px Monospaced (latin)",
-        font_path=FONT_DIR / "fusion-pixel-10px-monospaced-latin.ttf",
-        font_size=10,
-        baseline=9,
-        default_advance=10,
-        supported_ranges=SUPPORTED_RANGES,
-    ),
-    TtfPackSpec(
-        pack_id="fusion_pixel_10px_monospaced_zh_hans",
-        display_name="Fusion Pixel 10px Monospaced (zh_hans)",
-        font_path=FONT_DIR / "fusion-pixel-10px-monospaced-zh_hans.ttf",
-        font_size=10,
-        baseline=9,
-        default_advance=10,
-        supported_ranges=SUPPORTED_RANGES,
-    ),
-    TtfPackSpec(
-        pack_id="fusion_pixel_10px_proportional_latin",
-        display_name="Fusion Pixel 10px Proportional (latin)",
-        font_path=FONT_DIR / "fusion-pixel-10px-proportional-latin.ttf",
-        font_size=10,
-        baseline=9,
-        default_advance=6,
-        supported_ranges=SUPPORTED_RANGES,
-    ),
-    TtfPackSpec(
-        pack_id="fusion_pixel_10px_proportional_zh_hans",
-        display_name="Fusion Pixel 10px Proportional (zh_hans)",
-        font_path=FONT_DIR / "fusion-pixel-10px-proportional-zh_hans.ttf",
-        font_size=10,
-        baseline=9,
-        default_advance=10,
-        supported_ranges=SUPPORTED_RANGES,
-    ),
-    TtfPackSpec(
-        pack_id="fusion_pixel_12px_monospaced_latin",
-        display_name="Fusion Pixel 12px Monospaced (latin)",
-        font_path=FONT_DIR / "fusion-pixel-12px-monospaced-latin.ttf",
-        font_size=12,
-        baseline=10,
-        default_advance=12,
-        supported_ranges=SUPPORTED_RANGES,
-    ),
-    TtfPackSpec(
-        pack_id="fusion_pixel_12px_monospaced_zh_hans",
-        display_name="Fusion Pixel 12px Monospaced (zh_hans)",
-        font_path=FONT_DIR / "fusion-pixel-12px-monospaced-zh_hans.ttf",
-        font_size=12,
-        baseline=10,
-        default_advance=12,
-        supported_ranges=SUPPORTED_RANGES,
-    ),
-    TtfPackSpec(
-        pack_id="fusion_pixel_12px_proportional_latin",
-        display_name="Fusion Pixel 12px Proportional (latin)",
-        font_path=FONT_DIR / "fusion-pixel-12px-proportional-latin.ttf",
-        font_size=12,
-        baseline=11,
-        default_advance=8,
-        supported_ranges=SUPPORTED_RANGES,
-    ),
-    TtfPackSpec(
-        pack_id="fusion_pixel_12px_proportional_zh_hans",
-        display_name="Fusion Pixel 12px Proportional (zh_hans)",
-        font_path=FONT_DIR / "fusion-pixel-12px-proportional-zh_hans.ttf",
-        font_size=12,
-        baseline=11,
-        default_advance=12,
-        supported_ranges=SUPPORTED_RANGES,
-    ),
-]
-
-def ark_pack_spec(
-    size: int,
-    width_mode: str,
-    baseline: int,
-    default_advance: int,
-) -> BdfPackSpec:
-    """创建一个 Ark Pixel 大陆简体 BDF 内置包定义。"""
-
-    return BdfPackSpec(
-        pack_id=f"ark_pixel_{size}px_{width_mode}_zh_cn",
-        display_name=f"Ark Pixel {size}px {width_mode.title()} (zh_cn)",
-        font_path=(
-            FONT_SOURCE_DIR
-            / "ark_pixel"
-            / "2026.07.20"
-            / f"ark-pixel-{size}px-{width_mode}-zh_cn.bdf"
-        ),
-        cell_height=size,
-        baseline=baseline,
-        default_advance=default_advance,
-        supported_ranges=[
-            RangeSpec(0x0020, 0xD7FF),
-            RangeSpec(0xE000, 0xFFFD),
-        ],
-    )
-
-
-# Ark Pixel 官方提供的字号与宽度模式矩阵；每个选择只加载对应家族资源。
-ARK_PACKS = [
-    ark_pack_spec(size=10, width_mode="proportional", baseline=8, default_advance=5),
-    ark_pack_spec(size=10, width_mode="monospaced", baseline=9, default_advance=5),
-    ark_pack_spec(size=12, width_mode="proportional", baseline=10, default_advance=6),
-    ark_pack_spec(size=12, width_mode="monospaced", baseline=10, default_advance=6),
-    ark_pack_spec(size=16, width_mode="proportional", baseline=13, default_advance=7),
-    ark_pack_spec(size=16, width_mode="monospaced", baseline=13, default_advance=8),
-]
-
-
-def ttf_pack_spec(
-    family_id: str,
-    display_name: str,
-    font_path: Path,
-    nominal_size: int,
-    cell_height: int,
-    baseline: int,
-    default_advance: int,
-    width_mode: str = "proportional",
-) -> TtfPackSpec:
-    """创建一个第三方 TTF/OTF 内置包定义。"""
-
-    return TtfPackSpec(
-        pack_id=f"{family_id}_{nominal_size}px_{width_mode}",
-        display_name=f"{display_name} {nominal_size}px {width_mode.title()}",
-        font_path=font_path,
-        font_size=nominal_size,
-        baseline=baseline,
-        default_advance=default_advance,
-        supported_ranges=[
-            RangeSpec(0x0020, 0xD7FF),
-            RangeSpec(0xE000, 0xFFFD),
-        ],
-        cell_height=cell_height,
-    )
-
-
-# 非 Fusion 的轮廓字体同时生成原生字号和固定 chrome 使用的 10px 字号。
-ADDITIONAL_TTF_PACKS = [
-    ttf_pack_spec(
-        family_id="cubic_11",
-        display_name="Cubic 11",
-        font_path=FONT_SOURCE_DIR / "cubic_11" / "1.500" / "Cubic_11.ttf",
-        nominal_size=10,
-        cell_height=10,
-        baseline=8,
-        default_advance=7,
-    ),
-    ttf_pack_spec(
-        family_id="cubic_11",
-        display_name="Cubic 11",
-        font_path=FONT_SOURCE_DIR / "cubic_11" / "1.500" / "Cubic_11.ttf",
-        nominal_size=11,
-        cell_height=14,
-        baseline=10,
-        default_advance=8,
-    ),
-    ttf_pack_spec(
-        family_id="boutique_7",
-        display_name="Boutique Bitmap 7x7",
-        font_path=FONT_SOURCE_DIR / "boutique_bitmap_7" / "current-2026.03.30" / "BoutiqueBitmap7x7.ttf",
-        nominal_size=7,
-        cell_height=8,
-        baseline=6,
-        default_advance=4,
-    ),
-    ttf_pack_spec(
-        family_id="boutique_7",
-        display_name="Boutique Bitmap 7x7",
-        font_path=FONT_SOURCE_DIR / "boutique_bitmap_7" / "current-2026.03.30" / "BoutiqueBitmap7x7.ttf",
-        nominal_size=10,
-        cell_height=10,
-        baseline=8,
-        default_advance=6,
-    ),
-    ttf_pack_spec(
-        family_id="boutique_9",
-        display_name="Boutique Bitmap 9x9",
-        font_path=FONT_SOURCE_DIR / "boutique_bitmap_9" / "1.93" / "BoutiqueBitmap9x9_1.93.ttf",
-        nominal_size=9,
-        cell_height=11,
-        baseline=8,
-        default_advance=6,
-    ),
-    ttf_pack_spec(
-        family_id="boutique_9",
-        display_name="Boutique Bitmap 9x9",
-        font_path=FONT_SOURCE_DIR / "boutique_bitmap_9" / "1.93" / "BoutiqueBitmap9x9_1.93.ttf",
-        nominal_size=10,
-        cell_height=10,
-        baseline=7,
-        default_advance=6,
-    ),
-    ttf_pack_spec(
-        family_id="gnu_unifont",
-        display_name="GNU Unifont",
-        font_path=FONT_SOURCE_DIR / "gnu_unifont" / "17.0.04" / "unifont-17.0.04.otf",
-        nominal_size=10,
-        cell_height=10,
-        baseline=8,
-        default_advance=5,
-        width_mode="monospaced",
-    ),
-    ttf_pack_spec(
-        family_id="pix32",
-        display_name="Pix32",
-        font_path=FONT_SOURCE_DIR / "pix32" / "1.9.7" / "Pixel32.v1.9.7.ttf",
-        nominal_size=10,
-        cell_height=10,
-        baseline=8,
-        default_advance=5,
-        width_mode="monospaced",
-    ),
-    ttf_pack_spec(
-        family_id="pix32",
-        display_name="Pix32",
-        font_path=FONT_SOURCE_DIR / "pix32" / "1.9.7" / "Pixel32.v1.9.7.ttf",
-        nominal_size=12,
-        cell_height=14,
-        baseline=11,
-        default_advance=6,
-        width_mode="monospaced",
-    ),
-]
-
-
-ADDITIONAL_BDF_PACKS = [
-    BdfPackSpec(
-        pack_id="gnu_unifont_16px_monospaced",
-        display_name="GNU Unifont 16px Monospaced",
-        font_path=FONT_SOURCE_DIR / "gnu_unifont" / "17.0.04" / "unifont-17.0.04.bdf.gz",
-        cell_height=16,
-        baseline=14,
-        default_advance=8,
-        supported_ranges=[
-            RangeSpec(0x0020, 0xD7FF),
-            RangeSpec(0xE000, 0xFFFD),
-        ],
-    ),
-]
+    used_reviewed_exception: bool
 
 
 def main(argv: Sequence[str] | None = None) -> None:
     parser = build_argument_parser()
     args = parser.parse_args(argv)
     if args.input is None:
-        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        output_dir = Path(args.output)
+        output_dir.mkdir(parents=True, exist_ok=True)
         ttf_packs, bdf_packs, dot_grid_packs = load_catalog_pack_specs()
         for pack in ttf_packs:
-            generate_ttf_builtin_pack(pack)
+            generate_ttf_builtin_pack(pack, output_dir)
         for pack in bdf_packs:
-            generate_bdf_builtin_pack(pack)
+            generate_bdf_builtin_pack(pack, output_dir)
         for pack in dot_grid_packs:
-            generate_dot_grid_builtin_pack(pack)
+            generate_dot_grid_builtin_pack(pack, output_dir)
         return
 
     try:
@@ -494,12 +216,12 @@ def parse_ranges(value: str) -> list[RangeSpec]:
     return ranges
 
 
-def generate_ttf_builtin_pack(spec: TtfPackSpec) -> None:
+def generate_ttf_builtin_pack(spec: TtfPackSpec, output_dir: Path = OUTPUT_DIR) -> None:
     """把仓库内置 TTF/OTF 源转换成 engine 的稳定二进制字形包。"""
 
     generate_ttf_pack(
         font_path=spec.font_path,
-        output_dir=OUTPUT_DIR,
+        output_dir=output_dir,
         pack_id=spec.pack_id,
         display_name=spec.display_name,
         font_size=spec.font_size,
@@ -509,6 +231,7 @@ def generate_ttf_builtin_pack(spec: TtfPackSpec) -> None:
         supported_ranges=spec.supported_ranges,
         allowed_advances=spec.allowed_advances,
         shift_negative_bearing=spec.shift_negative_bearing,
+        reviewed_off_grid_code_points=spec.reviewed_off_grid_code_points,
     )
 
 
@@ -541,12 +264,16 @@ def load_catalog_pack_specs() -> tuple[list[TtfPackSpec], list[BdfPackSpec], lis
                     "default_advance": pack["defaultAdvance"],
                     "supported_ranges": range_sets[pack["rangeSet"]],
                 }
-                if pack["type"] in {"ttf", "otf"}:
+                if pack["type"] in {"ttf", "otf", "outline"}:
                     ttf_packs.append(
                         TtfPackSpec(
                             font_size=pack["fontSize"],
                             allowed_advances=allowed_advances,
                             shift_negative_bearing=family.get("negativeBearingPolicy") == "shift",
+                            reviewed_off_grid_code_points=frozenset(
+                                int(code_point, 16)
+                                for code_point in pack.get("reviewedOffGridCodePoints", [])
+                            ),
                             **common,
                         ),
                     )
@@ -571,12 +298,12 @@ def parse_range_label(label: str) -> RangeSpec:
     return RangeSpec(start=int(bounds[0], 16), end=int(bounds[-1], 16))
 
 
-def generate_bdf_builtin_pack(spec: BdfPackSpec) -> None:
+def generate_bdf_builtin_pack(spec: BdfPackSpec, output_dir: Path = OUTPUT_DIR) -> None:
     """把仓库内置 BDF 源转换成 engine 的稳定二进制字形包。"""
 
     generate_bdf_pack(
         font_path=spec.font_path,
-        output_dir=OUTPUT_DIR,
+        output_dir=output_dir,
         pack_id=spec.pack_id,
         display_name=spec.display_name,
         cell_height=spec.cell_height,
@@ -586,12 +313,12 @@ def generate_bdf_builtin_pack(spec: BdfPackSpec) -> None:
     )
 
 
-def generate_dot_grid_builtin_pack(spec: DotGridPackSpec) -> None:
+def generate_dot_grid_builtin_pack(spec: DotGridPackSpec, output_dir: Path = OUTPUT_DIR) -> None:
     """从点阵矢量 OTF 的轮廓中心恢复一源点一像素字形包。"""
 
     generate_dot_grid_pack(
         font_path=spec.font_path,
-        output_dir=OUTPUT_DIR,
+        output_dir=output_dir,
         pack_id=spec.pack_id,
         display_name=spec.display_name,
         grid_height=spec.grid_height,
@@ -614,6 +341,7 @@ def generate_ttf_pack(
     supported_ranges: list[RangeSpec],
     allowed_advances: tuple[int, ...] | None = None,
     shift_negative_bearing: bool = False,
+    reviewed_off_grid_code_points: frozenset[int] = frozenset(),
 ) -> None:
     from fontTools.ttLib import TTFont
 
@@ -624,6 +352,7 @@ def generate_ttf_pack(
         glyph_set = source_font.getGlyphSet()
         units_per_em = int(source_font["head"].unitsPerEm)
         records = []
+        observed_off_grid_code_points: set[int] = set()
         for code_point in iter_code_points(supported_ranges):
             glyph_name = source_code_points.get(code_point)
             if glyph_name is None:
@@ -636,7 +365,10 @@ def generate_ttf_pack(
                 baseline=baseline,
                 pack_id=pack_id,
                 code_point=code_point,
+                allow_off_grid=code_point in reviewed_off_grid_code_points,
             )
+            if rendered.used_reviewed_exception:
+                observed_off_grid_code_points.add(code_point)
             if not any(rendered.pixels) and not chr(code_point).isspace():
                 continue
 
@@ -659,6 +391,12 @@ def generate_ttf_pack(
             )
     finally:
         source_font.close()
+
+    if observed_off_grid_code_points != set(reviewed_off_grid_code_points):
+        raise ValueError(
+            f"{pack_id} reviewed off-grid set drifted: "
+            f"declared={sorted(reviewed_off_grid_code_points)}, observed={sorted(observed_off_grid_code_points)}",
+        )
 
     write_pack(
         output_dir=output_dir,
@@ -930,6 +668,7 @@ def render_outline_glyph(
     baseline: int,
     pack_id: str,
     code_point: int,
+    allow_off_grid: bool = False,
 ) -> RenderedTtfGlyph:
     """在原生 ppem 网格以像素中心和 non-zero fill 恢复线性轮廓。"""
 
@@ -947,6 +686,13 @@ def render_outline_glyph(
     pen = DecomposingRecordingPen(glyph_set)
     glyph.draw(pen)
     contours = linear_contours(pen.value, pack_id, code_point)
+    used_reviewed_exception = validate_outline_grid(
+        contours=contours,
+        grid_unit=grid_unit,
+        pack_id=pack_id,
+        code_point=code_point,
+        allow_off_grid=allow_off_grid,
+    )
     if not contours:
         return RenderedTtfGlyph(
             pixels=bytes([0]),
@@ -955,6 +701,7 @@ def render_outline_glyph(
             bitmap_offset_x=0,
             bitmap_offset_y=0,
             advance_width=advance_width,
+            used_reviewed_exception=used_reviewed_exception,
         )
 
     min_x = min(point[0] for contour in contours for point in contour)
@@ -981,6 +728,7 @@ def render_outline_glyph(
             bitmap_offset_x=0,
             bitmap_offset_y=0,
             advance_width=advance_width,
+            used_reviewed_exception=used_reviewed_exception,
         )
     bitmap_offset_x = min(point[0] for point in lit_points)
     bitmap_offset_y = min(point[1] for point in lit_points)
@@ -996,7 +744,35 @@ def render_outline_glyph(
         bitmap_offset_x=bitmap_offset_x,
         bitmap_offset_y=bitmap_offset_y,
         advance_width=advance_width,
+        used_reviewed_exception=used_reviewed_exception,
     )
+
+
+def validate_outline_grid(
+    contours: list[list[tuple[float, float]]],
+    grid_unit: float,
+    pack_id: str,
+    code_point: int,
+    allow_off_grid: bool,
+) -> bool:
+    """拒绝未声明的非整数原生网格坐标，并返回是否实际使用审阅例外。"""
+
+    max_distance = max(
+        (
+            abs(coordinate / grid_unit - round(coordinate / grid_unit))
+            for contour in contours
+            for point in contour
+            for coordinate in point
+        ),
+        default=0.0,
+    )
+    if max_distance <= DOT_GRID_COORDINATE_TOLERANCE + 1e-9:
+        return False
+    if not allow_off_grid:
+        raise ValueError(
+            f"{pack_id} U+{code_point:04X} outline is {max_distance:.4f} pixels off the native grid",
+        )
+    return True
 
 
 def linear_contours(

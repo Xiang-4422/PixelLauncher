@@ -14,7 +14,7 @@ import java.util.LinkedHashMap
 public class PixelIndexedGlyphPack internal constructor(
     /** 与二进制头和 catalog 一致的 manifest。 */
     public val manifest: PixelGlyphPackManifest,
-    /** 只读 PGLY v1 二进制。 */
+    /** 只读 PGLY v1/v2 二进制。 */
     internal val binary: ByteBuffer,
     /** 按 Unicode scalar 严格递增的码点。 */
     internal val codePoints: IntArray,

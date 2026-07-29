@@ -95,8 +95,18 @@ def load_and_validate(path: Path) -> dict[str, Any]:
                 if pack.get("rangeSet") not in range_sets:
                     raise ValueError(f"未知 rangeSet: {pack_id}")
                 pack_type = pack.get("type")
-                if pack_type not in {"ttf", "otf", "bdf", "dot_grid_otf"}:
+                if pack_type not in {"bdf", "outline", "dot_grid_otf"}:
                     raise ValueError(f"未知字体源类型: {pack_id}/{pack_type}")
+                if pack_type in {"bdf", "outline"} and pack.get("fontSize") != size:
+                    raise ValueError(f"字体源必须使用 face 原生字号: {pack_id}")
+                reviewed_code_points = pack.get("reviewedOffGridCodePoints", [])
+                if pack_type != "outline" and reviewed_code_points:
+                    raise ValueError(f"只有轮廓源可以声明网格例外: {pack_id}")
+                if not isinstance(reviewed_code_points, list) or any(
+                    not isinstance(code_point, str) or not re.fullmatch(r"[0-9A-F]{4,6}", code_point)
+                    for code_point in reviewed_code_points
+                ):
+                    raise ValueError(f"轮廓网格例外码点非法: {pack_id}")
                 if pack_type == "dot_grid_otf":
                     grid_height = pack.get("gridHeight")
                     if not isinstance(grid_height, int) or grid_height <= 0:
@@ -204,6 +214,9 @@ def render_kotlin(root: dict[str, Any]) -> str:
                         f'                            sourcePath = {quote(pack["source"])},',
                         f'                            sourceSha256 = "{pack["sourceSha256"]}",',
                         f'                            rangeSet = "{pack["rangeSet"]}",',
+                        "                            coverageRanges = listOf(" +
+                        ", ".join(quote(value) for value in root["rangeSets"][pack["rangeSet"]]) +
+                        "),",
                         f'                            defaultAdvance = {pack["defaultAdvance"]},',
                         "                        ),",
                     ],

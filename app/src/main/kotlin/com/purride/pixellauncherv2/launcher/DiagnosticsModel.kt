@@ -90,6 +90,8 @@ object DiagnosticsModel {
         val boundsSnapshot = DiagnosticsBoundsModel.snapshot(screenProfile)
         val familyDescriptor = requireNotNull(PixelFontCatalog.familyDescriptor(fontSelection.family))
         val faceDescriptor = PixelFontCatalog.requireFace(fontSelection)
+        /** 当前 face 所有 pack 声明范围的稳定去重列表。 */
+        val coverageRanges = faceDescriptor.packs.flatMap { pack -> pack.coverageRanges }.distinct()
 
         return listOf(
             DiagnosticsLine("HOME", homeSummary),
@@ -106,8 +108,13 @@ object DiagnosticsModel {
             ),
             DiagnosticsLine("FONT ID", fontSelection.family.id.uppercase()),
             DiagnosticsLine("FONT SRC", familyDescriptor.sourceVersion),
+            DiagnosticsLine("FONT TYPE", faceDescriptor.packs.map { pack -> pack.sourceType }.distinct().joinToString("+").uppercase()),
             DiagnosticsLine("FONT PACK", faceDescriptor.packs.joinToString("+") { pack -> pack.id }.take(32)),
-            DiagnosticsLine("FONT RANGE", faceDescriptor.packs.map { pack -> pack.rangeSet }.distinct().joinToString("+")),
+            DiagnosticsLine(
+                "FONT RANGE",
+                "${coverageRanges.size} ${coverageRanges.first().substringBefore('-')}-" +
+                    coverageRanges.last().substringAfter('-'),
+            ),
             DiagnosticsLine("FONT LOAD", if (isFontLoading) "LOADING" else "READY"),
             DiagnosticsLine("FONT CACHE", fontCacheSummary),
         ) + fontRows + listOf(

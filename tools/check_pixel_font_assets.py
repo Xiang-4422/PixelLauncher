@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import struct
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +25,7 @@ def main() -> None:
     parser.add_argument("--write-lock", action="store_true")
     args = parser.parse_args()
     snapshot = build_snapshot()
+    verify_deterministic_regeneration(snapshot)
     rendered = json.dumps(snapshot, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
     if args.write_lock:
         LOCK_PATH.write_text(rendered, encoding="utf-8")
@@ -89,8 +91,31 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def verify_deterministic_regeneration(snapshot: dict[str, Any]) -> None:
+    """在临时目录重建全部 pack，并逐文件验证提交资源没有漂移。"""
+
+    import generate_pixel_glyph_packs
+
+    with tempfile.TemporaryDirectory(prefix="pixel-font-assets-") as temp_dir:
+        generated_root = Path(temp_dir) / "glyphpacks"
+        generate_pixel_glyph_packs.main(["--output", str(generated_root)])
+        generated_pack_ids = {path.name for path in generated_root.iterdir() if path.is_dir()}
+        expected_pack_ids = set(snapshot["packs"])
+        if generated_pack_ids != expected_pack_ids:
+            raise ValueError(
+                f"临时生成 pack 集合漂移: missing={expected_pack_ids-generated_pack_ids}, "
+                f"orphan={generated_pack_ids-expected_pack_ids}",
+            )
+        for pack_id in sorted(expected_pack_ids):
+            for file_name in ("manifest.json", "glyphs.bin"):
+                committed = PACK_ROOT / pack_id / file_name
+                generated = generated_root / pack_id / file_name
+                if committed.read_bytes() != generated.read_bytes():
+                    raise ValueError(f"字体资源不可确定性重建: {pack_id}/{file_name}")
+
+
 def read_pixel_counts(path: Path, requested: set[int]) -> dict[int, int]:
-    """从 PGLY v1 读取指定码点的亮像素数量。"""
+    """从 PGLY v1/v2 读取指定码点的亮像素数量。"""
 
     if not requested:
         return {}
@@ -98,21 +123,26 @@ def read_pixel_counts(path: Path, requested: set[int]) -> dict[int, int]:
     if len(binary) < 16:
         raise ValueError(f"glyph pack 头部截断: {path}")
     magic, version, cell_height, glyph_count = struct.unpack_from(">IIII", binary, 0)
-    if magic != 0x50474C59 or version != 1:
+    if magic != 0x50474C59 or version not in {1, 2}:
         raise ValueError(f"glyph pack 格式非法: {path}")
     offset = 16
     counts: dict[int, int] = {}
     for _ in range(glyph_count):
-        if offset + 16 > len(binary):
+        record_header_size = 28 if version == 2 else 16
+        if offset + record_header_size > len(binary):
             raise ValueError(f"glyph pack 记录截断: {path}")
-        code_point, _, width, data_length = struct.unpack_from(">IIII", binary, offset)
-        offset += 16
+        if version == 2:
+            code_point, _, _, _, width, height, data_length = struct.unpack_from(">IiiiiiI", binary, offset)
+        else:
+            code_point, _, width, data_length = struct.unpack_from(">IIII", binary, offset)
+            height = cell_height
+        offset += record_header_size
         packed = binary[offset : offset + data_length]
         if len(packed) != data_length:
             raise ValueError(f"glyph pack 位图截断: {path}")
         offset += data_length
         if code_point in requested:
-            pixel_count = width * cell_height
+            pixel_count = width * height
             counts[code_point] = sum(
                 (packed[index // 8] >> (7 - index % 8)) & 1
                 for index in range(pixel_count)

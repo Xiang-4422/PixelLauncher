@@ -155,7 +155,7 @@ class SettingsScreen(
             add(
                 SettingsInfoRow(
                     title = "FONT INFO",
-                    valueLabel = PixelFontCatalog.metricsLabel(fontSelection).substringBefore(" A"),
+                    valueLabel = PixelFontCatalog.fontInfoLabel(fontSelection),
                     theme = t,
                 ),
             )

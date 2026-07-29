@@ -1,8 +1,8 @@
 {
   "packId": "fusion_pixel_8px_proportional_latin",
   "displayName": "FUSION 8px Proportional",
-  "cellHeight": 8,
-  "baseline": 7,
+  "cellHeight": 12,
+  "baseline": 9,
   "defaultAdvance": 4,
   "supportedRanges": [
     "0020-007E",
@@ -38,7 +38,7 @@
     "2103-2103",
     "2109-2109",
     "2460-2473",
-    "3000-3029",
+    "3001-3029",
     "3036-303A",
     "303C-303C",
     "303E-303F",

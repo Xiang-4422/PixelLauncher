@@ -1,8 +1,8 @@
 {
   "packId": "ark_pixel_12px_proportional_zh_cn",
   "displayName": "ARK 12px Proportional",
-  "cellHeight": 12,
-  "baseline": 10,
+  "cellHeight": 16,
+  "baseline": 13,
   "defaultAdvance": 6,
   "supportedRanges": [
     "0020-007E",

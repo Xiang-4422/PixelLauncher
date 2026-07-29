@@ -151,6 +151,8 @@ data class FontPackDescriptor(
     val sourceSha256: String,
     /** catalog 中引用的 Unicode 范围集合。 */
     val rangeSet: String,
+    /** 当前 pack 声明的 Unicode 覆盖范围。 */
+    val coverageRanges: List<String>,
     /** manifest 在缺少独立记录时使用的默认 advance。 */
     val defaultAdvance: Int,
 )
@@ -295,6 +297,18 @@ object PixelFontCatalog {
     fun metricsLabel(selection: LauncherFontSelection): String {
         val metrics = metrics(selection)
         return "C${metrics.cellHeight} B${metrics.baseline} A${metrics.narrowAdvanceWidth}/${metrics.wideAdvanceWidth}"
+    }
+
+    /** 返回设置页使用的原生字号、行框、基线和生成源类型。 */
+    fun fontInfoLabel(selection: LauncherFontSelection): String {
+        /** 当前设置精确对应的 catalog face。 */
+        val face = requireFace(selection)
+        /** 去重后的紧凑生产源类型标签。 */
+        val sourceTypes = face.packs
+            .map { pack -> pack.sourceType.uppercase().replace('_', '-') }
+            .distinct()
+            .joinToString("+")
+        return "${sizeLabel(selection.size)} C${face.metrics.cellHeight} B${face.metrics.baseline} $sourceTypes"
     }
 
     /** 按精确 face 的缺字 advance 估算诊断文本宽度。 */

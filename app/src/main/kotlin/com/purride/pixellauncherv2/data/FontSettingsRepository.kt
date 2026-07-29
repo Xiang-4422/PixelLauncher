@@ -155,43 +155,14 @@ class FontSettingsRepository(
         return PixelTheme.entries.firstOrNull { it.name == storedValue } ?: PixelTheme.DAY
     }
 
-    /** 读取完整字体选择，并兼容早期把 Fusion 宽度模式编码进家族名的设置。 */
+    /** 读取当前开发版字体状态；缺失、损坏或过期数据直接使用 catalog 默认值。 */
     private fun readStoredFontSelection(): LauncherFontSelection {
         readFontStateJson()?.let { state ->
             val familyId = state.optString(JSON_CURRENT_FAMILY)
             val family = LauncherFontFamily.entries.firstOrNull { candidate -> candidate.id == familyId }
             if (family != null) return selectionForFamily(family)
         }
-        val legacySelection = readLegacyFontSelection()
-        sharedPreferences.edit().putString(KEY_FONT_STATE_JSON, updatedFontStateJson(legacySelection)).apply()
-        return legacySelection
-    }
-
-    /** 读取三键旧格式，并兼容把 Fusion 宽度编码进家族名的最早版本。 */
-    private fun readLegacyFontSelection(): LauncherFontSelection {
-        /** 旧版或新版保存的字体家族原始名称。 */
-        val storedFamily = sharedPreferences.getString(KEY_FONT_FAMILY, null)
-        /** 从旧版家族名称中恢复出的宽度模式。 */
-        val legacyWidthMode = when (storedFamily) {
-            LEGACY_FUSION_MONOSPACED -> LauncherFontWidthMode.MONOSPACED
-            LEGACY_FUSION_PROPORTIONAL -> LauncherFontWidthMode.PROPORTIONAL
-            else -> null
-        }
-        /** 新版家族值；旧版 Fusion 名称统一迁移到 FUSION。 */
-        val family = LauncherFontFamily.entries.firstOrNull { family -> family.name == storedFamily }
-            ?: if (legacyWidthMode != null) LauncherFontFamily.FUSION else PixelFontCatalog.defaultUiFontSelection.family
-        /** 新版宽度模式，无值时优先采用旧版迁移结果。 */
-        val widthMode = sharedPreferences.getString(KEY_FONT_WIDTH_MODE, null)
-            ?.let { stored -> LauncherFontWidthMode.entries.firstOrNull { mode -> mode.name == stored } }
-            ?: legacyWidthMode
-            ?: PixelFontCatalog.defaultUiFontSelection.widthMode
-        /** 新版默认字号，无值或非法值时采用应用默认字号。 */
-        val size = sharedPreferences.getString(KEY_FONT_SIZE, null)
-            ?.let { stored -> PixelFontSize.entries.firstOrNull { candidate -> candidate.name == stored } }
-            ?: PixelFontCatalog.defaultUiFontSelection.size
-        return PixelFontCatalog.normalize(
-            LauncherFontSelection(family = family, widthMode = widthMode, size = size),
-        )
+        return PixelFontCatalog.defaultUiFontSelection
     }
 
     /** 返回合法 JSON 字体历史；损坏或未知版本视为无历史。 */
@@ -297,24 +268,14 @@ class FontSettingsRepository(
         const val KEY_DOT_SIZE_PX = "selected_dot_size_px"
         const val KEY_PIXEL_GAP_ENABLED = "pixel_gap_enabled"
         const val KEY_THEME = "selected_theme"
-        /** 字体家族对应的 SharedPreferences 键。 */
-        const val KEY_FONT_FAMILY = "selected_font_family"
-        /** 字体宽度模式对应的 SharedPreferences 键。 */
-        const val KEY_FONT_WIDTH_MODE = "selected_font_width_mode"
-        /** 默认字体字号对应的 SharedPreferences 键。 */
-        const val KEY_FONT_SIZE = "selected_font_size"
         /** 当前版本化字体选择和 family/width 历史。 */
-        const val KEY_FONT_STATE_JSON = "font_state_json_v2"
-        const val FONT_STATE_SCHEMA_VERSION = 2
+        const val KEY_FONT_STATE_JSON = "font_state_json_v3"
+        const val FONT_STATE_SCHEMA_VERSION = 3
         const val JSON_SCHEMA_VERSION = "schemaVersion"
         const val JSON_CURRENT_FAMILY = "currentFamilyId"
         const val JSON_FAMILIES = "families"
         const val JSON_LAST_WIDTH = "lastWidth"
         const val JSON_SIZES = "sizes"
-        /** 第一版设置中代表 Fusion 比例模式的旧家族名称。 */
-        const val LEGACY_FUSION_PROPORTIONAL = "FUSION_PROPORTIONAL"
-        /** 第一版设置中代表 Fusion 等宽模式的旧家族名称。 */
-        const val LEGACY_FUSION_MONOSPACED = "FUSION_MONOSPACED"
         const val KEY_DRAWER_LIST_ALIGNMENT = "drawer_list_alignment"
         const val KEY_IDLE_PAGE_ENABLED = "idle_page_enabled"
         const val KEY_CHARGE_AUTO_IDLE_ENABLED = "charge_auto_idle_enabled"

@@ -1,9 +1,9 @@
 {
-  "packId": "boutique_7_10px_proportional",
-  "displayName": "BOUTIQUE 7 10px Proportional",
-  "cellHeight": 10,
-  "baseline": 8,
-  "defaultAdvance": 6,
+  "packId": "boutique_7_8px_proportional",
+  "displayName": "BOUTIQUE 7 8px Proportional",
+  "cellHeight": 8,
+  "baseline": 6,
+  "defaultAdvance": 3,
   "supportedRanges": [
     "0020-007E",
     "00A2-00A9",

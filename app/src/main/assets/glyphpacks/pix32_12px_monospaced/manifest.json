@@ -1,7 +1,7 @@
 {
   "packId": "pix32_12px_monospaced",
   "displayName": "PIX32 12px Monospaced",
-  "cellHeight": 14,
+  "cellHeight": 12,
   "baseline": 11,
   "defaultAdvance": 6,
   "supportedRanges": [
