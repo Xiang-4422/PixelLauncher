@@ -4,6 +4,8 @@ import com.purride.pixelcore.PixelBitmapFont
 import com.purride.pixelcore.PixelBuffer
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelshowcase.DemoScene
+import kotlin.math.PI
+import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 import kotlin.random.Random
@@ -22,6 +24,9 @@ class TitleScene : DemoScene {
         var x: Float,
         var y: Float,
         val delay: Float,
+        /** 呼吸分裂时的专属飘散向量（方向 × 幅度，出生时定死）。 */
+        val driftX: Float,
+        val driftY: Float,
         var vx: Float = 0f,
         var vy: Float = 0f,
     )
@@ -70,16 +75,23 @@ class TitleScene : DemoScene {
     }
 
     override fun render(buffer: PixelBuffer) {
-        // 呼吸 = 整字同相位的垂直浮动。逐行错位的摆动在动画里是波浪、
-        // 在任何单帧里都是"字被撕裂"——字形完整性优先于动态感，
-        // 且幅度必须小于一个粒子块，错位一旦超过块尺寸就读作断裂。
-        val breath = if (elapsed in BREATH_FROM..SCATTER_AT) {
-            sin((elapsed - BREATH_FROM) * 1.6f) * (SCALE - 1f)
+        // 呼吸 = 分裂↔聚合循环：sin(π·t) 把每个周期驱动成 0→1→0 的往返，
+        // 峰值时每粒沿自己的飘散向量散开（雾化的字），归零时精确回到字形。
+        // 偏移只做在渲染层，粒子的逻辑位置始终钉在目标位——聚合零误差。
+        val burst = if (elapsed in BREATH_FROM..SCATTER_AT) {
+            val cycleT = ((elapsed - BREATH_FROM) / BREATH_CYCLE_SECONDS) % 1f
+            sin(cycleT * PI.toFloat())
         } else {
             0f
         }
         particles.forEach { p ->
-            buffer.fillRect(p.x.toInt(), (p.y + breath).toInt(), SCALE, SCALE, INK)
+            buffer.fillRect(
+                (p.x + p.driftX * burst).toInt(),
+                (p.y + p.driftY * burst).toInt(),
+                SCALE,
+                SCALE,
+                INK,
+            )
         }
     }
 
@@ -115,6 +127,10 @@ class TitleScene : DemoScene {
                     2 -> { startX = random.nextInt(width).toFloat(); startY = -8f }
                     else -> { startX = random.nextInt(width).toFloat(); startY = height + 8f }
                 }
+                // 飘散向量：随机方向、4~14 像素幅度。幅度刻意压在"散而可辨"的
+                // 区间——峰值时字应该像雾化而不是消失，聚合的瞬间才有魔力。
+                val driftAngle = random.nextFloat() * 2f * PI.toFloat()
+                val driftRadius = 4f + random.nextFloat() * 10f
                 result.add(
                     Particle(
                         targetX = (originLeft + x * SCALE).toFloat(),
@@ -122,6 +138,8 @@ class TitleScene : DemoScene {
                         x = startX,
                         y = startY,
                         delay = x * 0.018f + random.nextFloat() * 0.25f,
+                        driftX = cos(driftAngle) * driftRadius,
+                        driftY = sin(driftAngle) * driftRadius,
                     ),
                 )
             }
@@ -133,8 +151,11 @@ class TitleScene : DemoScene {
         const val SCALE = 3
         const val LINE_GAP = 2
         const val GATHER_SECONDS = 1.6f
-        const val BREATH_FROM = 3.5f
+        const val BREATH_FROM = 3.2f
         const val SCATTER_AT = 7.6f
+
+        /** 一次完整的分裂→聚合时长；呼吸窗口内正好跑两轮。 */
+        const val BREATH_CYCLE_SECONDS = 2.2f
         val INK = PixelColor.fromRgb(240, 246, 255)
     }
 }
