@@ -46,6 +46,7 @@ enum class ShowcaseRoute(val routeName: String) {
     WIDGETS("widgets"),
     TODO("todo"),
     STOPWATCH("stopwatch"),
+    TIMER("timer"),
     ABOUT("about"),
 }
 
@@ -87,6 +88,12 @@ class ShowcaseAppHost(
     )
     private val lapListController = ScrollController()
     private val lapListState = lapListController.create()
+    private val timer = TimerController(
+        vsync = hostView.tickerProvider,
+        onFrame = { hostView.invalidate() },
+    )
+    private val homeScrollController = ScrollController()
+    private val homeScrollState = homeScrollController.create()
 
     private var navigatorState: PixelNavigatorState? = null
     private var currentRoute = ShowcaseRoute.HOME
@@ -112,6 +119,12 @@ class ShowcaseAppHost(
         key = "showcase-navigator",
     )
 
+    /** 释放示例应用持有的 ticker；Activity 销毁时统一调用。 */
+    fun dispose() {
+        stopwatch.dispose()
+        timer.dispose()
+    }
+
     /** BACK：对话框 → 子页 → 交还系统（退出）。 */
     fun handleBack(): Boolean {
         if (dialogVisible) {
@@ -135,6 +148,7 @@ class ShowcaseAppHost(
 
     private fun navigateHome() {
         if (currentRoute == ShowcaseRoute.STOPWATCH) stopwatch.pause()
+        if (currentRoute == ShowcaseRoute.TIMER) timer.pausePage()
         currentRoute = ShowcaseRoute.HOME
         director.pause()
         navigatorState?.pop()
@@ -174,6 +188,10 @@ class ShowcaseAppHost(
             listController = lapListController,
             header = pageHeader("STOPWATCH"),
         )
+        ShowcaseRoute.TIMER -> TimerPage(
+            controller = timer,
+            header = pageHeader("TIMER"),
+        )
         ShowcaseRoute.ABOUT -> aboutPage()
     }
 
@@ -190,32 +208,48 @@ class ShowcaseAppHost(
                     Text("PIXEL ENGINE", color = ShowcaseTheme.TITLE, textAlign = TextAlign.CENTER),
                     Text("SHOWCASE", color = ShowcaseTheme.DIM, textAlign = TextAlign.CENTER),
                     Gap(12),
-                    menuTile(
-                        title = "DEMOS",
-                        subtitle = "10 VISUAL SCENES",
-                        route = ShowcaseRoute.DEMOS,
+                    Expanded(
+                        child = SingleChildScrollView(
+                            child = Column(
+                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                spacing = 3,
+                                children = listOf(
+                                    menuTile(
+                                        title = "DEMOS",
+                                        subtitle = "10 VISUAL SCENES",
+                                        route = ShowcaseRoute.DEMOS,
+                                    ),
+                                    menuTile(
+                                        title = "WIDGETS",
+                                        subtitle = "WIDGET GALLERY",
+                                        route = ShowcaseRoute.WIDGETS,
+                                    ),
+                                    menuTile(
+                                        title = "TODO",
+                                        subtitle = "STATE + LIST",
+                                        route = ShowcaseRoute.TODO,
+                                    ),
+                                    menuTile(
+                                        title = "STOPWATCH",
+                                        subtitle = "TICKER TIME",
+                                        route = ShowcaseRoute.STOPWATCH,
+                                    ),
+                                    menuTile(
+                                        title = "TIMER",
+                                        subtitle = "COUNTDOWN ALERT",
+                                        route = ShowcaseRoute.TIMER,
+                                    ),
+                                    menuTile(
+                                        title = "ABOUT",
+                                        subtitle = "WHAT IS THIS",
+                                        route = ShowcaseRoute.ABOUT,
+                                    ),
+                                ),
+                            ),
+                            state = homeScrollState,
+                            controller = homeScrollController,
+                        ),
                     ),
-                    menuTile(
-                        title = "WIDGETS",
-                        subtitle = "WIDGET GALLERY",
-                        route = ShowcaseRoute.WIDGETS,
-                    ),
-                    menuTile(
-                        title = "TODO",
-                        subtitle = "STATE + LIST",
-                        route = ShowcaseRoute.TODO,
-                    ),
-                    menuTile(
-                        title = "STOPWATCH",
-                        subtitle = "TICKER TIME",
-                        route = ShowcaseRoute.STOPWATCH,
-                    ),
-                    menuTile(
-                        title = "ABOUT",
-                        subtitle = "WHAT IS THIS",
-                        route = ShowcaseRoute.ABOUT,
-                    ),
-                    Expanded(child = Gap(0)),
                     Text("TAP A CARD TO ENTER", color = ShowcaseTheme.FAINT, textAlign = TextAlign.CENTER),
                 ),
             ),
@@ -384,4 +418,5 @@ object ShowcaseTheme {
     val DIM = PixelColor.fromRgb(140, 165, 200)
     val FAINT = PixelColor.fromRgb(80, 100, 130)
     val BORDER = PixelColor.fromRgb(70, 95, 130)
+    val ALERT = PixelColor.fromRgb(216, 72, 56)
 }

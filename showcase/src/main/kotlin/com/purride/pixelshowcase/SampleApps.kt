@@ -15,7 +15,9 @@ import com.purride.pixelui.Gap
 import com.purride.pixelui.ListViewBuilder
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.Padding
+import com.purride.pixelui.ProgressBar
 import com.purride.pixelui.Row
+import com.purride.pixelui.Stepper
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextAlign
 import com.purride.pixelui.TextButton
@@ -322,5 +324,210 @@ private fun lapRow(number: Int, millis: Long): Widget = Row(
     children = listOf(
         Expanded(child = Text("LAP $number", color = ShowcaseTheme.DIM)),
         Text(StopwatchController.format(millis), color = ShowcaseTheme.TITLE),
+    ),
+)
+
+// ── 倒计时器 ─────────────────────────────────────────────────────────────────
+
+/**
+ * 倒计时器：与秒表同一套 ticker 累计法，方向相反——剩余 = 设定 − 已走。
+ * 到点后 ticker 不停，超出的时长直接当闪烁相位用，不需要第二个时钟。
+ */
+class TimerController(
+    vsync: PixelTickerProvider,
+    private val onFrame: () -> Unit,
+) {
+    enum class Phase { SETUP, RUNNING, PAUSED, FINISHED }
+
+    private val ticker: PixelTicker = vsync.createTicker { elapsedNanos ->
+        segmentNanos = elapsedNanos
+        if (phase == Phase.RUNNING && remainingMillis <= 0L) phase = Phase.FINISHED
+        onFrame()
+    }
+
+    var phase = Phase.SETUP
+        private set
+    var minutes = 1
+        private set
+    var seconds = 30
+        private set
+
+    private var accumulatedNanos = 0L
+    private var segmentNanos = 0L
+
+    val totalMillis: Long
+        get() = (minutes * 60L + seconds) * 1_000L
+
+    private val elapsedMillis: Long
+        get() = (accumulatedNanos + segmentNanos) / 1_000_000L
+
+    val remainingMillis: Long
+        get() = (totalMillis - elapsedMillis).coerceAtLeast(0L)
+
+    /** 到点后的闪烁开关：超时时长按 400ms 翻转，占空比一半亮一半灭。 */
+    val flashOn: Boolean
+        get() = phase == Phase.FINISHED && ((elapsedMillis - totalMillis) / FLASH_MILLIS) % 2 == 0L
+
+    fun updateMinutes(value: Int) {
+        if (phase == Phase.SETUP) minutes = value.coerceIn(0, 99)
+        onFrame()
+    }
+
+    fun updateSeconds(value: Int) {
+        if (phase == Phase.SETUP) seconds = value.coerceIn(0, 59)
+        onFrame()
+    }
+
+    fun start() {
+        if (phase != Phase.SETUP || totalMillis == 0L) return
+        phase = Phase.RUNNING
+        segmentNanos = 0L
+        ticker.start()
+        onFrame()
+    }
+
+    fun pause() {
+        if (phase != Phase.RUNNING) return
+        accumulatedNanos += segmentNanos
+        segmentNanos = 0L
+        ticker.stop()
+        phase = Phase.PAUSED
+        onFrame()
+    }
+
+    fun resume() {
+        if (phase != Phase.PAUSED) return
+        phase = Phase.RUNNING
+        segmentNanos = 0L
+        ticker.start()
+        onFrame()
+    }
+
+    fun reset() {
+        ticker.stop()
+        phase = Phase.SETUP
+        accumulatedNanos = 0L
+        segmentNanos = 0L
+        onFrame()
+    }
+
+    /** 离开页面：走针暂停，响铃直接归位——闪烁在看不见的页面上没有意义。 */
+    fun pausePage() {
+        when (phase) {
+            Phase.RUNNING -> pause()
+            Phase.FINISHED -> reset()
+            else -> Unit
+        }
+    }
+
+    fun dispose() {
+        ticker.dispose()
+    }
+
+    companion object {
+        private const val FLASH_MILLIS = 400L
+
+        /** 倒计时显示到整秒，向上取整：剩 0.2s 显示 00:01，到 0 才显示 00:00。 */
+        fun format(millis: Long): String {
+            val totalSeconds = (millis + 999) / 1_000
+            return "%02d:%02d".format(totalSeconds / 60, totalSeconds % 60)
+        }
+    }
+}
+
+/** 倒计时页面：设定 → 走针 → 到点全屏闪烁，一个状态机四种画面。 */
+fun TimerPage(controller: TimerController, header: Widget): Widget {
+    val finished = controller.phase == TimerController.Phase.FINISHED
+    val flash = controller.flashOn
+    val display = if (controller.phase == TimerController.Phase.SETUP) {
+        TimerController.format(controller.totalMillis)
+    } else {
+        TimerController.format(controller.remainingMillis)
+    }
+    val progress = if (controller.totalMillis == 0L) {
+        0f
+    } else {
+        controller.remainingMillis.toFloat() / controller.totalMillis.toFloat()
+    }
+    return Container(
+        fillColor = if (flash) ShowcaseTheme.ALERT else ShowcaseTheme.BACKGROUND,
+        child = Padding(
+            padding = EdgeInsets.symmetric(horizontal = 8, vertical = 6),
+            child = Column(
+                mainAxisSize = com.purride.pixelui.MainAxisSize.MAX,
+                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                spacing = 4,
+                children = listOf(
+                    header,
+                    Gap(8),
+                    Row(
+                        mainAxisAlignment = MainAxisAlignment.CENTER,
+                        children = listOf(
+                            BigText(
+                                text = display,
+                                scale = 4,
+                                color = if (flash) ShowcaseTheme.BACKGROUND else ShowcaseTheme.TITLE,
+                            ),
+                        ),
+                    ),
+                    Gap(2),
+                    if (finished) {
+                        Text(
+                            "TIME UP",
+                            color = if (flash) ShowcaseTheme.BACKGROUND else ShowcaseTheme.ALERT,
+                            textAlign = TextAlign.CENTER,
+                        )
+                    } else {
+                        ProgressBar(progress = progress)
+                    },
+                    Gap(4),
+                ) + timerControls(controller),
+            ),
+        ),
+    )
+}
+
+/** 当前相位对应的设置区与按钮行。 */
+private fun timerControls(controller: TimerController): List<Widget> = when (controller.phase) {
+    TimerController.Phase.SETUP -> listOf(
+        timerStepperRow("MINUTES", controller.minutes, 0..99) { controller.updateMinutes(it) },
+        timerStepperRow("SECONDS", controller.seconds, 0..59) { controller.updateSeconds(it) },
+        Gap(4),
+        TextButton(text = "START", onPressed = { controller.start() }),
+    )
+    TimerController.Phase.RUNNING -> listOf(
+        Row(
+            spacing = 3,
+            children = listOf(
+                Expanded(child = TextButton(text = "PAUSE", onPressed = { controller.pause() })),
+                Expanded(child = TextButton(text = "RESET", onPressed = { controller.reset() })),
+            ),
+        ),
+    )
+    TimerController.Phase.PAUSED -> listOf(
+        Row(
+            spacing = 3,
+            children = listOf(
+                Expanded(child = TextButton(text = "RESUME", onPressed = { controller.resume() })),
+                Expanded(child = TextButton(text = "RESET", onPressed = { controller.reset() })),
+            ),
+        ),
+    )
+    TimerController.Phase.FINISHED -> listOf(
+        TextButton(text = "STOP", onPressed = { controller.reset() }),
+    )
+}
+
+private fun timerStepperRow(
+    label: String,
+    value: Int,
+    range: IntRange,
+    onChanged: (Int) -> Unit,
+): Widget = Row(
+    spacing = 4,
+    crossAxisAlignment = CrossAxisAlignment.CENTER,
+    children = listOf(
+        Expanded(child = Text(label, color = ShowcaseTheme.DIM)),
+        Stepper(value = value, range = range, onChanged = onChanged),
     ),
 )

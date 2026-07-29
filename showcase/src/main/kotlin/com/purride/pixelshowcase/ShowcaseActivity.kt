@@ -85,6 +85,7 @@ class ShowcaseActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        appHost.dispose()
         director.dispose()
         setup.dispose()
         super.onDestroy()
