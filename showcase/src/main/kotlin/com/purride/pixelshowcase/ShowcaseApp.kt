@@ -7,6 +7,8 @@ import com.purride.pixelui.ConfirmDialog
 import com.purride.pixelui.Container
 import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.Checkbox
+import com.purride.pixelui.CustomPaint
+import com.purride.pixelui.PixelTheme
 import com.purride.pixelui.Divider
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
@@ -47,6 +49,7 @@ enum class ShowcaseRoute(val routeName: String) {
     TODO("todo"),
     STOPWATCH("stopwatch"),
     TIMER("timer"),
+    THEME("theme"),
     ABOUT("about"),
 }
 
@@ -110,13 +113,16 @@ class ShowcaseAppHost(
             }
         }
 
-    /** 根 widget：Navigator 承担页面栈与过渡动画。 */
-    fun buildRoot(): Widget = PixelNavigator(
-        initialRequest = requestFor(ShowcaseRoute.HOME),
-        vsync = hostView.tickerProvider,
-        transitionDuration = 220.milliseconds,
-        defaultTransition = PixelRouteTransition.SlideHorizontal,
-        key = "showcase-navigator",
+    /** 根 widget：主题 provider 包住 Navigator——换 palette 时引擎组件全树跟随。 */
+    fun buildRoot(): Widget = PixelTheme(
+        tokens = ShowcaseTheme.palette.engineTokens,
+        child = PixelNavigator(
+            initialRequest = requestFor(ShowcaseRoute.HOME),
+            vsync = hostView.tickerProvider,
+            transitionDuration = 220.milliseconds,
+            defaultTransition = PixelRouteTransition.SlideHorizontal,
+            key = "showcase-navigator",
+        ),
     )
 
     /** 释放示例应用持有的 ticker；Activity 销毁时统一调用。 */
@@ -192,6 +198,7 @@ class ShowcaseAppHost(
             controller = timer,
             header = pageHeader("TIMER"),
         )
+        ShowcaseRoute.THEME -> themePage()
         ShowcaseRoute.ABOUT -> aboutPage()
     }
 
@@ -238,6 +245,11 @@ class ShowcaseAppHost(
                                         title = "TIMER",
                                         subtitle = "COUNTDOWN ALERT",
                                         route = ShowcaseRoute.TIMER,
+                                    ),
+                                    menuTile(
+                                        title = "THEME",
+                                        subtitle = "5 MACHINE MOODS",
+                                        route = ShowcaseRoute.THEME,
                                     ),
                                     menuTile(
                                         title = "ABOUT",
@@ -380,6 +392,58 @@ class ShowcaseAppHost(
         ),
     )
 
+    // ── 主题 ──────────────────────────────────────────────────────────────────
+
+    /** 主题页：一套 palette 一张卡，点选立即换整机气质。 */
+    private fun themePage(): Widget = Container(
+        fillColor = ShowcaseTheme.BACKGROUND,
+        child = Padding(
+            padding = EdgeInsets.symmetric(horizontal = 8, vertical = 6),
+            child = Column(
+                mainAxisSize = MainAxisSize.MAX,
+                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                spacing = 3,
+                children = listOf(
+                    pageHeader("THEME"),
+                    Text(
+                        "PICK A MACHINE MOOD",
+                        color = ShowcaseTheme.FAINT,
+                    ),
+                    Gap(2),
+                ) + ShowcasePalette.entries.map { paletteTile(it) },
+            ),
+        ),
+    )
+
+    private fun paletteTile(palette: ShowcasePalette): Widget {
+        val selected = ShowcaseTheme.palette == palette
+        return Container(
+            borderColor = if (selected) ShowcaseTheme.TITLE else ShowcaseTheme.BORDER,
+            padding = EdgeInsets.symmetric(horizontal = 4, vertical = 2),
+            child = ListTile(
+                title = Text(palette.label, color = ShowcaseTheme.TITLE),
+                subtitle = Text(palette.subtitle, color = ShowcaseTheme.DIM),
+                trailing = paletteSwatch(palette),
+                onTap = { mutate { ShowcaseTheme.palette = palette } },
+                semanticLabel = palette.label,
+            ),
+        )
+    }
+
+    /** 色板预览条：这套 palette 的四个主要颜色，一色一块。 */
+    private fun paletteSwatch(palette: ShowcasePalette): Widget {
+        val colors = listOf(palette.title, palette.dim, palette.faint, palette.alert)
+        return CustomPaint(
+            width = colors.size * SWATCH_STEP - 1,
+            height = SWATCH_SIZE,
+            key = "swatch-${palette.name}",
+        ) {
+            colors.forEachIndexed { index, color ->
+                fillRect(index * SWATCH_STEP, 0, SWATCH_SIZE, SWATCH_SIZE, color)
+            }
+        }
+    }
+
     // ── ABOUT ─────────────────────────────────────────────────────────────────
 
     private fun aboutPage(): Widget = Container(
@@ -412,11 +476,18 @@ class ShowcaseAppHost(
 }
 
 /** showcase 的极简主题：一底四阶，全应用共享。 */
+/** 主题页色板预览块的边长与步进（块 + 1px 间隔）。 */
+private const val SWATCH_SIZE = 7
+private const val SWATCH_STEP = SWATCH_SIZE + 1
+
+/** 应用自绘部分的当前配色：全部委托到选中的 palette，切换即全局生效。 */
 object ShowcaseTheme {
-    val BACKGROUND = PixelColor.fromRgb(10, 14, 26)
-    val TITLE = PixelColor.fromRgb(236, 244, 255)
-    val DIM = PixelColor.fromRgb(140, 165, 200)
-    val FAINT = PixelColor.fromRgb(80, 100, 130)
-    val BORDER = PixelColor.fromRgb(70, 95, 130)
-    val ALERT = PixelColor.fromRgb(216, 72, 56)
+    var palette: ShowcasePalette = ShowcasePalette.MIDNIGHT
+
+    val BACKGROUND: PixelColor get() = palette.background
+    val TITLE: PixelColor get() = palette.title
+    val DIM: PixelColor get() = palette.dim
+    val FAINT: PixelColor get() = palette.faint
+    val BORDER: PixelColor get() = palette.border
+    val ALERT: PixelColor get() = palette.alert
 }
