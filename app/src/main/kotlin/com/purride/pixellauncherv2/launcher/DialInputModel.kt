@@ -20,6 +20,9 @@ object DialInputModel {
     /** 头部省略号；像素字体里单字符 … 未必有字形，用 ASCII 点。 */
     private const val ELLIPSIS = ".."
 
+    /** 匹配槽未命中时的占位行；空串会让槽塌成 0 高度，见 [matchSlotText]。 */
+    private const val MATCH_SLOT_PLACEHOLDER = " "
+
     /** 追加一个字符；非可拨字符与超长输入原样返回。 */
     fun append(current: String, digit: Char): String {
         if (digit !in DIALABLE_CHARS) return current
@@ -58,6 +61,26 @@ object DialInputModel {
         // 连省略号都放不下时直接给尾部：尾号比一串点更有信息量。
         if (maxChars <= ELLIPSIS.length) return text.takeLast(maxChars)
         return ELLIPSIS + text.takeLast(maxChars - ELLIPSIS.length)
+    }
+
+    /**
+     * T9 匹配槽的显示文本；**返回值永不为空串**。
+     *
+     * 空串在渲染层会退化成 0 高度——段落布局对空文本直接返回空行列表，行高求和为 0，
+     * 而 Text 不带 explicitHeight、Column 的纵向约束 minHeight 也是 0，没有任何一层兜底。
+     * 结果是匹配槽在命中与未命中之间塌陷：每按一个数字，先同步清空匹配塌成 0，异步检索
+     * 返回后又涨回一行，键盘上下弹跳两次，而手指正落在键位上。
+     *
+     * 未命中时返回一个空格占位，占住与命中态完全相同的一行高度。
+     */
+    fun matchSlotText(displayName: String?, number: String?, extraCount: Int): String {
+        if (displayName.isNullOrBlank()) return MATCH_SLOT_PLACEHOLDER
+        val name = displayName.trim().uppercase()
+        return when {
+            extraCount > 0 -> "$name  +$extraCount"
+            !number.isNullOrBlank() -> "$name  ${number.trim()}"
+            else -> name
+        }
     }
 
     /** 大陆手机号 3/4/4 分组；不满足条件时原样返回。 */
