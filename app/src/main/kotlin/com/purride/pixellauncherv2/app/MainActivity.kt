@@ -976,11 +976,8 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
-                    LauncherMode.DIALER -> {
-                        if (state.callPageIndex == CallPageIndex.RECENT) {
-                            callController.moveSelection(-1)
-                        }
-                    }
+                    // 通话记录页无选中态呈现，方向键不再驱动一个看不见的选中项。
+                    LauncherMode.DIALER -> Unit
                     LauncherMode.SETTINGS -> Unit
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
@@ -1006,11 +1003,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
-                    LauncherMode.DIALER -> {
-                        if (state.callPageIndex == CallPageIndex.RECENT) {
-                            callController.moveSelection(1)
-                        }
-                    }
+                    LauncherMode.DIALER -> Unit
                     LauncherMode.SETTINGS -> Unit
                     LauncherMode.HOME -> Unit
                     LauncherMode.APP_MANAGEMENT,
@@ -1077,10 +1070,11 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     LauncherMode.DIALER -> {
+                        // 只有拨号盘页响应回车：号码就在眼前，用户知道自己要拨什么。
+                        // 通话记录页没有选中态呈现（列表以触摸为主通路，见 UI 规范），
+                        // 回车拨号意味着用户看不见将拨给谁——外呼不可逆，不能这么办。
                         if (state.callPageIndex == CallPageIndex.DIAL) {
                             callController.callDialInput()
-                        } else {
-                            callController.callSelected()
                         }
                     }
                     LauncherMode.SMS_THREAD_DETAIL -> {

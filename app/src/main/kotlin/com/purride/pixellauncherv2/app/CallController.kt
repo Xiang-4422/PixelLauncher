@@ -250,18 +250,6 @@ internal class CallController(
         callNumber(number)
     }
 
-    /** 按键导航：移动选中项。 */
-    fun moveSelection(delta: Int) {
-        host.state = LauncherStateTransitions.moveCallLogSelection(host.state, delta)
-        host.render()
-    }
-
-    /** 按键回车：回电当前选中项。 */
-    fun callSelected() {
-        val group = host.state.callLogGroups.getOrNull(host.state.callLogSelectedIndex) ?: return
-        callNumber(group.number)
-    }
-
     // ── Permission plumbing ───────────────────────────────────────────────────
 
     /** 申请缺失的拨号权限（读写通话记录 + 发起通话）。 */

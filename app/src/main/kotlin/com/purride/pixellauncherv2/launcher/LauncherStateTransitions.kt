@@ -228,7 +228,6 @@ object LauncherStateTransitions {
         return state.copy(
             mode = LauncherMode.DIALER,
             returnMode = LauncherMode.HOME,
-            callLogSelectedIndex = 0,
             // 读不到通话记录时直接落到拨号盘：让用户停在一个空页上没有意义，
             // 而拨号盘只需要 CALL_PHONE，与记录权限无关。
             callPageIndex = if (state.hasCallLogPermission) CallPageIndex.RECENT else CallPageIndex.DIAL,
@@ -269,27 +268,14 @@ object LauncherStateTransitions {
         return state.copy(dialMatches = matches)
     }
 
-    /** 同步通话记录数据；选中下标收敛到新列表范围内。 */
+    /** 同步通话记录数据。 */
     fun updateCallLogGroups(
         state: LauncherState,
         groups: List<CallLogGroup>,
     ): LauncherState {
-        val lastIndex = (groups.size - 1).coerceAtLeast(0)
         return state.copy(
             callLogGroups = groups,
             isCallLogLoading = false,
-            callLogSelectedIndex = state.callLogSelectedIndex.coerceIn(0, lastIndex),
-        )
-    }
-
-    /** 通话记录按键导航：移动选中下标，不环绕。 */
-    fun moveCallLogSelection(state: LauncherState, delta: Int): LauncherState {
-        if (state.callLogGroups.isEmpty()) {
-            return state.copy(callLogSelectedIndex = 0)
-        }
-        return state.copy(
-            callLogSelectedIndex = (state.callLogSelectedIndex + delta)
-                .coerceIn(0, state.callLogGroups.lastIndex),
         )
     }
 

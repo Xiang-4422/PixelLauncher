@@ -51,7 +51,6 @@ fun LauncherState.toLauncherUiState(): LauncherUiState = LauncherUiState(
     smsPermissionState = smsPermissionState,
     callLogGroups = callLogGroups,
     isCallLogLoading = isCallLogLoading,
-    callLogSelectedIndex = callLogSelectedIndex,
     hasCallPhonePermission = hasCallPhonePermission,
     callPageIndex = callPageIndex,
     dialInput = dialInput,

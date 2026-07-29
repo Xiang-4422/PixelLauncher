@@ -64,8 +64,6 @@ data class LauncherState(
     val callLogGroups: List<CallLogGroup> = emptyList(),
     /** 通话记录首次加载中。 */
     val isCallLogLoading: Boolean = false,
-    /** 通话记录按键导航的选中下标（只驱动滚动定位，不渲染高亮）。 */
-    val callLogSelectedIndex: Int = 0,
     /** 是否具备发起通话的权限。 */
     val hasCallPhonePermission: Boolean = false,
     /** 拨号模块当前页（最近通话 / 拨号盘）。 */
