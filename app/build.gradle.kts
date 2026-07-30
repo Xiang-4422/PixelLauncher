@@ -114,6 +114,23 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 }
 
+/** Launcher 聚合状态直接 copy 的独立静态检查器。 */
+val launcherStateCopyGuardTool =
+    rootProject.layout.projectDirectory.file("tools/check_launcher_state_copy_guard.py")
+
+/** 阶段 0 人工审阅的 LauncherState.copy 精确 baseline。 */
+val launcherStateCopyBaseline =
+    rootProject.layout.projectDirectory.file("tools/launcher-state-copy-baseline.json")
+
+/** App 生产 Kotlin 源码是聚合状态写入口的完整扫描范围。 */
+val launcherProductionKotlinSources = fileTree("src/main/kotlin") {
+    include("**/*.kt")
+}
+
+/** 门禁的确定性机器可读报告。 */
+val launcherStateCopyGuardReport =
+    layout.buildDirectory.file("reports/architecture/launcher-state-copy-guard.json")
+
 /** 从唯一 JSON 目录更新 Launcher 的只读 Kotlin 字体目录。 */
 tasks.register<Exec>("generatePixelFontCatalog") {
     group = "build"
@@ -138,8 +155,38 @@ val checkPixelFontAssets by tasks.registering(Exec::class) {
     commandLine("python3", rootProject.file("tools/check_pixel_font_assets.py"))
 }
 
+/** 阻止 Launcher 聚合状态在规范 reducer 外新增或扩大直接 copy 写入口。 */
+val checkLauncherStateCopyGuard by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Checks Launcher/App aggregate state copy calls against the reviewed baseline."
+    workingDir(rootProject.projectDir)
+
+    inputs.files(launcherProductionKotlinSources)
+        .withPropertyName("launcherProductionKotlinSources")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file(launcherStateCopyGuardTool)
+        .withPropertyName("launcherStateCopyGuardTool")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file(launcherStateCopyBaseline)
+        .withPropertyName("launcherStateCopyBaseline")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+    outputs.file(launcherStateCopyGuardReport)
+
+    commandLine(
+        "python3",
+        launcherStateCopyGuardTool.asFile,
+        "--root",
+        rootProject.projectDir,
+        "--baseline",
+        launcherStateCopyBaseline.asFile,
+        "--report",
+        launcherStateCopyGuardReport.get().asFile,
+    )
+}
+
 /** App 的标准检查必须阻止字体声明与生成代码漂移。 */
 tasks.named("check") {
     dependsOn(checkPixelFontCatalog)
     dependsOn(checkPixelFontAssets)
+    dependsOn(checkLauncherStateCopyGuard)
 }
