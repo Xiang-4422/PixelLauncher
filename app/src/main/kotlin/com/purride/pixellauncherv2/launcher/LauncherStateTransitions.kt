@@ -156,6 +156,18 @@ object LauncherStateTransitions {
         return state.copy(isAppActionMenuVisible = false)
     }
 
+    /**
+     * 主 Pager 开始拖动时关闭 Drawer 的输入焦点与应用操作浮层。
+     *
+     * Rail 动画状态不属于本手势回调的既有写入面，因此保持原值。
+     */
+    fun dismissDrawerOverlaysForPagerDrag(state: LauncherState): LauncherState {
+        return state.copy(
+            isDrawerSearchFocused = false,
+            isAppActionMenuVisible = false,
+        )
+    }
+
     fun showAppManagement(state: LauncherState, selectedIndex: Int = state.appEditorSelectedIndex): LauncherState {
         val apps = state.apps
         val safeIndex = selectedIndex.coerceIn(0, (apps.size - 1).coerceAtLeast(0))
@@ -296,6 +308,20 @@ object LauncherStateTransitions {
         return state.copy(
             callLogGroups = groups,
             isCallLogLoading = false,
+        )
+    }
+
+    /**
+     * 根据通话记录读取能力与现有缓存决定首次加载提示。
+     *
+     * 无读取权限或已有缓存时不展示 loading，后台刷新仍可继续执行。
+     */
+    fun prepareCallLogLoading(
+        state: LauncherState,
+        canReadCallLog: Boolean,
+    ): LauncherState {
+        return state.copy(
+            isCallLogLoading = canReadCallLog && state.callLogGroups.isEmpty(),
         )
     }
 
@@ -525,6 +551,27 @@ object LauncherStateTransitions {
     }
 
     /**
+     * 短信能力不足或数据已经落地时结束会话列表加载提示。
+     */
+    fun finishSmsThreadsLoading(state: LauncherState): LauncherState {
+        return state.copy(isSmsThreadsLoading = false)
+    }
+
+    /**
+     * 开始一次用户明确触发的短信全量刷新。
+     *
+     * 强制刷新会丢弃三份 provider 派生快照并展示 loading；草稿、菜单和会话身份保持不变。
+     */
+    fun beginForcedSmsRefresh(state: LauncherState): LauncherState {
+        return state.copy(
+            unreadSmsEntries = emptyList(),
+            smsThreads = emptyList(),
+            smsAllMessages = emptyList(),
+            isSmsThreadsLoading = true,
+        )
+    }
+
+    /**
      * 以默认状态打开抽屉，并把焦点和窗口重置到第一项。
      */
     fun showAppDrawer(state: LauncherState, visibleRows: Int): LauncherState {
@@ -552,6 +599,46 @@ object LauncherStateTransitions {
             ),
             visibleRows = visibleRows,
         )
+    }
+
+    /**
+     * 完成 Drawer 入场后的搜索焦点同步，并结束可能残留的 Rail 滑动状态。
+     *
+     * 非 Drawer 页面不会写入隐藏的输入焦点。
+     */
+    fun prepareDrawerEntryFocus(
+        state: LauncherState,
+        focusSearch: Boolean,
+    ): LauncherState {
+        if (state.mode != LauncherMode.APP_DRAWER) {
+            return state
+        }
+        return state.copy(
+            isDrawerSearchFocused = focusSearch,
+            isDrawerRailSliding = false,
+        )
+    }
+
+    /**
+     * 让 Drawer 搜索输入接管焦点，并结束 Rail 滑动。
+     *
+     * 该事件只在 Drawer 可见时生效，不能用来预写其他页面的隐藏状态。
+     */
+    fun focusDrawerSearchInput(state: LauncherState): LauncherState {
+        if (state.mode != LauncherMode.APP_DRAWER) {
+            return state
+        }
+        return state.copy(
+            isDrawerSearchFocused = true,
+            isDrawerRailSliding = false,
+        )
+    }
+
+    /**
+     * 应用目录没有可用缓存时开始首轮加载。
+     */
+    fun beginAppCatalogLoading(state: LauncherState): LauncherState {
+        return state.copy(isLoading = true)
     }
 
     /**
@@ -1217,6 +1304,25 @@ object LauncherStateTransitions {
             state = state,
             index = state.smsThreadSelectedIndex + delta,
             visibleRows = visibleRows,
+        )
+    }
+
+    /**
+     * 在短信搜索结果中按相对行数移动焦点。
+     *
+     * 搜索未开启时保持原状态；空结果也把下标规范为零，且不改动普通会话列表窗口。
+     */
+    fun moveSmsSearchSelection(
+        state: LauncherState,
+        delta: Int,
+        resultCount: Int,
+    ): LauncherState {
+        if (state.smsThreadSearchQuery.isBlank()) {
+            return state
+        }
+        val maxIndex = (resultCount - 1).coerceAtLeast(0)
+        return state.copy(
+            smsThreadSelectedIndex = (state.smsThreadSelectedIndex + delta).coerceIn(0, maxIndex),
         )
     }
 

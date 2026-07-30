@@ -2,12 +2,12 @@
 
 - 盘点日期：2026-07-30
 - 生产入口：`app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherStateTransitions.kt`
-- 目标：在拆分 reducer 前，锁定全部公开入口的领域归属、生产调用、写入面和 JVM 行为证据
+- 目标：在拆分 reducer 前，锁定全部公开入口的领域归属、生产调用、写入面和 JVM 行为证据，并为 reducer 外既有写入准备具名转换
 - 非目标：本基线不改变生产行为，不替代 Controller、Activity 或真机链路测试
 
 ## 1. 口径与结论
 
-`LauncherStateTransitions` 当前有 **100 个**公开 `fun`。本盘点将跨切片、包含顶层路由的入口标成
+`LauncherStateTransitions` 当前有 **108 个**公开 `fun`。本盘点将跨切片、包含顶层路由的入口标成
 `Flow/<领域>`；只写单一切片的入口使用 ADR-0001 的九个切片名：
 `Shell`、`AppCatalog`、`Settings`、`Sms`、`Phone`、`Effect`、`Home`、
 `Notification`、`System`。
@@ -16,12 +16,14 @@
 
 | 时点 | 直接行为覆盖 | 仅间接覆盖 | 缺口 |
 |---|---:|---:|---:|
-| 本任务开始前 | 56 | 0 | 44 |
-| 本任务完成后 | 100 | 0 | 0 |
+| 阶段 0 开始前 | 56 | 0 | 44 |
+| 阶段 0 完成后 | 100 | 0 | 0 |
+| 本任务完成后 | 108 | 0 | 0 |
 
 这里不把读取源码后做字符串匹配的静态契约算成行为覆盖，也不把“相邻模型有测试”算成 reducer 的间接覆盖。
-新增的 11 组测试按行为域组织，检查窗口一致性、路由返回、互斥字段和异步回填不覆盖独立状态；
-不是只调用入口来增加数字。
+阶段 0 新增的 11 组测试按行为域组织，检查窗口一致性、路由返回、互斥字段和异步回填不覆盖独立状态。
+本任务新增 8 个精确 before/after 用例：每个用例都从含跨域非默认哨兵的状态出发，并以完整 data class
+相等性证明只改变约定字段，不是只调用入口来增加数字。
 
 表格缩写：
 
@@ -33,9 +35,10 @@
 - `DQT`：既有 `DrawerQueryTransitionsTest`
 - `Journey`：既有 `LauncherCoreStateJourneyAcceptanceTest`
 - `LTB`：新增 `LauncherTransitionBaselineTest`
+- `LSW`：新增 `LauncherStateWriteTransitionsTest`
 - “无外部调用”表示生产源码在 reducer 对象外没有引用；不等于已经决定删除
 
-## 2. 100 个公开入口完整矩阵
+## 2. 108 个公开入口完整矩阵
 
 ### 2.1 Shell 与跨页 Flow（17）
 
@@ -182,11 +185,33 @@
 | 99 | `updateDeviceStatus` | `System` | 电量、充电态 | `MA` | 新增 `LTB#homeAndSystemRefreshes_preserveIndependentSnapshots` |
 | 100 | `updateDataHealth` | `System` | 六项平台能力、健康刷新时间 | `MA` | 既有 `LST#updateDataHealthPreservesOrWritesRefreshTime` |
 
-上表恰好包含 100 个唯一入口；跨切片职责已经直接写入每个入口的 `Flow/...` 目标领域，不重复列行。
+### 2.10 reducer 外既有写入的具名转换（8）
+
+这 8 个入口只准备迁移目标，本任务不修改 `MainActivity`、`SmsController` 或 `CallController`，
+因此生产调用仍标为“待迁移”。它们覆盖 13 个 baseline 表达式中的 12 个：Drawer 入场聚焦覆盖 2 个、
+Drawer 搜索聚焦覆盖 3 个、SMS 结束 loading 覆盖 2 个，其余入口各覆盖 1 个。
+
+| # | 方法 | 目标领域 | 主要写入字段 | 生产调用 | 直接行为测试证据 |
+|---:|---|---|---|---|---|
+| 101 | `dismissDrawerOverlaysForPagerDrag` | `AppCatalog` | Drawer 搜索焦点、应用菜单 | 待迁移 `MA` | 新增 `LSW#dismissDrawerOverlaysForPagerDrag_closesOnlyFocusAndMenu` |
+| 102 | `prepareDrawerEntryFocus` | `AppCatalog` | Drawer 搜索焦点、Rail 滑动态 | 待迁移 `MA` | 新增 `LSW#prepareDrawerEntryFocus_updatesOnlyEntryFocusAndRail` |
+| 103 | `focusDrawerSearchInput` | `AppCatalog` | Drawer 搜索焦点、Rail 滑动态 | 待迁移 `MA` | 新增 `LSW#focusDrawerSearchInput_requiresVisibleDrawerAndPreservesOtherFields` |
+| 104 | `beginAppCatalogLoading` | `AppCatalog` | 应用目录 loading | 待迁移 `MA` | 新增 `LSW#beginAppCatalogLoading_updatesOnlyCatalogLoadingFlag` |
+| 105 | `finishSmsThreadsLoading` | `Sms` | 短信会话 loading | 待迁移 `SMS-C` | 新增 `LSW#finishSmsThreadsLoading_updatesOnlySmsLoadingFlag` |
+| 106 | `beginForcedSmsRefresh` | `Sms` | 清空三份 provider 快照、开始 loading | 待迁移 `SMS-C` | 新增 `LSW#beginForcedSmsRefresh_resetsProviderSnapshotsAndPreservesSessionState` |
+| 107 | `moveSmsSearchSelection` | `Sms` | 搜索结果选择下标 | 待迁移 `SMS-C` | 新增 `LSW#moveSmsSearchSelection_clampsAgainstResultCountAndRequiresQuery` |
+| 108 | `prepareCallLogLoading` | `Phone` | 通话记录 loading | 待迁移 `CALL` | 新增 `LSW#prepareCallLogLoading_requiresPermissionAndEmptyCache` |
+
+剩余 1 个 baseline 表达式是 `MainActivity.onMainPageChanged()` 的 `else -> state.copy(mode = mode)`。
+`LauncherRootHost.MAIN_PAGE_MODES` 只会发出 `SETTINGS`、`HOME`、`APP_DRAWER`，三者均已被显式分支处理，
+因此该 `else` 对真实 Pager 回调不可达。后续迁移应直接改为 `else -> state`，不为死路径新增 transition，
+也不引入可写任意路由的 generic mode setter；本任务未修改调用点，当前生产行为和 13 项 baseline 不变。
+
+全部表格恰好包含 108 个唯一入口；跨切片职责已经直接写入每个入口的 `Flow/...` 目标领域，不重复列行。
 
 ## 3. 机器复核
 
-以下命令从生产源码提取 100 个方法，再与所有 JVM 测试中的真实调用求差集：
+以下命令从生产源码提取 108 个方法，再与所有 JVM 测试中的真实调用求差集：
 
 ```bash
 SOURCE_METHODS="$(mktemp)"
@@ -201,22 +226,23 @@ rg -o 'LauncherStateTransitions\.[A-Za-z_][A-Za-z0-9_]*' app/src/test/java \
   | sed 's/.*\.//' \
   | sort -u > "$TEST_METHODS"
 
-wc -l "$SOURCE_METHODS"                         # 100
-comm -12 "$SOURCE_METHODS" "$TEST_METHODS" | wc -l  # 100
+wc -l "$SOURCE_METHODS"                         # 108
+comm -12 "$SOURCE_METHODS" "$TEST_METHODS" | wc -l  # 108
 comm -23 "$SOURCE_METHODS" "$TEST_METHODS"          # 无输出
 ```
 
-任务前的 56 个直接覆盖可通过排除本任务新增测试复核：
+阶段 0 前的 56 个直接覆盖可通过排除两轮新增测试复核：
 
 ```bash
 rg -o 'LauncherStateTransitions\.[A-Za-z_][A-Za-z0-9_]*' app/src/test/java \
   --glob '!LauncherTransitionBaselineTest.kt' \
+  --glob '!LauncherStateWriteTransitionsTest.kt' \
   | sed 's/.*\.//' \
   | sort -u > "$TEST_METHODS"
 comm -12 "$SOURCE_METHODS" "$TEST_METHODS" | wc -l  # 56
 ```
 
-文档表格的 100 行应与源码集合一一对应：
+文档表格的 108 行应与源码集合一一对应：
 
 ```bash
 DOC_METHODS="$(mktemp)"
@@ -225,13 +251,13 @@ rg -o '^\| [0-9]+ \| `[A-Za-z_][A-Za-z0-9_]*` \\|' \
   | sed -E 's/.*`([A-Za-z_][A-Za-z0-9_]*)`.*/\1/' \
   | sort -u > "$DOC_METHODS"
 
-wc -l "$DOC_METHODS"                              # 100
+wc -l "$DOC_METHODS"                              # 108
 comm -3 "$SOURCE_METHODS" "$DOC_METHODS"           # 无输出
 ```
 
-## 4. 当前没有外部生产调用的 11 个入口
+## 4. 当前没有外部生产调用的入口
 
-以下公开入口在 reducer 对象外没有生产引用，但都有实际行为基线。它们可能是已被 UI 交互路径替代的遗留 API，
+以下 11 个旧公开入口在 reducer 对象外没有生产引用，但都有实际行为基线。它们可能是已被 UI 交互路径替代的遗留 API，
 也可能是下一轮输入统一化需要的候选；在确认调用意图前不应直接删除：
 
 1. `moveSelection`
@@ -247,6 +273,10 @@ comm -3 "$SOURCE_METHODS" "$DOC_METHODS"           # 无输出
 11. `selectSmsThreadIndex`
 
 `calculateListStartIndex` 也没有对象外引用，但它被 reducer 内部窗口同步逻辑调用，因此不列入外部孤儿 API。
+
+本任务新增的 8 个入口同样尚无外部生产调用，但它们不是遗留孤儿：它们对应 copy guard 中已经登记的
+12 个可达表达式；另 1 个 Pager 死写入按上节策略直接删除。下一任务仍按
+`MainActivity` 8、`SmsController` 4、`CallController` 1 的 baseline 顺序迁移。
 
 ## 5. `SNAKE` 重复分支调查
 
@@ -284,5 +314,5 @@ LauncherMode.SNAKE -> closeSnake()
 - `showContactDetail` 的注释说“仅允许从拨号模块进入”，实现只校验 `lookupKey` 非空，没有检查来源 mode。
   这是文档与行为差异，拆分前需要产品/架构决策，不能在基线任务里擅自改变。
 - 11 个外部孤儿 API 会扩大拆分后的公共写入面。应在输入路径盘点后逐个决定接回、降为私有或删除。
-- 100/100 表示 reducer 入口有直接 JVM 行为证据，不表示 `MainActivity`、Controller、线程调度、
+- 108/108 表示 reducer 入口有直接 JVM 行为证据，不表示 `MainActivity`、Controller、线程调度、
   Android 生命周期和真实输入分发已经具备端到端覆盖。
