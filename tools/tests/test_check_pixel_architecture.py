@@ -179,16 +179,36 @@ class PixelArchitectureGovernanceTest(unittest.TestCase):
             self.assertEqual([], report["findings"])
             self.assertEqual("passed", report["status"])
 
-    def test_rejects_gradle_module_list_drift(self) -> None:
-        """settings 漏掉桌面模块时必须报告实际与预期清单。"""
+    def test_gradle_module_parser_ignores_line_and_block_comments(self) -> None:
+        """注释中的 include 不得进入真实模块清单，字符串内注释符必须保留。"""
+
+        # 真实 include 混合单参数和多参数写法，注释还包含嵌套块与伪模块声明。
+        settings_text = """
+            include(":app")
+            val endpoint = "https://example.invalid/*literal*/"
+            val description = "include(\":string-only\")"
+            // include(":commented-line")
+            /* include(":commented-block")
+               /* include(":nested-comment") */
+            */
+            include(":pixel-engine", ":showcase", ":showcase-desktop")
+        """
+
+        modules = MODULE.declared_gradle_modules(settings_text)
+        self.assertEqual(MODULE.EXPECTED_GRADLE_MODULES, modules)
+
+    def test_rejects_commented_out_gradle_module(self) -> None:
+        """settings 仅在注释中保留桌面模块时必须报告清单漂移。"""
 
         with tempfile.TemporaryDirectory() as directory:
-            # 完整文档保持不变，只让 Gradle 事实来源缺少一个模块。
+            # 完整文档保持不变，桌面模块的 include 被行注释移除。
             root = Path(directory)
             (root / "pixel-engine/src/main/kotlin").mkdir(parents=True)
             budget = self.write_budget(root, default_limit=100)
             (root / "settings.gradle.kts").write_text(
-                'include(":app", ":pixel-engine", ":showcase")\n',
+                'include(":app", ":pixel-engine", ":showcase")\n'
+                '// include(":showcase-desktop")\n'
+                '/* include(":commented-block") */\n',
                 encoding="utf-8",
             )
 

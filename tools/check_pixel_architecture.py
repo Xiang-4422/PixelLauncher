@@ -71,8 +71,11 @@ EXPECTED_DEPENDENCY_CONTRACT_LINES = (
     ":showcase-desktop --debug classes.jar--> :pixel-engine",
     ":showcase-desktop --shared scene sources--> :showcase",
 )
-# settings.gradle.kts 中 include 调用及其字符串参数的最小解析模式。
-GRADLE_INCLUDE_PATTERN = re.compile(r"\binclude\s*\((?P<arguments>[^)]*)\)", re.MULTILINE)
+# settings.gradle.kts 中顶层 include 调用及其字符串参数的最小解析模式。
+GRADLE_INCLUDE_PATTERN = re.compile(
+    r"^[ \t]*include\s*\((?P<arguments>[^)]*)\)",
+    re.MULTILINE,
+)
 GRADLE_MODULE_ARGUMENT_PATTERN = re.compile(r"[\"'](?P<module>:[^\"']+)[\"']")
 # 模块契约区段只接受反引号包裹的完整 Gradle project path。
 DOCUMENTED_MODULE_PATTERN = re.compile(r"`(?P<module>:[a-z0-9][a-z0-9:-]*)`")
@@ -182,7 +185,7 @@ def sanitize_kotlin_source(source: str) -> str:
                 index += 1
             continue
         if in_triple_string:
-            if triple == '\"\"\"':
+            if triple == '"""':
                 in_triple_string = False
                 output.extend("   ")
                 index += 3
@@ -218,7 +221,7 @@ def sanitize_kotlin_source(source: str) -> str:
             output.extend("  ")
             index += 2
             continue
-        if triple == '\"\"\"':
+        if triple == '"""':
             in_triple_string = True
             output.extend("   ")
             index += 3
@@ -414,12 +417,90 @@ def stale_text_findings(root: Path) -> list[dict[str, Any]]:
     return findings
 
 
+def strip_kotlin_dsl_comments(source: str) -> str:
+    """移除 Kotlin DSL 行/块注释，同时保留字符串及原始换行。"""
+
+    # 输出保持原文长度，避免注释移除后相邻 token 意外拼接。
+    output: list[str] = []
+    # 当前扫描位置。
+    index = 0
+    # Kotlin 允许嵌套块注释，深度为零时才解析代码。
+    block_comment_depth = 0
+    # 当前普通字符串或字符字面量的结束符。
+    delimiter: str | None = None
+    # 三引号字符串单独处理，避免其中的注释符被误删。
+    in_triple_string = False
+    while index < len(source):
+        # 当前字符及注释/三引号所需的前瞻片段。
+        character = source[index]
+        pair = source[index : index + 2]
+        triple = source[index : index + 3]
+        if block_comment_depth > 0:
+            if pair == "/*":
+                block_comment_depth += 1
+                output.extend("  ")
+                index += 2
+            elif pair == "*/":
+                block_comment_depth -= 1
+                output.extend("  ")
+                index += 2
+            else:
+                output.append("\n" if character == "\n" else " ")
+                index += 1
+            continue
+        if in_triple_string:
+            if triple == '\"\"\"':
+                in_triple_string = False
+                output.extend(triple)
+                index += 3
+            else:
+                output.append(character)
+                index += 1
+            continue
+        if delimiter is not None:
+            output.append(character)
+            if character == "\\" and index + 1 < len(source):
+                output.append(source[index + 1])
+                index += 2
+                continue
+            if character == delimiter:
+                delimiter = None
+            index += 1
+            continue
+        if pair == "//":
+            # 行注释内容替换为空格，换行交由下一轮保留。
+            line_end = source.find("\n", index)
+            if line_end < 0:
+                output.extend(" " * (len(source) - index))
+                break
+            output.extend(" " * (line_end - index))
+            index = line_end
+            continue
+        if pair == "/*":
+            block_comment_depth = 1
+            output.extend("  ")
+            index += 2
+            continue
+        if triple == '\"\"\"':
+            in_triple_string = True
+            output.extend(triple)
+            index += 3
+            continue
+        if character in ('"', "'"):
+            delimiter = character
+        output.append(character)
+        index += 1
+    return "".join(output)
+
+
 def declared_gradle_modules(settings_text: str) -> tuple[str, ...]:
-    """按声明顺序返回 settings.gradle.kts 中 include 的模块路径。"""
+    """按声明顺序返回 settings.gradle.kts 中未被注释的 include 模块路径。"""
 
     # 多个 include 调用和单次调用中的多个参数统一展平。
     modules: list[str] = []
-    for include_match in GRADLE_INCLUDE_PATTERN.finditer(settings_text):
+    # 注释先被清空，避免已移除模块仍被正则计入实际工程清单。
+    uncommented_text = strip_kotlin_dsl_comments(settings_text)
+    for include_match in GRADLE_INCLUDE_PATTERN.finditer(uncommented_text):
         # 当前 include 调用中的字符串模块参数。
         arguments = include_match.group("arguments")
         modules.extend(
