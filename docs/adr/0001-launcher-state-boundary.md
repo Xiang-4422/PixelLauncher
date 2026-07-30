@@ -84,7 +84,7 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 
 | 字段 | 当前写入者/转换入口 | 主要读取者 | 寿命/来源 | 耦合/约束 |
 |---|---|---|---|---|
-| `mode` | 页面级 `T/show*` / `T/hide*` 流程；`MA:onMainPageChanged` 仍直接 `copy` | `MA`、`HOST`、所有 controller/policy | `VM` | 全域路由枢纽；只能由 flow transition 写 |
+| `mode` | 页面级 `T/show*` / `T/hide*` 流程 | `MA`、`HOST`、所有 controller/policy | `VM` | 全域路由枢纽；只能由 flow transition 写 |
 | `returnMode` | `T/showSettings`、`T/hideSettings`、`T/showAppManagement`、`T/showIdle`、Phone/SMS 打开/关闭流程 | 转换器内部 | `VM` | 不是 render 字段；必须与 `mode` 成对验收 |
 | `statusBarMessageText` | `T/updateStatusBarMessage`、`T/updateStatusBarAction` | `MA` 清除计时、`HOST` | `VM` | 与后三个 action 字段互斥 |
 | `statusBarActionLeadingText` | `T/updateStatusBarMessage`、`T/updateStatusBarAction` | `HOST` | `VM` | action 原子组成员 |
@@ -98,14 +98,14 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 | `apps` | `T/withApps` | `MA`、`DRAW`、`SET` | `Repo/cache` + `VM` | Settings 用它决定 App Management 是否可用 |
 | `drawerVisibleApps` | `T/withApps`、`T/showAppDrawer`、`T/updateDrawerQuery`、清空/退出搜索流程 | `MA`、`DRAW`、自动启动策略 | 派生 + `VM` | 应由 `apps + query + recentApps` 推导，迁移期先保留 |
 | `drawerQuery` | `T/updateDrawerQuery`、append/backspace/clear/exit | `MA`、`HOST`、`DRAW`、自动启动策略 | `VM` | 与过滤列表、搜索焦点、选择窗口原子更新 |
-| `isDrawerSearchFocused` | `T/showHome`、`T/showSettings`、`T/showAppActionMenu`、`T/exitDrawerSearch`；`MA` 多处直接 `copy` | `MA`、`HOST`、Drawer policy | `VM` | 当前绕过 reducer；应先封口 |
-| `isDrawerRailSliding` | `T/showAppActionMenu`、`T/exitDrawerSearch`；`MA` 多处直接写 `false` | 当前无读取行为 | `VM` | 写而不读，列入独立退役候选 |
-| `isAppActionMenuVisible` | `T/show/hideAppActionMenu`、Home/Settings/App Management 流程；`MA:onMainPageDragStart` 直接 `copy` | `MA`、`DRAW` | `VM` | 与搜索焦点互斥 |
+| `isDrawerSearchFocused` | `T/showHome`、`T/showSettings`、`T/showAppActionMenu`、`T/exitDrawerSearch`、`T/prepareDrawerEntryFocus`、`T/focusDrawerSearchInput`、`T/dismissDrawerOverlaysForPagerDrag` | `MA`、`HOST`、Drawer policy | `VM` | 已封口到具名转换；与菜单/搜索流程原子更新 |
+| `isDrawerRailSliding` | `T/showAppActionMenu`、`T/exitDrawerSearch`、`T/prepareDrawerEntryFocus`、`T/focusDrawerSearchInput` | 当前无读取行为 | `VM` | 写而不读，列入独立退役候选 |
+| `isAppActionMenuVisible` | `T/show/hideAppActionMenu`、`T/dismissDrawerOverlaysForPagerDrag`、Home/Settings/App Management 流程 | `MA`、`DRAW` | `VM` | 与搜索焦点互斥 |
 | `selectedIndex` | Drawer 选择、分页、字母索引、搜索和 reflow 转换 | `MA`、`DRAW` | `VM` | 必须钳制在当前可见列表范围 |
 | `listStartIndex` | Drawer 选择和 `syncDrawerWindow` | 转换器内部 | 派生 + `VM` | Host 不消费，列入行为证明后的退役候选 |
 | `drawerPageIndex` | Drawer 选择、分页和 `syncDrawerWindow` | 转换器内部 | 派生 + `VM` | Host 不消费，列入行为证明后的退役候选 |
 | `drawerFocus` | Drawer 选择和 `syncDrawerWindow` | 当前只有写入，无行为读取 | `VM` | enum 目前仅 `LIST`，优先退役候选 |
-| `isLoading` | `T/withApps` 写 `false`；`MA:loadApps` 直接写 `true` | `DRAW` | `Repo` + `VM` | 只表示应用目录首载，不应与字体/SMS loading 混用 |
+| `isLoading` | `T/beginAppCatalogLoading` 写 `true`；`T/withApps` 写 `false` | `DRAW` | `Repo` + `VM` | 只表示应用目录首载，不应与字体/SMS loading 混用 |
 | `appEditorSelectedIndex` | App action/menu management 与 editor selection 转换 | `MA`、`DRAW` | `VM` | 必须与 `apps` 同步钳制 |
 | `appEditorNameDraft` | App action/menu management 与 draft 转换 | `MA`、`HOST`、`DRAW` | `VM` | 保存后进入 `AppCustomizationRepository`，草稿本身不持久化 |
 | `appEditorAliasDraft` | App action/menu management 与 draft 转换 | `MA`、`HOST`、`DRAW` | `VM` | 与姓名草稿同一编辑会话 |
@@ -266,7 +266,7 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 
 目标不是禁止跨域流程，而是把它们集中到 `LauncherFlowTransitions`；单域 reducer 只写自己拥有的切片，flow 通过组合单域 reducer 完成原子跨域变化。
 
-### 4.3 reducer 外聚合 `copy` 已从 13 处收敛到 8 处
+### 4.3 reducer 外聚合 `copy` 已按 13 → 8 → 0 清零
 
 阶段 0 建立契约时，生产代码有 13 个绕过 `LauncherStateTransitions` 的聚合
 `LauncherState.copy` 表达式：
@@ -294,8 +294,8 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 
 阶段 0 的契约允许且只允许上表签名：新增文件/方法、新增表达式、给现有表达式增加字段，或总数不再是 13，均立即失败。阶段 1 每替换一处就同步缩减 allowlist，全部替换后才启用空 allowlist 的零容忍规则。不得用易漂移的绝对行号作为机器匹配条件。
 
-阶段 1 当前已将 `SmsController` 4 处和 `CallController` 1 处迁移到具名转换，进度为 **13 → 8**。
-当前 allowlist 只剩 `MainActivity` 的 7 个基线身份、8 个表达式：
+阶段 1 先将 `SmsController` 4 处和 `CallController` 1 处迁移到具名转换，形成 **13 → 8** 的中间进度。
+该中间 allowlist 只剩 `MainActivity` 的 7 个基线身份、8 个表达式：
 
 | 文件 / 方法 | 当前允许表达式数 | 当前允许字段 |
 |---|---:|---|
@@ -308,9 +308,14 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 | `MainActivity.handleDrawerTextInput` | 2 | `isDrawerSearchFocused`、`isDrawerRailSliding` |
 | **合计** | **8** | 7 个基线身份，全部位于 MainActivity |
 
+随后 `MainActivity` 的 7 个可达表达式均改由具名转换承接，不可达 Pager fallback
+`else -> state.copy(mode = mode)` 收窄为 `else -> state`。当前进度为 **8 → 0**，
+`tools/launcher-state-copy-baseline.json` 的 `entries` 已为空；任何新的生产聚合直接 `copy`
+都会被零容忍门禁作为未登记写入拒绝。
+
 此外三个 controller 的 `Host` 都暴露可读写的完整 `LauncherState`（`MainActivity.kt:178-257`），
 因此类型层面仍无法阻止未来修改其他域。Controller 5 处已改为通过具名转换产生状态；待剩余
-`MainActivity` 8 处清零后，controller Host 再收窄为所需切片的读取和事件 dispatch。
+`MainActivity` 写入也已清零，controller Host 的类型收窄仍是后续任务，尚未实施。
 
 ### 4.4 `MainActivity` 在 render 中写状态
 
@@ -386,7 +391,7 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 
 **范围**
 
-- 为上述 13 个直接 `copy` 引入命名 transition/event：App/SMS/Call loading、Drawer focus/menu、搜索态选择和 pager mode。
+- 为上述 12 个可达直接 `copy` 引入命名 transition/event：App/SMS/Call loading、Drawer focus/menu、搜索态选择；不可达 pager fallback 直接删除，不引入任意 mode setter。
 - 把 `refreshDataHealthState()` 与 media polling 移出 `renderCurrentFrame()`；由明确的 lifecycle/callback 刷新入口提交状态。
 - controller Host 暂时仍可读聚合状态，但写入改为 dispatch；不再暴露任意 setter。
 
@@ -397,8 +402,8 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 
 **行为等价验收**
 
-- 13 个场景 before/after snapshot 与基线完全一致。
-- 13 处替换完成后 allowlist 为空，生产代码中 transition/flow 之外的聚合 `LauncherState.copy` 为 0。
+- 12 个可达写入的 before/after snapshot 与基线完全一致，并保留 1 个 Pager fallback 不可达证据。
+- 13 处已收敛为 0：12 个可达写入完成替换，1 个死 fallback 删除；allowlist 为空，生产代码中 transition/flow 之外的聚合 `LauncherState.copy` 为 0。
 - 连续 render 两次，state 相等且 fake repository 调用数不增加。
 - 强制刷新 SMS、Call 首次 loading、Drawer 键盘/搜索焦点路径通过现有测试及新增单测。
 

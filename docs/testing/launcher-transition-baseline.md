@@ -187,27 +187,25 @@
 
 ### 2.10 reducer 外既有写入的具名转换（8）
 
-这 8 个入口中，`SmsController` 与 `CallController` 对应的 4 个入口已经接入生产调用，
-消除了 Controller 内 5 个直接聚合 `copy`；`MainActivity` 对应的 4 个入口仍待迁移。
-当前 copy baseline 只剩 `MainActivity` 的 8 个表达式：Drawer 入场聚焦覆盖 2 个、
-Drawer 搜索聚焦覆盖 3 个，其余 2 个可达入口各覆盖 1 个，另有 1 个 Pager 死 fallback。
+这 8 个入口均已接入生产调用：`SmsController` 与 `CallController` 的 4 个入口消除了
+Controller 内 5 个直接聚合 `copy`，`MainActivity` 的 4 个入口消除了 7 个可达表达式。
+剩余 1 个 Pager 死 fallback 已直接删除，当前 copy baseline 为空，零容忍门禁生效。
 
 | # | 方法 | 目标领域 | 主要写入字段 | 生产调用 | 直接行为测试证据 |
 |---:|---|---|---|---|---|
-| 101 | `dismissDrawerOverlaysForPagerDrag` | `AppCatalog` | Drawer 搜索焦点、应用菜单 | 待迁移 `MA` | 新增 `LSW#dismissDrawerOverlaysForPagerDrag_closesOnlyFocusAndMenu` |
-| 102 | `prepareDrawerEntryFocus` | `AppCatalog` | Drawer 搜索焦点、Rail 滑动态 | 待迁移 `MA` | 新增 `LSW#prepareDrawerEntryFocus_updatesOnlyEntryFocusAndRail` |
-| 103 | `focusDrawerSearchInput` | `AppCatalog` | Drawer 搜索焦点、Rail 滑动态 | 待迁移 `MA` | 新增 `LSW#focusDrawerSearchInput_requiresVisibleDrawerAndPreservesOtherFields` |
-| 104 | `beginAppCatalogLoading` | `AppCatalog` | 应用目录 loading | 待迁移 `MA` | 新增 `LSW#beginAppCatalogLoading_updatesOnlyCatalogLoadingFlag` |
+| 101 | `dismissDrawerOverlaysForPagerDrag` | `AppCatalog` | Drawer 搜索焦点、应用菜单 | `MA#onMainPageDragStart` | 新增 `LSW#dismissDrawerOverlaysForPagerDrag_closesOnlyFocusAndMenu` |
+| 102 | `prepareDrawerEntryFocus` | `AppCatalog` | Drawer 搜索焦点、Rail 滑动态 | `MA#onMainPageChanged/showAppDrawer` | 新增 `LSW#prepareDrawerEntryFocus_updatesOnlyEntryFocusAndRail` |
+| 103 | `focusDrawerSearchInput` | `AppCatalog` | Drawer 搜索焦点、Rail 滑动态 | `MA#onPixelEngineDrawerQueryChanged/handleDrawerTextInput` | 新增 `LSW#focusDrawerSearchInput_requiresVisibleDrawerAndPreservesOtherFields` |
+| 104 | `beginAppCatalogLoading` | `AppCatalog` | 应用目录 loading | `MA#loadApps` | 新增 `LSW#beginAppCatalogLoading_updatesOnlyCatalogLoadingFlag` |
 | 105 | `finishSmsThreadsLoading` | `Sms` | 短信会话 loading | `SMS-C#openModule/applySmsData`（已迁移） | 新增 `LSW#finishSmsThreadsLoading_updatesOnlySmsLoadingFlag` |
 | 106 | `beginForcedSmsRefresh` | `Sms` | 清空三份 provider 快照、开始 loading | `SMS-C#openModule`（已迁移） | 新增 `LSW#beginForcedSmsRefresh_resetsProviderSnapshotsAndPreservesSessionState` |
 | 107 | `moveSmsSearchSelection` | `Sms` | 搜索结果选择下标 | `SMS-C#moveThreadSelection`（已迁移） | 新增 `LSW#moveSmsSearchSelection_clampsAgainstResultCountAndRequiresQuery` |
 | 108 | `prepareCallLogLoading` | `Phone` | 通话记录 loading | `CALL#openCallLog`（已迁移） | 新增 `LSW#prepareCallLogLoading_requiresPermissionAndEmptyCache` |
 
-剩余 1 个 baseline 表达式是 `MainActivity.onMainPageChanged()` 的 `else -> state.copy(mode = mode)`。
+历史上剩余的 1 个 baseline 表达式是 `MainActivity.onMainPageChanged()` 的 `else -> state.copy(mode = mode)`。
 `LauncherRootHost.MAIN_PAGE_MODES` 只会发出 `SETTINGS`、`HOME`、`APP_DRAWER`，三者均已被显式分支处理，
-因此该 `else` 对真实 Pager 回调不可达。后续迁移应直接改为 `else -> state`，不为死路径新增 transition，
-也不引入可写任意路由的 generic mode setter；本任务未修改该调用点，当前生产行为不变，
-它仍计入 `MainActivity` 的 8 项 baseline。
+因此该 `else` 对真实 Pager 回调不可达。当前已直接收窄为 `else -> state`，没有为死路径新增 transition，
+也没有引入可写任意路由的 generic mode setter；它不再计入 baseline。
 
 全部表格恰好包含 108 个唯一入口；跨切片职责已经直接写入每个入口的 `Flow/...` 目标领域，不重复列行。
 
@@ -276,9 +274,10 @@ comm -3 "$SOURCE_METHODS" "$DOC_METHODS"           # 无输出
 
 `calculateListStartIndex` 也没有对象外引用，但它被 reducer 内部窗口同步逻辑调用，因此不列入外部孤儿 API。
 
-这 8 个具名入口中，Controller 对应的 4 个已经有外部生产调用；`MainActivity` 对应的 4 个
-仍不是遗留孤儿，它们对应 copy guard 中登记的 7 个可达表达式。另 1 个 Pager 死写入按上节策略
-直接删除。下一任务只需迁移 `MainActivity` 的 8 个 baseline 表达式。
+这 8 个具名入口均已有外部生产调用：Controller 对应入口由 `SmsController` / `CallController`
+调用，MainActivity 对应入口由 `loadApps`、`onMainPageChanged`、`onMainPageDragStart`、
+`showAppDrawer`、`onPixelEngineDrawerQueryChanged` 与 `handleDrawerTextInput` 调用。
+Pager 死写入已按上节策略直接删除，copy guard 当前为空基线。
 
 ## 5. `SNAKE` 重复分支调查
 

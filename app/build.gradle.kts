@@ -119,7 +119,7 @@ dependencies {
 val launcherStateCopyGuardTool =
     rootProject.layout.projectDirectory.file("tools/check_launcher_state_copy_guard.py")
 
-/** 阶段 0 人工审阅的 LauncherState.copy 精确 baseline。 */
+/** LauncherState.copy 零容忍 baseline，生产聚合直接写入必须保持为空。 */
 val launcherStateCopyBaseline =
     rootProject.layout.projectDirectory.file("tools/launcher-state-copy-baseline.json")
 

@@ -1194,7 +1194,7 @@ class MainActivity : AppCompatActivity() {
             )
             refreshDerivedUiState(render = true)
         } else {
-            state = state.copy(isLoading = true)
+            state = LauncherStateTransitions.beginAppCatalogLoading(state)
             renderCurrentFrame()
         }
 
@@ -1336,19 +1336,19 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     state
                 }
-                LauncherStateTransitions.showAppDrawer(
-                    state = drawerState,
-                    visibleRows = visibleRows(),
-                ).copy(
-                    isDrawerSearchFocused = shouldFocusSearchOnEntry,
-                    isDrawerRailSliding = false,
+                LauncherStateTransitions.prepareDrawerEntryFocus(
+                    state = LauncherStateTransitions.showAppDrawer(
+                        state = drawerState,
+                        visibleRows = visibleRows(),
+                    ),
+                    focusSearch = shouldFocusSearchOnEntry,
                 )
             }
             LauncherMode.SETTINGS -> LauncherStateTransitions.showSettings(
                 state = state,
                 visibleRows = settingsVisibleRows(),
             )
-            else -> state.copy(mode = mode)
+            else -> state
         }
         renderCurrentFrame()
         updateTextInputFocus()
@@ -1359,10 +1359,7 @@ class MainActivity : AppCompatActivity() {
         if (!state.isDrawerSearchFocused && !state.isAppActionMenuVisible) {
             return
         }
-        state = state.copy(
-            isDrawerSearchFocused = false,
-            isAppActionMenuVisible = false,
-        )
+        state = LauncherStateTransitions.dismissDrawerOverlaysForPagerDrag(state)
         renderCurrentFrame()
         updateTextInputFocus()
     }
@@ -1783,12 +1780,12 @@ class MainActivity : AppCompatActivity() {
                 visibleRows = visibleRows(),
             )
         }
-        state = LauncherStateTransitions.showAppDrawer(
-            state = state,
-            visibleRows = visibleRows(),
-        ).copy(
-            isDrawerSearchFocused = shouldFocusSearchOnEntry,
-            isDrawerRailSliding = false,
+        state = LauncherStateTransitions.prepareDrawerEntryFocus(
+            state = LauncherStateTransitions.showAppDrawer(
+                state = state,
+                visibleRows = visibleRows(),
+            ),
+            focusSearch = shouldFocusSearchOnEntry,
         )
         if (previousMode != LauncherMode.APP_DRAWER) {
             startAnimationTickerIfNeeded()
@@ -1819,10 +1816,7 @@ class MainActivity : AppCompatActivity() {
         recordInteraction()
         settleDrawerMotionBeforeExplicitAction()
         state = LauncherStateTransitions.updateDrawerQuery(
-            state = state.copy(
-                isDrawerSearchFocused = true,
-                isDrawerRailSliding = false,
-            ),
+            state = LauncherStateTransitions.focusDrawerSearchInput(state),
             query = filteredQuery,
             visibleRows = visibleRows(),
         )
@@ -1954,10 +1948,7 @@ class MainActivity : AppCompatActivity() {
             KeyEvent.KEYCODE_FORWARD_DEL -> {
                 settleDrawerMotionBeforeExplicitAction()
                 if (!state.isDrawerSearchFocused) {
-                    state = state.copy(
-                        isDrawerSearchFocused = true,
-                        isDrawerRailSliding = false,
-                    )
+                    state = LauncherStateTransitions.focusDrawerSearchInput(state)
                     updateDrawerInputFocus()
                 }
                 state = LauncherStateTransitions.backspaceDrawerQuery(
@@ -1996,10 +1987,7 @@ class MainActivity : AppCompatActivity() {
         }
         settleDrawerMotionBeforeExplicitAction()
         if (!state.isDrawerSearchFocused) {
-            state = state.copy(
-                isDrawerSearchFocused = true,
-                isDrawerRailSliding = false,
-            )
+            state = LauncherStateTransitions.focusDrawerSearchInput(state)
             updateDrawerInputFocus()
         }
 

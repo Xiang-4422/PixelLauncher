@@ -29,7 +29,7 @@ SPEC.loader.exec_module(MODULE)
 
 
 class LauncherStateCopyGuardTest(unittest.TestCase):
-    """覆盖真实 8 处基线、解析负控及全部要求的 baseline 漂移。"""
+    """覆盖真实零基线、解析负控及全部要求的 baseline 漂移。"""
 
     def setUp(self) -> None:
         """为每个 fixture 创建独立临时仓库。"""
@@ -97,8 +97,8 @@ class LauncherStateCopyGuardTest(unittest.TestCase):
             "count": count,
         }
 
-    def test_current_repository_matches_reviewed_eight_expressions(self) -> None:
-        """真实仓库必须只识别 MainActivity 8 处，两个 Controller 均为零。"""
+    def test_current_repository_rejects_all_direct_state_copy_expressions(self) -> None:
+        """真实仓库必须没有任何 LauncherState 聚合直接 copy。"""
 
         # 真实 baseline 路径。
         baseline_path = ROOT / "tools/launcher-state-copy-baseline.json"
@@ -107,19 +107,17 @@ class LauncherStateCopyGuardTest(unittest.TestCase):
         # 门禁报告必须无差异。
         report = MODULE.check_repository(ROOT, source_root, baseline_path)
         self.assertEqual("passed", report["status"])
-        self.assertEqual(8, report["expectedExpressionCount"])
-        self.assertEqual(8, report["actualExpressionCount"])
-        # 精确文件字典同时锁定 MainActivity 为 8、两个 Controller 为零。
+        self.assertEqual(0, report["expectedExpressionCount"])
+        self.assertEqual(0, report["actualExpressionCount"])
+        self.assertEqual([], report["baseline"])
+        self.assertEqual([], report["findings"])
+        self.assertEqual([], report["observed"])
+        # 空文件字典锁定所有生产文件均不存在聚合直接 copy。
         counts: dict[str, int] = {}
         for observed in report["observed"]:
             file_name = Path(observed["file"]).name
             counts[file_name] = counts.get(file_name, 0) + 1
-        self.assertEqual(
-            {
-                "MainActivity.kt": 8,
-            },
-            counts,
-        )
+        self.assertEqual({}, counts)
 
     def test_ignores_comments_strings_and_ordinary_data_class_copy(self) -> None:
         """注释、字符串和非 LauncherState 的 copy 不能造成误报。"""
@@ -195,8 +193,8 @@ class LauncherStateCopyGuardTest(unittest.TestCase):
         self.assertIn("aliasWrite", report["findings"][0]["message"])
         self.assertIn("mode", report["findings"][0]["message"])
 
-    def test_rejects_fourteenth_expression_with_file_method_and_fields(self) -> None:
-        """新增第 14 类表达式必须报告准确文件、方法和字段。"""
+    def test_rejects_unauthorized_expression_with_file_method_and_fields(self) -> None:
+        """新增未授权表达式必须报告准确文件、方法和字段。"""
 
         self.write_source(
             """
