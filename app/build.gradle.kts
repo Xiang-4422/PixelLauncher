@@ -110,6 +110,7 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.mediapipe.tasks.vision)
     testImplementation(libs.junit)
+    testImplementation(libs.mockk)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
