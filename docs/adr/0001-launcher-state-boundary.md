@@ -10,7 +10,7 @@
 
 当前 `LauncherState` 不是约 130 个字段，而是 **108 个主构造参数**；`LauncherUiState` 同样是 108 个主构造参数，`toLauncherUiState()` 也恰好有 108 条同名赋值。计数口径只包含两个 data class 主构造器中以 `val` 声明的属性，不包含 enum、计算属性、Activity 字段或其他模型字段。
 
-目标状态不按页面数量机械切分，而按写入来源、生命周期和行为内聚性划分为八个切片：
+目标状态不按页面数量机械切分，而按写入来源、生命周期和行为内聚性划分为九个切片：
 
 | 目标切片 | 字段数 | 所有权 |
 |---|---:|---|
@@ -20,11 +20,14 @@
 | `SmsState` | 25 | 短信列表、会话、草稿、菜单、角色和短信能力 |
 | `PhoneState` | 13 | 通话、拨号、联系人和联系人编辑 |
 | `EffectState` | 10 | Idle、Pixel Matter 配置及最近交互时刻 |
-| `HomeState` | 17 | 时间、Home 信息源、通知、天气和用量摘要 |
+| `HomeState` | 11 | 时间、Home 基础信息源、天气和用量摘要 |
+| `NotificationState` | 6 | 通知实时摘要、通知项、来源目录和来源规则 |
 | `SystemState` | 9 | 电池/充电以及跨业务共享的平台能力快照 |
 | **合计** | **108** | 与当前 `LauncherState` 扁平字段一一对应 |
 
 `SystemState` 是有意保留的共享只读快照，不强行归入 Home、Phone 或 Effect。`batteryLevel` / `isCharging` 同时服务 Home、全局 Header、Idle 和 diagnostics；权限字段同时服务 Data Health、Home 详情、Phone/SMS 入口。复制这些值到多个业务切片会立即产生一致性问题。目标规则是平台协调器写 `SystemState`，业务域只能读取。
+
+`NotificationState` 也必须独立于 Home。四个实时摘要字段由 `NotificationSummaryStore` / listener 回调产生，两个来源规则字段由 `NotificationSummarySettingsRepository` 恢复和修改；规则变化又会通过 `NotificationSummaryStore.updateRules()` 重新计算并发布摘要。`app/src/main/kotlin/com/purride/pixellauncherv2/data/NotificationSummaryRepository.kt:28-98` 明确把 signals、rules、summary 和 listener 放在同一个 store，`app/src/test/java/com/purride/pixellauncherv2/data/NotificationSummaryRepositoryTest.kt:44-72` 也验证改规则会用当前 signals 立即重建摘要。它们共同表达“通知信号 + 规则 → 可见摘要”的单一业务聚合，同时被 Home、Settings、Notification Settings 和 Idle 消费。把它们归入 Home 会让 Home 获得通知设置写权限，也无法解释独立的持久化和监听生命周期；拆成 Notification 并不复制状态，反而给两类输入一个共同所有者。
 
 最终应只保留一个规范化状态源。当前 `LauncherUiState` 没有裁剪、格式化或脱敏，纯粹复制 108 个字段，因此它不是有效的架构边界。完成切片迁移后，默认删除这一身份映射，让 Host/Screen 接收只读聚合状态或所需切片；只有出现可说明、可测试的 UI 专用派生值时，才保留一个更窄的 render projection。
 
@@ -189,7 +192,7 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 | `isPixelMatterHandDebugEnabled` | `T/updateUiBehavior` | `MA`、`SET` | `Prefs(font)` + `VM` | 影响 Android debug overlay |
 | `lastInteractionUptimeMs` | `T/recordInteraction` | `MA`、`IdleAutoEntryPolicy` | `VM`（单调时钟） | 不能持久化或跨进程恢复为旧 uptime |
 
-### 3.7 Home feed（17）
+### 3.7 Home feed（11）
 
 | 字段 | 当前写入者/转换入口 | 主要读取者 | 寿命/来源 | 耦合/约束 |
 |---|---|---|---|---|
@@ -200,18 +203,25 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 | `missedCallCount` | `T/updateCommunicationStatus` | HOME/Idle | Provider + `VM` | Phone 数据源、Home 展示所有权 |
 | `unreadSmsCount` | `T/updateCommunicationStatus` | `MA`、`SmsController` 入口、HOME/Idle | Provider + `VM` | SMS 打开初始页依赖该计数 |
 | `mediaPlayback` | `T/updateMediaPlayback` | `MA`、`HOST`、Home screen | Repo callback + `VM` | 当前 render 还会主动轮询并写回，需移出 render |
-| `notificationSummaryText` | `T/updateNotificationSummary` | HOME/Idle | listener repo + `VM` | 与 count/sources/items 同快照 |
-| `notificationCount` | `T/updateNotificationSummary` | HOME/Idle | listener repo + `VM` | 非负归一化 |
-| `notificationSources` | `T/updateNotificationSummary` | notification settings screen | listener repo + `VM` | Settings 页面消费 Home 通知子域 |
-| `notificationItems` | `T/updateNotificationSummary` | Home screen | listener repo + `VM` | 点击 action 的 key/index 来自此快照 |
-| `mutedNotificationSourceIds` | `T/updateNotificationRules` | `SET`、notification settings | `Prefs(notify)` + `VM` | 与 priority 集合互斥 |
-| `priorityNotificationSourceIds` | `T/updateNotificationRules` | `SET`、notification settings | `Prefs(notify)` + `VM` | 更新时减去 muted 集合 |
 | `rainHintText` | `T/updateRainHintText` | HOME/Idle | 网络/位置 repo + `VM` | 与位置能力、更新时间关联 |
 | `rainUpdatedTimeText` | `T/updateRainHintText` | `MA`、Home detail | 运行时刷新 + `VM` | 失败保留旧摘要时不能伪造成功时间 |
 | `screenUsageTimeText` | `T/updateScreenUsageSummary` | HOME/Idle/detail | usage repo + `VM` | 与 usage access 相关 |
 | `screenOpenCountText` | `T/updateScreenUsageSummary` | HOME/detail | usage repo + `VM` | 与 usage time 同次回填 |
 
-### 3.8 System / Capabilities（9）
+### 3.8 Notification（6）
+
+| 字段 | 当前写入者/转换入口 | 主要读取者 | 寿命/来源 | 耦合/约束 |
+|---|---|---|---|---|
+| `notificationSummaryText` | `T/updateNotificationSummary` | HOME/Idle | listener store + `VM` | 与 count/sources/items 同一发布快照 |
+| `notificationCount` | `T/updateNotificationSummary` | HOME/Idle | listener store + `VM` | 非负归一化 |
+| `notificationSources` | `T/updateNotificationSummary` | `MA`、notification settings | listener store + `VM` | 包含 muted 来源，供规则配置和单来源跳转 |
+| `notificationItems` | `T/updateNotificationSummary` | `MA`、Home screen | listener store + `VM` | 点击 action 的 key/index 来自此快照 |
+| `mutedNotificationSourceIds` | `T/updateNotificationRules` | `SET`、notification settings | `Prefs(notify)` + `VM` | 规则变化会触发 store 重新发布摘要；与 priority 互斥 |
+| `priorityNotificationSourceIds` | `T/updateNotificationRules` | `SET`、notification settings | `Prefs(notify)` + `VM` | 更新时减去 muted 集合并触发摘要重排 |
+
+四个实时字段与两个持久规则字段允许由两个事件分别更新，但所有权同属 Notification。规则事件必须先规范化并持久化，再交给 `NotificationSummaryStore.updateRules()`；store 基于当前 signals 重新计算四个实时字段。验收关注最终一致性，不要求六字段在同一个 `copy` 中同步改变。
+
+### 3.9 System / Capabilities（9）
 
 | 字段 | 当前写入者/转换入口 | 主要读取者 | 寿命/来源 | 耦合/约束 |
 |---|---|---|---|---|
@@ -225,7 +235,7 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 | `hasNotificationListenerAccess` | `T/updateDataHealth` | `MA`、`HEALTH` | 系统能力采样 + `VM` | 与通知数据是否已回填不是同一状态 |
 | `dataHealthUpdatedTimeText` | `T/updateDataHealth` | `MA`、`HEALTH` | `VM` | 只在用户显式刷新时更新时间 |
 
-字段计数校验：Shell 6 + AppCatalog 17 + Settings 11 + SMS 25 + Phone 13 + Effect 10 + Home 17 + System 9 = **108**。
+字段计数校验：Shell 6 + AppCatalog 17 + Settings 11 + SMS 25 + Phone 13 + Effect 10 + Home 11 + Notification 6 + System 9 = **108**。
 
 ## 4. 当前高耦合点与风险
 
@@ -246,24 +256,43 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 
 高耦合转换包括：
 
-- `showHome` / `showSettings`：Shell + Drawer，且 Settings 行模型还读取 AppCatalog、Effect、Home notification。
+- `showHome` / `showSettings`：Shell + Drawer，且 Settings 行模型还读取 AppCatalog、Effect、Notification。
 - `showAppManagement`：Shell + AppCatalog。
 - `showIdle`：写 Shell，读取 Effect 与当前 Shell；充电自动进入又读取 System。
 - SMS/Phone/Contact 的 `show*` / `hide*`：Shell + 对应业务域。
 - `updateUiBehavior`：同时写目标 Settings 与 Effect。
 - `updateCallCapability`：同时写目标 Phone 与 System。
+- `updateNotificationSummary` / `updateNotificationRules`：分别接收实时 store 与持久规则输入，但共同写目标 Notification；规则变化还会触发 summary 二次发布。
 
 目标不是禁止跨域流程，而是把它们集中到 `LauncherFlowTransitions`；单域 reducer 只写自己拥有的切片，flow 通过组合单域 reducer 完成原子跨域变化。
 
 ### 4.3 reducer 外还有 13 个整态 `copy` 写入口
 
-当前生产代码至少有 13 个绕过 `LauncherStateTransitions` 的 `LauncherState.copy` 表达式：
+当前生产代码有 13 个绕过 `LauncherStateTransitions` 的聚合 `LauncherState.copy` 表达式：
 
 - `MainActivity` 8 处：应用 loading、pager fallback mode、Drawer 菜单/搜索焦点和 rail 状态（`1197`、`1342`、`1351`、`1362`、`1789`、`1822`、`1957`、`1999`）。
 - `SmsController` 4 处：SMS loading/清空、搜索态选择和数据回填（`201`、`203`、`466`、`886`）。
 - `CallController` 1 处：Call Log loading（`106`）。
 
-此外三个 controller 的 `Host` 都暴露可读写的完整 `LauncherState`（`MainActivity.kt:178-257`），因此类型层面无法阻止未来修改其他域。迁移前应先把 13 处变成命名事件/转换，并增加静态契约，之后 controller Host 只暴露所需切片的读取和事件 dispatch。
+阶段 0 不能一边保留这 13 处，一边实施“零容忍”扫描。可执行做法是建立精确 allowlist/baseline，以“文件 + 所在方法 + 被复制字段集合 + 表达式数量”为键，行号只用于人工定位：
+
+| 文件 / 方法 | 允许表达式数 | 当前允许字段 |
+|---|---:|---|
+| `MainActivity.loadApps` | 1 | `isLoading` |
+| `MainActivity.onMainPageChanged` | 2 | `mode`；`isDrawerSearchFocused`、`isDrawerRailSliding` |
+| `MainActivity.onMainPageDragStart` | 1 | `isDrawerSearchFocused`、`isAppActionMenuVisible` |
+| `MainActivity.showAppDrawer` | 1 | `isDrawerSearchFocused`、`isDrawerRailSliding` |
+| `MainActivity.onPixelEngineDrawerQueryChanged` | 1 | `isDrawerSearchFocused`、`isDrawerRailSliding` |
+| `MainActivity.handleDrawerTextInput` | 2 | `isDrawerSearchFocused`、`isDrawerRailSliding` |
+| `SmsController.openModule` | 2 | `isSmsThreadsLoading`；`unreadSmsEntries`、`smsThreads`、`smsAllMessages`、`isSmsThreadsLoading` |
+| `SmsController.moveThreadSelection` | 1 | `smsThreadSelectedIndex` |
+| `SmsController.applySmsData` | 1 | `isSmsThreadsLoading` |
+| `CallController.openCallLog` | 1 | `isCallLogLoading` |
+| **合计** | **13** | MainActivity 8 / SmsController 4 / CallController 1 |
+
+阶段 0 的契约允许且只允许上表签名：新增文件/方法、新增表达式、给现有表达式增加字段，或总数不再是 13，均立即失败。阶段 1 每替换一处就同步缩减 allowlist，全部替换后才启用空 allowlist 的零容忍规则。不得用易漂移的绝对行号作为机器匹配条件。
+
+此外三个 controller 的 `Host` 都暴露可读写的完整 `LauncherState`（`MainActivity.kt:178-257`），因此类型层面无法阻止未来修改其他域。迁移前应先把 13 处变成命名事件/转换，之后 controller Host 只暴露所需切片的读取和事件 dispatch。
 
 ### 4.4 `MainActivity` 在 render 中写状态
 
@@ -292,14 +321,15 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 
 ## 5. 目标依赖规则
 
-1. `LauncherState` 只聚合八个不可变切片；切片之间不互相持有，也不依赖 Android 或 `data` 包。
+1. `LauncherState` 只聚合九个不可变切片；切片之间不互相持有，也不依赖 Android 或 `data` 包。
 2. repository/controller 产生输入事件；单域 reducer 只能返回自己拥有的切片，不能写其他切片。
 3. `LauncherFlowTransitions` 是唯一允许原子组合多个切片的纯函数层，例如“打开短信详情”同时更新 Shell 与 SMS。
-4. `MainActivity`、controller 和 Screen 禁止直接调用聚合状态的 `copy`。Activity 负责 Android 生命周期、系统结果桥接和 Host 挂载，不拥有业务规则。
+4. 阶段 0 只允许上述 13 处精确 baseline 且禁止增长；阶段 1 完成后，`MainActivity`、controller 和 Screen 禁止直接调用聚合状态的 `copy`。Activity 负责 Android 生命周期、系统结果桥接和 Host 挂载，不拥有业务规则。
 5. `SystemState` 由平台能力协调器单写，Home、Phone、SMS、Effect 和 diagnostics 只读。`hasCallLogPermission` 的现有双写必须收敛。
-6. Screen 优先接收单个切片或明确的只读 input，而不是 108 字段聚合对象。组合页面（Settings、Diagnostics、Data Health、全局 Header）可以在 Host/presentation 层显式组合多个只读切片。
-7. 状态变更先提交，再 render；render 不触发 I/O、权限采样或 reducer。
-8. 持久化 DTO 与运行状态分开。切片 data class 不直接序列化 SharedPreferences，也不保存 Android provider 实体生命周期。
+6. `NotificationState` 由 notification coordinator 单写；listener summary 与持久规则是同域的两个事件源，Home、Settings、Idle 和 Notification Settings 只读。
+7. Screen 优先接收单个切片或明确的只读 input，而不是 108 字段聚合对象。组合页面（Settings、Diagnostics、Data Health、全局 Header）可以在 Host/presentation 层显式组合多个只读切片。
+8. 状态变更先提交，再 render；render 不触发 I/O、权限采样或 reducer。
+9. 持久化 DTO 与运行状态分开。切片 data class 不直接序列化 SharedPreferences，也不保存 Android provider 实体生命周期。
 
 ## 6. 分阶段迁移任务
 
@@ -311,16 +341,18 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 
 - 新增可复核的 flattened snapshot 测试：为 108 个字段设置可区分值，并逐字段验证 mapper；集合/list/id 使用非空哨兵。
 - 为现有 100 个公开 transition 建立按域索引；补齐当前关键 flow 的 before/after 快照测试。
-- 新增静态契约，禁止 `MainActivity`、controllers、screens 新增聚合 `LauncherState.copy`。
+- 新增静态契约，精确 allowlist 上述 13 个聚合 `LauncherState.copy`；禁止数量、位置或字段集合增长，并在失败信息中输出新增签名。
 
 **禁止项**
 
 - 不改变状态形状、默认值、导航结果或持久化。
+- 不在本阶段修改 13 个既有表达式，也不把 baseline 泛化成“整个文件允许”。
 - 不以“默认状态相等”代替非默认字段验证。
 
 **行为等价验收**
 
 - 108 个源字段、108 个 UI 字段、108 个 mapper assignment 数量相等。
+- 聚合 `copy` baseline 精确为 13：MainActivity 8、SmsController 4、CallController 1；模拟第 14 处或给现有表达式追加字段时契约必须失败。
 - 每个字段在非默认输入下通过投影；现有 app JVM 测试全绿。
 
 **回滚点**
@@ -348,6 +380,7 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 **行为等价验收**
 
 - 13 个场景 before/after snapshot 与基线完全一致。
+- 13 处替换完成后 allowlist 为空，生产代码中 transition/flow 之外的聚合 `LauncherState.copy` 为 0。
 - 连续 render 两次，state 相等且 fake repository 调用数不增加。
 - 强制刷新 SMS、Call 首次 loading、Drawer 键盘/搜索焦点路径通过现有测试及新增单测。
 
@@ -364,7 +397,7 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 
 **范围**
 
-- 将 1,657 行转换器拆成 Shell/Flow、AppCatalog、Settings、SMS、Phone、Effect、Home、System 八组纯转换文件。
+- 将 1,657 行转换器拆成 Shell/Flow、AppCatalog、Settings、SMS、Phone、Effect、Home、Notification、System 九组纯转换文件。
 - Drawer 搜索 metadata/排序 helper 移入 AppCatalog 组。
 - 暂留 `LauncherStateTransitions` 作为薄 facade，原调用点不必同提交全部改名。
 
@@ -378,6 +411,7 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 - 阶段 0 的全量 transition snapshot 基线不变。
 - facade 与新 domain transition 对同一输入返回完全相等状态。
 - Drawer 搜索的中文、拼音、别名、recent boost 测试全绿。
+- Notification summary/rules 转换对空列表、muted/priority 冲突和规则重排保持当前结果。
 
 **回滚点**
 
@@ -395,12 +429,13 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 
 1. `PhoneState`（13）作为低风险试点。
 2. `SmsState`（25），利用现有 `SmsController` 边界。
-3. `AppCatalogState`（17）。
-4. `SettingsState`（11）。
-5. `EffectState`（10）。
-6. `HomeState`（17）。
-7. `SystemState`（9），并收敛 `hasCallLogPermission` 单写。
-8. `ShellState`（6）最后迁移，因为所有 flow 都依赖它。
+3. `NotificationState`（6），利用现有 store/listener 和 settings repository 边界。
+4. `AppCatalogState`（17）。
+5. `SettingsState`（11）。
+6. `EffectState`（10）。
+7. `HomeState`（11）。
+8. `SystemState`（9），并收敛 `hasCallLogPermission` 单写。
+9. `ShellState`（6）最后迁移，因为所有 flow 都依赖它。
 
 **禁止项**
 
@@ -412,7 +447,7 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 **行为等价验收**
 
 - 每个切片迁移后 flattened snapshot 仍有 108 个唯一字段且值与迁移前相等。
-- data class equality/copy 的域内变更只改变对应切片；其他七个切片保持引用或值相等。
+- data class equality/copy 的域内变更只改变对应切片；其他八个切片保持引用或值相等。
 - 对应域 transition、controller、screen/model 测试全绿。
 
 **回滚点**
@@ -423,9 +458,10 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 
 - Phone：Call/Contacts transition、T9、controller fake-host、联系人 CRUD presentation。
 - SMS：列表/搜索/发送/菜单/静音、异步旧会话防覆盖和 scroll sync。
+- Notification：signals/rules 汇总、muted/priority 冲突、规则改变后的同步重新发布、Home 点击和来源设置。
 - AppCatalog：缓存、搜索、分页/选择、编辑草稿和启动统计。
 - Settings/Effect：偏好 round-trip、字体切换、preview confirm/rollback、Idle 计时和 camera/motion 生命周期。
-- Home/System：仓库 callback 顺序、通知 rule、天气失败保留、权限变化和 battery-triggered Idle。
+- Home/System：仓库 callback 顺序、天气失败保留、权限变化和 battery-triggered Idle。
 - Shell：全 `LauncherMode` 的 open/back/return matrix。
 
 ### 阶段 4：收敛 UI 投影和 Host 输入
@@ -444,7 +480,7 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 **行为等价验收**
 
 - 所有目的地的输入值与阶段 0 flattened snapshot 对应值一致。
-- SMS/Drawer/Phone 的 pager、selection reveal、draft/editor controller 同步行为不变。
+- SMS/Drawer/Phone 的 pager、selection reveal、draft/editor controller，以及 Notification Settings 来源/规则展示行为不变。
 - `launcher` / `ui` 不再依赖 `viewmodel.LauncherUiState`。
 
 **回滚点**
@@ -453,7 +489,7 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 
 **测试建议**
 
-- RootHost route/page-order、SMS scroll sync、Home/Idle/Diagnostics presentation 测试。
+- RootHost route/page-order、SMS scroll sync、Home/Idle/Diagnostics/Notification Settings presentation 测试。
 - 至少跑一次 app instrumentation 的页面输入/恢复 smoke，避免 retained controller 同步回归。
 
 ### 阶段 5：按状态边界拆分 MainActivity 编排
@@ -461,7 +497,7 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 **范围**
 
 - 保留已有 `SmsController`、`CallController`、`ContactsController`，将其 Host 改为窄读取 + event dispatch。
-- 依次抽出 AppCatalog、HomeData、Appearance、Effect、Capability coordinator；每个 coordinator 只订阅自己的 repository/lifecycle 输入并 dispatch 对应事件。
+- 依次抽出 AppCatalog、Notification、HomeData、Appearance、Effect、Capability coordinator；每个 coordinator 只订阅自己的 repository/lifecycle 输入并 dispatch 对应事件。
 - `MainActivity` 最终只负责 Android lifecycle 转发、系统 result/permission bridge、依赖装配、顶层 Host 挂载和 flow dispatch。
 
 **禁止项**
@@ -479,7 +515,7 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 
 **回滚点**
 
-- 每个 coordinator 单独提交，顺序建议 Capability → HomeData → AppCatalog → Appearance → Effect；任一提交可独立回滚。
+- 每个 coordinator 单独提交，顺序建议 Capability → Notification → HomeData → AppCatalog → Appearance → Effect；任一提交可独立回滚。
 
 **测试建议**
 
@@ -524,6 +560,7 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 | Activity flow agent | `MainActivity.kt` | 新 coordinator、gateway 和其测试 |
 | SMS agent | `SmsController.kt`、SMS screen/model/policy | SMS tests |
 | Phone agent | `CallController.kt`、`ContactsController.kt`、Phone screens/models | Phone tests |
+| Notification agent | notification repository/store、model、screen 和新 coordinator | Notification tests；不得修改 `MainActivity.kt` |
 | App/Settings/Effect/Home agents | 各自 domain 文件 | 各自 tests；不得触碰上述四类独占文件 |
 
 每个 worktree 从上一个已验收阶段提交创建；未通过验收的分支不作为后续分支基线。禁止并行分支各自重排 `LauncherState` 构造参数后再尝试文本合并。
