@@ -29,7 +29,6 @@ import com.purride.pixelui.internal.withControlFocusIndicator
 import kotlin.math.PI
 import kotlin.math.roundToInt
 import kotlin.math.sin
-import kotlin.time.Duration
 
 /** 定义 `PixelIconData` 在 `PixelComponents` 中承担的数据与行为边界。
  *
@@ -1039,49 +1038,6 @@ private class PixelSwitchMotionState : State<PixelSwitchMotionWidget>() {
         if (hovered == nextHovered) return
         setState { hovered = nextHovered }
     }
-}
-
-/**
- * 使用当前 theme token 和可选 Motion scope 配置一个标准控件驱动器。
- *
- * @param motion 待配置的 retained 动画值。
- * @param scope 可选统一时钟与运动偏好来源。
- * @param spec 当前状态通道使用的主题运动规格。
- */
-private fun configureControlMotion(
-    motion: PixelControlMotionValue,
-    scope: PixelMotionScope?,
-    spec: PixelMotionSpec,
-) {
-    /** 已应用 scope 设置的运行时规格；无 scope 时走即时更新。 */
-    val resolved = scope?.let { availableScope -> spec.resolve(availableScope.settings) }
-    motion.configure(
-        nextVsync = scope?.vsync,
-        nextDuration = resolved?.duration ?: Duration.ZERO,
-        nextDelay = resolved?.delay ?: Duration.ZERO,
-        nextCurve = resolved?.curve ?: spec.curve,
-        nextImmediate = resolved?.let { motion ->
-            motion.isImmediate || motion.transition == PixelMotionTransitionPreset.None
-        } ?: true,
-    )
-}
-
-/**
- * 把可并存的 Switch/Tab 交互状态压缩为单一反馈目标。
- *
- * @param pressed 指针当前是否按下。
- * @param hovered 指针当前是否悬停。
- * @param focused 控件当前是否获得键盘焦点。
- */
-private fun controlFeedbackTarget(
-    pressed: Boolean,
-    hovered: Boolean,
-    focused: Boolean,
-): Float = when {
-    pressed -> 1f
-    focused -> 1f
-    hovered -> 0.5f
-    else -> 0f
 }
 
 /**
