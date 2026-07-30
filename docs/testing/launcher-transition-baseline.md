@@ -281,7 +281,7 @@ Pager 死写入已按上节策略直接删除，copy guard 当前为空基线。
 
 ## 5. `SNAKE` 重复分支调查
 
-`MainActivity.onKeyDown()` 的 Enter / DPAD Center 分支中，同一个 `when (state.mode)` 目前包含：
+`MainActivity.onKeyDown()` 的 Enter / DPAD Center 分支此前在同一个 `when (state.mode)` 中包含：
 
 ```kotlin
 LauncherMode.CONTACT_DETAIL -> Unit
@@ -295,17 +295,17 @@ LauncherMode.DIAGNOSTICS -> closeDiagnostics()
 LauncherMode.SNAKE -> closeSnake()
 ```
 
-事实结论：
+调查与处理结论：
 
-- 第一个 `LauncherMode.SNAKE -> Unit` 先匹配，当前 Enter 行为是 **no-op**。
-- 后面的 `LauncherMode.SNAKE -> closeSnake()` 永远不可达，Kotlin 编译器会报告
+- 第一个 `LauncherMode.SNAKE -> Unit` 先匹配，因此既有 Enter 行为是 **no-op**。
+- 后面的 `LauncherMode.SNAKE -> closeSnake()` 永远不可达，Kotlin 编译器此前会报告
   `Duplicate branch condition in 'when'`。
 - 两个分支均由提交 `9910d3c9` 引入，无法仅靠提交先后判断哪一个是最终意图。
 - 同一提交在系统 Back 路径中明确使用 `LauncherMode.SNAKE -> closeSnake()`；方向键用于游戏转向，
   提交说明还明确“点按场地重开”，没有把 Enter 描述为退出键。
-
-因此本基线只记录：**当前行为是 Enter no-op，后分支不可达，产品意图待确认**。后续生产修复任务应先决定：
-保留 no-op 并删除死分支，还是让 Enter 退出并替换前一个分支；本任务不修改 `MainActivity`。
+- 当前已删除第二个不可达分支，保留第一个 `LauncherMode.SNAKE -> Unit`；Enter / DPAD Center
+  在 SNAKE 模式下仍为 no-op，行为保持不变。
+- 系统 Back 路径的 `LauncherMode.SNAKE -> closeSnake()` 未修改，仍负责关闭游戏。
 
 ## 6. 仍需后续任务处理的风险
 

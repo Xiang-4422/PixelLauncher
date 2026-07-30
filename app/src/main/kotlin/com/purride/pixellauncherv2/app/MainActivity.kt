@@ -1154,7 +1154,6 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.LOADING_PREVIEW -> closeLoadingPreview()
                     LauncherMode.APP_MANAGEMENT -> onAppEditorSave()
                     LauncherMode.DIAGNOSTICS -> closeDiagnostics()
-                    LauncherMode.SNAKE -> closeSnake()
                     LauncherMode.HOME -> Unit
                     LauncherMode.APP_DRAWER -> Unit
                     LauncherMode.IDLE -> Unit
