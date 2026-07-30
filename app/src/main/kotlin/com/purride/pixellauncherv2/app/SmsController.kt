@@ -198,14 +198,9 @@ internal class SmsController(
             host.state.smsPermissionState != SmsPermissionState.MISSING &&
             (host.state.isDefaultSmsApp || smsRolePromptDismissedThisSession)
         if (!canShowThreads) {
-            host.state = host.state.copy(isSmsThreadsLoading = false)
+            host.state = LauncherStateTransitions.finishSmsThreadsLoading(host.state)
         } else if (forceRefresh) {
-            host.state = host.state.copy(
-                unreadSmsEntries = emptyList(),
-                smsThreads = emptyList(),
-                smsAllMessages = emptyList(),
-                isSmsThreadsLoading = true,
-            )
+            host.state = LauncherStateTransitions.beginForcedSmsRefresh(host.state)
         }
         host.state = if (canShowThreads) {
             LauncherStateTransitions.showSmsThreads(
@@ -459,12 +454,14 @@ internal class SmsController(
 
     fun moveThreadSelection(delta: Int) {
         if (host.state.smsThreadSearchQuery.isNotBlank()) {
-            val lastIndex = SmsThreadSearchModel.filter(
+            val searchResultCount = SmsThreadSearchModel.filter(
                 messages = host.state.smsAllMessages,
                 query = host.state.smsThreadSearchQuery,
-            ).lastIndex.coerceAtLeast(0)
-            host.state = host.state.copy(
-                smsThreadSelectedIndex = (host.state.smsThreadSelectedIndex + delta).coerceIn(0, lastIndex),
+            ).size
+            host.state = LauncherStateTransitions.moveSmsSearchSelection(
+                state = host.state,
+                delta = delta,
+                resultCount = searchResultCount,
             )
             host.render()
             return
@@ -882,8 +879,9 @@ internal class SmsController(
 
     private fun applySmsData(messages: List<SmsMessageEntry>) {
         val threads = SmsConversationModel.summarize(messages)
-        var nextState = LauncherStateTransitions.updateSmsAllMessages(
-            state = host.state.copy(isSmsThreadsLoading = false),
+        var nextState = LauncherStateTransitions.finishSmsThreadsLoading(host.state)
+        nextState = LauncherStateTransitions.updateSmsAllMessages(
+            state = nextState,
             messages = messages,
         )
         nextState = LauncherStateTransitions.updateSmsThreads(

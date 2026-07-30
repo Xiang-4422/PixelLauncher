@@ -133,15 +133,15 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 
 | 字段 | 当前写入者/转换入口 | 主要读取者 | 寿命/来源 | 耦合/约束 |
 |---|---|---|---|---|
-| `unreadSmsEntries` | `T/updateUnreadSmsEntries`；`SmsController:openModule` 仍直接清空 | `SMS`、`HOST` 状态栏 | Provider + `VM` | 与 unread page/selection 同步 |
+| `unreadSmsEntries` | `T/updateUnreadSmsEntries`、`T/beginForcedSmsRefresh` | `SMS`、`HOST` 状态栏 | Provider + `VM` | 与 unread page/selection 同步 |
 | `smsPageIndex` | `T/showSmsThreads`、`T/selectSmsPage`、unread 回填 | `SMS`、`HOST` | `VM` | unread 为空且非 loading 时会切 ALL |
 | `smsSelectedIndex` | select/move/reflow unread SMS | `SMS`、`HOST` | `VM` | 受 unread list 大小约束 |
 | `smsListStartIndex` | `syncSmsWindow` | 转换器内部 | 派生 + `VM` | Host 不消费，列入行为证明后的退役候选 |
-| `smsThreads` | `T/updateSmsThreads`；`SmsController:openModule` 仍直接清空 | `SMS` | Provider + `VM` | 与 thread selection/menu 约束 |
-| `isSmsThreadsLoading` | `SmsController:openModule/applySmsData` 直接 `copy` | `SMS` | Provider 操作态 + `VM` | reducer 缺少 begin/end loading 事件 |
-| `smsThreadSelectedIndex` | select/move/reflow/search query；搜索态 `SmsController` 仍直接 `copy` | `SMS`、`HOST` | `VM` | 搜索结果数量与会话数量使用不同上限 |
+| `smsThreads` | `T/updateSmsThreads`、`T/beginForcedSmsRefresh` | `SMS` | Provider + `VM` | 与 thread selection/menu 约束 |
+| `isSmsThreadsLoading` | `T/beginForcedSmsRefresh`、`T/finishSmsThreadsLoading` | `SMS` | Provider 操作态 + `VM` | 强制刷新开始、能力不足或数据落地时结束 |
+| `smsThreadSelectedIndex` | select/move/reflow/search query、`T/moveSmsSearchSelection` | `SMS`、`HOST` | `VM` | 搜索结果数量与会话数量使用不同上限 |
 | `smsThreadListStartIndex` | `syncSmsThreadWindow`、搜索 query 重置 | 转换器内部 | 派生 + `VM` | Host 不消费，列入行为证明后的退役候选 |
-| `smsAllMessages` | `T/updateSmsAllMessages`；force refresh 直接清空 | `SMS` 搜索 | Provider + `VM` | 搜索结果的唯一数据源 |
+| `smsAllMessages` | `T/updateSmsAllMessages`、`T/beginForcedSmsRefresh` | `SMS` 搜索 | Provider + `VM` | 搜索结果的唯一数据源 |
 | `smsCurrentConversationKey` | show/update SMS detail | `SmsController`、转换器 | Provider identity + `VM` | 菜单、静音、异步回填的会话一致性键 |
 | `smsCurrentConversationTitle` | show/update SMS detail | `SMS`、`HOST` 标题 | Provider + `VM` | 与 key/address 同次更新 |
 | `smsCurrentIsServiceConversation` | show/update SMS detail | `MA`、`SMS` | Provider + `VM` | 控制服务会话发送能力 |
@@ -164,7 +164,7 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 | 字段 | 当前写入者/转换入口 | 主要读取者 | 寿命/来源 | 耦合/约束 |
 |---|---|---|---|---|
 | `callLogGroups` | `T/updateCallLogGroups` | `CallController`、call log screen | Provider + `VM` | 回填时结束 loading |
-| `isCallLogLoading` | `CallController:openCallLog` 直接 `copy`；`T/updateCallLogGroups` 写 `false` | call log screen | Provider 操作态 + `VM` | reducer 缺少 begin loading 事件 |
+| `isCallLogLoading` | `T/prepareCallLogLoading`、`T/updateCallLogGroups` | call log screen | Provider 操作态 + `VM` | 无权限或已有缓存时不展示首次 loading |
 | `hasCallPhonePermission` | `T/updateCallCapability` | `CallController` | 系统能力 + `VM` | 当前与 `System.hasCallLogPermission` 被同一转换跨域写 |
 | `callPageIndex` | show/hide call、select call page、contact flow | `MA`、`HOST`、dialer screen | `VM` | 缺 call-log 权限时入口切到 dial page |
 | `dialInput` | `T/updateDialInput`、关闭 call | `CallController`、dialer screen | `VM` | 输入变化必须先清旧匹配 |
@@ -266,17 +266,19 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 
 目标不是禁止跨域流程，而是把它们集中到 `LauncherFlowTransitions`；单域 reducer 只写自己拥有的切片，flow 通过组合单域 reducer 完成原子跨域变化。
 
-### 4.3 reducer 外还有 13 个整态 `copy` 写入口
+### 4.3 reducer 外聚合 `copy` 已从 13 处收敛到 8 处
 
-当前生产代码有 13 个绕过 `LauncherStateTransitions` 的聚合 `LauncherState.copy` 表达式：
+阶段 0 建立契约时，生产代码有 13 个绕过 `LauncherStateTransitions` 的聚合
+`LauncherState.copy` 表达式：
 
 - `MainActivity` 8 处：应用 loading、pager fallback mode、Drawer 菜单/搜索焦点和 rail 状态（`1197`、`1342`、`1351`、`1362`、`1789`、`1822`、`1957`、`1999`）。
 - `SmsController` 4 处：SMS loading/清空、搜索态选择和数据回填（`201`、`203`、`466`、`886`）。
 - `CallController` 1 处：Call Log loading（`106`）。
 
-阶段 0 不能一边保留这 13 处，一边实施“零容忍”扫描。可执行做法是建立精确 allowlist/baseline，以“文件 + 所在方法 + 被复制字段集合 + 表达式数量”为键，行号只用于人工定位：
+阶段 0 不能一边保留这 13 处，一边实施“零容忍”扫描。可执行做法是建立精确 allowlist/baseline，
+以“文件 + 所在方法 + 被复制字段集合 + 表达式数量”为键，行号只用于人工定位。历史基线如下：
 
-| 文件 / 方法 | 允许表达式数 | 当前允许字段 |
+| 文件 / 方法 | 允许表达式数 | 阶段 0 允许字段 |
 |---|---:|---|
 | `MainActivity.loadApps` | 1 | `isLoading` |
 | `MainActivity.onMainPageChanged` | 2 | `mode`；`isDrawerSearchFocused`、`isDrawerRailSliding` |
@@ -292,7 +294,23 @@ sed -n '/LauncherUiState(/,/^)/p' app/src/main/kotlin/com/purride/pixellauncherv
 
 阶段 0 的契约允许且只允许上表签名：新增文件/方法、新增表达式、给现有表达式增加字段，或总数不再是 13，均立即失败。阶段 1 每替换一处就同步缩减 allowlist，全部替换后才启用空 allowlist 的零容忍规则。不得用易漂移的绝对行号作为机器匹配条件。
 
-此外三个 controller 的 `Host` 都暴露可读写的完整 `LauncherState`（`MainActivity.kt:178-257`），因此类型层面无法阻止未来修改其他域。迁移前应先把 13 处变成命名事件/转换，之后 controller Host 只暴露所需切片的读取和事件 dispatch。
+阶段 1 当前已将 `SmsController` 4 处和 `CallController` 1 处迁移到具名转换，进度为 **13 → 8**。
+当前 allowlist 只剩 `MainActivity` 的 7 个基线身份、8 个表达式：
+
+| 文件 / 方法 | 当前允许表达式数 | 当前允许字段 |
+|---|---:|---|
+| `MainActivity.loadApps` | 1 | `isLoading` |
+| `MainActivity.onMainPageChanged` | 1 | `isDrawerSearchFocused`、`isDrawerRailSliding` |
+| `MainActivity.onMainPageChanged` | 1 | `mode` |
+| `MainActivity.onMainPageDragStart` | 1 | `isDrawerSearchFocused`、`isAppActionMenuVisible` |
+| `MainActivity.showAppDrawer` | 1 | `isDrawerSearchFocused`、`isDrawerRailSliding` |
+| `MainActivity.onPixelEngineDrawerQueryChanged` | 1 | `isDrawerSearchFocused`、`isDrawerRailSliding` |
+| `MainActivity.handleDrawerTextInput` | 2 | `isDrawerSearchFocused`、`isDrawerRailSliding` |
+| **合计** | **8** | 7 个基线身份，全部位于 MainActivity |
+
+此外三个 controller 的 `Host` 都暴露可读写的完整 `LauncherState`（`MainActivity.kt:178-257`），
+因此类型层面仍无法阻止未来修改其他域。Controller 5 处已改为通过具名转换产生状态；待剩余
+`MainActivity` 8 处清零后，controller Host 再收窄为所需切片的读取和事件 dispatch。
 
 ### 4.4 `MainActivity` 在 render 中写状态
 

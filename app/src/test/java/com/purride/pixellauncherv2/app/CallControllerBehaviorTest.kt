@@ -79,7 +79,10 @@ class CallControllerBehaviorTest {
     fun openCallLog_withCachedGroups_keepsLoadingOffWhileRefreshIsQueued() {
         val cachedGroup = callGroup(id = 7L, number = "10007")
         val harness = CallHarness(
-            initialState = sentinelState().copy(callLogGroups = listOf(cachedGroup)),
+            initialState = sentinelState().copy(
+                callLogGroups = listOf(cachedGroup),
+                isCallLogLoading = true,
+            ),
         )
         every { harness.callLogRepository.hasReadCallLogPermission() } returns true
         every { harness.dialerRepository.hasCallPhonePermission() } returns true

@@ -101,9 +101,11 @@ internal class CallController(
         val canReadCallLog = callLogRepository.hasReadCallLogPermission()
         // 每次进入模块丢弃一次联系人快照：期间新增/改名的联系人才能被 T9 命中。
         contactSearchRepository.invalidate()
-        val hasData = host.state.callLogGroups.isNotEmpty()
         host.state = LauncherStateTransitions.showCallLog(
-            host.state.copy(isCallLogLoading = canReadCallLog && !hasData),
+            LauncherStateTransitions.prepareCallLogLoading(
+                state = host.state,
+                canReadCallLog = canReadCallLog,
+            ),
         )
         host.render()
         if (canReadCallLog) {

@@ -61,49 +61,6 @@
         "isDrawerSearchFocused"
       ],
       "count": 2
-    },
-    {
-      "file": "app/src/main/kotlin/com/purride/pixellauncherv2/app/SmsController.kt",
-      "method": "openModule",
-      "fields": [
-        "isSmsThreadsLoading"
-      ],
-      "count": 1
-    },
-    {
-      "file": "app/src/main/kotlin/com/purride/pixellauncherv2/app/SmsController.kt",
-      "method": "openModule",
-      "fields": [
-        "isSmsThreadsLoading",
-        "smsAllMessages",
-        "smsThreads",
-        "unreadSmsEntries"
-      ],
-      "count": 1
-    },
-    {
-      "file": "app/src/main/kotlin/com/purride/pixellauncherv2/app/SmsController.kt",
-      "method": "moveThreadSelection",
-      "fields": [
-        "smsThreadSelectedIndex"
-      ],
-      "count": 1
-    },
-    {
-      "file": "app/src/main/kotlin/com/purride/pixellauncherv2/app/SmsController.kt",
-      "method": "applySmsData",
-      "fields": [
-        "isSmsThreadsLoading"
-      ],
-      "count": 1
-    },
-    {
-      "file": "app/src/main/kotlin/com/purride/pixellauncherv2/app/CallController.kt",
-      "method": "openCallLog",
-      "fields": [
-        "isCallLogLoading"
-      ],
-      "count": 1
     }
   ]
 }
