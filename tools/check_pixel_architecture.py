@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""校验 Pixel Engine 规模预算与单模块工程文本边界。"""
+"""校验 Pixel Engine 规模预算、工程模块契约与历史文本边界。"""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ REMOVED_MODULE_NAMES = (
     "pixel-testing",
     "pixel-widgets",
 )
-# 旧九模块叙述不得继续误导单模块维护者。
+# 旧九模块叙述不得继续误导统一 Engine 模块的维护者。
 STALE_ARCHITECTURE_PHRASES = (
     "九个 SDK",
     "九个项目",
@@ -38,6 +38,47 @@ STALE_ARCHITECTURE_PHRASES = (
     "旧聚合坐标",
     "兄弟 artifact",
 )
+# 当前主工程允许存在的 Gradle 模块；变更模块结构时必须显式更新此契约。
+EXPECTED_GRADLE_MODULES = (
+    ":app",
+    ":pixel-engine",
+    ":showcase",
+    ":showcase-desktop",
+)
+# 模块清单受控区段必须出现在所有关键架构入口中。
+MODULE_CONTRACT_DOCUMENTS = (
+    Path("README.md"),
+    Path("docs/项目总览.md"),
+    Path("pixel-engine/README.md"),
+    Path("pixel-engine/docs/架构与设计.md"),
+    Path("pixel-engine/docs/长期规划.md"),
+)
+# 总览文档还必须维护完整依赖图，避免只同步模块数量而遗漏实际消费方式。
+DEPENDENCY_CONTRACT_DOCUMENTS = (
+    Path("README.md"),
+    Path("docs/项目总览.md"),
+)
+# 文档模块清单区段的稳定边界标记。
+MODULE_CONTRACT_START = "<!-- architecture-contract:modules:start -->"
+MODULE_CONTRACT_END = "<!-- architecture-contract:modules:end -->"
+# 文档依赖图区段的稳定边界标记。
+DEPENDENCY_CONTRACT_START = "<!-- architecture-contract:dependencies:start -->"
+DEPENDENCY_CONTRACT_END = "<!-- architecture-contract:dependencies:end -->"
+# 当前依赖图同时表达 Android project 依赖与桌面宿主的特殊二进制/源码消费方式。
+EXPECTED_DEPENDENCY_CONTRACT_LINES = (
+    ":app -> :pixel-engine",
+    ":showcase -> :pixel-engine",
+    ":showcase-desktop --debug classes.jar--> :pixel-engine",
+    ":showcase-desktop --shared scene sources--> :showcase",
+)
+# settings.gradle.kts 中顶层 include 调用及其字符串参数的最小解析模式。
+GRADLE_INCLUDE_PATTERN = re.compile(
+    r"^[ \t]*include\s*\((?P<arguments>[^)]*)\)",
+    re.MULTILINE,
+)
+GRADLE_MODULE_ARGUMENT_PATTERN = re.compile(r"[\"'](?P<module>:[^\"']+)[\"']")
+# 模块契约区段只接受反引号包裹的完整 Gradle project path。
+DOCUMENTED_MODULE_PATTERN = re.compile(r"`(?P<module>:[a-z0-9][a-z0-9:-]*)`")
 # 仅扫描对工程结构作出承诺的源码与治理文件。
 GOVERNANCE_ROOTS = (
     Path("build.gradle.kts"),
@@ -144,7 +185,7 @@ def sanitize_kotlin_source(source: str) -> str:
                 index += 1
             continue
         if in_triple_string:
-            if triple == '\"\"\"':
+            if triple == '"""':
                 in_triple_string = False
                 output.extend("   ")
                 index += 3
@@ -180,7 +221,7 @@ def sanitize_kotlin_source(source: str) -> str:
             output.extend("  ")
             index += 2
             continue
-        if triple == '\"\"\"':
+        if triple == '"""':
             in_triple_string = True
             output.extend("   ")
             index += 3
@@ -328,7 +369,7 @@ def production_size_findings(root: Path, budget: dict[str, Any]) -> list[dict[st
 
 
 def governance_files(root: Path) -> list[Path]:
-    """枚举需要遵守单模块叙述的治理文本文件。"""
+    """枚举需要遵守当前工程架构叙述的治理文本文件。"""
 
     # 去重后的稳定文本文件集合。
     files: set[Path] = set()
@@ -376,6 +417,223 @@ def stale_text_findings(root: Path) -> list[dict[str, Any]]:
     return findings
 
 
+def strip_kotlin_dsl_comments(source: str) -> str:
+    """移除 Kotlin DSL 行/块注释，同时保留字符串及原始换行。"""
+
+    # 输出保持原文长度，避免注释移除后相邻 token 意外拼接。
+    output: list[str] = []
+    # 当前扫描位置。
+    index = 0
+    # Kotlin 允许嵌套块注释，深度为零时才解析代码。
+    block_comment_depth = 0
+    # 当前普通字符串或字符字面量的结束符。
+    delimiter: str | None = None
+    # 三引号字符串单独处理，避免其中的注释符被误删。
+    in_triple_string = False
+    while index < len(source):
+        # 当前字符及注释/三引号所需的前瞻片段。
+        character = source[index]
+        pair = source[index : index + 2]
+        triple = source[index : index + 3]
+        if block_comment_depth > 0:
+            if pair == "/*":
+                block_comment_depth += 1
+                output.extend("  ")
+                index += 2
+            elif pair == "*/":
+                block_comment_depth -= 1
+                output.extend("  ")
+                index += 2
+            else:
+                output.append("\n" if character == "\n" else " ")
+                index += 1
+            continue
+        if in_triple_string:
+            if triple == '\"\"\"':
+                in_triple_string = False
+                output.extend(triple)
+                index += 3
+            else:
+                output.append(character)
+                index += 1
+            continue
+        if delimiter is not None:
+            output.append(character)
+            if character == "\\" and index + 1 < len(source):
+                output.append(source[index + 1])
+                index += 2
+                continue
+            if character == delimiter:
+                delimiter = None
+            index += 1
+            continue
+        if pair == "//":
+            # 行注释内容替换为空格，换行交由下一轮保留。
+            line_end = source.find("\n", index)
+            if line_end < 0:
+                output.extend(" " * (len(source) - index))
+                break
+            output.extend(" " * (line_end - index))
+            index = line_end
+            continue
+        if pair == "/*":
+            block_comment_depth = 1
+            output.extend("  ")
+            index += 2
+            continue
+        if triple == '\"\"\"':
+            in_triple_string = True
+            output.extend(triple)
+            index += 3
+            continue
+        if character in ('"', "'"):
+            delimiter = character
+        output.append(character)
+        index += 1
+    return "".join(output)
+
+
+def declared_gradle_modules(settings_text: str) -> tuple[str, ...]:
+    """按声明顺序返回 settings.gradle.kts 中未被注释的 include 模块路径。"""
+
+    # 多个 include 调用和单次调用中的多个参数统一展平。
+    modules: list[str] = []
+    # 注释先被清空，避免已移除模块仍被正则计入实际工程清单。
+    uncommented_text = strip_kotlin_dsl_comments(settings_text)
+    for include_match in GRADLE_INCLUDE_PATTERN.finditer(uncommented_text):
+        # 当前 include 调用中的字符串模块参数。
+        arguments = include_match.group("arguments")
+        modules.extend(
+            argument.group("module")
+            for argument in GRADLE_MODULE_ARGUMENT_PATTERN.finditer(arguments)
+        )
+    return tuple(modules)
+
+
+def controlled_contract_block(
+    text: str,
+    start_marker: str,
+    end_marker: str,
+) -> tuple[int, str] | None:
+    """提取唯一且闭合的受控文档区段，返回起始行与正文。"""
+
+    # 标记必须各出现一次，避免检查器在多个候选区段间猜测权威内容。
+    if text.count(start_marker) != 1 or text.count(end_marker) != 1:
+        return None
+    # 起止字符位置用于校验顺序并计算报告行号。
+    start_index = text.index(start_marker)
+    content_start = start_index + len(start_marker)
+    end_index = text.index(end_marker)
+    if end_index < content_start:
+        return None
+    # 1-based 行号指向区段起始标记，方便审查者直接定位。
+    start_line = text.count("\n", 0, start_index) + 1
+    return start_line, text[content_start:end_index]
+
+
+def normalized_contract_lines(block: str) -> tuple[str, ...]:
+    """移除空行与 Markdown fence，返回受控依赖区段的有效行。"""
+
+    return tuple(
+        line.strip()
+        for line in block.splitlines()
+        if line.strip() and not line.strip().startswith("```")
+    )
+
+
+def module_contract_findings(root: Path) -> list[dict[str, Any]]:
+    """返回 Gradle include、文档模块清单和依赖图之间的契约漂移。"""
+
+    # 当前模块契约违规的机器可读列表。
+    findings: list[dict[str, Any]] = []
+    # settings.gradle.kts 是 Gradle 实际项目清单的事实来源。
+    settings_path = root / "settings.gradle.kts"
+    actual_modules = (
+        declared_gradle_modules(settings_path.read_text(encoding="utf-8"))
+        if settings_path.is_file()
+        else ()
+    )
+    # Gradle include 顺序没有架构含义，但重复声明和集合差异都属于契约漂移。
+    if len(actual_modules) != len(EXPECTED_GRADLE_MODULES) or set(actual_modules) != set(
+        EXPECTED_GRADLE_MODULES
+    ):
+        findings.append(
+            {
+                "kind": "gradle-module-list",
+                "path": "settings.gradle.kts",
+                "expected": list(EXPECTED_GRADLE_MODULES),
+                "actual": list(actual_modules),
+            }
+        )
+
+    for relative in MODULE_CONTRACT_DOCUMENTS:
+        # 当前关键文档必须包含唯一模块契约区段。
+        path = root / relative
+        text = path.read_text(encoding="utf-8") if path.is_file() else ""
+        contract = controlled_contract_block(text, MODULE_CONTRACT_START, MODULE_CONTRACT_END)
+        if contract is None:
+            findings.append(
+                {
+                    "kind": "documented-module-list",
+                    "path": relative.as_posix(),
+                    "expected": list(EXPECTED_GRADLE_MODULES),
+                    "actual": [],
+                    "reason": "missing-or-ambiguous-contract-block",
+                }
+            )
+            continue
+        # 区段中的反引号模块路径必须与预期清单及顺序完全一致。
+        start_line, block = contract
+        documented_modules = tuple(
+            match.group("module") for match in DOCUMENTED_MODULE_PATTERN.finditer(block)
+        )
+        if documented_modules != EXPECTED_GRADLE_MODULES:
+            findings.append(
+                {
+                    "kind": "documented-module-list",
+                    "path": relative.as_posix(),
+                    "line": start_line,
+                    "expected": list(EXPECTED_GRADLE_MODULES),
+                    "actual": list(documented_modules),
+                }
+            )
+
+    for relative in DEPENDENCY_CONTRACT_DOCUMENTS:
+        # 两份工程总览必须给出同一份可机器核对的依赖图。
+        path = root / relative
+        text = path.read_text(encoding="utf-8") if path.is_file() else ""
+        contract = controlled_contract_block(
+            text,
+            DEPENDENCY_CONTRACT_START,
+            DEPENDENCY_CONTRACT_END,
+        )
+        if contract is None:
+            findings.append(
+                {
+                    "kind": "documented-module-dependencies",
+                    "path": relative.as_posix(),
+                    "expected": list(EXPECTED_DEPENDENCY_CONTRACT_LINES),
+                    "actual": [],
+                    "reason": "missing-or-ambiguous-contract-block",
+                }
+            )
+            continue
+        # 依赖关系顺序固定，便于两份总览产生可读且确定的差异。
+        start_line, block = contract
+        documented_dependencies = normalized_contract_lines(block)
+        if documented_dependencies != EXPECTED_DEPENDENCY_CONTRACT_LINES:
+            findings.append(
+                {
+                    "kind": "documented-module-dependencies",
+                    "path": relative.as_posix(),
+                    "line": start_line,
+                    "expected": list(EXPECTED_DEPENDENCY_CONTRACT_LINES),
+                    "actual": list(documented_dependencies),
+                }
+            )
+    return findings
+
+
 def check_repository(root: Path, budget_path: Path) -> dict[str, Any]:
     """执行全部架构治理检查并返回确定性报告。"""
 
@@ -385,6 +643,7 @@ def check_repository(root: Path, budget_path: Path) -> dict[str, Any]:
     findings = (
         production_size_findings(root, budget)
         + production_function_findings(root, budget)
+        + module_contract_findings(root)
         + stale_text_findings(root)
     )
     findings.sort(key=lambda item: (str(item.get("path", "")), int(item.get("line", 0)), str(item["kind"])))

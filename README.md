@@ -1,12 +1,29 @@
 # PixelLauncher
 
-PixelLauncher 是一个 Android 启动器应用，同时内置可复用的像素 UI 引擎。主工程维护三个 Gradle 模块：
+PixelLauncher 是一个 Android 启动器应用，同时内置可复用的像素 UI 引擎。主工程维护四个 Gradle 模块：
 
-- `app`：Launcher 产品、页面状态和 Android 应用入口。
-- `pixel-engine`：像素渲染、组件、动画、路由、Android Host、测试 DSL 与诊断能力。
-- `showcase`：脱离 Launcher 独立运行的 Pixel Engine 展示应用。
+<!-- architecture-contract:modules:start -->
+- `:app`：Launcher 产品、页面状态和 Android 应用入口。
+- `:pixel-engine`：像素渲染、组件、动画、路由、Android Host、测试 DSL 与诊断能力。
+- `:showcase`：脱离 Launcher 独立运行的 Android Pixel Engine 展示应用。
+- `:showcase-desktop`：复用展示场景的 JVM/AWT 桌面宿主。
+<!-- architecture-contract:modules:end -->
 
-两个应用模块都只依赖引擎：`app -> pixel-engine`、`showcase -> pixel-engine`。SDK 对外仍只发布
+<!-- architecture-contract:dependencies:start -->
+```text
+:app -> :pixel-engine
+:showcase -> :pixel-engine
+:showcase-desktop --debug classes.jar--> :pixel-engine
+:showcase-desktop --shared scene sources--> :showcase
+```
+<!-- architecture-contract:dependencies:end -->
+
+两个 Android 应用模块通过 Gradle project 依赖消费引擎。`:showcase-desktop` 不声明 Android project
+依赖：其 `compileKotlin` 先触发 `:pixel-engine:assembleDebug`，再直接消费 debug AAR 中的
+`pixel-engine/build/intermediates/aar_main_jar/debug/syncDebugLibJars/classes.jar`，同时从 `:showcase`
+共享 `DemoScene.kt` 与 `scenes/**`。
+桌面入口由 `:showcase-desktop` 自有的
+`showcase-desktop/src/main/kotlin/com/purride/pixelshowcase/desktop/DesktopShowcase.kt` 提供。SDK 对外仍只发布
 `com.purride:pixel-engine:1.0.0` 一个坐标，避免消费者拼装多个内部产物。
 
 ## 环境
@@ -19,10 +36,11 @@ PixelLauncher 是一个 Android 启动器应用，同时内置可复用的像素
 ./gradlew projects
 ./gradlew :app:assembleDebug
 ./gradlew :showcase:assembleDebug
+./gradlew :showcase-desktop:classes
 ./gradlew :pixel-engine:testDebugUnitTest
 ```
 
-`./gradlew projects` 应只列出 `:app`、`:pixel-engine` 和 `:showcase`。
+`./gradlew projects` 应只列出 `:app`、`:pixel-engine`、`:showcase` 和 `:showcase-desktop`。
 
 ## 运行
 
@@ -40,6 +58,12 @@ Android Studio 直接选择 `app` 配置即可编译和运行。
 ```bash
 ./gradlew :showcase:installDebug
 adb shell am start -n com.purride.pixelshowcase/.ShowcaseActivity
+```
+
+桌面展示宿主使用本机 JVM/AWT，可执行：
+
+```bash
+./gradlew :showcase-desktop:run
 ```
 
 ## SDK 接入
@@ -95,6 +119,7 @@ pixel-engine/                像素引擎 SDK
   src/test/                  JVM 测试
   src/androidTest/           Android Host 测试
 showcase/                    Pixel Engine 独立展示应用
+showcase-desktop/            复用 Showcase 场景的 JVM/AWT 桌面宿主
 compatibility/               隔离 Maven 消费者与当前公开 API 验证工程
 docs/                        项目级文档
 tools/                       CI、发布、供应链与文档工具

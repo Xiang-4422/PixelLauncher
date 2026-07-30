@@ -39,5 +39,14 @@ Pixel Engine 是 Android-first 的 retained-mode 像素 UI SDK。它以一个 `p
 bash tools/pixel-publication-validation.sh
 ```
 
-主工程必须始终只有 `app` 和 `pixel-engine` 两个 Gradle 模块。性能 benchmark、真实远程发布和
-Compose wrapper 不属于当前 Engine 工程边界。
+主工程模块清单如下；展示宿主是 Engine 的消费者，不改变 `pixel-engine` 作为统一 Android Library 的
+内部边界。
+
+<!-- architecture-contract:modules:start -->
+- `:app`
+- `:pixel-engine`
+- `:showcase`
+- `:showcase-desktop`
+<!-- architecture-contract:modules:end -->
+
+性能 benchmark、真实远程发布和 Compose wrapper 不属于当前 Engine 工程边界。
