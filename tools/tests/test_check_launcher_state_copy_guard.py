@@ -29,7 +29,7 @@ SPEC.loader.exec_module(MODULE)
 
 
 class LauncherStateCopyGuardTest(unittest.TestCase):
-    """覆盖真实 13 处基线、解析负控及全部要求的 baseline 漂移。"""
+    """覆盖真实 8 处基线、解析负控及全部要求的 baseline 漂移。"""
 
     def setUp(self) -> None:
         """为每个 fixture 创建独立临时仓库。"""
@@ -97,8 +97,8 @@ class LauncherStateCopyGuardTest(unittest.TestCase):
             "count": count,
         }
 
-    def test_current_repository_matches_reviewed_thirteen_expressions(self) -> None:
-        """真实仓库必须精确识别 Main 8、SMS 4、Call 1 共 13 处。"""
+    def test_current_repository_matches_reviewed_eight_expressions(self) -> None:
+        """真实仓库必须只识别 MainActivity 8 处，两个 Controller 均为零。"""
 
         # 真实 baseline 路径。
         baseline_path = ROOT / "tools/launcher-state-copy-baseline.json"
@@ -107,9 +107,9 @@ class LauncherStateCopyGuardTest(unittest.TestCase):
         # 门禁报告必须无差异。
         report = MODULE.check_repository(ROOT, source_root, baseline_path)
         self.assertEqual("passed", report["status"])
-        self.assertEqual(13, report["expectedExpressionCount"])
-        self.assertEqual(13, report["actualExpressionCount"])
-        # 按文件汇总数量，锁定 ADR 的 8/4/1 口径。
+        self.assertEqual(8, report["expectedExpressionCount"])
+        self.assertEqual(8, report["actualExpressionCount"])
+        # 精确文件字典同时锁定 MainActivity 为 8、两个 Controller 为零。
         counts: dict[str, int] = {}
         for observed in report["observed"]:
             file_name = Path(observed["file"]).name
@@ -117,8 +117,6 @@ class LauncherStateCopyGuardTest(unittest.TestCase):
         self.assertEqual(
             {
                 "MainActivity.kt": 8,
-                "SmsController.kt": 4,
-                "CallController.kt": 1,
             },
             counts,
         )
