@@ -16,16 +16,18 @@ import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.PageView
 import com.purride.pixelui.Padding
 import com.purride.pixelui.PixelSemanticRole
+import com.purride.pixelui.PixelTheme
+import com.purride.pixelui.PixelThemeTokens
 import com.purride.pixelui.Row
 import com.purride.pixelui.Semantics
 import com.purride.pixelui.Slidable
-import com.purride.pixelui.Stack
-import com.purride.pixelui.TextButton
-import com.purride.pixelui.TextButtonStyle
 import com.purride.pixelui.SlidableAction
 import com.purride.pixelui.SlidableActionPane
+import com.purride.pixelui.Stack
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextAlign
+import com.purride.pixelui.TextButton
+import com.purride.pixelui.TextButtonStyle
 import com.purride.pixelui.TextField
 import com.purride.pixelui.TextInputAction
 import com.purride.pixelui.TextOverflow
@@ -38,14 +40,15 @@ import com.purride.pixelui.state.PixelPagerController
 import com.purride.pixelui.state.PixelPagerState
 import com.purride.pixelui.state.PixelTextFieldController
 import com.purride.pixelui.state.PixelTextFieldState
+import com.purride.pixellauncherv2.launcher.LauncherSpacing
+import com.purride.pixellauncherv2.launcher.LauncherThemeBrightness
+import com.purride.pixellauncherv2.launcher.SmsPageIndex
+import com.purride.pixellauncherv2.launcher.SmsThreadGeometry
+import com.purride.pixellauncherv2.launcher.SmsThreadSearchModel
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.model.SmsThreadSummary
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.util.RelativeTimeFormatter
-import com.purride.pixellauncherv2.launcher.LauncherSpacing
-import com.purride.pixellauncherv2.launcher.SmsPageIndex
-import com.purride.pixellauncherv2.launcher.SmsThreadSearchModel
-import com.purride.pixellauncherv2.launcher.SmsThreadGeometry
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 private const val SMS_THREAD_ROW_PADDING_PX = LauncherSpacing.CONTENT_HORIZONTAL
@@ -445,51 +448,95 @@ private fun buildUnreadRow(
     theme: LauncherTheme,
     onOpenThread: (conversationKey: String) -> Unit,
     onMarkUnreadMessageRead: (Long) -> Unit,
-): Widget = Slidable(
-    onTap = { onOpenThread(entry.conversationKey) },
-    startActionPane = unreadReadActionPane(theme) { onMarkUnreadMessageRead(entry.messageId) },
-    endActionPane = unreadReadActionPane(theme) { onMarkUnreadMessageRead(entry.messageId) },
-    onDismissed = { onMarkUnreadMessageRead(entry.messageId) },
-    child = Padding(
-        horizontal = SMS_THREAD_ROW_PADDING_PX,
-        vertical = SMS_THREAD_ROW_PADDING_PX,
-        child = Column(
-            crossAxisAlignment = CrossAxisAlignment.STRETCH,
-            mainAxisSize = MainAxisSize.MIN,
-            spacing = 1,
-            children = listOf(
-                Row(
-                    spacing = LauncherSpacing.ROW_SPACING,
-                    crossAxisAlignment = CrossAxisAlignment.CENTER,
-                    children = listOf(
-                        Expanded(
-                            child = Text(
-                                entry.conversationTitle.ifBlank { entry.address }.uppercase(),
-                                style = TextStyle(color = theme.sms.sender),
-                                overflow = TextOverflow.ELLIPSIS,
-                                softWrap = false,
-                                maxLines = 1,
+): Widget {
+    /** 只作用于当前未读行的 PixelUI 主题，避免 Slidable 回落到默认黑白表面。 */
+    val slidableTheme = smsSlidableTheme(theme)
+    return PixelTheme(
+        tokens = slidableTheme,
+        child = Slidable(
+            onTap = { onOpenThread(entry.conversationKey) },
+            startActionPane = unreadReadActionPane(theme) { onMarkUnreadMessageRead(entry.messageId) },
+            endActionPane = unreadReadActionPane(theme) { onMarkUnreadMessageRead(entry.messageId) },
+            onDismissed = { onMarkUnreadMessageRead(entry.messageId) },
+            // Slidable 的组件表面与业务内容都显式使用 Launcher 面板色，
+            // 避免主题边界变化时重新暴露默认背景。
+            child = Container(
+                fillColor = theme.surface.panel,
+                child = Padding(
+                    horizontal = SMS_THREAD_ROW_PADDING_PX,
+                    vertical = SMS_THREAD_ROW_PADDING_PX,
+                    child = Column(
+                        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                        mainAxisSize = MainAxisSize.MIN,
+                        spacing = 1,
+                        children = listOf(
+                            Row(
+                                spacing = LauncherSpacing.ROW_SPACING,
+                                crossAxisAlignment = CrossAxisAlignment.CENTER,
+                                children = listOf(
+                                    Expanded(
+                                        child = Text(
+                                            entry.conversationTitle.ifBlank { entry.address }.uppercase(),
+                                            style = TextStyle(color = theme.sms.sender),
+                                            overflow = TextOverflow.ELLIPSIS,
+                                            softWrap = false,
+                                            maxLines = 1,
+                                        ),
+                                    ),
+                                    Text(
+                                        RelativeTimeFormatter.format(entry.dateMillis),
+                                        style = TextStyle(color = theme.sms.timestamp),
+                                        overflow = TextOverflow.ELLIPSIS,
+                                        softWrap = false,
+                                        maxLines = 1,
+                                    ),
+                                ),
                             ),
-                        ),
-                        Text(
-                            RelativeTimeFormatter.format(entry.dateMillis),
-                            style = TextStyle(color = theme.sms.timestamp),
-                            overflow = TextOverflow.ELLIPSIS,
-                            softWrap = false,
-                            maxLines = 1,
+                            Text(
+                                entry.body.trim(),
+                                style = TextStyle(color = theme.sms.incomingMessage),
+                                softWrap = true,
+                                maxLines = Int.MAX_VALUE,
+                            ),
                         ),
                     ),
                 ),
-                Text(
-                    entry.body.trim(),
-                    style = TextStyle(color = theme.sms.incomingMessage),
-                    softWrap = true,
-                    maxLines = Int.MAX_VALUE,
-                ),
             ),
         ),
-    ),
-)
+    )
+}
+
+/** 把当前 Launcher 主题的短信相关角色映射到未读行使用的 PixelUI 组件主题。 */
+private fun smsSlidableTheme(theme: LauncherTheme): PixelThemeTokens {
+    /** 与 Launcher 日间或夜间模式一致的 PixelUI 基础主题。 */
+    val base = if (theme.mode == LauncherThemeBrightness.LIGHT) {
+        PixelThemeTokens.Light
+    } else {
+        PixelThemeTokens.Dark
+    }
+    return base.copy(
+        colors = base.colors.copy(
+            surface = theme.surface.panel,
+            onSurface = theme.sms.incomingMessage,
+            surfaceVariant = theme.surface.panelSubtle,
+            onSurfaceVariant = theme.sms.threadPreview,
+            outline = theme.button.border,
+            outlineVariant = theme.button.border,
+            primary = theme.button.filledSurface,
+            onPrimary = theme.button.filledText,
+            danger = theme.semantic.danger,
+            onDanger = theme.button.filledText,
+            warning = theme.semantic.warning,
+            onWarning = theme.button.filledText,
+            disabled = theme.surface.panelSubtle,
+            onDisabled = theme.button.disabledText,
+            inactive = theme.button.unselectedText,
+            track = theme.sms.loadingTrack,
+            focus = theme.button.border,
+            selection = theme.button.pressedFill,
+        ),
+    )
+}
 
 private fun unreadReadActionPane(
     theme: LauncherTheme,

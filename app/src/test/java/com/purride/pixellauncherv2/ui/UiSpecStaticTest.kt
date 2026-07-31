@@ -737,6 +737,10 @@ class UiSpecStaticTest {
                 unreadRowSource.contains("startActionPane = unreadReadActionPane") &&
                 unreadRowSource.contains("endActionPane = unreadReadActionPane") &&
                 unreadRowSource.contains("onDismissed = { onMarkUnreadMessageRead(entry.messageId) }") &&
+                unreadRowSource.contains("tokens = slidableTheme") &&
+                unreadRowSource.contains("fillColor = theme.surface.panel") &&
+                source.contains("private fun smsSlidableTheme(theme: LauncherTheme): PixelThemeTokens") &&
+                source.contains("outline = theme.button.border") &&
                 source.contains("SlidableAction(") &&
                 source.contains("label = \"READ\"") &&
                 unreadRowSource.contains("maxLines = Int.MAX_VALUE") &&
