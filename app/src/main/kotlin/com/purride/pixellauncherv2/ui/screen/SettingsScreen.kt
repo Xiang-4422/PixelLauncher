@@ -13,6 +13,9 @@ import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
+import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
+import com.purride.pixellauncherv2.launcher.DrawerListAlignment
+import com.purride.pixellauncherv2.launcher.IdleSettings
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.PixelFontCatalog
 import com.purride.pixellauncherv2.launcher.SettingsListGeometry
@@ -21,10 +24,10 @@ import com.purride.pixellauncherv2.launcher.SettingsMenuModel
 import com.purride.pixellauncherv2.launcher.SettingsSection
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.SettingsActionRow
+import com.purride.pixellauncherv2.ui.widget.SettingsChoiceRow
 import com.purride.pixellauncherv2.ui.widget.SettingsOptionStepperRow
 import com.purride.pixellauncherv2.ui.widget.SettingsPixelSizeControl
 import com.purride.pixellauncherv2.ui.widget.SettingsSectionHeader
-import com.purride.pixellauncherv2.ui.widget.SettingsSegmentedControlRow
 import com.purride.pixellauncherv2.ui.widget.SettingsSwitchRow
 import com.purride.pixellauncherv2.ui.widget.SettingsTextEdgeResolvers
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
@@ -32,10 +35,10 @@ import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 /**
  * 重写后的设置页（pixel-engine 渲染）。
  *
- * 交互规则（Phase 3）：
- * - 点击行左侧（标题区域）→ 上一个选项（direction = -1）
- * - 点击行右侧（数值区域）→ 下一个选项（direction = +1）
- * - D-Pad 路由留待 Phase 3b 补全
+ * 交互规则：
+ * - 三项以内的枚举直接点击分段选择，明确布尔值继续使用开关语义
+ * - 超过三项的枚举暂时保留标题向前、数值向后的步进交互
+ * - THEME、FONT 与 PIXEL 使用各自保留的专用控件
  *
  * @param uiState       当前 UI 状态快照（读取设置值 + 已选索引）
  * @param theme         当前颜色主题
@@ -105,13 +108,22 @@ class SettingsScreen(
             )
             if (isPixelGapEnabled) {
                 add(
-                    SettingsOptionStepperRow(
+                    SettingsChoiceRow(
                         title = "STYLE",
-                        valueLabel = SettingsMenuModel.styleLabel(selectedPixelShape),
+                        labels = SettingsMenuModel.styleOptions.map(SettingsMenuModel::styleLabel),
+                        selectedIndex = SettingsMenuModel.styleOptions.indexOf(selectedPixelShape).coerceAtLeast(0),
                         theme = t,
                         textEdgeResolvers = widget.textEdgeResolvers,
-                        onPrevious = { widget.onItemAction(SettingsMenuItem.STYLE, -1) },
-                        onNext = { widget.onItemAction(SettingsMenuItem.STYLE, +1) },
+                        widthPolicy = SegmentedControlWidthPolicy.Content,
+                        onSelected = { selectedIndex ->
+                            /** 将直接选择的目标下标转换为现有设置动作协议使用的相对方向。 */
+                            dispatchSelection(
+                                item = SettingsMenuItem.STYLE,
+                                options = SettingsMenuModel.styleOptions,
+                                current = selectedPixelShape,
+                                selectedIndex = selectedIndex,
+                            )
+                        },
                     ),
                 )
             }
@@ -127,7 +139,7 @@ class SettingsScreen(
                 ),
             )
             add(
-                SettingsSegmentedControlRow(
+                SettingsChoiceRow(
                     title = "MODE",
                     labels = SettingsMenuModel.themeModeOptions.map(SettingsMenuModel::themeModeLabel),
                     selectedIndex = SettingsMenuModel.themeModeOptions.indexOf(selectedThemeMode).coerceAtLeast(0),
@@ -152,38 +164,70 @@ class SettingsScreen(
                     enabled = !isFontLoading && PixelFontCatalog.fontFamilyOptions().size > 1,
                 ),
             )
+            /** 当前字体家族允许用户直接选择的宽度模式，最多展示三个分段。 */
+            val widthOptions = PixelFontCatalog.widthModeOptions(fontSelection.family)
             add(
-                SettingsOptionStepperRow(
+                SettingsChoiceRow(
                     title = "WIDTH",
-                    valueLabel = SettingsMenuModel.fontWidthLabel(fontSelection.widthMode),
+                    labels = widthOptions.map(SettingsMenuModel::fontWidthLabel),
+                    selectedIndex = widthOptions.indexOf(fontSelection.widthMode).coerceAtLeast(0),
                     theme = t,
-                    onPrevious = { widget.onItemAction(SettingsMenuItem.FONT_WIDTH, -1) },
-                    onNext = { widget.onItemAction(SettingsMenuItem.FONT_WIDTH, +1) },
-                    enabled = !isFontLoading && PixelFontCatalog.widthModeOptions(fontSelection.family).size > 1,
+                    widthPolicy = SegmentedControlWidthPolicy.EqualToWidest,
+                    enabled = !isFontLoading && widthOptions.size > 1,
+                    onSelected = { selectedIndex ->
+                        /** 字体加载期间控件禁用，正常状态下按目标下标直接切换宽度。 */
+                        dispatchSelection(
+                            item = SettingsMenuItem.FONT_WIDTH,
+                            options = widthOptions,
+                            current = fontSelection.widthMode,
+                            selectedIndex = selectedIndex,
+                        )
+                    },
                 ),
             )
+            /** 当前字体与宽度组合允许用户直接选择的字号，目录约束为最多三个。 */
+            val sizeOptions = PixelFontCatalog.fontSizeOptions(fontSelection.family, fontSelection.widthMode)
             add(
-                SettingsOptionStepperRow(
+                SettingsChoiceRow(
                     title = "SIZE",
-                    valueLabel = SettingsMenuModel.fontSizeLabel(fontSelection.size),
+                    labels = sizeOptions.map(SettingsMenuModel::fontSizeLabel),
+                    selectedIndex = sizeOptions.indexOf(fontSelection.size).coerceAtLeast(0),
                     theme = t,
-                    onPrevious = { widget.onItemAction(SettingsMenuItem.FONT_SIZE, -1) },
-                    onNext = { widget.onItemAction(SettingsMenuItem.FONT_SIZE, +1) },
-                    enabled = !isFontLoading && PixelFontCatalog.fontSizeOptions(
-                        fontSelection.family,
-                        fontSelection.widthMode,
-                    ).size > 1,
+                    widthPolicy = SegmentedControlWidthPolicy.EqualToWidest,
+                    enabled = !isFontLoading && sizeOptions.size > 1,
+                    onSelected = { selectedIndex ->
+                        /** 通过目标字号下标复用既有方向动作，避免新增状态写入通道。 */
+                        dispatchSelection(
+                            item = SettingsMenuItem.FONT_SIZE,
+                            options = sizeOptions,
+                            current = fontSelection.size,
+                            selectedIndex = selectedIndex,
+                        )
+                    },
                 ),
             )
             addSection(SettingsSection.DRAWER, t)
             add(
-                SettingsOptionStepperRow(
+                SettingsChoiceRow(
                     title = "ALIGN",
-                    valueLabel = SettingsMenuModel.drawerListAlignmentLabel(drawerListAlignment),
+                    labels = DrawerListAlignment.entries.map(
+                        SettingsMenuModel::drawerListAlignmentLabel,
+                    ),
+                    selectedIndex = DrawerListAlignment.entries
+                        .indexOf(drawerListAlignment)
+                        .coerceAtLeast(0),
                     theme = t,
                     textEdgeResolvers = widget.textEdgeResolvers,
-                    onPrevious = { widget.onItemAction(SettingsMenuItem.APP_LIST_ALIGNMENT, -1) },
-                    onNext = { widget.onItemAction(SettingsMenuItem.APP_LIST_ALIGNMENT, +1) },
+                    widthPolicy = SegmentedControlWidthPolicy.Content,
+                    onSelected = { selectedIndex ->
+                        /** 抽屉对齐方式固定为三项，允许直接点击目标位置。 */
+                        dispatchSelection(
+                            item = SettingsMenuItem.APP_LIST_ALIGNMENT,
+                            options = DrawerListAlignment.entries,
+                            current = drawerListAlignment,
+                            selectedIndex = selectedIndex,
+                        )
+                    },
                 ),
             )
             add(
@@ -230,24 +274,40 @@ class SettingsScreen(
                 )
                 if (inactivityAutoIdleEnabled) {
                     add(
-                        SettingsOptionStepperRow(
+                        SettingsChoiceRow(
                             title = "TIMEOUT",
-                            valueLabel = SettingsMenuModel.idleTimeoutLabel(idleTimeoutSeconds),
+                            labels = IdleSettings.timeoutOptionsSeconds.map(SettingsMenuModel::idleTimeoutLabel),
+                            selectedIndex = IdleSettings.timeoutOptionsSeconds.indexOf(idleTimeoutSeconds).coerceAtLeast(0),
                             theme = t,
                             textEdgeResolvers = widget.textEdgeResolvers,
-                            onPrevious = { widget.onItemAction(SettingsMenuItem.IDLE_TIMEOUT, -1) },
-                            onNext = { widget.onItemAction(SettingsMenuItem.IDLE_TIMEOUT, +1) },
+                            onSelected = { selectedIndex ->
+                                /** 四档超时继续显示步进器，但共享统一的受控候选项协议。 */
+                                dispatchSelection(
+                                    item = SettingsMenuItem.IDLE_TIMEOUT,
+                                    options = IdleSettings.timeoutOptionsSeconds,
+                                    current = idleTimeoutSeconds,
+                                    selectedIndex = selectedIndex,
+                                )
+                            },
                         ),
                     )
                 }
                 add(
-                    SettingsOptionStepperRow(
+                    SettingsChoiceRow(
                         title = "EFFECT",
-                        valueLabel = SettingsMenuModel.chargeIdleEffectLabel(chargeIdleEffect),
+                        labels = ChargeIdleEffect.entries.map(SettingsMenuModel::chargeIdleEffectLabel),
+                        selectedIndex = ChargeIdleEffect.entries.indexOf(chargeIdleEffect).coerceAtLeast(0),
                         theme = t,
                         textEdgeResolvers = widget.textEdgeResolvers,
-                        onPrevious = { widget.onItemAction(SettingsMenuItem.CHARGE_IDLE_EFFECT, -1) },
-                        onNext = { widget.onItemAction(SettingsMenuItem.CHARGE_IDLE_EFFECT, +1) },
+                        onSelected = { selectedIndex ->
+                            /** 六种效果等待专用组件，当前由统一入口回退为步进器。 */
+                            dispatchSelection(
+                                item = SettingsMenuItem.CHARGE_IDLE_EFFECT,
+                                options = ChargeIdleEffect.entries,
+                                current = chargeIdleEffect,
+                                selectedIndex = selectedIndex,
+                            )
+                        },
                     ),
                 )
             }
@@ -275,5 +335,24 @@ class SettingsScreen(
             )
         }
 
+        /**
+         * 将分段控件的绝对目标下标转换为现有设置分发器接受的相对方向。
+         *
+         * 相同选项保持幂等；无效状态或越界目标不会触发设置写入。
+         */
+        private fun <T> dispatchSelection(
+            item: SettingsMenuItem,
+            options: List<T>,
+            current: T,
+            selectedIndex: Int,
+        ) {
+            /** 当前值在受控选项列表中的位置。 */
+            val currentIndex = options.indexOf(current)
+            if (currentIndex >= 0 && selectedIndex in options.indices && selectedIndex != currentIndex) {
+                widget.onItemAction(item, selectedIndex - currentIndex)
+            }
+        }
+
     }
+
 }

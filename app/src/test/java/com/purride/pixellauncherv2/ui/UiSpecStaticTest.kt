@@ -237,9 +237,9 @@ class UiSpecStaticTest {
                 Regex("""SettingsSwitchRow\(\s*title = "GAP"""").containsMatchIn(screenSource),
         )
         assertTrue(
-            "STYLE must only be composed while GAP is enabled.",
+            "STYLE must use the three-item selector only while GAP is enabled.",
             Regex(
-                """if \(isPixelGapEnabled\) \{\s*add\(\s*SettingsOptionStepperRow\(\s*title = "STYLE"""",
+                """if \(isPixelGapEnabled\) \{\s*add\(\s*SettingsChoiceRow\(\s*title = "STYLE"""",
             ).containsMatchIn(screenSource),
         )
         assertTrue(
@@ -282,6 +282,61 @@ class UiSpecStaticTest {
                 !screenSource.contains("previewPixelSizeRatio") &&
                 !screenSource.contains("previewGapRatio"),
         )
+    }
+
+    /** 三项以内的枚举设置直接展示候选项，更多候选项暂时沿用原有控件。 */
+    @Test
+    fun compactEnumSettingsUseSelectorsWithoutMisusingSwitchSemantics() {
+        /** 顶层设置页源码，用于约束各设置项选择的组件类型。 */
+        val settingsSource = resolveModuleRoot()
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/SettingsScreen.kt")
+            .readText()
+        /** MORE 设置页源码，用于覆盖实验性三态设置。 */
+        val moreSettingsSource = resolveModuleRoot()
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/MoreSettingsScreen.kt")
+            .readText()
+
+        listOf("STYLE", "MODE", "WIDTH", "SIZE", "ALIGN", "TIMEOUT", "EFFECT").forEach { title ->
+            assertTrue(
+                "$title must use the option-count-aware choice row without switch semantics.",
+                Regex("""SettingsChoiceRow\(\s*title = "$title"""").containsMatchIn(settingsSource) &&
+                    !Regex("""SettingsSwitchRow\(\s*title = "$title"""").containsMatchIn(settingsSource),
+            )
+        }
+        assertTrue(
+            "SHAKE MODE must expose its three enum values directly.",
+            Regex("""SettingsChoiceRow\(\s*title = "SHAKE MODE"""")
+                .containsMatchIn(moreSettingsSource) &&
+                !Regex("""SettingsSwitchRow\(\s*title = "SHAKE MODE"""").containsMatchIn(moreSettingsSource),
+        )
+        listOf("GAP", "SEARCH", "ENABLE", "CHARGE", "AUTO").forEach { title ->
+            assertTrue(
+                "$title is an explicit boolean setting and must retain switch semantics.",
+                Regex("""SettingsSwitchRow\(\s*title = "$title"""").containsMatchIn(settingsSource),
+            )
+        }
+        listOf("SHAKE", "HAND", "HAND DEBUG").forEach { title ->
+            assertTrue(
+                "$title is an explicit boolean setting and must retain switch semantics.",
+                Regex("""SettingsSwitchRow\(\s*title = "$title"""").containsMatchIn(moreSettingsSource),
+            )
+        }
+        /** 统一入口必须把超过三项的候选列表回退为步进器。 */
+        val controlsSource = resolveModuleRoot()
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/widget/SettingsControls.kt")
+            .readText()
+        assertTrue(
+            "Choice rows must reserve segmented controls for at most three options.",
+            controlsSource.contains("SETTINGS_INLINE_SELECTION_MAX_OPTIONS = 3") &&
+                controlsSource.contains("labels.size <= SETTINGS_INLINE_SELECTION_MAX_OPTIONS") &&
+                controlsSource.contains("return SettingsOptionStepperRow("),
+        )
+        listOf("THEME", "FONT").forEach { title ->
+            assertTrue(
+                "$title is explicitly excluded from selector conversion.",
+                Regex("""SettingsOptionStepperRow\(\s*title = "$title"""").containsMatchIn(settingsSource),
+            )
+        }
     }
 
     @Test

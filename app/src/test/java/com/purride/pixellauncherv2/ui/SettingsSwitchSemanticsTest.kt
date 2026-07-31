@@ -56,6 +56,38 @@ class SettingsSwitchSemanticsTest {
         }
     }
 
+    /** 单一字体属性不可切换时，通用枚举行必须禁用底层分段语义与回调。 */
+    @Test
+    fun disabledEnumRowBlocksSelectionActions() {
+        /** 记录禁用控件是否错误触发选择回调。 */
+        var selectionCount = 0
+        /** 使用离屏像素宿主读取禁用状态下的语义节点。 */
+        val tester = PixelTester()
+        try {
+            tester.pumpWidget(
+                SettingsSegmentedControlRow(
+                    title = "SIZE",
+                    labels = listOf("12PX"),
+                    selectedIndex = 0,
+                    theme = testTheme(),
+                    enabled = false,
+                    onSelected = { selectionCount += 1 },
+                ),
+                logicalWidth = 120,
+                logicalHeight = 20,
+            )
+            /** 唯一字号候选仍可读，但不提供点击能力。 */
+            val sizeTab = tester.semanticsNodes().single { node -> node.role == PixelSemanticRole.TAB }
+
+            assertFalse(sizeTab.enabled)
+            assertFalse(PixelSemanticsAction.CLICK in sizeTab.actions)
+            assertFalse(tester.performSemanticsAction(sizeTab.id, PixelSemanticsAction.CLICK))
+            assertEquals(0, selectionCount)
+        } finally {
+            tester.dispose()
+        }
+    }
+
     /** Switch 节点包含 checked 与 click，内部 OFF/ON Tab 不暴露给无障碍树。 */
     @Test
     fun binaryWrapperExportsOneSwitchNode() {

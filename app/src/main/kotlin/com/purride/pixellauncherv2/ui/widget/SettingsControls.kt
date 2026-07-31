@@ -49,10 +49,54 @@ private const val SETTINGS_SWITCH_SEGMENT_GAP_PX = 1
 /** 设置行标题列与值列的内部水平间距，不用于相邻设置行。 */
 private const val SETTINGS_INLINE_COLUMN_GAP_PX = 2
 
+/** 行内滑动选择器允许直接展示的最大候选项数量。 */
+private const val SETTINGS_INLINE_SELECTION_MAX_OPTIONS = 3
+
+/**
+ * 根据候选项数量选择设置枚举行：三项以内直接选择，更多项暂时回退步进器。
+ *
+ * 该入口集中约束设置页的组件选择；未来增加多候选项组件时只需替换超过三项的分支。
+ */
+fun SettingsChoiceRow(
+    title: String,
+    labels: List<String>,
+    selectedIndex: Int,
+    theme: LauncherTheme,
+    textEdgeResolvers: SettingsTextEdgeResolvers = SettingsTextEdgeResolvers.None,
+    widthPolicy: SegmentedControlWidthPolicy = SegmentedControlWidthPolicy.Content,
+    enabled: Boolean = true,
+    onSelected: (Int) -> Unit,
+): Widget {
+    require(labels.isNotEmpty()) { "SettingsChoiceRow labels must not be empty." }
+    require(selectedIndex in labels.indices) { "SettingsChoiceRow selectedIndex must reference labels." }
+    if (labels.size <= SETTINGS_INLINE_SELECTION_MAX_OPTIONS) {
+        return SettingsSegmentedControlRow(
+            title = title,
+            labels = labels,
+            selectedIndex = selectedIndex,
+            theme = theme,
+            textEdgeResolvers = textEdgeResolvers,
+            widthPolicy = widthPolicy,
+            enabled = enabled,
+            onSelected = onSelected,
+        )
+    }
+    return SettingsOptionStepperRow(
+        title = title,
+        valueLabel = labels[selectedIndex],
+        theme = theme,
+        textEdgeResolvers = textEdgeResolvers,
+        onPrevious = { onSelected(wrappedOptionIndex(selectedIndex - 1, labels.size)) },
+        onNext = { onSelected(wrappedOptionIndex(selectedIndex + 1, labels.size)) },
+        enabled = enabled,
+    )
+}
+
 /**
  * 构建设置页的通用多态单选行，并把每项宽度策略透传给底层分段选择器。
  *
  * @param widthPolicy 支持各项内容宽、按最长项等宽或调用方指定等宽。
+ * @param enabled 是否允许点击、键盘和无障碍操作整组候选项。
  */
 fun SettingsSegmentedControlRow(
     title: String,
@@ -61,11 +105,17 @@ fun SettingsSegmentedControlRow(
     theme: LauncherTheme,
     textEdgeResolvers: SettingsTextEdgeResolvers = SettingsTextEdgeResolvers.None,
     widthPolicy: SegmentedControlWidthPolicy = SegmentedControlWidthPolicy.Content,
+    enabled: Boolean = true,
     onSelected: (Int) -> Unit,
 ): Widget {
     return Container(
         child = settingsInlineRow(
-            title = settingsTitleCell(title = title, theme = theme, textEdgeResolvers = textEdgeResolvers),
+            title = settingsTitleCell(
+                title = title,
+                theme = theme,
+                textEdgeResolvers = textEdgeResolvers,
+                enabled = enabled,
+            ),
             trailing = SettingsSelection(
                 title = title,
                 labels = labels,
@@ -73,6 +123,7 @@ fun SettingsSegmentedControlRow(
                 theme = theme,
                 widthPolicy = widthPolicy,
                 showLabels = true,
+                enabled = enabled,
                 onSelected = onSelected,
             ),
             titleFlex = 1,
@@ -339,6 +390,7 @@ private fun SettingsSwitch(
         theme = theme,
         widthPolicy = widthPolicy,
         showLabels = showLabels,
+        enabled = true,
         onSelected = { selectedIndex ->
             /** 重选当前项保持幂等，仅在目标布尔值改变时调用旧的 toggle 协议。 */
             val nextChecked = selectedIndex == 1
@@ -375,6 +427,7 @@ private fun SettingsSelection(
     theme: LauncherTheme,
     widthPolicy: SegmentedControlWidthPolicy,
     showLabels: Boolean,
+    enabled: Boolean,
     onSelected: (Int) -> Unit,
 ): Widget = SegmentedControl(
     labels = labels,
@@ -395,4 +448,8 @@ private fun SettingsSelection(
         segmentSpacing = SETTINGS_SWITCH_SEGMENT_GAP_PX,
     ),
     key = "$title-settings-selection",
+    enabled = enabled,
 )
+
+/** 将步进器越过首尾的目标位置循环映射回合法候选项下标。 */
+private fun wrappedOptionIndex(index: Int, optionCount: Int): Int = ((index % optionCount) + optionCount) % optionCount

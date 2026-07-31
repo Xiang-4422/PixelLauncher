@@ -7,6 +7,7 @@ import com.purride.pixelui.Expanded
 import com.purride.pixelui.ListView
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Padding
+import com.purride.pixelui.SegmentedControlWidthPolicy
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Widget
@@ -16,6 +17,7 @@ import com.purride.pixellauncherv2.BuildConfig
 import com.purride.pixellauncherv2.launcher.DataHealthModel
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.NotificationSettingsModel
+import com.purride.pixellauncherv2.launcher.PixelMatterEffectMode
 import com.purride.pixellauncherv2.launcher.SettingsListGeometry
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
@@ -23,6 +25,7 @@ import com.purride.pixellauncherv2.launcher.SettingsSection
 import com.purride.pixellauncherv2.launcher.pixelMatterEffectModeLabel
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.SettingsActionRow
+import com.purride.pixellauncherv2.ui.widget.SettingsChoiceRow
 import com.purride.pixellauncherv2.ui.widget.SettingsSectionHeader
 import com.purride.pixellauncherv2.ui.widget.SettingsSwitchRow
 import com.purride.pixellauncherv2.ui.widget.SettingsTextEdgeResolvers
@@ -108,12 +111,26 @@ class MoreSettingsScreen(
             )
             if (isPixelMatterEffectEnabled) {
                 add(
-                    SettingsActionRow(
+                    SettingsChoiceRow(
                         title = "SHAKE MODE",
-                        valueLabel = pixelMatterEffectModeLabel(pixelMatterEffectMode),
+                        labels = PixelMatterEffectMode.entries.map(
+                            ::pixelMatterEffectModeLabel,
+                        ),
+                        selectedIndex = PixelMatterEffectMode.entries
+                            .indexOf(pixelMatterEffectMode)
+                            .coerceAtLeast(0),
                         theme = currentTheme,
                         textEdgeResolvers = widget.textEdgeResolvers,
-                        onPressed = { widget.onItemAction(SettingsMenuItem.PIXEL_MATTER_EFFECT_MODE, +1) },
+                        widthPolicy = SegmentedControlWidthPolicy.Content,
+                        onSelected = { selectedIndex ->
+                            /** SHAKE MODE 固定为三项，点击后直接换算到现有相对方向协议。 */
+                            dispatchSelection(
+                                item = SettingsMenuItem.PIXEL_MATTER_EFFECT_MODE,
+                                options = PixelMatterEffectMode.entries,
+                                current = pixelMatterEffectMode,
+                                selectedIndex = selectedIndex,
+                            )
+                        },
                     ),
                 )
             }
@@ -173,6 +190,20 @@ class MoreSettingsScreen(
                     topMargin = topMargin,
                 ),
             )
+        }
+
+        /** 将三态分段控件的目标下标转换为设置层沿用的相对方向。 */
+        private fun <T> dispatchSelection(
+            item: SettingsMenuItem,
+            options: List<T>,
+            current: T,
+            selectedIndex: Int,
+        ) {
+            /** 当前设置值对应的选项下标。 */
+            val currentIndex = options.indexOf(current)
+            if (currentIndex >= 0 && selectedIndex in options.indices && selectedIndex != currentIndex) {
+                widget.onItemAction(item, selectedIndex - currentIndex)
+            }
         }
     }
 }
