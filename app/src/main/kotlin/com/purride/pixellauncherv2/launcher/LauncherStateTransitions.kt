@@ -325,7 +325,11 @@ object LauncherStateTransitions {
         )
     }
 
-    /** 打开联系人详情；仅允许从拨号模块进入。 */
+    /**
+     * 打开联系人详情。只校验 lookupKey 非空，不校验来源 mode——当前生产调用均来自
+     * 拨号模块（ContactsController），是否需要来源限制留待产品决策
+     * （见 docs/testing/launcher-transition-baseline.md §6）。
+     */
     fun showContactDetail(state: LauncherState, lookupKey: String): LauncherState {
         if (lookupKey.isBlank()) {
             return state
