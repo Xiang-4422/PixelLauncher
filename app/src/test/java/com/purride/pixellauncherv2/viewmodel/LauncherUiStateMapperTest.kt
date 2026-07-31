@@ -95,8 +95,7 @@ class LauncherUiStateMapperTest {
             notificationCount = 1,
             notificationSources = listOf(NotificationSourceInfo("bank", "BANK")),
             notificationItems = listOf(NotificationSignal("bank", "BANK", title = "OTP")),
-            mutedNotificationSourceIds = setOf("noisy"),
-            priorityNotificationSourceIds = setOf("bank"),
+            allowedNotificationSourceIds = setOf("bank"),
             rainHintText = "RAIN 18:00",
             rainUpdatedTimeText = "09:41",
             screenUsageTimeText = "01:23",
@@ -167,8 +166,7 @@ class LauncherUiStateMapperTest {
         assertEquals(1, ui.notificationCount)
         assertEquals(listOf(NotificationSourceInfo("bank", "BANK")), ui.notificationSources)
         assertEquals(listOf(NotificationSignal("bank", "BANK", title = "OTP")), ui.notificationItems)
-        assertEquals(setOf("noisy"), ui.mutedNotificationSourceIds)
-        assertEquals(setOf("bank"), ui.priorityNotificationSourceIds)
+        assertEquals(setOf("bank"), ui.allowedNotificationSourceIds)
         assertEquals("RAIN 18:00", ui.rainHintText)
         assertEquals("09:41", ui.rainUpdatedTimeText)
         assertEquals("01:23", ui.screenUsageTimeText)

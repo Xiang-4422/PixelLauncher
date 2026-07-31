@@ -404,8 +404,7 @@ class MainActivity : AppCompatActivity() {
         state = notificationSummarySettingsRepository.rules().let { rules ->
             LauncherStateTransitions.updateNotificationRules(
                 state = state,
-                mutedSourceIds = rules.mutedSourceIds,
-                prioritySourceIds = rules.prioritySourceIds,
+                allowedSourceIds = rules.allowedSourceIds,
             )
         }
         state = LauncherStateTransitions.updateStats(state, launcherStatsRepository.read())
@@ -2103,11 +2102,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onNotificationSourcePressed(sourceId: String) {
-        val rules = notificationSummarySettingsRepository.cycleSource(sourceId)
+        val rules = notificationSummarySettingsRepository.toggleSource(sourceId)
         state = LauncherStateTransitions.updateNotificationRules(
             state = state,
-            mutedSourceIds = rules.mutedSourceIds,
-            prioritySourceIds = rules.prioritySourceIds,
+            allowedSourceIds = rules.allowedSourceIds,
         )
         NotificationSummaryStore.updateRules(rules)
         renderCurrentFrame()

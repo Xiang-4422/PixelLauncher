@@ -869,15 +869,13 @@ class LauncherStateTransitionsTest {
     }
 
     @Test
-    fun updateNotificationRulesTrimsSourcesAndLetsMuteWin() {
+    fun updateNotificationRulesTrimsWhitelistSources() {
         val result = LauncherStateTransitions.updateNotificationRules(
             state = LauncherState(),
-            mutedSourceIds = setOf(" noisy ", ""),
-            prioritySourceIds = setOf("noisy", "bank"),
+            allowedSourceIds = setOf(" bank ", "", "chat"),
         )
 
-        assertEquals(setOf("noisy"), result.mutedNotificationSourceIds)
-        assertEquals(setOf("bank"), result.priorityNotificationSourceIds)
+        assertEquals(setOf("bank", "chat"), result.allowedNotificationSourceIds)
     }
 
     @Test

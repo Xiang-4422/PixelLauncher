@@ -58,17 +58,17 @@ class NotificationSummaryRepositoryTest {
             ),
             nextRules = NotificationSummaryRules(),
         )
-        NotificationSummaryStore.updateRules(NotificationSummaryRules(mutedSourceIds = setOf("bank")))
+        NotificationSummaryStore.updateRules(NotificationSummaryRules(allowedSourceIds = setOf("bank")))
 
-        assertEquals(1, received[1].count)
-        assertEquals("BANK OTP", received[1].text)
         assertEquals(
             NotificationSummary(
                 count = 0,
                 text = "",
                 sources = received[1].sources,
             ),
-            received[2],
+            received[1],
         )
+        assertEquals(1, received[2].count)
+        assertEquals("BANK OTP", received[2].text)
     }
 }

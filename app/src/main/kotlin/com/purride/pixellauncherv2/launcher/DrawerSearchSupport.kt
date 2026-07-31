@@ -100,6 +100,39 @@ object DrawerSearchSupport {
         )
     }
 
+    /**
+     * 按 Drawer 的搜索规则计算匹配等级；数值越小表示结果越相关，`null` 表示不匹配。
+     *
+     * 该方法供 Drawer 之外的应用选择页面复用，避免白名单等页面另建一套搜索语义。
+     */
+    fun searchScore(
+        metadata: DrawerSearchMetadata,
+        query: String,
+    ): Int? {
+        val normalizedQuery = normalizeForSearch(query)
+        if (normalizedQuery.isEmpty()) {
+            return 0
+        }
+        return calculateSearchScore(
+            metadata = metadata,
+            normalizedQuery = normalizedQuery,
+        )
+    }
+
+    /** 使用已经归一化的查询文本计算 Drawer 搜索匹配等级。 */
+    fun searchScoreForNormalizedQuery(
+        metadata: DrawerSearchMetadata,
+        normalizedQuery: String,
+    ): Int? {
+        if (normalizedQuery.isEmpty()) {
+            return 0
+        }
+        return calculateSearchScore(
+            metadata = metadata,
+            normalizedQuery = normalizedQuery,
+        )
+    }
+
     private fun matchSourceLabel(
         normalizedQuery: String,
         metadata: DrawerSearchMetadata,
@@ -117,6 +150,42 @@ object DrawerSearchSupport {
                 metadata.normalizedAlias.matchesQuery(normalizedQuery) -> "PKG"
 
             metadata.normalizedActivity.matchesQuery(normalizedQuery) -> "ACT"
+
+            else -> null
+        }
+    }
+
+    /** Drawer 统一使用的精确、前缀、拼音及包含匹配优先级。 */
+    private fun calculateSearchScore(
+        metadata: DrawerSearchMetadata,
+        normalizedQuery: String,
+    ): Int? {
+        return when {
+            metadata.normalizedLabel == normalizedQuery ||
+                metadata.normalizedEnglishLabel == normalizedQuery ||
+                metadata.normalizedAlias == normalizedQuery ||
+                metadata.normalizedUserAliases.any { it == normalizedQuery } ||
+                metadata.normalizedPackage == normalizedQuery ||
+                metadata.normalizedActivity == normalizedQuery ||
+                metadata.pinyinFull == normalizedQuery ||
+                metadata.pinyinInitial == normalizedQuery -> 0
+
+            metadata.normalizedLabel.startsWith(normalizedQuery) -> 1
+            metadata.normalizedEnglishLabel.startsWith(normalizedQuery) -> 1
+            metadata.normalizedUserAliases.any { it.startsWith(normalizedQuery) } -> 1
+            metadata.normalizedAlias.startsWith(normalizedQuery) -> 2
+            metadata.normalizedPackage.startsWith(normalizedQuery) -> 2
+            metadata.normalizedActivity.startsWith(normalizedQuery) -> 2
+            metadata.pinyinFull.startsWith(normalizedQuery) -> 3
+            metadata.pinyinInitial.startsWith(normalizedQuery) -> 4
+            metadata.normalizedLabel.contains(normalizedQuery) ||
+                metadata.normalizedEnglishLabel.contains(normalizedQuery) ||
+                metadata.normalizedUserAliases.any { it.contains(normalizedQuery) } ||
+                metadata.normalizedAlias.contains(normalizedQuery) ||
+                metadata.normalizedPackage.contains(normalizedQuery) ||
+                metadata.normalizedActivity.contains(normalizedQuery) ||
+                metadata.pinyinFull.contains(normalizedQuery) ||
+                metadata.pinyinInitial.contains(normalizedQuery) -> 5
 
             else -> null
         }
