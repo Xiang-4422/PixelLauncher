@@ -53,7 +53,7 @@ class UiSpecStaticTest {
             .resolve("src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt")
             .readText()
         val switchSource = Regex(
-            """private fun SettingsSwitch\([\s\S]*?\n}\n\nprivate fun switchSegment""",
+            """private fun SettingsSwitch\([\s\S]*\n}""",
         ).find(controlsSource)?.value.orEmpty()
         val offenders = listOfNotNull(
             if (!spacingSource.contains("const val CONTENT_HORIZONTAL = 2")) "CONTENT_HORIZONTAL must be 2" else null,
@@ -99,8 +99,12 @@ class UiSpecStaticTest {
             } else {
                 null
             },
-            if (switchSource.isEmpty() || switchSource.contains("padding =")) {
-                "Settings Switch outer border must not add a gap around active segments"
+            if (switchSource.isEmpty() ||
+                !switchSource.contains("SegmentedControl(") ||
+                !switchSource.contains("SegmentedControlWidthPolicy.EqualToWidest") ||
+                !switchSource.contains("selectedFillColor = theme.button.pressedFill")
+            ) {
+                "Settings Switch must wrap the shared equal-width sliding SegmentedControl"
             } else {
                 null
             },

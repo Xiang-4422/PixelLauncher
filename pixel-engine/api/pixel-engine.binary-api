@@ -2125,6 +2125,8 @@ public final class com.purride.pixelui.PixelComponentsKt {
   public static com.purride.pixelui.Widget TabsWithControlStates$default(java.util.List, int, kotlin.jvm.functions.Function1, int, java.lang.Object, boolean, int, java.lang.Object);
   public static final com.purride.pixelui.Widget SegmentedControl(java.util.List<java.lang.String>, int, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, java.lang.Object, boolean);
   public static com.purride.pixelui.Widget SegmentedControl$default(java.util.List, int, kotlin.jvm.functions.Function1, java.lang.Object, boolean, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget SegmentedControlWithLayout(java.util.List<java.lang.String>, int, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, com.purride.pixelui.SegmentedControlWidthPolicy, com.purride.pixelui.SegmentedControlStyle, int, java.lang.Object, boolean);
+  public static com.purride.pixelui.Widget SegmentedControlWithLayout$default(java.util.List, int, kotlin.jvm.functions.Function1, com.purride.pixelui.SegmentedControlWidthPolicy, com.purride.pixelui.SegmentedControlStyle, int, java.lang.Object, boolean, int, java.lang.Object);
   public static final com.purride.pixelui.Widget SegmentedControlWithControlStates(java.util.List<java.lang.String>, int, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, int, java.lang.Object, boolean);
   public static com.purride.pixelui.Widget SegmentedControlWithControlStates$default(java.util.List, int, kotlin.jvm.functions.Function1, int, java.lang.Object, boolean, int, java.lang.Object);
   public static final com.purride.pixelui.Widget ValueAdjuster(java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.String, boolean, int, com.purride.pixelui.ValueAdjusterStyle, java.lang.Object);
@@ -5823,6 +5825,60 @@ public final class com.purride.pixelui.SectionListSection {
   public final com.purride.pixelui.Widget component3();
   public final com.purride.pixelui.SectionListSection copy(java.util.List<? extends com.purride.pixelui.Widget>, com.purride.pixelui.Widget, com.purride.pixelui.Widget);
   public static com.purride.pixelui.SectionListSection copy$default(com.purride.pixelui.SectionListSection, java.util.List, com.purride.pixelui.Widget, com.purride.pixelui.Widget, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelui.SegmentedControlStyle {
+  public static final com.purride.pixelui.SegmentedControlStyle$Companion Companion;
+  public com.purride.pixelui.SegmentedControlStyle(com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.EdgeInsets, int, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final com.purride.pixelcore.PixelColor getContainerColor-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor getBorderColor-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor getSelectedFillColor-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor getSelectedContentColor-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor getUnselectedContentColor-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor getDisabledContentColor-BDeX7ZQ();
+  public final com.purride.pixelui.EdgeInsets getPadding();
+  public final int getSegmentSpacing();
+  public final com.purride.pixelcore.PixelColor component1-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor component2-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor component3-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor component4-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor component5-BDeX7ZQ();
+  public final com.purride.pixelcore.PixelColor component6-BDeX7ZQ();
+  public final com.purride.pixelui.EdgeInsets component7();
+  public final int component8();
+  public final com.purride.pixelui.SegmentedControlStyle copy-hxnZD5M(com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.EdgeInsets, int);
+  public static com.purride.pixelui.SegmentedControlStyle copy-hxnZD5M$default(com.purride.pixelui.SegmentedControlStyle, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.EdgeInsets, int, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+  public com.purride.pixelui.SegmentedControlStyle(com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelcore.PixelColor, com.purride.pixelui.EdgeInsets, int, kotlin.jvm.internal.DefaultConstructorMarker);
+}
+public final class com.purride.pixelui.SegmentedControlStyle$Companion {
+  public final com.purride.pixelui.SegmentedControlStyle getDefault();
+  public com.purride.pixelui.SegmentedControlStyle$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
+}
+public interface com.purride.pixelui.SegmentedControlWidthPolicy {
+}
+public final class com.purride.pixelui.SegmentedControlWidthPolicy$Content implements com.purride.pixelui.SegmentedControlWidthPolicy {
+  public static final com.purride.pixelui.SegmentedControlWidthPolicy$Content INSTANCE;
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelui.SegmentedControlWidthPolicy$EqualToWidest implements com.purride.pixelui.SegmentedControlWidthPolicy {
+  public static final com.purride.pixelui.SegmentedControlWidthPolicy$EqualToWidest INSTANCE;
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+public final class com.purride.pixelui.SegmentedControlWidthPolicy$Fixed implements com.purride.pixelui.SegmentedControlWidthPolicy {
+  public com.purride.pixelui.SegmentedControlWidthPolicy$Fixed(int);
+  public final int getWidth();
+  public final int component1();
+  public final com.purride.pixelui.SegmentedControlWidthPolicy$Fixed copy(int);
+  public static com.purride.pixelui.SegmentedControlWidthPolicy$Fixed copy$default(com.purride.pixelui.SegmentedControlWidthPolicy$Fixed, int, int, java.lang.Object);
   public java.lang.String toString();
   public int hashCode();
   public boolean equals(java.lang.Object);

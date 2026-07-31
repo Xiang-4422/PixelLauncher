@@ -437,6 +437,7 @@ com.purride.pixelui public companion object
 com.purride.pixelui public companion object
 com.purride.pixelui public companion object
 com.purride.pixelui public companion object
+com.purride.pixelui public companion object
 com.purride.pixelui public const val FPS_WINDOW: Int = 30
 com.purride.pixelui public const val PixelMultiStackSnapshotBundleKey: String =
 com.purride.pixelui public const val PixelMultiStackSnapshotSchemaVersion: Int = 1
@@ -461,6 +462,7 @@ com.purride.pixelui public data class Encoded(
 com.purride.pixelui public data class Failed(
 com.purride.pixelui public data class Failed(
 com.purride.pixelui public data class Failure(public val error: Throwable) : PixelAsyncSnapshot<Nothing>()
+com.purride.pixelui public data class Fixed(
 com.purride.pixelui public data class Fixed(
 com.purride.pixelui public data class FormFieldDecoration(
 com.purride.pixelui public data class LineTo(val point: PixelPoint) : PixelPathCommand()
@@ -571,6 +573,7 @@ com.purride.pixelui public data class Rejected(public val message: String) : Pix
 com.purride.pixelui public data class Rejected(public val message: String) : PixelRouteStateDecodeResult
 com.purride.pixelui public data class Restored(
 com.purride.pixelui public data class SectionListSection(
+com.purride.pixelui public data class SegmentedControlStyle(
 com.purride.pixelui public data class SlidableActionPane(
 com.purride.pixelui public data class Success<T>(public val value: T) : PixelAsyncSnapshot<T>()
 com.purride.pixelui public data class Success<out R>(public val value: R) : PixelRouteOutcome<R>
@@ -579,6 +582,8 @@ com.purride.pixelui public data class Unsupported(
 com.purride.pixelui public data class Value<T>(
 com.purride.pixelui public data class ValueAdjusterStyle(
 com.purride.pixelui public data object Close : PixelPathCommand()
+com.purride.pixelui public data object Content : SegmentedControlWidthPolicy
+com.purride.pixelui public data object EqualToWidest : SegmentedControlWidthPolicy
 com.purride.pixelui public enum class Alignment
 com.purride.pixelui public enum class AlignmentDirectional
 com.purride.pixelui public enum class CrossAxisAlignment
@@ -786,6 +791,7 @@ com.purride.pixelui public fun ScrollController.showItem(
 com.purride.pixelui public fun Scrollbar(
 com.purride.pixelui public fun Scrollbar(
 com.purride.pixelui public fun SectionList(
+com.purride.pixelui public fun SegmentedControl(
 com.purride.pixelui public fun SegmentedControl(
 com.purride.pixelui public fun SegmentedControl(
 com.purride.pixelui public fun Semantics(
@@ -1177,6 +1183,7 @@ com.purride.pixelui public sealed interface PixelRouteStateDecodeResult
 com.purride.pixelui public sealed interface PixelSliver
 com.purride.pixelui public sealed interface PixelTypedDeepLinkResult
 com.purride.pixelui public sealed interface PixelTypedSystemAction
+com.purride.pixelui public sealed interface SegmentedControlWidthPolicy
 com.purride.pixelui public typealias Axis = PixelAxis
 com.purride.pixelui public typealias ButtonStyle = PixelButtonStyle
 com.purride.pixelui public typealias FormValidator = (Map<String, Any?>) -> Map<String, String>
@@ -1240,6 +1247,7 @@ com.purride.pixelui public val Default: PixelTextStyle = PixelTextStyle()
 com.purride.pixelui public val Default: PixelThemeTokens = Dark
 com.purride.pixelui public val Default: PixelTypographyToken = PixelTypographyToken()
 com.purride.pixelui public val Default: PixelTypographyTokens = PixelTypographyTokens()
+com.purride.pixelui public val Default: SegmentedControlStyle = SegmentedControlStyle()
 com.purride.pixelui public val Default: ValueAdjusterStyle = ValueAdjusterStyle()
 com.purride.pixelui public val DefaultTimeout: Duration = 2.seconds
 com.purride.pixelui public val DefaultTimeout: Duration = 4.seconds
@@ -1297,6 +1305,7 @@ com.purride.pixelui public val barrierTap: PixelOverlayDismissAction = PixelOver
 com.purride.pixelui public val bitmap: PixelBitmap,
 com.purride.pixelui public val blendMode: PixelBlendMode = PixelBlendMode.SrcOver,
 com.purride.pixelui public val body: PixelTypographyToken = PixelTypographyToken.Default,
+com.purride.pixelui public val borderColor: PixelColor? = null,
 com.purride.pixelui public val borderColor: PixelColor? = null,
 com.purride.pixelui public val borderColor: PixelStateProperty<PixelColorRole?> = PixelStateProperty.constant(
 com.purride.pixelui public val borderWidth: Int = 1,
@@ -1356,6 +1365,7 @@ com.purride.pixelui public val components: PixelComponentTokens = PixelComponent
 com.purride.pixelui public val compositionEnd: Int = -1,
 com.purride.pixelui public val compositionStart: Int = -1,
 com.purride.pixelui public val confirm: String = "OK",
+com.purride.pixelui public val containerColor: PixelColor? = null,
 com.purride.pixelui public val containerColor: PixelStateProperty<PixelColorRole?> = PixelStateProperty.constant(null),
 com.purride.pixelui public val content: Widget,
 com.purride.pixelui public val contentColor: PixelStateProperty<PixelColorRole?> = PixelStateProperty.constant(
@@ -1417,6 +1427,7 @@ com.purride.pixelui public val dialogExit: PixelMotionSpec = PixelMotionSpec(
 com.purride.pixelui public val dirtyElementCount: Int,
 com.purride.pixelui public val dirtyRenderNodeCount: Int,
 com.purride.pixelui public val disabled: PixelColor,
+com.purride.pixelui public val disabledContentColor: PixelColor? = null,
 com.purride.pixelui public val dismiss: String = "Dismiss",
 com.purride.pixelui public val dismissPolicy: PixelOverlayDismissPolicy = PixelOverlayDismissPolicy.Dismissible,
 com.purride.pixelui public val displayFeatures: List<PixelDisplayFeature>
@@ -1646,6 +1657,7 @@ com.purride.pixelui public val overriddenStates: Set<PixelControlState>
 com.purride.pixelui public val ownerBinding: PixelHostLifecycleOwnerBinding,
 com.purride.pixelui public val packageName: String? = null,
 com.purride.pixelui public val padding: EdgeInsets = EdgeInsets.all(0),
+com.purride.pixelui public val padding: EdgeInsets? = null,
 com.purride.pixelui public val padding: PixelWindowInsets = viewPadding,
 com.purride.pixelui public val paintNanos: Long,
 com.purride.pixelui public val paintedPixelCount: Long,
@@ -1717,10 +1729,13 @@ com.purride.pixelui public val schemaVersion: Int,
 com.purride.pixelui public val scrim: PixelColor,
 com.purride.pixelui public val scrollbar: PixelComponentColorTokens = PixelComponentColorTokens.Scrollbar,
 com.purride.pixelui public val scrollbar: String = "Scrollbar",
+com.purride.pixelui public val segmentSpacing: Int = 0,
 com.purride.pixelui public val segmented: PixelComponentColorTokens = PixelComponentColorTokens.SelectionControl.copy(
 com.purride.pixelui public val segmentedControl: String = "SegmentedControl",
 com.purride.pixelui public val selected: Boolean = false,
 com.purride.pixelui public val selected: Boolean = false,
+com.purride.pixelui public val selectedContentColor: PixelColor? = null,
+com.purride.pixelui public val selectedFillColor: PixelColor? = null,
 com.purride.pixelui public val selectedIcon: PixelIconData? = null,
 com.purride.pixelui public val selection: PixelColor,
 com.purride.pixelui public val selection: PixelMotionSpec = PixelMotionSpec(
@@ -1830,6 +1845,7 @@ com.purride.pixelui public val type: PixelDisplayFeatureType = PixelDisplayFeatu
 com.purride.pixelui public val type: PixelNavigationEventType,
 com.purride.pixelui public val typography: PixelTypographyTokens = PixelTypographyTokens.Default,
 com.purride.pixelui public val unattributedNanos: Long,
+com.purride.pixelui public val unselectedContentColor: PixelColor? = null,
 com.purride.pixelui public val uri: String,
 com.purride.pixelui public val utf16Length: Int
 com.purride.pixelui public val value: PixelTextEditingValue,
@@ -1848,6 +1864,7 @@ com.purride.pixelui public val warning: PixelColor,
 com.purride.pixelui public val widget: Widget
 com.purride.pixelui public val width: Float
 com.purride.pixelui public val width: Int = 1,
+com.purride.pixelui public val width: Int,
 com.purride.pixelui public val width: Int,
 com.purride.pixelui public val width: Int,
 com.purride.pixelui public val widthDp: Float = physicalWidthPx / density

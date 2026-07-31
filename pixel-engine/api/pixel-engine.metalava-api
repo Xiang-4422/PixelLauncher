@@ -2244,7 +2244,9 @@ package com.purride.pixelui {
     method public static com.purride.pixelui.Widget SectionList(java.util.List<com.purride.pixelui.SectionListSection> sections, optional int itemSpacing, optional int sectionSpacing, optional Object? key);
     method public static com.purride.pixelui.Widget SegmentedControl(java.util.List<java.lang.String> labels, int selectedIndex, kotlin.jvm.functions.Function1<? super java.lang.Integer,kotlin.Unit> onSelected, optional Object? key, optional boolean enabled);
     method @KotlinOnly public static com.purride.pixelui.Widget SegmentedControl(java.util.List<java.lang.String> labels, int selectedIndex, kotlin.jvm.functions.Function1<java.lang.Integer,kotlin.Unit> onSelected, com.purride.pixelui.PixelControlStateSet states, optional Object? key, optional boolean enabled);
+    method @KotlinOnly public static com.purride.pixelui.Widget SegmentedControl(java.util.List<java.lang.String> labels, int selectedIndex, kotlin.jvm.functions.Function1<java.lang.Integer,kotlin.Unit> onSelected, com.purride.pixelui.SegmentedControlWidthPolicy widthPolicy, optional com.purride.pixelui.SegmentedControlStyle style, optional com.purride.pixelui.PixelControlStateSet states, optional Object? key, optional boolean enabled);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget SegmentedControlWithControlStates(java.util.List<java.lang.String> labels, int selectedIndex, kotlin.jvm.functions.Function1<? super java.lang.Integer,kotlin.Unit> onSelected, int states, optional Object? key, optional boolean enabled);
+    method @InaccessibleFromKotlin public static com.purride.pixelui.Widget SegmentedControlWithLayout(java.util.List<java.lang.String> labels, int selectedIndex, kotlin.jvm.functions.Function1<? super java.lang.Integer,kotlin.Unit> onSelected, com.purride.pixelui.SegmentedControlWidthPolicy widthPolicy, optional com.purride.pixelui.SegmentedControlStyle style, optional int states, optional Object? key, optional boolean enabled);
     method public static <T> com.purride.pixelui.Widget SelectionList(java.util.List<? extends T> items, int selectedIndex, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,kotlin.Unit> onSelected, kotlin.jvm.functions.Function1<? super T,java.lang.String> itemLabel, optional boolean enabled, optional Object? key);
     method public static com.purride.pixelui.Widget ShortcutHint(String shortcut, String label, optional com.purride.pixelui.PixelTextStyle? shortcutStyle, optional com.purride.pixelui.PixelTextStyle? labelStyle, optional Object? key);
     method @KotlinOnly public static com.purride.pixelui.Widget Snackbar(String message, com.purride.pixelui.PixelControlStateSet states, optional com.purride.pixelui.Widget? action, optional com.purride.pixelcore.PixelColor? fillColor, optional com.purride.pixelui.PixelTextStyle? textStyle, optional Object? key);
@@ -6002,6 +6004,55 @@ package com.purride.pixelui {
     property public java.util.List<com.purride.pixelui.Widget> children;
     property public com.purride.pixelui.Widget? footer;
     property public com.purride.pixelui.Widget? header;
+  }
+
+  public final class SegmentedControlStyle {
+    ctor public SegmentedControlStyle();
+    ctor @KotlinOnly public SegmentedControlStyle(optional com.purride.pixelcore.PixelColor? containerColor, optional com.purride.pixelcore.PixelColor? borderColor, optional com.purride.pixelcore.PixelColor? selectedFillColor, optional com.purride.pixelcore.PixelColor? selectedContentColor, optional com.purride.pixelcore.PixelColor? unselectedContentColor, optional com.purride.pixelcore.PixelColor? disabledContentColor, optional com.purride.pixelui.EdgeInsets? padding, optional int segmentSpacing);
+    method @KotlinOnly public operator com.purride.pixelcore.PixelColor? component1();
+    method @KotlinOnly public operator com.purride.pixelcore.PixelColor? component2();
+    method @KotlinOnly public operator com.purride.pixelcore.PixelColor? component3();
+    method @KotlinOnly public operator com.purride.pixelcore.PixelColor? component4();
+    method @KotlinOnly public operator com.purride.pixelcore.PixelColor? component5();
+    method @KotlinOnly public operator com.purride.pixelcore.PixelColor? component6();
+    method public com.purride.pixelui.EdgeInsets? component7();
+    method public int component8();
+    method @KotlinOnly public com.purride.pixelui.SegmentedControlStyle copy(optional com.purride.pixelcore.PixelColor? containerColor, optional com.purride.pixelcore.PixelColor? borderColor, optional com.purride.pixelcore.PixelColor? selectedFillColor, optional com.purride.pixelcore.PixelColor? selectedContentColor, optional com.purride.pixelcore.PixelColor? unselectedContentColor, optional com.purride.pixelcore.PixelColor? disabledContentColor, optional com.purride.pixelui.EdgeInsets? padding, optional int segmentSpacing);
+    method @InaccessibleFromKotlin public com.purride.pixelui.EdgeInsets? getPadding();
+    method @InaccessibleFromKotlin public int getSegmentSpacing();
+    property public com.purride.pixelcore.PixelColor? borderColor;
+    property public com.purride.pixelcore.PixelColor? containerColor;
+    property public com.purride.pixelcore.PixelColor? disabledContentColor;
+    property public com.purride.pixelui.EdgeInsets? padding;
+    property public int segmentSpacing;
+    property public com.purride.pixelcore.PixelColor? selectedContentColor;
+    property public com.purride.pixelcore.PixelColor? selectedFillColor;
+    property public com.purride.pixelcore.PixelColor? unselectedContentColor;
+    field public static final com.purride.pixelui.SegmentedControlStyle.Companion Companion;
+  }
+
+  public static final class SegmentedControlStyle.Companion {
+    method @InaccessibleFromKotlin public com.purride.pixelui.SegmentedControlStyle getDefault();
+    property public com.purride.pixelui.SegmentedControlStyle Default;
+  }
+
+  public sealed exhaustive interface SegmentedControlWidthPolicy {
+  }
+
+  public static final class SegmentedControlWidthPolicy.Content implements com.purride.pixelui.SegmentedControlWidthPolicy {
+    field public static final com.purride.pixelui.SegmentedControlWidthPolicy.Content INSTANCE;
+  }
+
+  public static final class SegmentedControlWidthPolicy.EqualToWidest implements com.purride.pixelui.SegmentedControlWidthPolicy {
+    field public static final com.purride.pixelui.SegmentedControlWidthPolicy.EqualToWidest INSTANCE;
+  }
+
+  public static final class SegmentedControlWidthPolicy.Fixed implements com.purride.pixelui.SegmentedControlWidthPolicy {
+    ctor public SegmentedControlWidthPolicy.Fixed(int width);
+    method public int component1();
+    method public com.purride.pixelui.SegmentedControlWidthPolicy.Fixed copy(optional int width);
+    method @InaccessibleFromKotlin public int getWidth();
+    property public int width;
   }
 
   public final class SelectionControlsKt {

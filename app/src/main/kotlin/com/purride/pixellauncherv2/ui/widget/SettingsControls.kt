@@ -8,8 +8,13 @@ import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.MainAxisSize
+import com.purride.pixelui.PixelSemanticRole
+import com.purride.pixelui.PixelSemanticsActions
 import com.purride.pixelui.Row
 import com.purride.pixelui.SegmentedControl
+import com.purride.pixelui.SegmentedControlStyle
+import com.purride.pixelui.SegmentedControlWidthPolicy
+import com.purride.pixelui.Semantics
 import com.purride.pixelui.Text
 import com.purride.pixelui.TextOverflow
 import com.purride.pixelui.TextStyle
@@ -44,12 +49,18 @@ private const val SETTINGS_SWITCH_SEGMENT_GAP_PX = 1
 /** 设置行标题列与值列的内部水平间距，不用于相邻设置行。 */
 private const val SETTINGS_INLINE_COLUMN_GAP_PX = 2
 
+/**
+ * 构建设置页的通用多态单选行，并把每项宽度策略透传给底层分段选择器。
+ *
+ * @param widthPolicy 支持各项内容宽、按最长项等宽或调用方指定等宽。
+ */
 fun SettingsSegmentedControlRow(
     title: String,
     labels: List<String>,
     selectedIndex: Int,
     theme: LauncherTheme,
     textEdgeResolvers: SettingsTextEdgeResolvers = SettingsTextEdgeResolvers.None,
+    widthPolicy: SegmentedControlWidthPolicy = SegmentedControlWidthPolicy.Content,
     onSelected: (Int) -> Unit,
 ): Widget {
     return Container(
@@ -59,6 +70,7 @@ fun SettingsSegmentedControlRow(
                 labels = labels,
                 selectedIndex = selectedIndex,
                 onSelected = onSelected,
+                widthPolicy = widthPolicy,
             ),
             titleFlex = 1,
             trailingFlex = 3,
@@ -106,6 +118,7 @@ fun SettingsSwitchRow(
             child = settingsTitleCell(title = title, theme = theme, textEdgeResolvers = textEdgeResolvers),
         ),
         trailing = SettingsSwitch(
+            title = title,
             checked = checked,
             theme = theme,
             showLabels = showLabels,
@@ -316,6 +329,7 @@ private fun settingsValueAdjusterStyle(theme: LauncherTheme): ValueAdjusterStyle
 )
 
 private fun SettingsSwitch(
+    title: String,
     checked: Boolean,
     theme: LauncherTheme,
     showLabels: Boolean,
@@ -323,49 +337,52 @@ private fun SettingsSwitch(
     onLabel: String,
     onToggle: () -> Unit,
 ): Widget {
-    val effectiveOffLabel = if (showLabels) offLabel else ""
-    val effectiveOnLabel = if (showLabels) onLabel else ""
-    return GestureDetector(
-        onTap = onToggle,
-        child = Container(
+    /** 无标签模式保留旧控件的紧凑分段宽度，文字只用于内部稳定 identity。 */
+    val widthPolicy = if (showLabels) {
+        SegmentedControlWidthPolicy.EqualToWidest
+    } else {
+        SegmentedControlWidthPolicy.Fixed(
+            width = LauncherSpacing.BORDERED_CONTROL_INSET * 2,
+        )
+    }
+    /** 底层多态选择器；Switch 上层只负责布尔值与下标之间的映射。 */
+    val selector = SegmentedControl(
+        labels = listOf(offLabel, onLabel),
+        selectedIndex = if (checked) 1 else 0,
+        onSelected = { selectedIndex ->
+            /** 重选当前项保持幂等，仅在目标布尔值改变时调用旧的 toggle 协议。 */
+            val nextChecked = selectedIndex == 1
+            if (nextChecked != checked) onToggle()
+        },
+        widthPolicy = widthPolicy,
+        style = SegmentedControlStyle(
+            containerColor = PixelColor.Transparent,
             borderColor = theme.button.border,
-            child = Row(
-                spacing = SETTINGS_SWITCH_SEGMENT_GAP_PX,
-                children = listOf(
-                    switchSegment(
-                        label = effectiveOffLabel,
-                        active = !checked,
-                        theme = theme,
-                    ),
-                    switchSegment(
-                        label = effectiveOnLabel,
-                        active = checked,
-                        theme = theme,
-                    ),
-                ),
+            selectedFillColor = theme.button.pressedFill,
+            selectedContentColor = if (showLabels) theme.button.text else PixelColor.Transparent,
+            unselectedContentColor = if (showLabels) theme.button.disabledText else PixelColor.Transparent,
+            disabledContentColor = theme.button.disabledText,
+            padding = EdgeInsets.symmetric(
+                horizontal = LauncherSpacing.BORDERED_CONTROL_INSET,
+                vertical = LauncherSpacing.BORDERED_CONTROL_INSET,
             ),
+            segmentSpacing = SETTINGS_SWITCH_SEGMENT_GAP_PX,
         ),
+        key = "$title-settings-switch-selector",
+    )
+    /** 隐藏内部 Tab 语义，把二态封装重新导出为平台可识别的 Switch。 */
+    return Semantics(
+        label = title,
+        role = PixelSemanticRole.SWITCH,
+        checked = checked,
+        excludeDescendants = true,
+        actions = PixelSemanticsActions(
+            onClick = {
+                onToggle()
+                true
+            },
+        ),
+        child = selector,
+        key = "$title-settings-switch-semantics",
     )
 }
-
-private fun switchSegment(
-    label: String,
-    active: Boolean,
-    theme: LauncherTheme,
-): Widget = Container(
-    fillColor = if (active) theme.button.pressedFill else PixelColor.Transparent,
-    padding = EdgeInsets.symmetric(
-        horizontal = LauncherSpacing.BORDERED_CONTROL_INSET,
-        vertical = LauncherSpacing.BORDERED_CONTROL_INSET,
-    ),
-    alignment = Alignment.CENTER,
-    child = Text(
-        label,
-        style = TextStyle(
-            color = if (active) theme.button.text else theme.button.disabledText,
-        ),
-        overflow = TextOverflow.ELLIPSIS,
-        softWrap = false,
-        maxLines = 1,
-    ),
-)
