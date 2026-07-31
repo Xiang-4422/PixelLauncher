@@ -79,7 +79,7 @@ object DiagnosticsModel {
             ?.take(8)
             ?.ifBlank { "0" }
             ?: "0"
-        val statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile)
+        val statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile, fontSelection)
         val fontRows = PixelFontCatalog.fontSizeOptions(fontSelection.family, fontSelection.widthMode).map { size ->
             /** 同一字体家族与宽度模式下该字号的真实度量。 */
             val sizedSelection = fontSelection.copy(size = size)
@@ -87,7 +87,7 @@ object DiagnosticsModel {
         }
         val textSummary = DiagnosticsTextSampleModel.summary(textSamples)
         val maxTextSample = DiagnosticsTextSampleModel.maxSample(textSamples)
-        val boundsSnapshot = DiagnosticsBoundsModel.snapshot(screenProfile)
+        val boundsSnapshot = DiagnosticsBoundsModel.snapshot(screenProfile, fontSelection)
         val familyDescriptor = requireNotNull(PixelFontCatalog.familyDescriptor(fontSelection.family))
         val faceDescriptor = PixelFontCatalog.requireFace(fontSelection)
         /** 当前 face 所有 pack 声明范围的稳定去重列表。 */

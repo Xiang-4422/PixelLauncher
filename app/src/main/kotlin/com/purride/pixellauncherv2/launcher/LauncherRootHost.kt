@@ -643,6 +643,13 @@ internal class LauncherRootHost(
                 faceSelection = uiState.fontSelection,
             )
         },
+        measureChromeTextWidth = { text ->
+            preparedFont.measureTextWidth(
+                text = text,
+                faceSelection = chromeFontSelection(),
+            )
+        },
+        chromeGeometry = chromeGeometry(),
     )
 
     private fun buildSettingsPage(): Widget = com.purride.pixellauncherv2.ui.screen.SettingsScreen(
@@ -691,7 +698,11 @@ internal class LauncherRootHost(
                     chargeTick = chargeTick,
                     theme = theme,
                     statusBarWidth = screenProfile.logicalWidth,
-                    statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
+                    chromeGeometry = chromeGeometry(),
+                    statusBarHeight = LauncherHeaderLayout.statusBarHeight(
+                        screenProfile,
+                        uiState.fontSelection,
+                    ),
                     onChanged = callbacks.onDrawerQueryChanged,
                     onSubmitted = callbacks.onDrawerSubmitSearch,
                 )
@@ -732,7 +743,11 @@ internal class LauncherRootHost(
                             faceSelection = chromeFontSelection(),
                         )
                     },
-                    statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile),
+                    chromeGeometry = chromeGeometry(),
+                    statusBarHeight = LauncherHeaderLayout.statusBarHeight(
+                        screenProfile,
+                        uiState.fontSelection,
+                    ),
                     pageTagVsync = routeTickerProvider,
                     onAction = callbacks.onStatusBarAction,
                     onCenterAction = if (showSmsReadAction) callbacks.onMarkSmsRead else null,
@@ -752,6 +767,10 @@ internal class LauncherRootHost(
         widthMode = uiState.fontSelection.widthMode,
         role = LauncherTextRole.CHROME,
     )
+
+    /** 返回当前 CHROME face 驱动的状态栏与 HOME 底栏共享几何。 */
+    private fun chromeGeometry(): LauncherChromeGeometry =
+        LauncherChromeLayout.geometry(uiState.fontSelection)
 
     private fun statusBarPageTitle(presentation: LauncherStatusBarPresentation.Standard): String {
         return when (uiState.mode) {
@@ -857,7 +876,10 @@ internal class LauncherRootHost(
             return
         }
         val fieldWidth = screenProfile.logicalWidth
-        val fieldHeight = screenProfile.logicalHeight - LauncherHeaderLayout.statusBarHeight(screenProfile)
+        val fieldHeight = screenProfile.logicalHeight - LauncherHeaderLayout.statusBarHeight(
+            screenProfile,
+            uiState.fontSelection,
+        )
         if (fieldWidth <= 0 || fieldHeight <= 0) {
             return
         }

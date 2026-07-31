@@ -17,14 +17,18 @@ data class DiagnosticsBoundsSnapshot(
 
 object DiagnosticsBoundsModel {
 
-    fun snapshot(screenProfile: LauncherLayoutProfile): DiagnosticsBoundsSnapshot {
-        val statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile)
+    /** 按当前字体的页面行高与 CHROME 状态栏高度生成边界快照。 */
+    fun snapshot(
+        screenProfile: LauncherLayoutProfile,
+        fontSelection: LauncherFontSelection = PixelFontCatalog.defaultUiFontSelection,
+    ): DiagnosticsBoundsSnapshot {
+        val statusBarHeight = LauncherHeaderLayout.statusBarHeight(screenProfile, fontSelection)
         val contentWidth = (screenProfile.logicalWidth - LauncherSpacing.CONTENT_HORIZONTAL * 2)
             .coerceAtLeast(0)
         val bodyHeight = (screenProfile.logicalHeight - statusBarHeight - LauncherSpacing.CONTENT_VERTICAL * 2)
             .coerceAtLeast(0)
         val rowPitch = (
-            PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSelection).cellHeight +
+            PixelFontCatalog.metrics(fontSelection).cellHeight +
                 LauncherSpacing.ROW_SPACING
             ).coerceAtLeast(1)
         val visibleRows = bodyHeight / rowPitch

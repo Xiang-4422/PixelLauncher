@@ -36,12 +36,12 @@ import com.purride.pixelui.widgets.animated.AnimatedContainer
 import com.purride.pixellauncherv2.launcher.HomeInfoAction
 import com.purride.pixellauncherv2.launcher.HomeInfoLine
 import com.purride.pixellauncherv2.launcher.HomeInfoModel
+import com.purride.pixellauncherv2.launcher.LauncherChromeGeometry
 import com.purride.pixellauncherv2.launcher.LauncherChromeLayout
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.MediaPlaybackSnapshot
 import com.purride.pixellauncherv2.launcher.NotificationActionInfo
 import com.purride.pixellauncherv2.launcher.NotificationSignal
-import com.purride.pixellauncherv2.launcher.PixelFontCatalog
 import com.purride.pixellauncherv2.launcher.LauncherTextRole
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.text.opticallyAlignStartText
@@ -67,6 +67,8 @@ import kotlin.time.Duration.Companion.milliseconds
  * @param onOpenSms      点击 SMS → 进入短信模块
  * @param onInfoAction   点击 HOME 信息行
  * @param resolveLeadingInkInset 查询页面边缘文字首字形的左侧空白像素数
+ * @param measureChromeTextWidth 使用当前 CHROME face 的实际栅格器测量文字宽度
+ * @param chromeGeometry 当前 CHROME face 驱动的共享边框几何
  */
 class HomeScreen(
     private val uiState: LauncherUiState,
@@ -84,6 +86,8 @@ class HomeScreen(
     private val onNotificationPressed: (String) -> Unit,
     private val onNotificationAction: (String, Int) -> Unit,
     private val resolveLeadingInkInset: (String) -> Int,
+    private val measureChromeTextWidth: (String) -> Int,
+    private val chromeGeometry: LauncherChromeGeometry,
     override val key: Any? = null,
 ) : StatefulWidget(key = key) {
 
@@ -136,6 +140,7 @@ class HomeScreen(
                                 .coerceAtLeast(1),
                             onNotificationPressed = widget.onNotificationPressed,
                             onNotificationAction = widget.onNotificationAction,
+                            chromeGeometry = widget.chromeGeometry,
                         ),
                     ),
                     Padding(
@@ -202,7 +207,7 @@ class HomeScreen(
                 null
             }
             val content = Container(
-                height = HOME_ACTION_TOTAL_HEIGHT_PX,
+                height = widget.chromeGeometry.rowHeightPx,
                 child = Stack(
                     alignment = Alignment.CENTER,
                     children = buildList {
@@ -211,7 +216,7 @@ class HomeScreen(
                             Positioned(
                                 left = 0,
                                 top = 0,
-                                height = HOME_ACTION_TOTAL_HEIGHT_PX,
+                                height = widget.chromeGeometry.rowHeightPx,
                                 child = AnimatedContainer(
                                     duration = HOME_MEDIA_PROGRESS_ANIMATION_MS.milliseconds,
                                     vsync = widget.vsync,
@@ -220,12 +225,13 @@ class HomeScreen(
                                     } else {
                                         HOME_MEDIA_PROGRESS_COLLAPSED_WIDTH_PX
                                     },
-                                    height = HOME_ACTION_TOTAL_HEIGHT_PX,
+                                    height = widget.chromeGeometry.rowHeightPx,
                                     key = "home-media-progress",
                                     child = HomeMediaProgressBar(
                                         progress = scrubProgress,
                                         width = barWidth,
                                         theme = t,
+                                        chromeGeometry = widget.chromeGeometry,
                                     ),
                                 ),
                             ),
@@ -267,6 +273,7 @@ class HomeScreen(
                     onTogglePlayPause = widget.onMediaTogglePlayPause,
                     onSkipPrevious = widget.onMediaSkipPrevious,
                     onSkipNext = widget.onMediaSkipNext,
+                    chromeGeometry = widget.chromeGeometry,
                 )
             }
 
@@ -279,8 +286,16 @@ class HomeScreen(
             val balanceSideActions = s.missedCallCount > 0 || s.unreadSmsCount > 0
             val sideActionWidth = if (balanceSideActions) {
                 max(
-                    homeActionButtonWidth(label = "CALL", count = s.missedCallCount),
-                    homeActionButtonWidth(label = "SMS", count = s.unreadSmsCount),
+                    homeActionButtonWidth(
+                        label = "CALL",
+                        count = s.missedCallCount,
+                        measureTextWidth = widget.measureChromeTextWidth,
+                    ),
+                    homeActionButtonWidth(
+                        label = "SMS",
+                        count = s.unreadSmsCount,
+                        measureTextWidth = widget.measureChromeTextWidth,
+                    ),
                 )
             } else {
                 null
@@ -297,6 +312,7 @@ class HomeScreen(
                         onPressed = widget.onOpenCall,
                         style = actionButtonStyle,
                         width = sideActionWidth,
+                        chromeGeometry = widget.chromeGeometry,
                     ),
                     Expanded(child = SizedBox(width = 0, height = 0)),
                     HomeActionButton(
@@ -307,6 +323,7 @@ class HomeScreen(
                         onPressed = widget.onOpenSms,
                         style = actionButtonStyle,
                         width = sideActionWidth,
+                        chromeGeometry = widget.chromeGeometry,
                     ),
                 ),
             )
@@ -407,6 +424,7 @@ private fun HomeNotificationPanel(
     widthPx: Int,
     onNotificationPressed: (String) -> Unit,
     onNotificationAction: (String, Int) -> Unit,
+    chromeGeometry: LauncherChromeGeometry,
 ): Widget {
     if (notifications.isEmpty()) {
         return SizedBox(width = 0, height = 0)
@@ -427,6 +445,7 @@ private fun HomeNotificationPanel(
                     widthPx = widthPx,
                     onNotificationPressed = onNotificationPressed,
                     onNotificationAction = onNotificationAction,
+                    chromeGeometry = chromeGeometry,
                 )
             },
         ),
@@ -439,6 +458,7 @@ private fun HomeNotificationItem(
     widthPx: Int,
     onNotificationPressed: (String) -> Unit,
     onNotificationAction: (String, Int) -> Unit,
+    chromeGeometry: LauncherChromeGeometry,
 ): Widget {
     val title = homeNotificationTitle(item)
     val bodyLines = homeNotificationBodyLines(item, title)
@@ -485,7 +505,7 @@ private fun HomeNotificationItem(
                     )
                 }
                 homeNotificationProgress(item, widthPx, theme)?.let(::add)
-                homeNotificationActions(item, theme, onNotificationAction)?.let(::add)
+                homeNotificationActions(item, theme, onNotificationAction, chromeGeometry)?.let(::add)
             },
         ),
     )
@@ -533,6 +553,7 @@ private fun homeNotificationActions(
     item: NotificationSignal,
     theme: LauncherTheme,
     onNotificationAction: (String, Int) -> Unit,
+    chromeGeometry: LauncherChromeGeometry,
 ): Widget? {
     if (item.key.isBlank() || item.actions.isEmpty()) return null
     val visibleActions = item.actions.take(HOME_NOTIFICATION_MAX_ACTIONS)
@@ -546,6 +567,7 @@ private fun homeNotificationActions(
                     action = action,
                     theme = theme,
                     onNotificationAction = onNotificationAction,
+                    chromeGeometry = chromeGeometry,
                 ),
             )
         },
@@ -557,10 +579,11 @@ private fun homeNotificationActionButton(
     action: NotificationActionInfo,
     theme: LauncherTheme,
     onNotificationAction: (String, Int) -> Unit,
+    chromeGeometry: LauncherChromeGeometry,
 ): Widget {
     val enabled = !action.requiresInput
     val content = Container(
-        height = HOME_ACTION_SEGMENT_HEIGHT_PX,
+        height = chromeGeometry.segmentHeightPx,
         fillColor = if (enabled) theme.button.border else theme.surface.panelSubtle,
         alignment = Alignment.CENTER,
         padding = EdgeInsets.symmetric(horizontal = HOME_ACTION_SEGMENT_HORIZONTAL_PADDING_PX),
@@ -701,6 +724,7 @@ private fun HomeActionButton(
     onPressed: () -> Unit,
     style: TextButtonStyle,
     width: Int? = null,
+    chromeGeometry: LauncherChromeGeometry,
 ): Widget {
     if (count <= 0 && width == null) {
         return TextButton(
@@ -717,6 +741,7 @@ private fun HomeActionButton(
             role = LauncherTextRole.CHROME,
         ),
         fillColor = null,
+        chromeGeometry = chromeGeometry,
     )
     val labelChild = if (width != null) {
         Expanded(child = labelSegment)
@@ -731,8 +756,9 @@ private fun HomeActionButton(
                 role = LauncherTextRole.CHROME,
             ),
             fillColor = theme.button.border,
+            chromeGeometry = chromeGeometry,
         )
-        val divider = homeActionDivider(theme)
+        val divider = homeActionDivider(theme, chromeGeometry)
         if (countOnStart) {
             listOf(countSegment, divider, labelChild)
         } else {
@@ -750,7 +776,7 @@ private fun HomeActionButton(
             onTap = onPressed,
             child = Container(
                 width = width,
-                height = HOME_ACTION_TOTAL_HEIGHT_PX,
+                height = chromeGeometry.rowHeightPx,
                 borderColor = theme.button.border,
                 padding = EdgeInsets.all(HOME_ACTION_BORDER_PX),
                 child = Row(
@@ -774,9 +800,10 @@ private fun HomeMediaBottomBar(
     onTogglePlayPause: () -> Unit,
     onSkipPrevious: () -> Unit,
     onSkipNext: () -> Unit,
+    chromeGeometry: LauncherChromeGeometry,
 ): Widget {
     return Container(
-        height = HOME_ACTION_TOTAL_HEIGHT_PX,
+        height = chromeGeometry.rowHeightPx,
         borderColor = theme.button.border,
         padding = EdgeInsets.all(HOME_ACTION_BORDER_PX),
         child = Row(
@@ -791,9 +818,10 @@ private fun HomeMediaBottomBar(
                         countOnStart = false,
                         theme = theme,
                         onPressed = onOpenCall,
+                        chromeGeometry = chromeGeometry,
                     ),
                 ),
-                mediaControlDivider(theme),
+                mediaControlDivider(theme, chromeGeometry),
                 Expanded(
                     child = mediaControlSegment(
                         icon = MediaControlIcon.PREVIOUS,
@@ -802,9 +830,10 @@ private fun HomeMediaBottomBar(
                         filled = true,
                         theme = theme,
                         onPressed = onSkipPrevious,
+                        chromeGeometry = chromeGeometry,
                     ),
                 ),
-                mediaControlDivider(theme),
+                mediaControlDivider(theme, chromeGeometry),
                 Expanded(
                     child = mediaControlSegment(
                         icon = if (media.isPlaying) MediaControlIcon.PAUSE else MediaControlIcon.PLAY,
@@ -813,9 +842,10 @@ private fun HomeMediaBottomBar(
                         filled = false,
                         theme = theme,
                         onPressed = onTogglePlayPause,
+                        chromeGeometry = chromeGeometry,
                     ),
                 ),
-                mediaControlDivider(theme),
+                mediaControlDivider(theme, chromeGeometry),
                 Expanded(
                     child = mediaControlSegment(
                         icon = MediaControlIcon.NEXT,
@@ -824,9 +854,10 @@ private fun HomeMediaBottomBar(
                         filled = true,
                         theme = theme,
                         onPressed = onSkipNext,
+                        chromeGeometry = chromeGeometry,
                     ),
                 ),
-                mediaControlDivider(theme),
+                mediaControlDivider(theme, chromeGeometry),
                 Expanded(
                     child = HomeMediaSideAction(
                         label = "SMS",
@@ -834,6 +865,7 @@ private fun HomeMediaBottomBar(
                         countOnStart = true,
                         theme = theme,
                         onPressed = onOpenSms,
+                        chromeGeometry = chromeGeometry,
                     ),
                 ),
             ),
@@ -847,6 +879,7 @@ private fun HomeMediaSideAction(
     countOnStart: Boolean,
     theme: LauncherTheme,
     onPressed: () -> Unit,
+    chromeGeometry: LauncherChromeGeometry,
 ): Widget {
     val labelText = homeMediaSideText(label, theme)
     val countText = if (count > 0) {
@@ -854,7 +887,7 @@ private fun HomeMediaSideAction(
     } else {
         null
     }
-    val spacer = Expanded(child = SizedBox(width = 0, height = HOME_ACTION_SEGMENT_HEIGHT_PX))
+    val spacer = Expanded(child = SizedBox(width = 0, height = chromeGeometry.segmentHeightPx))
     val children = if (countOnStart) {
         buildList {
             countText?.let(::add)
@@ -875,7 +908,7 @@ private fun HomeMediaSideAction(
         child = GestureDetector(
             onTap = onPressed,
             child = Container(
-                height = HOME_ACTION_SEGMENT_HEIGHT_PX,
+                height = chromeGeometry.segmentHeightPx,
                 padding = EdgeInsets.symmetric(horizontal = HOME_ACTION_SEGMENT_HORIZONTAL_PADDING_PX),
                 child = Row(
                     spacing = 0,
@@ -907,13 +940,14 @@ private fun mediaControlSegment(
     filled: Boolean,
     theme: LauncherTheme,
     onPressed: () -> Unit,
+    chromeGeometry: LauncherChromeGeometry,
 ): Widget {
     val fillColor = when {
         filled -> theme.button.border
         else -> null
     }
     val content = Container(
-        height = HOME_ACTION_SEGMENT_HEIGHT_PX,
+        height = chromeGeometry.segmentHeightPx,
         fillColor = if (enabled) fillColor else fillColor?.withAlpha(HOME_MEDIA_DISABLED_FILL_ALPHA),
         alignment = Alignment.CENTER,
         child = mediaControlIcon(
@@ -941,9 +975,12 @@ private fun mediaControlSegment(
     )
 }
 
-private fun mediaControlDivider(theme: LauncherTheme): Widget = Container(
+private fun mediaControlDivider(
+    theme: LauncherTheme,
+    chromeGeometry: LauncherChromeGeometry,
+): Widget = Container(
     width = HOME_MEDIA_CONTROL_DIVIDER_PX,
-    height = HOME_ACTION_SEGMENT_HEIGHT_PX,
+    height = chromeGeometry.segmentHeightPx,
     fillColor = theme.button.border,
 )
 
@@ -951,9 +988,10 @@ private fun HomeMediaProgressBar(
     progress: Float,
     width: Int,
     theme: LauncherTheme,
+    chromeGeometry: LauncherChromeGeometry,
 ): Widget = CustomPaint(
     width = width.coerceAtLeast(1),
-    height = HOME_ACTION_TOTAL_HEIGHT_PX,
+    height = chromeGeometry.rowHeightPx,
 ) {
     val safeWidth = this.width
     val safeHeight = this.height
@@ -1028,8 +1066,9 @@ private fun homeActionSegment(
     text: String,
     textStyle: TextStyle,
     fillColor: PixelColor?,
+    chromeGeometry: LauncherChromeGeometry,
 ): Widget = Container(
-    height = HOME_ACTION_SEGMENT_HEIGHT_PX,
+    height = chromeGeometry.segmentHeightPx,
     fillColor = fillColor,
     padding = EdgeInsets.symmetric(horizontal = HOME_ACTION_SEGMENT_HORIZONTAL_PADDING_PX),
     alignment = Alignment.CENTER,
@@ -1042,28 +1081,34 @@ private fun homeActionSegment(
     ),
 )
 
-private fun homeActionDivider(theme: LauncherTheme): Widget = Container(
+private fun homeActionDivider(
+    theme: LauncherTheme,
+    chromeGeometry: LauncherChromeGeometry,
+): Widget = Container(
     width = HOME_ACTION_DIVIDER_PX,
-    height = HOME_ACTION_SEGMENT_HEIGHT_PX,
+    height = chromeGeometry.segmentHeightPx,
     fillColor = theme.button.border,
 )
 
-private fun homeActionButtonWidth(label: String, count: Int): Int {
-    val labelWidth = homeActionSegmentWidth(label)
+private fun homeActionButtonWidth(
+    label: String,
+    count: Int,
+    measureTextWidth: (String) -> Int,
+): Int {
+    val labelWidth = homeActionSegmentWidth(label, measureTextWidth)
     val contentWidth = if (count > 0) {
-        labelWidth + HOME_ACTION_DIVIDER_PX + homeActionSegmentWidth(count.toString())
+        labelWidth + HOME_ACTION_DIVIDER_PX + homeActionSegmentWidth(count.toString(), measureTextWidth)
     } else {
         labelWidth
     }
     return contentWidth + (HOME_ACTION_BORDER_PX * 2)
 }
 
-private fun homeActionSegmentWidth(text: String): Int {
-    val metrics = PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSelection)
-    val conservativeTextWidth = text.length * metrics.wideAdvanceWidth
-    return max(PixelFontCatalog.estimatedTextWidth(text), conservativeTextWidth) +
-        (HOME_ACTION_SEGMENT_HORIZONTAL_PADDING_PX * 2)
-}
+/** 使用实际 CHROME 栅格器计算边框段宽度，避免宽字体被默认 face 估算裁切。 */
+internal fun homeActionSegmentWidth(
+    text: String,
+    measureTextWidth: (String) -> Int,
+): Int = measureTextWidth(text).coerceAtLeast(0) + HOME_ACTION_SEGMENT_HORIZONTAL_PADDING_PX * 2
 
 private enum class MediaControlIcon {
     PREVIOUS,
@@ -1081,8 +1126,6 @@ private fun PixelColor.withAlpha(alpha: Int): PixelColor = PixelColor.fromArgb(
 
 private const val HOME_ACTION_BORDER_PX = LauncherChromeLayout.sharedBorderPx
 private const val HOME_ACTION_DIVIDER_PX = 1
-private const val HOME_ACTION_SEGMENT_HEIGHT_PX = LauncherChromeLayout.sharedSegmentHeightPx
-private const val HOME_ACTION_TOTAL_HEIGHT_PX = LauncherChromeLayout.sharedRowHeightPx
 private const val HOME_ACTION_SEGMENT_HORIZONTAL_PADDING_PX = 2
 private const val HOME_MEDIA_CONTROL_DIVIDER_PX = 1
 private const val HOME_MEDIA_EDGE_SWIPE_TARGET_HEIGHT_PX = 2

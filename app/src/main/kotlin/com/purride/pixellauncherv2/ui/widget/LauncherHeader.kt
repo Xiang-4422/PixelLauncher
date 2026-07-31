@@ -28,6 +28,7 @@ import com.purride.pixelui.Widget
 import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.state.PixelTextFieldState
 import com.purride.pixelui.widgets.animated.AnimatedSwitcher
+import com.purride.pixellauncherv2.launcher.LauncherChromeGeometry
 import com.purride.pixellauncherv2.launcher.LauncherChromeLayout
 import com.purride.pixellauncherv2.launcher.LauncherHeaderLayout
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
@@ -58,6 +59,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * @param statusBarHeight 顶部状态栏占位高度（engine 逻辑像素）
  * @param resolveLeadingInkInset 查询左侧边缘文字首字形的左侧空白像素数
  * @param measureTextWidth 使用当前实际字形包测量单行文字宽度
+ * @param chromeGeometry 当前 CHROME face 的共享边框几何
  */
 fun LauncherHeader(
     timeText: String,
@@ -77,7 +79,8 @@ fun LauncherHeader(
     statusBarWidth: Int,
     resolveLeadingInkInset: (String) -> Int,
     measureTextWidth: (String) -> Int,
-    statusBarHeight: Int = LauncherHeaderLayout.defaultStatusBarHeight,
+    chromeGeometry: LauncherChromeGeometry,
+    statusBarHeight: Int,
     pageTagVsync: PixelTickerProvider? = null,
     onAction: (() -> Unit)? = null,
     onCenterAction: (() -> Unit)? = null,
@@ -111,7 +114,7 @@ fun LauncherHeader(
         children = statusBarChildren(
             statusBarHeight = statusBarHeight,
             contentWidth = statusBarWidth,
-            contentHeight = STATUS_BAR_TITLE_CONTENT_HEIGHT_PX,
+            contentHeight = chromeGeometry.rowHeightPx + LauncherHeaderLayout.dividerHeight,
             row = statusBarTitleRow(
                 timeText = timeText,
                 screenTitle = screenTitle,
@@ -120,6 +123,7 @@ fun LauncherHeader(
                 resolveLeadingInkInset = resolveLeadingInkInset,
                 measureTextWidth = measureTextWidth,
                 statusBarWidth = statusBarWidth,
+                chromeGeometry = chromeGeometry,
                 pageTagVsync = pageTagVsync,
                 onAction = onAction,
                 onCenterAction = onCenterAction,
@@ -182,6 +186,7 @@ private fun statusBarTitleRow(
     resolveLeadingInkInset: (String) -> Int,
     measureTextWidth: (String) -> Int,
     statusBarWidth: Int,
+    chromeGeometry: LauncherChromeGeometry,
     pageTagVsync: PixelTickerProvider?,
     onAction: (() -> Unit)?,
     onCenterAction: (() -> Unit)?,
@@ -202,11 +207,12 @@ private fun statusBarTitleRow(
             theme = theme,
             resolveLeadingInkInset = resolveLeadingInkInset,
             onAction = onAction,
+            chromeGeometry = chromeGeometry,
         )
     }
     if (centerContent == StatusBarCenterContent.Empty) {
         return Container(
-            height = STATUS_BAR_TITLE_ROW_HEIGHT_PX,
+            height = chromeGeometry.rowHeightPx,
             padding = EdgeInsets.all(STATUS_BAR_TITLE_EDGE_PADDING_PX),
             child = Row(
                 mainAxisSize = MainAxisSize.MAX,
@@ -215,7 +221,7 @@ private fun statusBarTitleRow(
                         text = timeText,
                         theme = theme,
                         textColor = theme.statusBar.text,
-                        height = STATUS_BAR_TITLE_SEGMENT_HEIGHT_PX,
+                        height = chromeGeometry.segmentHeightPx,
                         resolveLeadingInkInset = resolveLeadingInkInset,
                     ),
                     Expanded(child = SizedBox(width = 0, height = 0)),
@@ -224,7 +230,7 @@ private fun statusBarTitleRow(
                         theme = theme,
                         textColor = theme.statusBar.text,
                         textAlign = TextAlign.END,
-                        height = STATUS_BAR_TITLE_SEGMENT_HEIGHT_PX,
+                        height = chromeGeometry.segmentHeightPx,
                         width = pageTagWidth,
                         vsync = pageTagVsync,
                     ),
@@ -234,7 +240,7 @@ private fun statusBarTitleRow(
         )
     }
     return Container(
-        height = STATUS_BAR_MEDIA_ROW_HEIGHT_PX,
+        height = chromeGeometry.rowHeightPx,
         borderColor = theme.button.border,
         padding = EdgeInsets.all(STATUS_BAR_MEDIA_BORDER_PX),
         child = Row(
@@ -244,10 +250,10 @@ private fun statusBarTitleRow(
                     text = timeText,
                     theme = theme,
                     textColor = theme.statusBar.text,
-                    height = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX,
+                    height = chromeGeometry.segmentHeightPx,
                     resolveLeadingInkInset = resolveLeadingInkInset,
                 ),
-                statusBarDivider(theme),
+                statusBarDivider(theme, chromeGeometry),
                 Expanded(
                     child = statusBarCenterContent(
                         content = centerContent,
@@ -256,15 +262,16 @@ private fun statusBarTitleRow(
                         onCenterAction = onCenterAction,
                         onCenterTap = onCenterTap,
                         onCenterDoubleTap = onCenterDoubleTap,
+                        chromeGeometry = chromeGeometry,
                     ),
                 ),
-                statusBarDivider(theme),
+                statusBarDivider(theme, chromeGeometry),
                 statusBarPageTag(
                     text = screenTitle,
                     theme = theme,
                     textColor = theme.statusBar.text,
                     textAlign = TextAlign.END,
-                    height = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX,
+                    height = chromeGeometry.segmentHeightPx,
                     width = pageTagWidth,
                     vsync = pageTagVsync,
                 ),
@@ -281,6 +288,7 @@ private fun statusBarCenterContent(
     onCenterAction: (() -> Unit)?,
     onCenterTap: (() -> Unit)?,
     onCenterDoubleTap: (() -> Unit)?,
+    chromeGeometry: LauncherChromeGeometry,
 ): Widget = when (content) {
     StatusBarCenterContent.Empty -> SizedBox(width = 0, height = 0)
     is StatusBarCenterContent.Message -> statusBarSegment(
@@ -288,7 +296,7 @@ private fun statusBarCenterContent(
         theme = theme,
         textColor = theme.statusBar.text,
         textAlign = TextAlign.CENTER,
-        height = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX,
+        height = chromeGeometry.segmentHeightPx,
     )
     is StatusBarCenterContent.FilledAction -> statusBarCenterAction(
         leadingText = content.leadingText,
@@ -298,6 +306,7 @@ private fun statusBarCenterContent(
         isDanger = content.isDanger,
         theme = theme,
         onAction = onAction,
+        chromeGeometry = chromeGeometry,
     )
     is StatusBarCenterContent.TextAction -> statusBarCenterAction(
         leadingText = "",
@@ -307,6 +316,7 @@ private fun statusBarCenterContent(
         isDanger = false,
         theme = theme,
         onAction = onCenterAction,
+        chromeGeometry = chromeGeometry,
     )
     is StatusBarCenterContent.MediaTitle -> statusBarCenter(
         text = content.text,
@@ -315,7 +325,7 @@ private fun statusBarCenterContent(
         theme = theme,
         onTap = onCenterTap,
         onDoubleTap = onCenterDoubleTap,
-        height = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX,
+        height = chromeGeometry.segmentHeightPx,
     )
 }
 
@@ -326,6 +336,7 @@ private fun statusBarFullWidthAction(
     theme: LauncherTheme,
     resolveLeadingInkInset: (String) -> Int,
     onAction: (() -> Unit)?,
+    chromeGeometry: LauncherChromeGeometry,
 ): Widget {
     val fillColor = statusBarActionBackgroundColor(isDanger, theme)
     val textColor = PixelColor.White
@@ -367,7 +378,7 @@ private fun statusBarFullWidthAction(
         )
     }
     val content = Container(
-        height = STATUS_BAR_MEDIA_ROW_HEIGHT_PX,
+        height = chromeGeometry.rowHeightPx,
         fillColor = fillColor,
         padding = EdgeInsets.symmetric(horizontal = LauncherSpacing.CONTENT_HORIZONTAL),
         child = Row(
@@ -399,6 +410,7 @@ private fun statusBarCenterAction(
     isDanger: Boolean,
     theme: LauncherTheme,
     onAction: (() -> Unit)?,
+    chromeGeometry: LauncherChromeGeometry,
 ): Widget {
     val textColor = when {
         !enabled -> theme.statusBar.mutedText
@@ -416,14 +428,14 @@ private fun statusBarCenterAction(
     val fillColor = if (filled) statusBarActionBackgroundColor(isDanger, theme) else null
     if (leadingText.isBlank()) {
         return Container(
-            height = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX,
+            height = chromeGeometry.segmentHeightPx,
             fillColor = fillColor,
             alignment = Alignment.CENTER,
             child = actionButton,
         )
     }
     return Container(
-        height = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX,
+        height = chromeGeometry.segmentHeightPx,
         fillColor = fillColor,
         padding = EdgeInsets.symmetric(horizontal = STATUS_BAR_SEGMENT_HORIZONTAL_PADDING_PX),
         child = Row(
@@ -559,9 +571,12 @@ private fun statusBarPageTag(
     }
 }
 
-private fun statusBarDivider(theme: LauncherTheme): Widget = Container(
+private fun statusBarDivider(
+    theme: LauncherTheme,
+    chromeGeometry: LauncherChromeGeometry,
+): Widget = Container(
     width = STATUS_BAR_SEGMENT_DIVIDER_PX,
-    height = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX,
+    height = chromeGeometry.segmentHeightPx,
     fillColor = theme.button.border,
 )
 
@@ -573,6 +588,7 @@ private fun statusBarDivider(theme: LauncherTheme): Widget = Container(
  *
  * @param placeholderLeadingInkInset placeholder 首字形在实际字形包中的左侧空白像素数
  * @param statusBarWidth 状态栏搜索行使用的完整逻辑宽度
+ * @param chromeGeometry 当前 CHROME face 的共享边框几何
  */
 fun LauncherSearchHeader(
     state: PixelTextFieldState,
@@ -591,7 +607,8 @@ fun LauncherSearchHeader(
     chargeTick: Int,
     theme: LauncherTheme,
     statusBarWidth: Int,
-    statusBarHeight: Int = LauncherHeaderLayout.defaultStatusBarHeight,
+    chromeGeometry: LauncherChromeGeometry,
+    statusBarHeight: Int,
     onChanged: (String) -> Unit,
     onSubmitted: () -> Unit,
 ): Widget {
@@ -599,7 +616,7 @@ fun LauncherSearchHeader(
         children = statusBarChildren(
             statusBarHeight = statusBarHeight,
             contentWidth = statusBarWidth,
-            contentHeight = STATUS_BAR_TITLE_CONTENT_HEIGHT_PX,
+            contentHeight = chromeGeometry.rowHeightPx + LauncherHeaderLayout.dividerHeight,
             row = statusBarSearchRow(
                 state = state,
                 controller = controller,
@@ -609,6 +626,7 @@ fun LauncherSearchHeader(
                 enabled = enabled,
                 textAlign = textAlign,
                 theme = theme,
+                chromeGeometry = chromeGeometry,
                 onChanged = onChanged,
                 onSubmitted = onSubmitted,
             ),
@@ -636,10 +654,11 @@ private fun statusBarSearchRow(
     enabled: Boolean,
     textAlign: TextAlign,
     theme: LauncherTheme,
+    chromeGeometry: LauncherChromeGeometry,
     onChanged: (String) -> Unit,
     onSubmitted: () -> Unit,
 ): Widget = Container(
-    height = STATUS_BAR_TITLE_ROW_HEIGHT_PX,
+    height = chromeGeometry.rowHeightPx,
     padding = searchRowPadding(
         textAlign = textAlign,
         placeholderLeadingInkInset = placeholderLeadingInkInset,
@@ -744,7 +763,7 @@ private fun statusBarActionBackgroundColor(
 private fun statusBarChildren(
     statusBarHeight: Int,
     contentWidth: Int,
-    contentHeight: Int = LauncherHeaderLayout.headerContentHeight,
+    contentHeight: Int,
     row: Widget,
     divider: Widget,
 ): List<Widget> = buildList {
@@ -767,13 +786,7 @@ private const val STATUS_BAR_SEGMENT_HORIZONTAL_PADDING_PX =
     LauncherSpacing.CONTENT_HORIZONTAL - LauncherChromeLayout.sharedBorderPx
 private const val STATUS_BAR_SEGMENT_DIVIDER_PX = 1
 private const val STATUS_BAR_MEDIA_BORDER_PX = LauncherChromeLayout.sharedBorderPx
-private const val STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX = LauncherChromeLayout.sharedSegmentHeightPx
-private const val STATUS_BAR_MEDIA_ROW_HEIGHT_PX = LauncherChromeLayout.sharedRowHeightPx
 private const val STATUS_BAR_TITLE_EDGE_PADDING_PX = STATUS_BAR_MEDIA_BORDER_PX
 /** Drawer 搜索输入末尾字形与光标之间保留的像素间隙。 */
 private const val SEARCH_CURSOR_GAP_PX = 1
-private const val STATUS_BAR_TITLE_SEGMENT_HEIGHT_PX = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX
-private const val STATUS_BAR_TITLE_ROW_HEIGHT_PX = LauncherChromeLayout.sharedRowHeightPx
-private const val STATUS_BAR_TITLE_CONTENT_HEIGHT_PX =
-    STATUS_BAR_TITLE_ROW_HEIGHT_PX + LauncherHeaderLayout.dividerHeight
 private const val STATUS_BAR_PAGE_TAG_TRANSITION_MS = 120

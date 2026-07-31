@@ -17,7 +17,7 @@ object SmsLayout {
     ): Int {
         /** 与渲染列表完全一致的动态行距。 */
         val threadRowHeight = SmsThreadGeometry.rowPitch(fontSelection)
-        val top = LauncherHeaderLayout.firstContentItemTop(screenProfile)
+        val top = LauncherHeaderLayout.firstContentItemTop(screenProfile, fontSelection)
         val bottomExclusive = (screenProfile.logicalHeight - panelBottomPadding).coerceAtLeast(top + threadRowHeight)
         return TextListSupport.createLayoutMetrics(
             top = top,

@@ -14,11 +14,14 @@ import org.junit.Test
  */
 class AppListLayoutTest {
 
-    private fun expectedVisibleRows(profile: LauncherLayoutProfile): Int {
+    private fun expectedVisibleRows(
+        profile: LauncherLayoutProfile,
+        fontSelection: LauncherFontSelection = PixelFontCatalog.defaultUiFontSelection,
+    ): Int {
         val rowHeight = DrawerListGeometry.rowPitch(
-            PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSelection).cellHeight,
+            PixelFontCatalog.metrics(fontSelection).cellHeight,
         )
-        val top = LauncherHeaderLayout.firstContentItemTop(profile)
+        val top = LauncherHeaderLayout.firstContentItemTop(profile, fontSelection)
         val rail = (profile.logicalHeight - top).coerceAtLeast(rowHeight)
         return (rail / rowHeight).coerceAtLeast(1)
     }
@@ -60,5 +63,17 @@ class AppListLayoutTest {
         )
 
         assertTrue("a taller status bar must reduce visible drawer rows", tallerHeader < defaultHeader)
+    }
+
+    @Test
+    fun visibleRows_usesCurrentChromeHeightForLargeFont() {
+        val profile = LauncherLayoutProfile(120, 240, 4)
+        val unifont = PixelFontCatalog.selectionForRole(
+            family = LauncherFontFamily.GNU_UNIFONT,
+            widthMode = LauncherFontWidthMode.MONOSPACED,
+            role = LauncherTextRole.CHROME,
+        )
+
+        assertEquals(expectedVisibleRows(profile, unifont), AppListLayout.visibleRows(profile, unifont))
     }
 }

@@ -23,6 +23,7 @@ object SettingsMenuLayout {
         fontSelection: LauncherFontSelection = PixelFontCatalog.defaultUiFontSelection,
     ): Int = computeVisibleRows(
         screenProfile = screenProfile,
+        fontSelection = fontSelection,
         listRowHeight = maxOf(rowHeight, PixelFontCatalog.metrics(fontSelection).cellHeight + rowGap),
     )
 
@@ -31,11 +32,17 @@ object SettingsMenuLayout {
         fontSelection: LauncherFontSelection = PixelFontCatalog.defaultUiFontSelection,
     ): Int = computeVisibleRows(
         screenProfile = screenProfile,
+        fontSelection = fontSelection,
         listRowHeight = (PixelFontCatalog.metrics(fontSelection).cellHeight * 2) + rowGap,
     )
 
-    private fun computeVisibleRows(screenProfile: LauncherLayoutProfile, listRowHeight: Int): Int {
-        val panelTop = LauncherHeaderLayout.firstContentItemTop(screenProfile)
+    /** 使用同一当前字体计算状态栏占位与列表行数。 */
+    private fun computeVisibleRows(
+        screenProfile: LauncherLayoutProfile,
+        fontSelection: LauncherFontSelection,
+        listRowHeight: Int,
+    ): Int {
+        val panelTop = LauncherHeaderLayout.firstContentItemTop(screenProfile, fontSelection)
         val panelBottom = (screenProfile.logicalHeight - panelBottomPadding).coerceAtLeast(panelTop + 24)
         return TextListSupport.createLayoutMetrics(
             top = panelTop,

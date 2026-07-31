@@ -345,7 +345,7 @@ class UiSpecStaticTest {
             },
             if (!headerSource.contains("centerContent is StatusBarCenterContent.FilledAction") ||
                 !headerSource.contains("statusBarFullWidthAction(") ||
-                !headerSource.contains("height = STATUS_BAR_MEDIA_ROW_HEIGHT_PX")
+                !headerSource.contains("height = chromeGeometry.rowHeightPx")
             ) {
                 "filled status bar actions such as CONFIRM must occupy the full status bar row without an inner segment"
             } else {
@@ -490,9 +490,9 @@ class UiSpecStaticTest {
                 headerSource.contains("if (centerContent == StatusBarCenterContent.Empty) {\n        return Container(") &&
                 headerSource.contains("return Container(") &&
                 headerSource.contains("borderColor = theme.button.border") &&
-                headerSource.contains("height = STATUS_BAR_TITLE_ROW_HEIGHT_PX") &&
+                headerSource.contains("height = chromeGeometry.rowHeightPx") &&
                 headerSource.contains("padding = EdgeInsets.all(STATUS_BAR_TITLE_EDGE_PADDING_PX)") &&
-                headerSource.contains("height = STATUS_BAR_MEDIA_ROW_HEIGHT_PX") &&
+                headerSource.contains("height = chromeGeometry.segmentHeightPx") &&
                 headerSource.contains("padding = EdgeInsets.all(STATUS_BAR_MEDIA_BORDER_PX)") &&
                 headerSource.contains("fillColor = content.color ?: theme.button.border") &&
                 headerSource.contains("textColor = theme.surface.offPixelColor") &&
@@ -501,15 +501,15 @@ class UiSpecStaticTest {
                 headerSource.contains("AnimatedSwitcher(") &&
                 headerSource.contains("status-bar-page-tag-\$") &&
                 headerSource.contains("STATUS_BAR_SEGMENT_DIVIDER_PX = 1") &&
-                headerSource.contains("STATUS_BAR_MEDIA_ROW_HEIGHT_PX = LauncherChromeLayout.sharedRowHeightPx") &&
                 headerSource.contains("STATUS_BAR_TITLE_EDGE_PADDING_PX = STATUS_BAR_MEDIA_BORDER_PX") &&
-                headerSource.contains("STATUS_BAR_TITLE_SEGMENT_HEIGHT_PX = STATUS_BAR_MEDIA_SEGMENT_HEIGHT_PX") &&
-                headerSource.contains("STATUS_BAR_TITLE_ROW_HEIGHT_PX = LauncherChromeLayout.sharedRowHeightPx") &&
-                headerSource.contains("STATUS_BAR_TITLE_CONTENT_HEIGHT_PX =") &&
-                headerSource.contains("STATUS_BAR_TITLE_ROW_HEIGHT_PX + LauncherHeaderLayout.dividerHeight") &&
+                headerSource.contains("contentHeight = chromeGeometry.rowHeightPx + LauncherHeaderLayout.dividerHeight") &&
                 headerSource.contains("StatusBarBatteryFrame(") &&
-                homeSource.contains("HOME_ACTION_TOTAL_HEIGHT_PX = LauncherChromeLayout.sharedRowHeightPx") &&
-                chromeLayoutSource.contains("sharedRowHeightPx = sharedSegmentHeightPx + sharedBorderPx * 2"),
+                homeSource.contains("height = widget.chromeGeometry.rowHeightPx") &&
+                homeSource.contains("height = chromeGeometry.rowHeightPx") &&
+                homeSource.contains("height = chromeGeometry.segmentHeightPx") &&
+                homeSource.contains("measureChromeTextWidth") &&
+                chromeLayoutSource.contains("maxOf(minimumSegmentHeightPx, textHeight)") &&
+                !chromeLayoutSource.contains("sharedSegmentHeightPx"),
         )
         val searchHeaderSource = Regex(
             "fun LauncherSearchHeader[\\s\\S]*?private fun statusBarSearchRow",
@@ -519,11 +519,13 @@ class UiSpecStaticTest {
         ).find(headerSource)?.value.orEmpty()
         assertTrue(
             "App drawer search header must use the same row box height as the normal status bar.",
-            searchHeaderSource.contains("contentHeight = STATUS_BAR_TITLE_CONTENT_HEIGHT_PX") &&
+            searchHeaderSource.contains(
+                "contentHeight = chromeGeometry.rowHeightPx + LauncherHeaderLayout.dividerHeight",
+            ) &&
                 searchHeaderSource.contains("statusBarSearchRow(") &&
                 !searchHeaderSource.contains("messageText") &&
                 !searchHeaderSource.contains("actionLabel") &&
-                searchRowSource.contains("height = STATUS_BAR_TITLE_ROW_HEIGHT_PX") &&
+                searchRowSource.contains("height = chromeGeometry.rowHeightPx") &&
                 searchRowSource.contains("padding = searchRowPadding(") &&
                 searchRowSource.contains("child = TextField(") &&
                 searchRowSource.contains("textAlign = textAlign") &&
@@ -584,7 +586,7 @@ class UiSpecStaticTest {
                 mediaBarSource.contains("HomeMediaSideAction(") &&
                 mediaBarSource.contains("filled = true") &&
                 mediaBarSource.contains("filled = false") &&
-                mediaBarSource.contains("mediaControlDivider(theme)"),
+                mediaBarSource.contains("mediaControlDivider(theme, chromeGeometry)"),
         )
         assertTrue(
             "Home media bottom bar must consume horizontal scrubs whenever a track is visible, even if the session cannot seek.",
@@ -599,7 +601,9 @@ class UiSpecStaticTest {
             "Home media bottom bar must exclude the Android bottom gesture strip while media controls are visible.",
             mainActivitySource.contains("updateMediaGestureExclusion(uiState.mediaPlayback.hasTrack)") &&
                 mainActivitySource.contains("view.systemGestureExclusionRects = listOf(") &&
-                mainActivitySource.contains("MEDIA_BOTTOM_BAR_GESTURE_EXCLUSION_LOGICAL_HEIGHT"),
+                mainActivitySource.contains(".geometry(state.fontSelection)") &&
+                mainActivitySource.contains(".bottomRegionHeight(LauncherSpacing.CONTENT_VERTICAL)") &&
+                mainActivitySource.contains("LauncherSpacing.CONTENT_VERTICAL"),
         )
         assertTrue(
             "Home info rows must not duplicate CALL/SMS counts already shown in the bottom actions.",

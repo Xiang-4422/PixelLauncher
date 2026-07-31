@@ -57,8 +57,10 @@ import com.purride.pixellauncherv2.launcher.DrawerSearchAutoLaunchPolicy
 import com.purride.pixellauncherv2.launcher.HomeInfoAction
 import com.purride.pixellauncherv2.launcher.HomeInfoDetailModel
 import com.purride.pixellauncherv2.launcher.IdleAutoEntryPolicy
+import com.purride.pixellauncherv2.launcher.LauncherChromeLayout
 import com.purride.pixellauncherv2.launcher.LauncherFontSelection
 import com.purride.pixellauncherv2.launcher.LauncherMode
+import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.LauncherState
 import com.purride.pixellauncherv2.launcher.LauncherStateTransitions
 import com.purride.pixellauncherv2.launcher.LauncherCallbacks
@@ -1298,9 +1300,11 @@ class MainActivity : AppCompatActivity() {
             view.systemGestureExclusionRects = emptyList()
             return
         }
-        val exclusionHeightPx = (
-            screenProfile.dotSizePx * MEDIA_BOTTOM_BAR_GESTURE_EXCLUSION_LOGICAL_HEIGHT
-        ).coerceAtLeast(1)
+        /** HOME 底栏边框行加底部页面留白，随当前 CHROME face 同步增长。 */
+        val exclusionLogicalHeight = LauncherChromeLayout
+            .geometry(state.fontSelection)
+            .bottomRegionHeight(LauncherSpacing.CONTENT_VERTICAL)
+        val exclusionHeightPx = (screenProfile.dotSizePx * exclusionLogicalHeight).coerceAtLeast(1)
         view.systemGestureExclusionRects = listOf(
             Rect(
                 0,
@@ -2935,7 +2939,6 @@ class MainActivity : AppCompatActivity() {
         const val rainLocationPromptText = "LOC"
         const val statusBarMessageTimeoutMs: Long = 2_500L
         const val pixelAppearanceConfirmTimeoutMs: Long = 5_000L
-        const val MEDIA_BOTTOM_BAR_GESTURE_EXCLUSION_LOGICAL_HEIGHT = 16
         const val ACTION_NOTIFICATION_SETTINGS = "android.settings.NOTIFICATION_SETTINGS"
         const val EXTRA_OPEN_SMS_THREAD_ID = "open_sms_thread_id"
         const val EXTRA_OPEN_SMS_ADDRESS = "open_sms_address"

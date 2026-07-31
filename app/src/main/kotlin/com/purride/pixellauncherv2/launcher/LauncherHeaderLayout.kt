@@ -3,49 +3,48 @@ package com.purride.pixellauncherv2.launcher
 import com.purride.pixellauncherv2.layout.LauncherLayoutProfile
 import kotlin.math.max
 
+/** 状态栏占位与页面内容起点的字体自适应布局规则。 */
 object LauncherHeaderLayout {
 
+    /** 状态栏文字与页面内容共用的水平边距。 */
     const val horizontalPadding = LauncherSpacing.CONTENT_HORIZONTAL
+    /** 边框行与电量线之间不额外留缝。 */
     const val dividerGap = 0
+    /** 电量分隔线固定为一逻辑像素。 */
     const val dividerHeight = 1
 
-    /** 默认 UI 字号的不可变指标，避免每次访问都重新计算。 */
-    private val uiFontMetrics = PixelFontCatalog.metrics(PixelFontCatalog.defaultUiFontSelection)
-
-    val rowY: Int
-        get() = 0
-
-    val textOffsetY: Int
-        get() = 0
-
-    val headerTextY: Int
-        get() = rowY + textOffsetY
-
-    val dividerY: Int
-        get() = headerTextY + uiFontMetrics.cellHeight + dividerGap
-
-    val headerContentHeight: Int
-        get() = uiFontMetrics.cellHeight + dividerGap + dividerHeight
-
-    val defaultStatusBarHeight: Int
-        get() = headerContentHeight
-
-    fun statusBarHeight(screenProfile: LauncherLayoutProfile): Int {
-        return max(screenProfile.statusBarHeight, defaultStatusBarHeight)
+    /** 状态栏边框行加电量分隔线的完整内容高度。 */
+    fun headerContentHeight(fontSelection: LauncherFontSelection): Int {
+        return LauncherChromeLayout.geometry(fontSelection).rowHeightPx + dividerGap + dividerHeight
     }
 
-    val contentTop: Int
-        get() = defaultStatusBarHeight
+    /** 系统栏占位与当前 CHROME 内容高度取较大值，避免字体或边框被裁切。 */
+    fun statusBarHeight(
+        screenProfile: LauncherLayoutProfile,
+        fontSelection: LauncherFontSelection,
+    ): Int = max(screenProfile.statusBarHeight, headerContentHeight(fontSelection))
 
-    fun contentTop(screenProfile: LauncherLayoutProfile): Int = statusBarHeight(screenProfile)
+    /** 返回状态栏之后的页面内容起点。 */
+    fun contentTop(
+        screenProfile: LauncherLayoutProfile,
+        fontSelection: LauncherFontSelection,
+    ): Int = statusBarHeight(screenProfile, fontSelection)
 
-    val firstContentItemTop: Int
-        get() = contentTop + LauncherSpacing.CONTENT_VERTICAL
-
-    fun firstContentItemTop(screenProfile: LauncherLayoutProfile): Int {
-        return contentTop(screenProfile) + LauncherSpacing.CONTENT_VERTICAL
+    /** 返回带共享页面上边距的首项位置。 */
+    fun firstContentItemTop(
+        screenProfile: LauncherLayoutProfile,
+        fontSelection: LauncherFontSelection,
+    ): Int {
+        return contentTop(screenProfile, fontSelection) + LauncherSpacing.CONTENT_VERTICAL
     }
 
-    val titleGap: Int
-        get() = max(2, uiFontMetrics.narrowAdvanceWidth / 2)
+    /** 按当前 CHROME face 的窄字符宽度计算标题间距。 */
+    fun titleGap(fontSelection: LauncherFontSelection): Int {
+        val chromeSelection = PixelFontCatalog.selectionForRole(
+            family = fontSelection.family,
+            widthMode = fontSelection.widthMode,
+            role = LauncherTextRole.CHROME,
+        )
+        return max(2, PixelFontCatalog.metrics(chromeSelection).narrowAdvanceWidth / 2)
+    }
 }

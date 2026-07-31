@@ -14,8 +14,12 @@ import org.junit.Test
  */
 class SettingsMenuLayoutTest {
 
-    private fun expectedVisibleRows(profile: LauncherLayoutProfile, rowHeight: Int): Int {
-        val top = LauncherHeaderLayout.firstContentItemTop(profile)
+    private fun expectedVisibleRows(
+        profile: LauncherLayoutProfile,
+        rowHeight: Int,
+        fontSelection: LauncherFontSelection = PixelFontCatalog.defaultUiFontSelection,
+    ): Int {
+        val top = LauncherHeaderLayout.firstContentItemTop(profile, fontSelection)
         val panelBottom = (profile.logicalHeight - LauncherSpacing.CONTENT_VERTICAL).coerceAtLeast(top + 24)
         val height = (panelBottom - top).coerceAtLeast(rowHeight)
         return (height / rowHeight).coerceAtLeast(1)
@@ -71,5 +75,24 @@ class SettingsMenuLayoutTest {
             tallerHeader,
         )
         assertTrue("a taller status bar must reduce settings rows", tallerHeader < defaultHeader)
+    }
+
+    @Test
+    fun visibleRows_usesCurrentFontForHeaderAndRows() {
+        val profile = LauncherLayoutProfile(120, 240, 4)
+        val unifont = PixelFontCatalog.selectionForRole(
+            family = LauncherFontFamily.GNU_UNIFONT,
+            widthMode = LauncherFontWidthMode.MONOSPACED,
+            role = LauncherTextRole.CHROME,
+        )
+        val rowHeight = maxOf(
+            SettingsListGeometry.ROW_PITCH_PX,
+            PixelFontCatalog.metrics(unifont).cellHeight + LauncherSpacing.ROW_SPACING,
+        )
+
+        assertEquals(
+            expectedVisibleRows(profile, rowHeight, unifont),
+            SettingsMenuLayout.visibleRows(profile, unifont),
+        )
     }
 }

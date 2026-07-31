@@ -16,7 +16,7 @@ class DiagnosticsBoundsModelTest {
 
         assertTrue(snapshot.geometryOk)
         assertEquals(116, snapshot.contentWidthPx)
-        assertEquals(221, snapshot.bodyHeightPx)
+        assertEquals(219, snapshot.bodyHeightPx)
         assertEquals(13, snapshot.visibleRowCount)
         assertEquals("OK 13 ROW", snapshot.summary)
     }
@@ -31,5 +31,21 @@ class DiagnosticsBoundsModelTest {
         assertEquals(0, snapshot.bodyHeightPx)
         assertEquals(0, snapshot.visibleRowCount)
         assertEquals("RISK 0 ROW", snapshot.summary)
+    }
+
+    @Test
+    fun snapshotUsesCurrentFontForHeaderAndBodyRows() {
+        val unifont = PixelFontCatalog.selectionForRole(
+            family = LauncherFontFamily.GNU_UNIFONT,
+            widthMode = LauncherFontWidthMode.MONOSPACED,
+            role = LauncherTextRole.CHROME,
+        )
+        val snapshot = DiagnosticsBoundsModel.snapshot(
+            screenProfile = LauncherLayoutProfile(120, 240, 6),
+            fontSelection = unifont,
+        )
+
+        assertEquals(217, snapshot.bodyHeightPx)
+        assertEquals(12, snapshot.visibleRowCount)
     }
 }

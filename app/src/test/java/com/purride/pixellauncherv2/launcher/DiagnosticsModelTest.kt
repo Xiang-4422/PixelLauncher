@@ -97,7 +97,7 @@ class DiagnosticsModelTest {
         val profileWithStatus = profile.copy(statusBarHeight = 14)
         val byTitle = DiagnosticsModel.lines(state, profileWithStatus).associate { it.title to it.value }
         assertEquals("120X240", byTitle["DISPLAY"])
-        assertEquals("14/15", byTitle["STATUS"])
+        assertEquals("14/17", byTitle["STATUS"])
         assertEquals("80% CHG", byTitle["POWER"])
     }
 
@@ -113,7 +113,7 @@ class DiagnosticsModelTest {
         assertEquals("NO ACCESS", byTitle["USAGE"])
         assertEquals("DATA 138/116", byTitle["TEXT MAX"])
         assertEquals("1", byTitle["TEXT RISK"])
-        assertEquals("0/15", byTitle["STATUS"])
+        assertEquals("0/17", byTitle["STATUS"])
         assertEquals("OK 13 ROW", byTitle["BOUNDS"])
         assertEquals("DATA HEALTH", byTitle["DEBUG"])
     }

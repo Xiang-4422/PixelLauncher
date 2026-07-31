@@ -19,7 +19,7 @@ object AppListLayout {
     ): Int {
         /** 与引擎 DrawerScreen 渲染行距一致的当前行高。 */
         val rowHeight = DrawerListGeometry.rowPitch(PixelFontCatalog.metrics(fontSelection).cellHeight)
-        val listStartY = LauncherHeaderLayout.firstContentItemTop(screenProfile)
+        val listStartY = LauncherHeaderLayout.firstContentItemTop(screenProfile, fontSelection)
         val railHeight = (screenProfile.logicalHeight - listStartY - bottomPadding).coerceAtLeast(rowHeight)
         return TextListSupport.createLayoutMetrics(
             top = listStartY,
