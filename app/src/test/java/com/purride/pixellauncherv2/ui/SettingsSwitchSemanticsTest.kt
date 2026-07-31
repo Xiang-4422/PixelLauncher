@@ -91,7 +91,17 @@ class SettingsSwitchSemanticsTest {
                 filledText = background,
                 disabledText = disabled,
             ),
-            sms = SmsColors(foreground, foreground, foreground, foreground),
+            sms = SmsColors(
+                sender = foreground,
+                threadPreview = foreground,
+                incomingMessage = foreground,
+                outgoingMessage = foreground,
+                composerText = foreground,
+                timestamp = foreground,
+                draftBorder = foreground,
+                selectionFill = background,
+                loadingTrack = background,
+            ),
             semantic = SemanticColors(foreground, foreground, foreground, foreground),
         )
     }

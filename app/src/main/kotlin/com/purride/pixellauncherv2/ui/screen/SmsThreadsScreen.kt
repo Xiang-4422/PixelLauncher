@@ -428,8 +428,8 @@ private fun centeredSmsLoading(
             child = AnimatedPixelLoadingBar(
                 vsync = vsync,
                 color = theme.text.primary,
-                // 点阵背景显式沿用扫描色，避免回落到组件 track 角色。
-                trackColor = theme.text.primary,
+                // 未激活轨道保持接近背景，扫描块使用主色才能形成可辨认的运动。
+                trackColor = theme.sms.loadingTrack,
                 width = 96,
                 height = 9,
                 blockWidth = 9,
@@ -482,7 +482,7 @@ private fun buildUnreadRow(
                 ),
                 Text(
                     entry.body.trim(),
-                    style = TextStyle(color = theme.sms.body),
+                    style = TextStyle(color = theme.sms.incomingMessage),
                     softWrap = true,
                     maxLines = Int.MAX_VALUE,
                 ),
@@ -559,7 +559,7 @@ private fun buildThreadRow(
                 ),
                 Text(
                     thread.snippet.trim(),
-                    style = TextStyle(color = theme.sms.body),
+                    style = TextStyle(color = theme.sms.threadPreview),
                     overflow = TextOverflow.ELLIPSIS,
                     softWrap = false,
                     maxLines = 1,
@@ -607,7 +607,7 @@ private fun buildSearchResultRow(
                 ),
                 Text(
                     message.body.trim(),
-                    style = TextStyle(color = theme.sms.body),
+                    style = TextStyle(color = theme.sms.threadPreview),
                     softWrap = true,
                     maxLines = Int.MAX_VALUE,
                 ),

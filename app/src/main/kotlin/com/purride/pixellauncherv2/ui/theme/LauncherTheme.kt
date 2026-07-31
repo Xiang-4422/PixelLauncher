@@ -77,10 +77,24 @@ data class ButtonColors(
 )
 
 data class SmsColors(
+    /** 联系人、号码和未读来源等消息标题颜色。 */
     val sender: PixelColor,
+    /** 会话列表中已读片段与搜索结果摘要颜色。 */
+    val threadPreview: PixelColor,
+    /** 会话详情中接收消息的正文颜色。 */
+    val incomingMessage: PixelColor,
+    /** 会话详情中发出消息的正文颜色。 */
+    val outgoingMessage: PixelColor,
+    /** 搜索框与草稿输入框的正文颜色。 */
+    val composerText: PixelColor,
+    /** 时间、发送进度与送达状态等元信息颜色。 */
     val timestamp: PixelColor,
-    val body: PixelColor,
+    /** 搜索框、草稿框和发送按钮的轮廓颜色。 */
     val draftBorder: PixelColor,
+    /** 文本输入选区的背景颜色，必须与输入正文保持可读对比度。 */
+    val selectionFill: PixelColor,
+    /** 短信加载动画的未激活轨道颜色。 */
+    val loadingTrack: PixelColor,
 )
 
 data class SemanticColors(

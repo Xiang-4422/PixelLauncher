@@ -293,7 +293,13 @@ private fun buildMessage(
                 add(
                     Text(
                         msg.body,
-                        style = TextStyle(color = theme.sms.body),
+                        style = TextStyle(
+                            color = if (isOutgoing) {
+                                theme.sms.outgoingMessage
+                            } else {
+                                theme.sms.incomingMessage
+                            },
+                        ),
                         softWrap = true,
                         maxLines = Int.MAX_VALUE,
                         // 发出的消息整体靠尾端（右）对齐，做出收/发的聊天感（收到的靠首端）。

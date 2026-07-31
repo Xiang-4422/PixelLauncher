@@ -643,6 +643,9 @@ class UiSpecStaticTest {
         val source = moduleRoot
             .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/SmsThreadDetailScreen.kt")
             .readText()
+        val textFieldSource = moduleRoot
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/SmsTextFieldStyle.kt")
+            .readText()
         val rootHostSource = moduleRoot
             .resolve("src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherRootHost.kt")
             .readText()
@@ -661,6 +664,11 @@ class UiSpecStaticTest {
                 !source.contains("SEARCH MSG") &&
                 !source.contains("SmsMessageStatusModel.label") &&
                 !source.contains("conversationTitle(") &&
+                source.contains("theme.sms.outgoingMessage") &&
+                source.contains("theme.sms.incomingMessage") &&
+                textFieldSource.contains("textStyle = TextStyle(color = theme.sms.composerText)") &&
+                textFieldSource.contains("selectionColor = theme.sms.selectionFill") &&
+                textFieldSource.contains("borderColor = theme.sms.draftBorder") &&
                 rootHostSource.contains("statusBarPageTitle(presentation)") &&
                 rootHostSource.contains("LauncherStatusBarPresentation.smsDetailPageTitle(") &&
                 rootHostSource.contains("conversationTitle = uiState.smsCurrentConversationTitle") &&
@@ -701,8 +709,11 @@ class UiSpecStaticTest {
                 source.contains("SEARCH ALL SMS") &&
                 source.contains("SmsThreadSearchModel.filter") &&
                 source.contains("thread.snippet.trim()") &&
-                source.contains("style = TextStyle(color = theme.sms.body)") &&
+                source.contains("style = TextStyle(color = theme.sms.threadPreview)") &&
                 source.contains("message.body.trim()") &&
+                source.contains("style = TextStyle(color = theme.sms.incomingMessage)") &&
+                source.contains("trackColor = theme.sms.loadingTrack") &&
+                !source.contains("trackColor = theme.text.primary") &&
                 source.contains("maxLines = Int.MAX_VALUE") &&
                 source.contains("borderColor = theme.button.border") &&
                 source.contains("SMS_PAGE_TABS.mapIndexed") &&

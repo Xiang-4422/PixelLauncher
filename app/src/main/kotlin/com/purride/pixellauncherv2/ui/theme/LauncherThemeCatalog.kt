@@ -248,9 +248,14 @@ internal object LauncherThemeCatalog {
             ),
             sms = SmsColors(
                 sender = palette.title,
+                threadPreview = palette.dim,
+                incomingMessage = palette.title,
+                outgoingMessage = palette.dim,
+                composerText = palette.title,
                 timestamp = metadataText,
-                body = palette.title,
                 draftBorder = outline,
+                selectionFill = panelSubtle,
+                loadingTrack = offPixel,
             ),
             semantic = SemanticColors(
                 success = palette.title,

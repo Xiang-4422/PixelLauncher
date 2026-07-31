@@ -127,6 +127,11 @@ class LauncherThemeCatalogTest {
                 "settingsValue" to theme.settings.itemValue,
                 "buttonDisabled" to theme.button.disabledText,
                 "buttonUnselected" to theme.button.unselectedText,
+                "smsSender" to theme.sms.sender,
+                "smsThreadPreview" to theme.sms.threadPreview,
+                "smsIncomingMessage" to theme.sms.incomingMessage,
+                "smsOutgoingMessage" to theme.sms.outgoingMessage,
+                "smsComposerText" to theme.sms.composerText,
                 "smsTimestamp" to theme.sms.timestamp,
                 "semanticSuccess" to theme.semantic.success,
                 "semanticWarning" to theme.semantic.warning,
@@ -138,6 +143,36 @@ class LauncherThemeCatalogTest {
                 val contrast = contrastRatio(color, theme.surface.bezelColor)
                 assertTrue("$variant $role 对比度不足：$contrast", contrast >= 4.5)
             }
+        }
+    }
+
+    /** 短信专用颜色必须兼顾输入可读性、加载辨识度与收发信息层级。 */
+    @Test
+    fun everyVariantKeepsSmsRolesReadableAndDistinct() {
+        LauncherThemeCatalog.byVariant.forEach { (variant, theme) ->
+            /** 输入正文与选区背景之间的对比度。 */
+            val selectionTextContrast = contrastRatio(
+                theme.sms.composerText,
+                theme.sms.selectionFill,
+            )
+            /** 加载扫描色与未激活轨道之间的对比度。 */
+            val loadingContrast = contrastRatio(theme.text.primary, theme.sms.loadingTrack)
+            /** 短信输入轮廓与页面背景之间的对比度。 */
+            val draftBorderContrast = contrastRatio(
+                theme.sms.draftBorder,
+                theme.surface.bezelColor,
+            )
+
+            assertTrue("$variant 短信选区文字对比度不足：$selectionTextContrast", selectionTextContrast >= 4.5)
+            assertTrue("$variant 短信加载动画对比度不足：$loadingContrast", loadingContrast >= 4.5)
+            assertTrue("$variant 短信输入轮廓对比度不足：$draftBorderContrast", draftBorderContrast >= 3.0)
+            assertNotEquals("$variant 会话标题与摘要必须区分层级", theme.sms.sender, theme.sms.threadPreview)
+            assertNotEquals(
+                "$variant 收发消息必须使用不同颜色角色",
+                theme.sms.incomingMessage,
+                theme.sms.outgoingMessage,
+            )
+            assertNotEquals("$variant 加载扫描色与轨道不能相同", theme.text.primary, theme.sms.loadingTrack)
         }
     }
 
