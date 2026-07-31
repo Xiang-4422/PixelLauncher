@@ -339,6 +339,29 @@ class UiSpecStaticTest {
         }
     }
 
+    /** WIDTH 与 SIZE 只有真实可切换时才展示枚举选择器。 */
+    @Test
+    fun unavailableFontAttributesKeepOriginalDisabledStepper() {
+        /** 设置页源码，用于约束字体属性的可用与禁用分支。 */
+        val settingsSource = resolveModuleRoot()
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/SettingsScreen.kt")
+            .readText()
+
+        listOf("WIDTH" to "widthOptions", "SIZE" to "sizeOptions").forEach { (title, options) ->
+            assertTrue(
+                "$title must use a selector only after loading and with multiple options.",
+                settingsSource.contains("if (!isFontLoading && $options.size > 1)") &&
+                    Regex("""SettingsChoiceRow\(\s*title = "$title"""").containsMatchIn(settingsSource),
+            )
+            assertTrue(
+                "$title must retain the disabled stepper when it cannot change.",
+                Regex(
+                    """SettingsOptionStepperRow\(\s*title = "$title"[\s\S]*?enabled = false""",
+                ).containsMatchIn(settingsSource),
+            )
+        }
+    }
+
     @Test
     fun drawerListDoesNotRenderSearchMatchReasonTags() {
         val moduleRoot = resolveModuleRoot()

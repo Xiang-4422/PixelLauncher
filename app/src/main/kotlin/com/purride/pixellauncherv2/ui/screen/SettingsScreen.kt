@@ -166,46 +166,72 @@ class SettingsScreen(
             )
             /** 当前字体家族允许用户直接选择的宽度模式，最多展示三个分段。 */
             val widthOptions = PixelFontCatalog.widthModeOptions(fontSelection.family)
-            add(
-                SettingsChoiceRow(
-                    title = "WIDTH",
-                    labels = widthOptions.map(SettingsMenuModel::fontWidthLabel),
-                    selectedIndex = widthOptions.indexOf(fontSelection.widthMode).coerceAtLeast(0),
-                    theme = t,
-                    widthPolicy = SegmentedControlWidthPolicy.EqualToWidest,
-                    enabled = !isFontLoading && widthOptions.size > 1,
-                    onSelected = { selectedIndex ->
-                        /** 字体加载期间控件禁用，正常状态下按目标下标直接切换宽度。 */
-                        dispatchSelection(
-                            item = SettingsMenuItem.FONT_WIDTH,
-                            options = widthOptions,
-                            current = fontSelection.widthMode,
-                            selectedIndex = selectedIndex,
-                        )
-                    },
-                ),
-            )
+            if (!isFontLoading && widthOptions.size > 1) {
+                add(
+                    SettingsChoiceRow(
+                        title = "WIDTH",
+                        labels = widthOptions.map(SettingsMenuModel::fontWidthLabel),
+                        selectedIndex = widthOptions.indexOf(fontSelection.widthMode).coerceAtLeast(0),
+                        theme = t,
+                        widthPolicy = SegmentedControlWidthPolicy.EqualToWidest,
+                        onSelected = { selectedIndex ->
+                            /** 可切换时按目标下标直接选择字体宽度。 */
+                            dispatchSelection(
+                                item = SettingsMenuItem.FONT_WIDTH,
+                                options = widthOptions,
+                                current = fontSelection.widthMode,
+                                selectedIndex = selectedIndex,
+                            )
+                        },
+                    ),
+                )
+            } else {
+                /** 单一候选或加载期间沿用原步进器的灰色禁用效果。 */
+                add(
+                    SettingsOptionStepperRow(
+                        title = "WIDTH",
+                        valueLabel = SettingsMenuModel.fontWidthLabel(fontSelection.widthMode),
+                        theme = t,
+                        onPrevious = { widget.onItemAction(SettingsMenuItem.FONT_WIDTH, -1) },
+                        onNext = { widget.onItemAction(SettingsMenuItem.FONT_WIDTH, +1) },
+                        enabled = false,
+                    ),
+                )
+            }
             /** 当前字体与宽度组合允许用户直接选择的字号，目录约束为最多三个。 */
             val sizeOptions = PixelFontCatalog.fontSizeOptions(fontSelection.family, fontSelection.widthMode)
-            add(
-                SettingsChoiceRow(
-                    title = "SIZE",
-                    labels = sizeOptions.map(SettingsMenuModel::fontSizeLabel),
-                    selectedIndex = sizeOptions.indexOf(fontSelection.size).coerceAtLeast(0),
-                    theme = t,
-                    widthPolicy = SegmentedControlWidthPolicy.EqualToWidest,
-                    enabled = !isFontLoading && sizeOptions.size > 1,
-                    onSelected = { selectedIndex ->
-                        /** 通过目标字号下标复用既有方向动作，避免新增状态写入通道。 */
-                        dispatchSelection(
-                            item = SettingsMenuItem.FONT_SIZE,
-                            options = sizeOptions,
-                            current = fontSelection.size,
-                            selectedIndex = selectedIndex,
-                        )
-                    },
-                ),
-            )
+            if (!isFontLoading && sizeOptions.size > 1) {
+                add(
+                    SettingsChoiceRow(
+                        title = "SIZE",
+                        labels = sizeOptions.map(SettingsMenuModel::fontSizeLabel),
+                        selectedIndex = sizeOptions.indexOf(fontSelection.size).coerceAtLeast(0),
+                        theme = t,
+                        widthPolicy = SegmentedControlWidthPolicy.EqualToWidest,
+                        onSelected = { selectedIndex ->
+                            /** 通过目标字号下标复用既有方向动作，避免新增状态写入通道。 */
+                            dispatchSelection(
+                                item = SettingsMenuItem.FONT_SIZE,
+                                options = sizeOptions,
+                                current = fontSelection.size,
+                                selectedIndex = selectedIndex,
+                            )
+                        },
+                    ),
+                )
+            } else {
+                /** 单一候选或加载期间沿用原步进器的灰色禁用效果。 */
+                add(
+                    SettingsOptionStepperRow(
+                        title = "SIZE",
+                        valueLabel = SettingsMenuModel.fontSizeLabel(fontSelection.size),
+                        theme = t,
+                        onPrevious = { widget.onItemAction(SettingsMenuItem.FONT_SIZE, -1) },
+                        onNext = { widget.onItemAction(SettingsMenuItem.FONT_SIZE, +1) },
+                        enabled = false,
+                    ),
+                )
+            }
             addSection(SettingsSection.DRAWER, t)
             add(
                 SettingsChoiceRow(
