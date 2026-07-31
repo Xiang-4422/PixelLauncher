@@ -44,15 +44,22 @@ val bytecodeReport = providers.gradleProperty("pixelCompatibilityReport")
 val checkNoInternalBytecodeReferences by tasks.registering {
     group = "verification"
     description = "Rejects compiled external SPI classes that reference pixel-engine internal packages."
-    dependsOn("compileDebugKotlin")
 
-    /** Compiled main classes discovered below the AGP build directory after compilation. */
-    val compiledClasses = fileTree(
-        layout.buildDirectory.dir("intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes"),
-    ) {
-        include("**/*.class")
-        exclude("**/*Test*.class")
-    }
+    /** The Kotlin compile task providing the consumer's own compiled classes. */
+    val compileDebugKotlin = tasks.named("compileDebugKotlin")
+    dependsOn(compileDebugKotlin)
+
+    /**
+     * Compiled main classes wired from the compile task's declared outputs instead of a
+     * hardcoded AGP intermediates path, so AGP layout changes cannot silently empty the scan.
+     */
+    val compiledClasses = objects.fileCollection()
+        .from(compileDebugKotlin.map { task -> task.outputs.files })
+        .asFileTree
+        .matching {
+            include("**/*.class")
+            exclude("**/*Test*.class")
+        }
     inputs.files(compiledClasses)
         .withPropertyName("externalConsumerClasses")
         .withPathSensitivity(PathSensitivity.RELATIVE)

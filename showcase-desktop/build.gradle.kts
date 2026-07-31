@@ -10,10 +10,13 @@ plugins {
  *
  * 依赖引擎 AAR 的 classes.jar（只触碰 pixelcore，不加载任何 Android 类），
  * 场景源码直接从 showcase 模块共享。
+ *
+ * classes.jar 取自 :pixel-engine:exportDebugClassesJar 导出的稳定路径
+ * （引擎模块自有的输出契约），不再直接引用 AGP intermediates 内部布局。
  */
 
 val engineClassesJar = rootProject.layout.projectDirectory.file(
-    "pixel-engine/build/intermediates/aar_main_jar/debug/syncDebugLibJars/classes.jar",
+    "pixel-engine/build/outputs/desktop-classes/classes.jar",
 )
 
 dependencies {
@@ -34,7 +37,7 @@ sourceSets {
 }
 
 tasks.named("compileKotlin") {
-    dependsOn(":pixel-engine:assembleDebug")
+    dependsOn(":pixel-engine:exportDebugClassesJar")
 }
 
 application {

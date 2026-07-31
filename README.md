@@ -19,9 +19,9 @@ PixelLauncher 是一个 Android 启动器应用，同时内置可复用的像素
 <!-- architecture-contract:dependencies:end -->
 
 两个 Android 应用模块通过 Gradle project 依赖消费引擎。`:showcase-desktop` 不声明 Android project
-依赖：其 `compileKotlin` 先触发 `:pixel-engine:assembleDebug`，再直接消费 debug AAR 中的
-`pixel-engine/build/intermediates/aar_main_jar/debug/syncDebugLibJars/classes.jar`，同时从 `:showcase`
-共享 `DemoScene.kt` 与 `scenes/**`。
+依赖：其 `compileKotlin` 先触发 `:pixel-engine:exportDebugClassesJar`（把 debug AAR 内的 classes.jar
+解包到引擎自有的稳定路径 `pixel-engine/build/outputs/desktop-classes/classes.jar`），再消费该导出产物，
+同时从 `:showcase` 共享 `DemoScene.kt` 与 `scenes/**`。
 桌面入口由 `:showcase-desktop` 自有的
 `showcase-desktop/src/main/kotlin/com/purride/pixelshowcase/desktop/DesktopShowcase.kt` 提供。SDK 对外仍只发布
 `com.purride:pixel-engine:1.0.0` 一个坐标，避免消费者拼装多个内部产物。

@@ -98,6 +98,26 @@ androidComponents {
     }
 }
 
+/** 当前 Debug AAR；desktop classes.jar 导出任务的输入（outputs/aar 是 AGP 的公开输出位置）。 */
+val debugArtifactAar = layout.buildDirectory.file("outputs/aar/pixel-engine-debug.aar")
+
+/**
+ * 把 debug AAR 内的 classes.jar 解包到本模块自有的稳定输出路径
+ * `build/outputs/desktop-classes/classes.jar`。
+ *
+ * showcase-desktop 只消费本任务的输出，不触碰 AGP intermediates 内部布局；
+ * AGP 升级若改变 AAR 打包细节，本任务是唯一需要跟进的位置。
+ */
+val exportDebugClassesJar by tasks.registering(Copy::class) {
+    group = "build"
+    description = "Exports the debug AAR classes.jar to a stable path for the desktop host."
+    dependsOn("assembleDebug")
+    from({ zipTree(debugArtifactAar) }) {
+        include("classes.jar")
+    }
+    into(layout.buildDirectory.dir("outputs/desktop-classes"))
+}
+
 /** Deterministic source-file manifest consumed through Metalava's @file syntax. */
 val metalavaSourceManifest = layout.buildDirectory.file("intermediates/metalava/release/source-files.txt")
 
