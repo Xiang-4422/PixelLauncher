@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""校验 Pixel Engine 规模预算、工程模块契约与历史文本边界。"""
+"""校验 Pixel Engine 函数规模、工程模块契约与历史文本边界。"""
 
 from __future__ import annotations
 
@@ -133,21 +133,10 @@ def load_budget(path: Path) -> dict[str, Any]:
     raw = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise ValueError("architecture budget must be a JSON object")
-    # 新文件使用的统一行数上限必须是正整数。
-    default_limit = raw.get("defaultMaxProductionKotlinLines")
-    if not isinstance(default_limit, int) or default_limit <= 0:
-        raise ValueError("defaultMaxProductionKotlinLines must be a positive integer")
     # 生产函数统一采用的最大行数必须是正整数。
     function_limit = raw.get("maxProductionFunctionLines")
     if not isinstance(function_limit, int) or function_limit <= 0:
         raise ValueError("maxProductionFunctionLines must be a positive integer")
-    # 已知热点预算必须是路径到正整数的映射。
-    grandfathered = raw.get("grandfatheredProductionKotlinFiles")
-    if not isinstance(grandfathered, dict) or any(
-        not isinstance(relative, str) or not isinstance(limit, int) or limit <= 0
-        for relative, limit in grandfathered.items()
-    ):
-        raise ValueError("grandfatheredProductionKotlinFiles must map paths to positive integers")
     return raw
 
 
@@ -324,47 +313,6 @@ def production_function_findings(root: Path, budget: dict[str, Any]) -> list[dic
                         "maxLines": limit,
                     }
                 )
-    return findings
-
-
-def production_size_findings(root: Path, budget: dict[str, Any]) -> list[dict[str, Any]]:
-    """返回超过默认或已审热点预算的生产 Kotlin 文件。"""
-
-    # Pixel Engine 生产 Kotlin 源码根。
-    source_root = root / "pixel-engine/src/main/kotlin"
-    # 普通生产文件统一采用的最大行数。
-    default_limit = int(budget["defaultMaxProductionKotlinLines"])
-    # 已审热点文件使用不允许增长的逐文件上限。
-    grandfathered = dict(budget["grandfatheredProductionKotlinFiles"])
-    # 当前规模违规的机器可读列表。
-    findings: list[dict[str, Any]] = []
-    for source in sorted(source_root.rglob("*.kt")):
-        # 预算路径以 pixel-engine 为基准，保持跨机器稳定。
-        relative = source.relative_to(root / "pixel-engine").as_posix()
-        # 已审热点使用精确预算，其余文件使用统一上限。
-        limit = int(grandfathered.get(relative, default_limit))
-        # splitlines 与审查统计口径一致，不把尾换行计为额外空行。
-        actual = len(source.read_text(encoding="utf-8").splitlines())
-        if actual > limit:
-            findings.append(
-                {
-                    "kind": "production-kotlin-size",
-                    "path": f"pixel-engine/{relative}",
-                    "actualLines": actual,
-                    "maxLines": limit,
-                }
-            )
-    # 预算中不存在的热点路径说明文件被移动后忘记同步治理配置。
-    for relative in sorted(grandfathered):
-        # 当前预算条目对应的生产文件。
-        source = root / "pixel-engine" / relative
-        if not source.is_file():
-            findings.append(
-                {
-                    "kind": "missing-grandfathered-file",
-                    "path": f"pixel-engine/{relative}",
-                }
-            )
     return findings
 
 
@@ -639,10 +587,9 @@ def check_repository(root: Path, budget_path: Path) -> dict[str, Any]:
 
     # 已验证结构的规模预算。
     budget = load_budget(budget_path)
-    # 规模和架构文本违规合并后按稳定字段排序。
+    # 函数规模和架构文本违规合并后按稳定字段排序。
     findings = (
-        production_size_findings(root, budget)
-        + production_function_findings(root, budget)
+        production_function_findings(root, budget)
         + module_contract_findings(root)
         + stale_text_findings(root)
     )

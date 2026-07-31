@@ -151,10 +151,10 @@ val themeTokenRuntimeSourceRoot = layout.projectDirectory.dir("src/main/kotlin")
 /** Machine-readable M5 token-consumption evidence retained by the verification gate. */
 val themeTokenCoverageReport = layout.buildDirectory.file("reports/theme/theme-token-coverage.json")
 
-/** 工程模块契约、历史架构文本与生产 Kotlin 文件规模检查器。 */
+/** 工程模块契约、历史架构文本与生产 Kotlin 函数规模检查器。 */
 val architectureGovernanceTool = rootProject.layout.projectDirectory.file("tools/check_pixel_architecture.py")
 
-/** 人工审阅后的生产 Kotlin 文件规模预算。 */
+/** 生产 Kotlin 函数规模预算。 */
 val architectureBudget = layout.projectDirectory.file("config/architecture-budget.json")
 
 /** 架构治理检查输出的机器可读报告。 */
@@ -321,10 +321,10 @@ val testPixelTooling by tasks.registering(Exec::class) {
     )
 }
 
-/** 阻止超大生产文件增长、模块契约漂移及已删除模块重新进入治理文本。 */
+/** 阻止超长生产函数、模块契约漂移及已删除模块重新进入治理文本。 */
 val checkArchitectureGovernance by tasks.registering(Exec::class) {
     group = "verification"
-    description = "Checks Pixel Engine source-size budgets, module contracts, and governance text."
+    description = "Checks Pixel Engine function-size budgets, module contracts, and governance text."
     workingDir(rootProject.projectDir)
 
     inputs.file(architectureGovernanceTool)

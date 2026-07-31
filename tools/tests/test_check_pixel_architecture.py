@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""验证 Pixel Engine 架构规模、模块契约与历史文本门禁。"""
+"""验证 Pixel Engine 函数规模、模块契约与历史文本门禁。"""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ SPEC.loader.exec_module(MODULE)
 
 
 class PixelArchitectureGovernanceTest(unittest.TestCase):
-    """覆盖规模超限、模块漂移、旧模块文本和真实仓库通过状态。"""
+    """覆盖函数超限、模块漂移、旧模块文本和真实仓库通过状态。"""
 
     def write_architecture_contract(self, root: Path) -> None:
         """在临时仓库写入当前四模块及依赖图契约。"""
@@ -62,7 +62,7 @@ class PixelArchitectureGovernanceTest(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(contract + "\n", encoding="utf-8")
 
-    def write_budget(self, root: Path, default_limit: int = 3) -> Path:
+    def write_budget(self, root: Path, function_limit: int = 220) -> Path:
         """在临时仓库写入最小合法规模预算。"""
 
         self.write_architecture_contract(root)
@@ -72,31 +72,33 @@ class PixelArchitectureGovernanceTest(unittest.TestCase):
         budget.write_text(
             json.dumps(
                 {
-                    "defaultMaxProductionKotlinLines": default_limit,
-                    "maxProductionFunctionLines": 220,
-                    "grandfatheredProductionKotlinFiles": {},
+                    "maxProductionFunctionLines": function_limit,
                 }
             ),
             encoding="utf-8",
         )
         return budget
 
-    def test_rejects_production_file_over_default_limit(self) -> None:
-        """未审生产文件超过统一行数上限时必须失败。"""
+    def test_accepts_large_file_when_functions_remain_bounded(self) -> None:
+        """大文件只要没有超长函数，就不应被机械行数门禁拒绝。"""
 
         with tempfile.TemporaryDirectory() as directory:
-            # 临时仓库只包含一个四行 Kotlin 文件。
+            # 临时仓库包含远超旧 1200 行上限、但没有长函数的 Kotlin 文件。
             root = Path(directory)
             source = root / "pixel-engine/src/main/kotlin/example/Large.kt"
             source.parent.mkdir(parents=True)
-            source.write_text("package example\nclass Large\n// three\n// four\n", encoding="utf-8")
-            # 三行上限故意小于实际文件。
-            budget = self.write_budget(root, default_limit=3)
+            source.write_text(
+                "package example\n"
+                + "\n".join(f"internal const val VALUE_{index} = {index}" for index in range(1_300)),
+                encoding="utf-8",
+            )
+            # 函数预算仍保留，但当前文件没有块函数。
+            budget = self.write_budget(root)
 
-            # 报告必须精确指出规模超限。
+            # 文件总行数不再决定架构门禁结果。
             report = MODULE.check_repository(root, budget)
-            self.assertEqual("failed", report["status"])
-            self.assertEqual("production-kotlin-size", report["findings"][0]["kind"])
+            self.assertEqual([], report["findings"])
+            self.assertEqual("passed", report["status"])
 
     def test_rejects_production_function_over_limit(self) -> None:
         """生产块函数超过统一行数上限时必须失败。"""
@@ -110,19 +112,8 @@ class PixelArchitectureGovernanceTest(unittest.TestCase):
                 "package example\nfun oversized() {\n    println(1)\n}\n",
                 encoding="utf-8",
             )
-            # 宽松文件预算确保只触发函数预算。
-            budget = self.write_budget(root, default_limit=100)
             # 两行函数上限故意小于当前三行函数。
-            budget.write_text(
-                json.dumps(
-                    {
-                        "defaultMaxProductionKotlinLines": 100,
-                        "maxProductionFunctionLines": 2,
-                        "grandfatheredProductionKotlinFiles": {},
-                    }
-                ),
-                encoding="utf-8",
-            )
+            budget = self.write_budget(root, function_limit=2)
 
             # 报告必须给出函数名和起始行。
             report = MODULE.check_repository(root, budget)
@@ -137,8 +128,8 @@ class PixelArchitectureGovernanceTest(unittest.TestCase):
             # 临时仓库先建立完整契约，再向 README 注入错误历史模块名称。
             root = Path(directory)
             (root / "pixel-engine/src/main/kotlin").mkdir(parents=True)
-            # 宽松预算把测试焦点限制在文本门禁。
-            budget = self.write_budget(root, default_limit=100)
+            # 当前预算把测试焦点限制在文本门禁。
+            budget = self.write_budget(root)
             readme = root / "README.md"
             readme.write_text(
                 readme.read_text(encoding="utf-8") + "依赖 pixel-demo\n",
@@ -162,7 +153,7 @@ class PixelArchitectureGovernanceTest(unittest.TestCase):
             # 空生产源码使测试只验证模块契约的正向路径；Gradle 声明顺序不应影响结果。
             root = Path(directory)
             (root / "pixel-engine/src/main/kotlin").mkdir(parents=True)
-            budget = self.write_budget(root, default_limit=100)
+            budget = self.write_budget(root)
             (root / "settings.gradle.kts").write_text(
                 'include(":showcase-desktop", ":showcase", ":pixel-engine", ":app")\n',
                 encoding="utf-8",
@@ -204,7 +195,7 @@ class PixelArchitectureGovernanceTest(unittest.TestCase):
             # 完整文档保持不变，桌面模块的 include 被行注释移除。
             root = Path(directory)
             (root / "pixel-engine/src/main/kotlin").mkdir(parents=True)
-            budget = self.write_budget(root, default_limit=100)
+            budget = self.write_budget(root)
             (root / "settings.gradle.kts").write_text(
                 'include(":app", ":pixel-engine", ":showcase")\n'
                 '// include(":showcase-desktop")\n'
@@ -226,7 +217,7 @@ class PixelArchitectureGovernanceTest(unittest.TestCase):
             # 项目总览故意从受控区段移除桌面模块。
             root = Path(directory)
             (root / "pixel-engine/src/main/kotlin").mkdir(parents=True)
-            budget = self.write_budget(root, default_limit=100)
+            budget = self.write_budget(root)
             overview = root / "docs/项目总览.md"
             overview.write_text(
                 overview.read_text(encoding="utf-8").replace("- `:showcase-desktop`\n", ""),
@@ -250,7 +241,7 @@ class PixelArchitectureGovernanceTest(unittest.TestCase):
                 # Engine README 用于隔离两种不明确区段结构。
                 root = Path(directory)
                 (root / "pixel-engine/src/main/kotlin").mkdir(parents=True)
-                budget = self.write_budget(root, default_limit=100)
+                budget = self.write_budget(root)
                 readme = root / "pixel-engine/README.md"
                 text = readme.read_text(encoding="utf-8")
                 if scenario == "missing-end":
@@ -278,7 +269,7 @@ class PixelArchitectureGovernanceTest(unittest.TestCase):
             # 根 README 只删掉一条特殊消费关系，隔离依赖图负向路径。
             root = Path(directory)
             (root / "pixel-engine/src/main/kotlin").mkdir(parents=True)
-            budget = self.write_budget(root, default_limit=100)
+            budget = self.write_budget(root)
             readme = root / "README.md"
             missing_line = ":showcase-desktop --shared scene sources--> :showcase\n"
             readme.write_text(
@@ -296,7 +287,7 @@ class PixelArchitectureGovernanceTest(unittest.TestCase):
             self.assertNotIn(missing_line.strip(), finding["actual"])
 
     def test_current_repository_passes_architecture_governance(self) -> None:
-        """受版本控制的当前仓库必须满足规模、模块契约与历史文本预算。"""
+        """受版本控制的当前仓库必须满足函数规模、模块契约与历史文本预算。"""
 
         # 真实预算文件与 CI 使用同一路径。
         budget = ROOT / "pixel-engine/config/architecture-budget.json"
