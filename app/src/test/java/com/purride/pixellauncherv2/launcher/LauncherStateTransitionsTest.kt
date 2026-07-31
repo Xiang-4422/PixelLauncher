@@ -182,24 +182,37 @@ class LauncherStateTransitionsTest {
     // ── Diagnostics + SMS navigation ──────────────────────────────────────────
 
     @Test
+    fun moreSettings_openAndCloseWithoutLosingSettingsReturnMode() {
+        val settings = LauncherState(
+            mode = LauncherMode.SETTINGS,
+            returnMode = LauncherMode.APP_DRAWER,
+        )
+        val opened = LauncherStateTransitions.showMoreSettings(settings)
+
+        assertEquals(LauncherMode.MORE_SETTINGS, opened.mode)
+        assertEquals(LauncherMode.APP_DRAWER, opened.returnMode)
+        assertEquals(LauncherMode.SETTINGS, LauncherStateTransitions.hideMoreSettings(opened).mode)
+    }
+
+    @Test
     fun diagnostics_openAndClose() {
-        val opened = LauncherStateTransitions.showDiagnostics(LauncherState(mode = LauncherMode.SETTINGS))
+        val opened = LauncherStateTransitions.showDiagnostics(LauncherState(mode = LauncherMode.MORE_SETTINGS))
         assertEquals(LauncherMode.DIAGNOSTICS, opened.mode)
-        assertEquals(LauncherMode.SETTINGS, LauncherStateTransitions.hideDiagnostics(opened).mode)
+        assertEquals(LauncherMode.MORE_SETTINGS, LauncherStateTransitions.hideDiagnostics(opened).mode)
     }
 
     @Test
     fun dataHealth_openAndClose() {
-        val opened = LauncherStateTransitions.showDataHealth(LauncherState(mode = LauncherMode.SETTINGS))
+        val opened = LauncherStateTransitions.showDataHealth(LauncherState(mode = LauncherMode.MORE_SETTINGS))
         assertEquals(LauncherMode.DATA_HEALTH, opened.mode)
-        assertEquals(LauncherMode.SETTINGS, LauncherStateTransitions.hideDataHealth(opened).mode)
+        assertEquals(LauncherMode.MORE_SETTINGS, LauncherStateTransitions.hideDataHealth(opened).mode)
     }
 
     @Test
     fun loadingPreview_openAndClose() {
-        val opened = LauncherStateTransitions.showLoadingPreview(LauncherState(mode = LauncherMode.SETTINGS))
+        val opened = LauncherStateTransitions.showLoadingPreview(LauncherState(mode = LauncherMode.MORE_SETTINGS))
         assertEquals(LauncherMode.LOADING_PREVIEW, opened.mode)
-        assertEquals(LauncherMode.SETTINGS, LauncherStateTransitions.hideLoadingPreview(opened).mode)
+        assertEquals(LauncherMode.MORE_SETTINGS, LauncherStateTransitions.hideLoadingPreview(opened).mode)
     }
 
     @Test

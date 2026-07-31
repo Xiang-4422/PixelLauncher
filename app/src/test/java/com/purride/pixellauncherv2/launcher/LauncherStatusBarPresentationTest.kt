@@ -20,6 +20,7 @@ class LauncherStatusBarPresentationTest {
         val expectedTitles = mapOf(
             LauncherMode.HOME to "HOME",
             LauncherMode.SETTINGS to "SETTINGS",
+            LauncherMode.MORE_SETTINGS to "MORE",
             // Drawer 在状态栏走搜索态，标题实际用不到，但 pageTitleFor 仍有定义。
             LauncherMode.APP_DRAWER to "APP",
             LauncherMode.SMS_ROLE_PROMPT to "SMS",

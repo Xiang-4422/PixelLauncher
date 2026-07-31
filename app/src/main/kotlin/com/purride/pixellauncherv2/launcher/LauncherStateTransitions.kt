@@ -12,7 +12,7 @@ import com.purride.pixelcore.PixelShape
 /**
  * Launcher 状态转换的统一入口 facade（ADR-0001 阶段 2）。
  *
- * 108 个公开入口的实现已按九个状态域拆分到独立文件：
+ * 110 个公开入口的实现已按九个状态域拆分到独立文件：
  * [LauncherShellTransitions]、[LauncherAppCatalogTransitions]、[LauncherSettingsTransitions]、
  * [LauncherSmsTransitions]、[LauncherPhoneTransitions]、[LauncherEffectTransitions]、
  * [LauncherHomeTransitions]、[LauncherNotificationTransitions]、[LauncherSystemTransitions]。
@@ -35,6 +35,14 @@ object LauncherStateTransitions {
     /** 委托 [LauncherShellTransitions.hideSettings]。 */
     fun hideSettings(state: LauncherState): LauncherState =
         LauncherShellTransitions.hideSettings(state)
+
+    /** 委托 [LauncherShellTransitions.showMoreSettings]。 */
+    fun showMoreSettings(state: LauncherState): LauncherState =
+        LauncherShellTransitions.showMoreSettings(state)
+
+    /** 委托 [LauncherShellTransitions.hideMoreSettings]。 */
+    fun hideMoreSettings(state: LauncherState): LauncherState =
+        LauncherShellTransitions.hideMoreSettings(state)
 
     /** 委托 [LauncherShellTransitions.showSnake]。 */
     fun showSnake(state: LauncherState): LauncherState =

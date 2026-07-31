@@ -35,10 +35,14 @@ class LauncherTransitionBaselineTest {
         assertEquals(LauncherMode.APP_DRAWER, snakeState.returnMode)
         assertEquals(LauncherMode.SETTINGS, LauncherStateTransitions.hideSnake(snakeState).mode)
 
-        val notificationState = LauncherStateTransitions.showNotificationSettings(settingsState)
+        val moreState = LauncherStateTransitions.showMoreSettings(settingsState)
+        assertEquals(LauncherMode.MORE_SETTINGS, moreState.mode)
+        assertEquals(LauncherMode.APP_DRAWER, moreState.returnMode)
+
+        val notificationState = LauncherStateTransitions.showNotificationSettings(moreState)
         assertEquals(LauncherMode.NOTIFICATION_SETTINGS, notificationState.mode)
         assertEquals(
-            LauncherMode.SETTINGS,
+            LauncherMode.MORE_SETTINGS,
             LauncherStateTransitions.hideNotificationSettings(notificationState).mode,
         )
 

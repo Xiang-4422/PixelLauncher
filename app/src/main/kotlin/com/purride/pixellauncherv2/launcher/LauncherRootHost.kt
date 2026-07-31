@@ -43,6 +43,7 @@ import com.purride.pixellauncherv2.ui.screen.DrawerScreen
 import com.purride.pixellauncherv2.ui.screen.HomeScreen
 import com.purride.pixellauncherv2.ui.screen.IdleScreen
 import com.purride.pixellauncherv2.ui.screen.LoadingPreviewScreen
+import com.purride.pixellauncherv2.ui.screen.MoreSettingsScreen
 import com.purride.pixellauncherv2.ui.screen.NotificationSettingsScreen
 import com.purride.pixellauncherv2.ui.screen.SmsRolePromptScreen
 import com.purride.pixellauncherv2.ui.screen.SmsThreadDetailScreen
@@ -456,6 +457,12 @@ internal class LauncherRootHost(
 
     private fun buildDestination(destination: LauncherRouteDestination): Widget = when (destination) {
         LauncherRouteDestination.MAIN -> buildMainPager()
+        LauncherRouteDestination.MORE_SETTINGS -> MoreSettingsScreen(
+            uiState = uiState,
+            theme = theme,
+            textEdgeResolvers = settingsTextEdgeResolvers(),
+            onItemAction = callbacks.onSettingsItemAction,
+        )
         LauncherRouteDestination.SMS_ROLE_PROMPT -> SmsRolePromptScreen(
             theme = theme,
             onRequestRole = callbacks.onRequestSmsRole,
@@ -658,7 +665,13 @@ internal class LauncherRootHost(
     private fun buildSettingsPage(): Widget = com.purride.pixellauncherv2.ui.screen.SettingsScreen(
         uiState = uiState,
         theme = theme,
-        textEdgeResolvers = SettingsTextEdgeResolvers(
+        textEdgeResolvers = settingsTextEdgeResolvers(),
+        onItemAction = callbacks.onSettingsItemAction,
+    )
+
+    /** 创建顶层设置与 MORE 页面共用的真实字形墨迹边界解析器。 */
+    private fun settingsTextEdgeResolvers(): SettingsTextEdgeResolvers =
+        SettingsTextEdgeResolvers(
             leadingInkInset = { text ->
                 preparedFont.leadingInkInset(
                     text = text,
@@ -671,9 +684,7 @@ internal class LauncherRootHost(
                     faceSelection = uiState.fontSelection,
                 )
             },
-        ),
-        onItemAction = callbacks.onSettingsItemAction,
-    )
+        )
 
     private fun buildGlobalStatusBar(): Widget =
         when (val presentation = LauncherStatusBarPresentation.forMode(uiState.mode)) {
@@ -955,6 +966,7 @@ internal class LauncherRootHost(
             LauncherMode.APP_DRAWER,
             LauncherMode.SETTINGS,
             -> LauncherRouteDestination.MAIN
+            LauncherMode.MORE_SETTINGS -> LauncherRouteDestination.MORE_SETTINGS
             LauncherMode.SMS_ROLE_PROMPT -> LauncherRouteDestination.SMS_ROLE_PROMPT
             LauncherMode.SMS_THREADS -> LauncherRouteDestination.SMS_THREADS
             LauncherMode.SMS_THREAD_DETAIL -> LauncherRouteDestination.SMS_THREAD_DETAIL
@@ -977,6 +989,7 @@ internal class LauncherRootHost(
             -> PixelRouteTransition.SlideVertical
 
             LauncherRouteDestination.MAIN,
+            LauncherRouteDestination.MORE_SETTINGS,
             LauncherRouteDestination.SMS_THREAD_DETAIL,
             LauncherRouteDestination.CONTACT_DETAIL,
             LauncherRouteDestination.CONTACT_EDITOR,
@@ -1034,6 +1047,7 @@ internal enum class LauncherRouteDestination(
     val routeName: String,
 ) {
     MAIN("main"),
+    MORE_SETTINGS("more-settings"),
     SMS_ROLE_PROMPT("sms-role-prompt"),
     SMS_THREADS("sms-threads"),
     SMS_THREAD_DETAIL("sms-thread-detail"),

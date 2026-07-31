@@ -64,7 +64,8 @@ object LauncherAppCatalogTransitions {
         val returnMode = when (state.returnMode) {
             LauncherMode.HOME,
             LauncherMode.APP_DRAWER,
-            LauncherMode.SETTINGS -> state.returnMode
+            LauncherMode.SETTINGS,
+            LauncherMode.MORE_SETTINGS -> state.returnMode
 
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,

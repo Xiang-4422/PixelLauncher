@@ -20,6 +20,7 @@ internal sealed class LauncherStatusBarPresentation {
         fun pageTitleFor(mode: LauncherMode): String = when (mode) {
             LauncherMode.HOME -> "HOME"
             LauncherMode.SETTINGS -> "SETTINGS"
+            LauncherMode.MORE_SETTINGS -> "MORE"
             LauncherMode.APP_DRAWER,
             LauncherMode.APP_MANAGEMENT,
             -> "APP"

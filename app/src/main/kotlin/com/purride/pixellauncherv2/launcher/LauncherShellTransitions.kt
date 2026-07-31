@@ -33,6 +33,7 @@ object LauncherShellTransitions {
             LauncherMode.CONTACT_EDITOR -> state.mode
 
             LauncherMode.SETTINGS,
+            LauncherMode.MORE_SETTINGS,
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,
@@ -71,6 +72,7 @@ object LauncherShellTransitions {
             LauncherMode.CONTACT_EDITOR -> state.returnMode
 
             LauncherMode.SETTINGS,
+            LauncherMode.MORE_SETTINGS,
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,
@@ -85,6 +87,16 @@ object LauncherShellTransitions {
         )
     }
 
+    /** 从顶层设置进入低频设置二级页面。 */
+    fun showMoreSettings(state: LauncherState): LauncherState {
+        return state.copy(mode = LauncherMode.MORE_SETTINGS)
+    }
+
+    /** 关闭低频设置二级页面并返回顶层设置。 */
+    fun hideMoreSettings(state: LauncherState): LauncherState {
+        return state.copy(mode = LauncherMode.SETTINGS)
+    }
+
     /** 从设置页进入贪吃蛇。 */
     fun showSnake(state: LauncherState): LauncherState {
         return state.copy(mode = LauncherMode.SNAKE)
@@ -95,44 +107,44 @@ object LauncherShellTransitions {
         return state.copy(mode = LauncherMode.SETTINGS)
     }
 
-    /** 从设置页进入轻量 diagnostics 页面。 */
+    /** 从 MORE 页面进入轻量 diagnostics 页面。 */
     fun showDiagnostics(state: LauncherState): LauncherState {
         return state.copy(mode = LauncherMode.DIAGNOSTICS)
     }
 
-    /** 关闭 diagnostics，并返回设置页。 */
+    /** 关闭 diagnostics，并返回 MORE 页面。 */
     fun hideDiagnostics(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.SETTINGS)
+        return state.copy(mode = LauncherMode.MORE_SETTINGS)
     }
 
-    /** 从设置页进入数据健康页。 */
+    /** 从 MORE 页面进入数据健康页。 */
     fun showDataHealth(state: LauncherState): LauncherState {
         return state.copy(mode = LauncherMode.DATA_HEALTH)
     }
 
-    /** 关闭数据健康页，并返回设置页。 */
+    /** 关闭数据健康页，并返回 MORE 页面。 */
     fun hideDataHealth(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.SETTINGS)
+        return state.copy(mode = LauncherMode.MORE_SETTINGS)
     }
 
-    /** 从设置页进入通知摘要设置页。 */
+    /** 从 MORE 页面进入通知摘要设置页。 */
     fun showNotificationSettings(state: LauncherState): LauncherState {
         return state.copy(mode = LauncherMode.NOTIFICATION_SETTINGS)
     }
 
-    /** 关闭通知摘要设置页，并返回设置页。 */
+    /** 关闭通知摘要设置页，并返回 MORE 页面。 */
     fun hideNotificationSettings(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.SETTINGS)
+        return state.copy(mode = LauncherMode.MORE_SETTINGS)
     }
 
-    /** 从设置页进入加载动画预览页。 */
+    /** 从 MORE 页面进入加载动画预览页。 */
     fun showLoadingPreview(state: LauncherState): LauncherState {
         return state.copy(mode = LauncherMode.LOADING_PREVIEW)
     }
 
-    /** 关闭加载动画预览页，并返回设置页。 */
+    /** 关闭加载动画预览页，并返回 MORE 页面。 */
     fun hideLoadingPreview(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.SETTINGS)
+        return state.copy(mode = LauncherMode.MORE_SETTINGS)
     }
 
     /**

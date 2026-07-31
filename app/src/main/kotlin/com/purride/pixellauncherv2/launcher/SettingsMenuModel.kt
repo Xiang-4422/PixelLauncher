@@ -1,6 +1,7 @@
 package com.purride.pixellauncherv2.launcher
 
 import com.purride.pixelcore.PixelShape
+import com.purride.pixellauncherv2.BuildConfig
 import com.purride.pixellauncherv2.layout.LauncherLayoutProfileFactory
 
 enum class SettingsMenuItem {
@@ -12,7 +13,6 @@ enum class SettingsMenuItem {
     FONT,
     FONT_WIDTH,
     FONT_SIZE,
-    HOME_STATUS,
     APP_LIST_ALIGNMENT,
     IDLE_PAGE,
     CHARGE_AUTO_IDLE,
@@ -20,7 +20,7 @@ enum class SettingsMenuItem {
     IDLE_TIMEOUT,
     CHARGE_IDLE_EFFECT,
     DRAWER_AUTO_SEARCH,
-    APP_MANAGEMENT,
+    MORE,
     NOTIFICATIONS,
     DATA_HEALTH,
     LOADING_PREVIEW,
@@ -28,7 +28,6 @@ enum class SettingsMenuItem {
     PIXEL_MATTER_EFFECT_MODE,
     PIXEL_MATTER_HAND_CONTROL,
     PIXEL_MATTER_HAND_DEBUG,
-    SNAKE,
     ADVANCED,
 }
 
@@ -37,11 +36,20 @@ enum class SettingsSection {
     DISPLAY,
     /** 颜色主题、明暗模式与字体排版设置。 */
     THEME,
-    HOME,
+    /** 应用抽屉的布局与打开行为设置。 */
     DRAWER,
+    /** 待机页及其自动进入条件设置。 */
     IDLE,
-    DATA,
-    ADVANCED,
+    /** 进入低频设置二级页面的入口分类。 */
+    MORE,
+    /** 通知来源的展示优先级设置。 */
+    NOTIFICATIONS,
+    /** 系统权限、角色与数据访问状态入口。 */
+    ACCESS,
+    /** 面向用户的实验性交互效果。 */
+    EXPERIMENTAL,
+    /** 仅调试构建可见的组件预览与诊断工具。 */
+    DEVELOPER,
 }
 
 data class SettingsMenuRow(
@@ -65,6 +73,7 @@ object SettingsMenuModel {
     /** 设置页允许循环选择的字体家族。 */
     val fontOptions: List<LauncherFontFamily> = PixelFontCatalog.fontFamilyOptions()
 
+    /** 生成与当前状态一致的顶层设置菜单行。 */
     fun rows(state: LauncherState): List<SettingsMenuRow> {
         return buildList {
             add(
@@ -135,14 +144,6 @@ object SettingsMenuModel {
             )
             add(
                 SettingsMenuRow(
-                    item = SettingsMenuItem.HOME_STATUS,
-                    title = "HOME STATUS",
-                    value = HomeInfoModel.summary(state),
-                    section = SettingsSection.HOME,
-                ),
-            )
-            add(
-                SettingsMenuRow(
                     item = SettingsMenuItem.APP_LIST_ALIGNMENT,
                     title = "APP ALIGN",
                     value = drawerListAlignmentLabel(state.drawerListAlignment),
@@ -159,77 +160,86 @@ object SettingsMenuModel {
             )
             add(
                 SettingsMenuRow(
-                    item = SettingsMenuItem.APP_MANAGEMENT,
-                    title = "APP MANAGE",
-                    value = if (state.apps.isEmpty()) "EMPTY" else "OPEN",
-                    section = SettingsSection.DRAWER,
-                ),
-            )
-            add(
-                SettingsMenuRow(
                     item = SettingsMenuItem.IDLE_PAGE,
-                    title = "IDLE PAGE",
+                    title = "ENABLE",
                     value = onOffLabel(state.isIdlePageEnabled),
                     section = SettingsSection.IDLE,
                 ),
             )
+            if (state.isIdlePageEnabled) {
+                add(
+                    SettingsMenuRow(
+                        item = SettingsMenuItem.CHARGE_AUTO_IDLE,
+                        title = "CHARGE",
+                        value = onOffLabel(state.chargeAutoIdleEnabled),
+                        section = SettingsSection.IDLE,
+                    ),
+                )
+                add(
+                    SettingsMenuRow(
+                        item = SettingsMenuItem.INACTIVITY_AUTO_IDLE,
+                        title = "AUTO",
+                        value = onOffLabel(state.inactivityAutoIdleEnabled),
+                        section = SettingsSection.IDLE,
+                    ),
+                )
+                if (state.inactivityAutoIdleEnabled) {
+                    add(
+                        SettingsMenuRow(
+                            item = SettingsMenuItem.IDLE_TIMEOUT,
+                            title = "TIMEOUT",
+                            value = idleTimeoutLabel(state.idleTimeoutSeconds),
+                            section = SettingsSection.IDLE,
+                        ),
+                    )
+                }
+                add(
+                    SettingsMenuRow(
+                        item = SettingsMenuItem.CHARGE_IDLE_EFFECT,
+                        title = "EFFECT",
+                        value = chargeIdleEffectLabel(state.chargeIdleEffect),
+                        section = SettingsSection.IDLE,
+                    ),
+                )
+            }
             add(
                 SettingsMenuRow(
-                    item = SettingsMenuItem.CHARGE_AUTO_IDLE,
-                    title = "CHARGE IDLE",
-                    value = onOffLabel(state.chargeAutoIdleEnabled),
-                    section = SettingsSection.IDLE,
+                    item = SettingsMenuItem.MORE,
+                    title = "MORE",
+                    value = "OPEN",
+                    section = SettingsSection.MORE,
                 ),
             )
-            add(
-                SettingsMenuRow(
-                    item = SettingsMenuItem.INACTIVITY_AUTO_IDLE,
-                    title = "AUTO IDLE",
-                    value = onOffLabel(state.inactivityAutoIdleEnabled),
-                    section = SettingsSection.IDLE,
-                ),
-            )
-            add(
-                SettingsMenuRow(
-                    item = SettingsMenuItem.IDLE_TIMEOUT,
-                    title = "IDLE TIME",
-                    value = idleTimeoutLabel(state.idleTimeoutSeconds),
-                    section = SettingsSection.IDLE,
-                ),
-            )
-            add(
-                SettingsMenuRow(
-                    item = SettingsMenuItem.CHARGE_IDLE_EFFECT,
-                    title = "IDLE EFFECT",
-                    value = chargeIdleEffectLabel(state.chargeIdleEffect),
-                    section = SettingsSection.IDLE,
-                ),
-            )
+        }
+    }
+
+    /**
+     * 生成 MORE 二级页面的低频设置行。
+     *
+     * @param includeDeveloperTools 是否包含只供开发验收使用的预览与诊断入口。
+     */
+    fun moreRows(
+        state: LauncherState,
+        includeDeveloperTools: Boolean = BuildConfig.DEBUG,
+    ): List<SettingsMenuRow> {
+        return buildList {
             add(
                 SettingsMenuRow(
                     item = SettingsMenuItem.NOTIFICATIONS,
-                    title = "NOTIFY",
+                    title = "SOURCES",
                     value = NotificationSettingsModel.summary(
                         mutedSourceIds = state.mutedNotificationSourceIds,
                         prioritySourceIds = state.priorityNotificationSourceIds,
                     ),
-                    section = SettingsSection.DATA,
+                    section = SettingsSection.NOTIFICATIONS,
                 ),
             )
             add(
                 SettingsMenuRow(
                     item = SettingsMenuItem.DATA_HEALTH,
-                    title = "DATA HEALTH",
+                    title = "PERMISSIONS",
                     value = DataHealthModel.summary(state),
-                    section = SettingsSection.DATA,
-                ),
-            )
-            add(
-                SettingsMenuRow(
-                    item = SettingsMenuItem.LOADING_PREVIEW,
-                    title = "LOADING",
-                    value = "OPEN",
-                    section = SettingsSection.ADVANCED,
+                    section = SettingsSection.ACCESS,
                 ),
             )
             add(
@@ -237,56 +247,72 @@ object SettingsMenuModel {
                     item = SettingsMenuItem.PIXEL_MATTER_EFFECT,
                     title = "SHAKE",
                     value = onOffLabel(state.isPixelMatterEffectEnabled),
-                    section = SettingsSection.ADVANCED,
+                    section = SettingsSection.EXPERIMENTAL,
                 ),
             )
-            add(
-                SettingsMenuRow(
-                    item = SettingsMenuItem.PIXEL_MATTER_EFFECT_MODE,
-                    title = "MODE",
-                    value = pixelMatterEffectModeLabel(state.pixelMatterEffectMode),
-                    section = SettingsSection.ADVANCED,
-                ),
-            )
+            if (state.isPixelMatterEffectEnabled) {
+                add(
+                    SettingsMenuRow(
+                        item = SettingsMenuItem.PIXEL_MATTER_EFFECT_MODE,
+                        title = "SHAKE MODE",
+                        value = pixelMatterEffectModeLabel(state.pixelMatterEffectMode),
+                        section = SettingsSection.EXPERIMENTAL,
+                    ),
+                )
+            }
             add(
                 SettingsMenuRow(
                     item = SettingsMenuItem.PIXEL_MATTER_HAND_CONTROL,
                     title = "HAND",
                     value = onOffLabel(state.isPixelMatterHandControlEnabled),
-                    section = SettingsSection.ADVANCED,
+                    section = SettingsSection.EXPERIMENTAL,
                 ),
             )
-            add(
-                SettingsMenuRow(
-                    item = SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG,
-                    title = "HAND DEBUG",
-                    value = onOffLabel(state.isPixelMatterHandDebugEnabled),
-                    section = SettingsSection.ADVANCED,
-                ),
-            )
-            add(
-                SettingsMenuRow(
-                    item = SettingsMenuItem.SNAKE,
-                    title = "SNAKE",
-                    value = "PLAY",
-                    section = SettingsSection.ADVANCED,
-                ),
-            )
-            add(
-                SettingsMenuRow(
-                    item = SettingsMenuItem.ADVANCED,
-                    title = "ADVANCED",
-                    value = "OPEN",
-                    section = SettingsSection.ADVANCED,
-                ),
-            )
+            if (includeDeveloperTools) {
+                add(
+                    SettingsMenuRow(
+                        item = SettingsMenuItem.LOADING_PREVIEW,
+                        title = "LOADING PREVIEW",
+                        value = "OPEN",
+                        section = SettingsSection.DEVELOPER,
+                    ),
+                )
+                add(
+                    SettingsMenuRow(
+                        item = SettingsMenuItem.ADVANCED,
+                        title = "DIAGNOSTICS",
+                        value = "OPEN",
+                        section = SettingsSection.DEVELOPER,
+                    ),
+                )
+                if (state.isPixelMatterHandControlEnabled) {
+                    add(
+                        SettingsMenuRow(
+                            item = SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG,
+                            title = "HAND DEBUG",
+                            value = onOffLabel(state.isPixelMatterHandDebugEnabled),
+                            section = SettingsSection.DEVELOPER,
+                        ),
+                    )
+                }
+            }
         }
     }
 
+    /** 返回当前可见设置项对应的有序分类列表。 */
     fun sections(state: LauncherState): List<SettingsSection> {
         return rows(state).map { it.section }.distinct()
     }
 
+    /** 返回 MORE 二级页面当前可见设置项对应的有序分类列表。 */
+    fun moreSections(
+        state: LauncherState,
+        includeDeveloperTools: Boolean = BuildConfig.DEBUG,
+    ): List<SettingsSection> {
+        return moreRows(state, includeDeveloperTools).map { it.section }.distinct()
+    }
+
+    /** 根据当前索引返回实际可见的设置项，并将越界索引收敛到列表边界。 */
     fun selectedItem(state: LauncherState): SettingsMenuItem {
         val rows = rows(state)
         return rows[state.settingsSelectedIndex.coerceIn(0, rows.lastIndex)].item
@@ -437,11 +463,13 @@ object SettingsMenuModel {
         return when (section) {
             SettingsSection.DISPLAY -> "DISPLAY"
             SettingsSection.THEME -> "THEME"
-            SettingsSection.HOME -> "HOME"
             SettingsSection.DRAWER -> "DRAWER"
             SettingsSection.IDLE -> "IDLE"
-            SettingsSection.DATA -> "DATA"
-            SettingsSection.ADVANCED -> "ADVANCED"
+            SettingsSection.MORE -> "MORE"
+            SettingsSection.NOTIFICATIONS -> "NOTIFICATIONS"
+            SettingsSection.ACCESS -> "ACCESS"
+            SettingsSection.EXPERIMENTAL -> "EXPERIMENTAL"
+            SettingsSection.DEVELOPER -> "DEVELOPER"
         }
     }
 

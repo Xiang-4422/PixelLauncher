@@ -457,6 +457,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 when (state.mode) {
                     LauncherMode.SETTINGS -> closeSettingsMenu()
+                    LauncherMode.MORE_SETTINGS -> closeMoreSettings()
                     LauncherMode.SMS_ROLE_PROMPT -> smsController.closeModule()
                     LauncherMode.SMS_THREADS -> smsController.closeModule()
                     LauncherMode.SMS_THREAD_DETAIL -> smsController.closeThreadDetail()
@@ -1044,7 +1045,8 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.CONTACT_DETAIL -> Unit
                     LauncherMode.CONTACT_EDITOR -> Unit
                     LauncherMode.SNAKE -> launcherRootHost.turnSnake(SnakeModel.Direction.UP)
-                    LauncherMode.SETTINGS -> Unit
+                    LauncherMode.SETTINGS,
+                    LauncherMode.MORE_SETTINGS -> Unit
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
                     LauncherMode.NOTIFICATION_SETTINGS,
@@ -1073,7 +1075,8 @@ class MainActivity : AppCompatActivity() {
                     LauncherMode.CONTACT_DETAIL -> Unit
                     LauncherMode.CONTACT_EDITOR -> Unit
                     LauncherMode.SNAKE -> launcherRootHost.turnSnake(SnakeModel.Direction.DOWN)
-                    LauncherMode.SETTINGS -> Unit
+                    LauncherMode.SETTINGS,
+                    LauncherMode.MORE_SETTINGS -> Unit
                     LauncherMode.HOME -> Unit
                     LauncherMode.APP_MANAGEMENT,
                     LauncherMode.DATA_HEALTH,
@@ -1088,7 +1091,8 @@ class MainActivity : AppCompatActivity() {
 
             KeyEvent.KEYCODE_DPAD_LEFT -> {
                 when (state.mode) {
-                    LauncherMode.SETTINGS -> Unit
+                    LauncherMode.SETTINGS,
+                    LauncherMode.MORE_SETTINGS -> Unit
                     LauncherMode.HOME -> Unit
                     LauncherMode.SMS_ROLE_PROMPT,
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
@@ -1110,7 +1114,8 @@ class MainActivity : AppCompatActivity() {
 
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
                 when (state.mode) {
-                    LauncherMode.SETTINGS -> Unit
+                    LauncherMode.SETTINGS,
+                    LauncherMode.MORE_SETTINGS -> Unit
                     LauncherMode.HOME -> Unit
                     LauncherMode.SMS_ROLE_PROMPT,
                     LauncherMode.SMS_THREAD_DETAIL -> Unit
@@ -1134,7 +1139,8 @@ class MainActivity : AppCompatActivity() {
             KeyEvent.KEYCODE_ENTER,
             KeyEvent.KEYCODE_NUMPAD_ENTER -> {
                 when (state.mode) {
-                    LauncherMode.SETTINGS -> Unit
+                    LauncherMode.SETTINGS,
+                    LauncherMode.MORE_SETTINGS -> Unit
                     LauncherMode.SMS_ROLE_PROMPT -> smsController.ensureReadAccessAndRole()
                     LauncherMode.SMS_THREADS -> {
                         settleSettingsMotionBeforeExplicitAction()
@@ -1449,9 +1455,6 @@ class MainActivity : AppCompatActivity() {
                 restorePendingPixelAppearanceChange(render = false)
                 requestFontSelection(SettingsMenuModel.nextFontSize(state.fontSelection, direction))
             }
-            SettingsMenuItem.HOME_STATUS -> {
-                state = LauncherStateTransitions.showHome(state)
-            }
             SettingsMenuItem.APP_LIST_ALIGNMENT -> applyUiBehavior(
                 drawerListAlignment = SettingsMenuModel.nextDrawerListAlignment(s.drawerListAlignment, direction),
                 isIdlePageEnabled = s.isIdlePageEnabled,
@@ -1485,6 +1488,7 @@ class MainActivity : AppCompatActivity() {
                 openDrawerInSearchMode = SettingsMenuModel.toggle(s.openDrawerInSearchMode),
                 chargeIdleEffect = s.chargeIdleEffect,
             )
+            SettingsMenuItem.MORE -> openMoreSettings()
             SettingsMenuItem.PIXEL_MATTER_EFFECT -> applyUiBehavior(
                 isPixelMatterEffectEnabled = SettingsMenuModel.toggle(s.isPixelMatterEffectEnabled),
             )
@@ -1501,14 +1505,9 @@ class MainActivity : AppCompatActivity() {
             SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG -> applyUiBehavior(
                 isPixelMatterHandDebugEnabled = SettingsMenuModel.toggle(s.isPixelMatterHandDebugEnabled),
             )
-            SettingsMenuItem.APP_MANAGEMENT -> openAppManagement()
             SettingsMenuItem.NOTIFICATIONS -> openNotificationSettings()
             SettingsMenuItem.DATA_HEALTH -> openDataHealth()
             SettingsMenuItem.LOADING_PREVIEW -> openLoadingPreview()
-            SettingsMenuItem.SNAKE -> {
-                state = LauncherStateTransitions.showSnake(state)
-                renderCurrentFrame()
-            }
             SettingsMenuItem.ADVANCED -> openDiagnostics()
         }
     }
@@ -2048,6 +2047,21 @@ class MainActivity : AppCompatActivity() {
         scheduleIdleCheck()
     }
 
+    /** 打开低频设置二级页面。 */
+    private fun openMoreSettings() {
+        settleSettingsMotionBeforeExplicitAction()
+        state = LauncherStateTransitions.showMoreSettings(state)
+        renderCurrentFrame()
+        updateDrawerInputFocus()
+    }
+
+    /** 关闭低频设置二级页面并返回顶层设置。 */
+    private fun closeMoreSettings() {
+        state = LauncherStateTransitions.hideMoreSettings(state)
+        renderCurrentFrame()
+        updateDrawerInputFocus()
+    }
+
     private fun openDiagnostics() {
         settleSettingsMotionBeforeExplicitAction()
         // Diagnostics 展示 usage access 等能力快照；render 纯化后由打开动作负责采样，
@@ -2313,6 +2327,7 @@ class MainActivity : AppCompatActivity() {
             LauncherMode.HOME,
             LauncherMode.APP_DRAWER,
             LauncherMode.SETTINGS,
+            LauncherMode.MORE_SETTINGS,
             LauncherMode.SMS_ROLE_PROMPT,
             LauncherMode.SMS_THREADS,
             LauncherMode.SMS_THREAD_DETAIL,
