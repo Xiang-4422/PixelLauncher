@@ -12,6 +12,7 @@ import com.purride.pixelui.internal.InteractionDetector
 import com.purride.pixelui.internal.PixelRect
 import com.purride.pixelui.internal.SliderWidget
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotSame
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -123,6 +124,56 @@ class PixelHostInteractionInstrumentedTest {
 
                 assertEquals(listOf("pressed:true", "pressed:false"), foregroundEvents)
                 assertEquals(emptyList<String>(), backgroundEvents)
+            }
+        }
+    }
+
+    /** ValueAdjuster 两侧动作在按下后的重绘中仍分别保留自己的手势所有权。 */
+    @Test
+    fun valueAdjusterKeepsActionIdentityAcrossRenderSnapshots() {
+        /** 受控数值，用于分别记录减值与增值动作是否执行。 */
+        var value = 11
+        ActivityScenario.launch(PixelHostLifecycleTestActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                /** 承载待验证 ValueAdjuster 的真实 Android Host。 */
+                val host = activity.hostView
+                host.setContent {
+                    ValueAdjuster(
+                        valueText = "${value}PX",
+                        onDecrease = { value -= 1 },
+                        onIncrease = { value += 1 },
+                    )
+                }
+                renderSynchronously(host)
+
+                /** 按水平位置排序后的减值与增值点击目标。 */
+                val actionTargets = checkNotNull(host.lastRenderResult?.clickTargets).sortedBy { it.bounds.left }
+                /** 左侧减值点击目标。 */
+                val decreaseTarget = actionTargets[0]
+                /** 右侧增值点击目标。 */
+                val increaseTarget = actionTargets[1]
+                assertNotSame(decreaseTarget.source, increaseTarget.source)
+
+                /** 减值目标中心对应的 Android View 物理坐标。 */
+                val decreasePoint = rawCenterOfBounds(host, decreaseTarget.bounds)
+                host.onTouchEvent(touchEvent(MotionEvent.ACTION_DOWN, decreasePoint, downTime = 300L, eventTime = 300L))
+                host.invalidate()
+                renderSynchronously(host)
+                host.onTouchEvent(touchEvent(MotionEvent.ACTION_UP, decreasePoint, downTime = 300L, eventTime = 320L))
+                assertEquals(10, value)
+
+                host.invalidate()
+                renderSynchronously(host)
+                /** 重绘后增值目标中心对应的 Android View 物理坐标。 */
+                val increasePoint = rawCenterOfBounds(
+                    host,
+                    checkNotNull(host.lastRenderResult?.clickTargets).maxBy { it.bounds.left }.bounds,
+                )
+                host.onTouchEvent(touchEvent(MotionEvent.ACTION_DOWN, increasePoint, downTime = 340L, eventTime = 340L))
+                host.invalidate()
+                renderSynchronously(host)
+                host.onTouchEvent(touchEvent(MotionEvent.ACTION_UP, increasePoint, downTime = 340L, eventTime = 360L))
+                assertEquals(11, value)
             }
         }
     }

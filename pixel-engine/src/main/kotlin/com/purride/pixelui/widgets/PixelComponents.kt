@@ -3690,7 +3690,7 @@ private class RenderValueAdjuster(
                     targets += PixelClickTarget(
                         bounds = visibleBounds.translate(offsetX, offsetY),
                         onClick = callback,
-                        source = this,
+                        source = actionSlots.firstOrNull() ?: this,
                     )
                 }
             }
@@ -3701,7 +3701,7 @@ private class RenderValueAdjuster(
                     targets += PixelClickTarget(
                         bounds = visibleBounds.translate(offsetX, offsetY),
                         onClick = callback,
-                        source = this,
+                        source = actionSlots.lastOrNull() ?: this,
                     )
                 }
             }
@@ -3742,7 +3742,7 @@ private class RenderValueAdjuster(
                     id = semanticNodeId(DECREASE_SEMANTIC_SLOT),
                     actions = decreaseActions.capabilitySet(),
                 ),
-                source = this,
+                source = actionSlots.firstOrNull() ?: this,
                 actions = decreaseActions,
             )
         }
@@ -3760,7 +3760,7 @@ private class RenderValueAdjuster(
                     id = semanticNodeId(INCREASE_SEMANTIC_SLOT),
                     actions = increaseActions.capabilitySet(),
                 ),
-                source = this,
+                source = actionSlots.lastOrNull() ?: this,
                 actions = increaseActions,
             )
         }
@@ -3986,7 +3986,7 @@ private class RenderValueAdjuster(
     private val valueBox: RenderBox?
         get() = children.getOrNull(1) as? RenderBox
 
-    /** Zero-sized action identity children kept outside the measured center content. */
+    /** 位于中心内容测量范围外、分别为减值与增值动作保留身份的零尺寸子节点。 */
     private val actionSlots: List<RenderBox>
         get() = listOfNotNull(children.getOrNull(0) as? RenderBox, children.getOrNull(2) as? RenderBox)
 
