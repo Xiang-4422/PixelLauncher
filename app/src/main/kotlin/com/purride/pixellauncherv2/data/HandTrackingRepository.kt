@@ -31,6 +31,11 @@ internal class HandTrackingRepository(
     private val context: Context,
     private val backgroundExecutor: ExecutorService,
     private val mainHandler: Handler = Handler(Looper.getMainLooper()),
+    /**
+     * 调试帧包含相机画面，属于隐私敏感数据；Release 构建必须传 false，
+     * 在采集端断源——不生成调试位图、不向任何监听者发布调试帧。
+     */
+    private val debugFramesEnabled: Boolean = true,
 ) {
     private val appContext = context.applicationContext
     private var cameraProvider: ProcessCameraProvider? = null
@@ -205,7 +210,8 @@ internal class HandTrackingRepository(
                 transform,
                 true,
             )
-            lastDebugBitmap = scaledDebugBitmap(rotatedBitmap)
+            // Release 不生成调试位图：既是隐私门禁的采集端断源，也省掉每帧一次的缩放。
+            lastDebugBitmap = if (debugFramesEnabled) scaledDebugBitmap(rotatedBitmap) else null
             val image = BitmapImageBuilder(rotatedBitmap).build()
             handLandmarker?.detectAsync(image, frameTimeMs)
         } catch (error: RuntimeException) {
@@ -285,6 +291,7 @@ internal class HandTrackingRepository(
         label: String,
         confidence: Float,
     ) {
+        if (!debugFramesEnabled) return
         val bitmap = lastDebugBitmap ?: return
         debugListener?.invoke(
             HandTrackingDebugFrame(

@@ -75,7 +75,8 @@ class AppContainerContractTest {
         val REPOSITORY_CONSTRUCTOR_CALLS = listOf(
             "PackageManagerAppRepository(appContext)",
             "AppCustomizationRepository(appContext)",
-            "FontSettingsRepository(appContext)",
+            // 字体/行为偏好仓库需要 Release 归一化开关，采用多行具名参数构造。
+            "FontSettingsRepository(",
             "LauncherStatsRepository(appContext)",
             "DeviceStatusRepository(appContext)",
             "NextAlarmRepository(appContext)",

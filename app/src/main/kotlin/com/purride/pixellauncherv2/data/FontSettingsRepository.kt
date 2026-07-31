@@ -19,6 +19,11 @@ import org.json.JSONObject
 /** 持久化外观、字体历史和 UI 行为设置。 */
 class FontSettingsRepository(
     context: Context,
+    /**
+     * 手势调试帧偏好是否允许生效；Release 构建必须传 false——读取时强制归一化为
+     * 关闭且默认关闭，防止无开关可关的调试相机画面（隐私门禁的状态层）。
+     */
+    private val handDebugSettingAllowed: Boolean = true,
 ) {
 
     private val sharedPreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
@@ -73,7 +78,8 @@ class FontSettingsRepository(
             pixelMatterEffectEnabled = readStoredPixelMatterEffectEnabled(),
             pixelMatterEffectMode = readStoredPixelMatterEffectMode(),
             pixelMatterHandControlEnabled = sharedPreferences.getBoolean(KEY_PIXEL_MATTER_HAND_CONTROL_ENABLED, false),
-            pixelMatterHandDebugEnabled = sharedPreferences.getBoolean(KEY_PIXEL_MATTER_HAND_DEBUG_ENABLED, true),
+            pixelMatterHandDebugEnabled = handDebugSettingAllowed &&
+                sharedPreferences.getBoolean(KEY_PIXEL_MATTER_HAND_DEBUG_ENABLED, handDebugSettingAllowed),
         )
     }
 

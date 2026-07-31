@@ -25,6 +25,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.purride.pixellauncherv2.BuildConfig
 import com.purride.pixellauncherv2.data.AppCustomizationRepository
 import com.purride.pixellauncherv2.data.AppRepository
 import com.purride.pixellauncherv2.data.CommunicationStatus
@@ -806,7 +807,7 @@ class MainActivity : AppCompatActivity() {
             onDebugFrame = { frame ->
                 if (::handTrackingDebugOverlayView.isInitialized) {
                     handTrackingDebugOverlayView.updateFrame(
-                        if (state.isPixelMatterHandDebugEnabled) frame else null,
+                        if (BuildConfig.DEBUG && state.isPixelMatterHandDebugEnabled) frame else null,
                     )
                 }
             },
@@ -832,7 +833,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun syncPixelMatterHandDebugOverlay() {
         if (!::handTrackingDebugOverlayView.isInitialized) return
-        if (!state.isPixelMatterHandDebugEnabled || !pixelMatterHandTracking) {
+        if (!BuildConfig.DEBUG || !state.isPixelMatterHandDebugEnabled || !pixelMatterHandTracking) {
             handTrackingDebugOverlayView.updateFrame(null)
         }
     }
@@ -2567,6 +2568,10 @@ class MainActivity : AppCompatActivity() {
         isPixelMatterHandControlEnabled: Boolean = state.isPixelMatterHandControlEnabled,
         isPixelMatterHandDebugEnabled: Boolean = state.isPixelMatterHandDebugEnabled,
     ) {
+        // 手势调试帧含相机画面：Release 在状态边界强制关闭，保证 state 与持久化
+        // 都不会出现 true（采集端另有 HandTrackingRepository.debugFramesEnabled 断源）。
+        @Suppress("NAME_SHADOWING")
+        val isPixelMatterHandDebugEnabled = BuildConfig.DEBUG && isPixelMatterHandDebugEnabled
         fontSettingsRepository.setUiBehaviorSettings(
             drawerListAlignment = drawerListAlignment,
             isIdlePageEnabled = isIdlePageEnabled,

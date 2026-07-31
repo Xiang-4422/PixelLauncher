@@ -3,6 +3,7 @@ package com.purride.pixellauncherv2.app
 import android.content.ComponentName
 import android.content.Context
 import android.os.Handler
+import com.purride.pixellauncherv2.BuildConfig
 import com.purride.pixellauncherv2.data.AppCustomizationRepository
 import com.purride.pixellauncherv2.data.AppRepository
 import com.purride.pixellauncherv2.data.CallLogRepository
@@ -57,7 +58,11 @@ internal class AppContainer(
     val appCustomizationRepository = AppCustomizationRepository(appContext)
 
     /** 字体、外观与交互行为设置仓库。 */
-    val fontSettingsRepository = FontSettingsRepository(appContext)
+    val fontSettingsRepository = FontSettingsRepository(
+        context = appContext,
+        // Release 强制把手势调试帧偏好归一化为关闭（隐私门禁的状态层）。
+        handDebugSettingAllowed = BuildConfig.DEBUG,
+    )
 
     /** Launcher 使用统计（启动次数等）仓库。 */
     val launcherStatsRepository = LauncherStatsRepository(appContext)
@@ -101,6 +106,8 @@ internal class AppContainer(
         context = appContext,
         backgroundExecutor = backgroundExecutor,
         mainHandler = mainHandler,
+        // Release 在采集端断源：不生成、不发布含相机画面的调试帧（隐私门禁的载力点）。
+        debugFramesEnabled = BuildConfig.DEBUG,
     )
 
     /** 降雨预报仓库（无状态，不依赖 Context）。 */
