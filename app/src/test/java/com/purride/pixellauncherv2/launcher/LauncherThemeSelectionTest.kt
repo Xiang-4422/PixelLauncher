@@ -5,6 +5,15 @@ import org.junit.Test
 
 /** 锁定 Showcase 主题家族与用户亮暗模式解析规则。 */
 class LauncherThemeModeTest {
+    /** 设置页模式必须按 DAY、AUTO、NIGHT 的视觉与交互顺序排列。 */
+    @Test
+    fun modesKeepDayAutoNightOrder() {
+        assertEquals(
+            listOf(LauncherThemeMode.DAY, LauncherThemeMode.AUTO, LauncherThemeMode.NIGHT),
+            LauncherThemeMode.entries,
+        )
+    }
+
     /** AUTO 必须跟随系统暗色状态解析成实际亮度。 */
     @Test
     fun resolve_autoFollowsSystemDarkMode() {

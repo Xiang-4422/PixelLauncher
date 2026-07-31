@@ -21,8 +21,8 @@ enum class LauncherThemeMode(
     /** 设置页展示的紧凑名称。 */
     val displayLabel: String,
 ) {
-    AUTO("AUTO"),
     DAY("DAY"),
+    AUTO("AUTO"),
     NIGHT("NIGHT"),
     ;
 

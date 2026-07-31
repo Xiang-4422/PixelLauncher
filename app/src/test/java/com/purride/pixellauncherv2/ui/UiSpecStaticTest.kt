@@ -100,11 +100,12 @@ class UiSpecStaticTest {
                 null
             },
             if (switchSource.isEmpty() ||
-                !switchSource.contains("SegmentedControl(") ||
+                !switchSource.contains("SettingsSelection(") ||
                 !switchSource.contains("SegmentedControlWidthPolicy.EqualToWidest") ||
-                !switchSource.contains("selectedFillColor = theme.button.pressedFill")
+                !controlsSource.contains("private fun SettingsSelection(") ||
+                !controlsSource.contains("selectedFillColor = theme.button.pressedFill")
             ) {
-                "Settings Switch must wrap the shared equal-width sliding SegmentedControl"
+                "Settings Switch and polymorphic selectors must share the equal-width sliding selection core"
             } else {
                 null
             },

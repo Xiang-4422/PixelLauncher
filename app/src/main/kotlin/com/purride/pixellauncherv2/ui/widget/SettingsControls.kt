@@ -66,11 +66,14 @@ fun SettingsSegmentedControlRow(
     return Container(
         child = settingsInlineRow(
             title = settingsTitleCell(title = title, theme = theme, textEdgeResolvers = textEdgeResolvers),
-            trailing = SegmentedControl(
+            trailing = SettingsSelection(
+                title = title,
                 labels = labels,
                 selectedIndex = selectedIndex,
-                onSelected = onSelected,
+                theme = theme,
                 widthPolicy = widthPolicy,
+                showLabels = true,
+                onSelected = onSelected,
             ),
             titleFlex = 1,
             trailingFlex = 3,
@@ -329,29 +332,18 @@ private fun SettingsSwitch(
         )
     }
     /** 底层多态选择器；Switch 上层只负责布尔值与下标之间的映射。 */
-    val selector = SegmentedControl(
+    val selector = SettingsSelection(
+        title = title,
         labels = listOf(offLabel, onLabel),
         selectedIndex = if (checked) 1 else 0,
+        theme = theme,
+        widthPolicy = widthPolicy,
+        showLabels = showLabels,
         onSelected = { selectedIndex ->
             /** 重选当前项保持幂等，仅在目标布尔值改变时调用旧的 toggle 协议。 */
             val nextChecked = selectedIndex == 1
             if (nextChecked != checked) onToggle()
         },
-        widthPolicy = widthPolicy,
-        style = SegmentedControlStyle(
-            containerColor = PixelColor.Transparent,
-            borderColor = theme.button.border,
-            selectedFillColor = theme.button.pressedFill,
-            selectedContentColor = if (showLabels) theme.button.selectedText else PixelColor.Transparent,
-            unselectedContentColor = if (showLabels) theme.button.unselectedText else PixelColor.Transparent,
-            disabledContentColor = theme.button.disabledText,
-            padding = EdgeInsets.symmetric(
-                horizontal = LauncherSpacing.BORDERED_CONTROL_INSET,
-                vertical = LauncherSpacing.BORDERED_CONTROL_INSET,
-            ),
-            segmentSpacing = SETTINGS_SWITCH_SEGMENT_GAP_PX,
-        ),
-        key = "$title-settings-switch-selector",
     )
     /** 隐藏内部 Tab 语义，把二态封装重新导出为平台可识别的 Switch。 */
     return Semantics(
@@ -369,3 +361,38 @@ private fun SettingsSwitch(
         key = "$title-settings-switch-semantics",
     )
 }
+
+/**
+ * Settings 所有单选控件共享的滑动高亮选择器。
+ *
+ * OFF/ON 由 [SettingsSwitch] 在上层封装成平台 Switch 语义；三态及更多选项直接保留
+ * [SegmentedControl] 的 Tab 语义，但二者始终使用相同颜色、间距和移动动画。
+ */
+private fun SettingsSelection(
+    title: String,
+    labels: List<String>,
+    selectedIndex: Int,
+    theme: LauncherTheme,
+    widthPolicy: SegmentedControlWidthPolicy,
+    showLabels: Boolean,
+    onSelected: (Int) -> Unit,
+): Widget = SegmentedControl(
+    labels = labels,
+    selectedIndex = selectedIndex,
+    onSelected = onSelected,
+    widthPolicy = widthPolicy,
+    style = SegmentedControlStyle(
+        containerColor = PixelColor.Transparent,
+        borderColor = theme.button.border,
+        selectedFillColor = theme.button.pressedFill,
+        selectedContentColor = if (showLabels) theme.button.selectedText else PixelColor.Transparent,
+        unselectedContentColor = if (showLabels) theme.button.unselectedText else PixelColor.Transparent,
+        disabledContentColor = theme.button.disabledText,
+        padding = EdgeInsets.symmetric(
+            horizontal = LauncherSpacing.BORDERED_CONTROL_INSET,
+            vertical = LauncherSpacing.BORDERED_CONTROL_INSET,
+        ),
+        segmentSpacing = SETTINGS_SWITCH_SEGMENT_GAP_PX,
+    ),
+    key = "$title-settings-selection",
+)

@@ -7,6 +7,7 @@ import com.purride.pixelui.Expanded
 import com.purride.pixelui.ListView
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Padding
+import com.purride.pixelui.SegmentedControlWidthPolicy
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Widget
@@ -23,6 +24,7 @@ import com.purride.pixellauncherv2.ui.widget.SettingsActionRow
 import com.purride.pixellauncherv2.ui.widget.SettingsOptionStepperRow
 import com.purride.pixellauncherv2.ui.widget.SettingsPixelSizeControl
 import com.purride.pixellauncherv2.ui.widget.SettingsSectionHeader
+import com.purride.pixellauncherv2.ui.widget.SettingsSegmentedControlRow
 import com.purride.pixellauncherv2.ui.widget.SettingsSwitchRow
 import com.purride.pixellauncherv2.ui.widget.SettingsTextEdgeResolvers
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
@@ -125,13 +127,19 @@ class SettingsScreen(
                 ),
             )
             add(
-                SettingsOptionStepperRow(
+                SettingsSegmentedControlRow(
                     title = "MODE",
-                    valueLabel = SettingsMenuModel.themeModeLabel(selectedThemeMode),
+                    labels = SettingsMenuModel.themeModeOptions.map(SettingsMenuModel::themeModeLabel),
+                    selectedIndex = SettingsMenuModel.themeModeOptions.indexOf(selectedThemeMode).coerceAtLeast(0),
                     theme = t,
                     textEdgeResolvers = widget.textEdgeResolvers,
-                    onPrevious = { widget.onItemAction(SettingsMenuItem.THEME_MODE, -1) },
-                    onNext = { widget.onItemAction(SettingsMenuItem.THEME_MODE, +1) },
+                    widthPolicy = SegmentedControlWidthPolicy.EqualToWidest,
+                    onSelected = { selectedIndex ->
+                        val currentIndex = SettingsMenuModel.themeModeOptions.indexOf(selectedThemeMode)
+                        if (currentIndex >= 0 && selectedIndex != currentIndex) {
+                            widget.onItemAction(SettingsMenuItem.THEME_MODE, selectedIndex - currentIndex)
+                        }
+                    },
                 ),
             )
             add(

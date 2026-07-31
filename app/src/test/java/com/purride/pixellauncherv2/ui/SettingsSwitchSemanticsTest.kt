@@ -3,6 +3,7 @@ package com.purride.pixellauncherv2.ui
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.PixelSemanticRole
 import com.purride.pixelui.PixelSemanticsAction
+import com.purride.pixelui.SegmentedControlWidthPolicy
 import com.purride.pixelui.testing.PixelTester
 import com.purride.pixellauncherv2.launcher.LauncherThemeBrightness
 import com.purride.pixellauncherv2.ui.theme.ButtonColors
@@ -15,6 +16,7 @@ import com.purride.pixellauncherv2.ui.theme.StatusBarColors
 import com.purride.pixellauncherv2.ui.theme.SurfaceColors
 import com.purride.pixellauncherv2.ui.theme.TextColors
 import com.purride.pixellauncherv2.ui.widget.SettingsSwitchRow
+import com.purride.pixellauncherv2.ui.widget.SettingsSegmentedControlRow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -22,6 +24,38 @@ import org.junit.Test
 
 /** Settings 布尔封装必须隐藏底层 Tab 语义并重新导出标准 Switch 契约。 */
 class SettingsSwitchSemanticsTest {
+    /** 三态 MODE 复用同一分段选择器，同时保留直接选择任意模式的 Tab 语义。 */
+    @Test
+    fun themeModeExportsDayAutoNightTabs() {
+        /** 记录语义点击后请求的目标模式下标。 */
+        var requestedIndex = -1
+        /** 使用离屏像素宿主收集三态选择器语义树。 */
+        val tester = PixelTester()
+        try {
+            tester.pumpWidget(
+                SettingsSegmentedControlRow(
+                    title = "MODE",
+                    labels = listOf("DAY", "AUTO", "NIGHT"),
+                    selectedIndex = 1,
+                    theme = testTheme(),
+                    widthPolicy = SegmentedControlWidthPolicy.EqualToWidest,
+                    onSelected = { requestedIndex = it },
+                ),
+                logicalWidth = 180,
+                logicalHeight = 24,
+            )
+            /** MODE 下的三个可直接选择语义节点。 */
+            val tabs = tester.semanticsNodes().filter { node -> node.role == PixelSemanticRole.TAB }
+
+            assertEquals(listOf("DAY", "AUTO", "NIGHT"), tabs.map { node -> node.label })
+            assertEquals(listOf(false, true, false), tabs.map { node -> node.selected })
+            assertTrue(tester.performSemanticsAction(tabs.last().id, PixelSemanticsAction.CLICK))
+            assertEquals(2, requestedIndex)
+        } finally {
+            tester.dispose()
+        }
+    }
+
     /** Switch 节点包含 checked 与 click，内部 OFF/ON Tab 不暴露给无障碍树。 */
     @Test
     fun binaryWrapperExportsOneSwitchNode() {
