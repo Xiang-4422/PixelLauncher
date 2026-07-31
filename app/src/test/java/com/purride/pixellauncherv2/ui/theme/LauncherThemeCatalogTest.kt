@@ -189,7 +189,8 @@ class LauncherThemeCatalogTest {
             /** 实心操作文字与实心背景之间的对比度。 */
             val filledTextContrast = contrastRatio(theme.button.filledText, theme.button.filledSurface)
 
-            assertTrue("$variant 控件轮廓对比度不足：$outlineContrast", outlineContrast >= 3.0)
+            assertTrue("$variant 控件轮廓对比度不足：$outlineContrast", outlineContrast >= 4.5)
+            assertEquals("$variant 控件选中填充必须与边框同色", theme.button.border, theme.button.pressedFill)
             assertTrue("$variant 选中块对比度不足：$selectionContrast", selectionContrast >= 3.0)
             assertTrue("$variant 选中文字对比度不足：$selectedTextContrast", selectedTextContrast >= 4.5)
             assertTrue("$variant 实心操作文字对比度不足：$filledTextContrast", filledTextContrast >= 4.5)
@@ -221,7 +222,7 @@ class LauncherThemeCatalogTest {
             theme.text.muted,
         )
         assertEquals(
-            ensureContrast(rgb(border), backgroundColor, titleColor, minimumContrast = 3.0),
+            ensureContrast(rgb(border), backgroundColor, titleColor, minimumContrast = 4.5),
             theme.button.border,
         )
         assertEquals(

@@ -384,7 +384,7 @@ private fun SettingsSelection(
     style = SegmentedControlStyle(
         containerColor = PixelColor.Transparent,
         borderColor = theme.button.border,
-        selectedFillColor = theme.button.pressedFill,
+        selectedFillColor = theme.button.border,
         selectedContentColor = if (showLabels) theme.button.selectedText else PixelColor.Transparent,
         unselectedContentColor = if (showLabels) theme.button.unselectedText else PixelColor.Transparent,
         disabledContentColor = theme.button.disabledText,

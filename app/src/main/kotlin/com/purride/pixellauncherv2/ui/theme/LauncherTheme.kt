@@ -62,7 +62,7 @@ data class ButtonColors(
     val text: PixelColor,
     /** 控件轮廓与分隔线颜色。 */
     val border: PixelColor,
-    /** 分段选择器选中指示块颜色。 */
+    /** 控件选中与按压填充色；必须与 [border] 保持一致。 */
     val pressedFill: PixelColor,
     /** 选中指示块覆盖区域内的文字颜色。 */
     val selectedText: PixelColor,

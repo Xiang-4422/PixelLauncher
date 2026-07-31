@@ -7,9 +7,6 @@ import com.purride.pixellauncherv2.launcher.LauncherThemeFamily
 /** 普通信息文字与其背景之间的最低对比度。 */
 private const val MINIMUM_TEXT_CONTRAST = 4.5
 
-/** 控件轮廓与相邻背景之间的最低对比度。 */
-private const val MINIMUM_NON_TEXT_CONTRAST = 3.0
-
 /** 在基础色与主色之间寻找可读颜色时使用的插值精度。 */
 private const val ACCESSIBLE_COLOR_SEARCH_STEPS = 100
 
@@ -173,23 +170,16 @@ internal object LauncherThemeCatalog {
             toward = palette.title,
             minimumContrast = MINIMUM_TEXT_CONTRAST,
         )
-        /** 控件轮廓保留原色倾向，并满足非文字控件的最低识别要求。 */
+        /** 控件轮廓同时承担选中填充，必须满足反色文字所需的最低对比度。 */
         val outline = ensureContrast(
-            color = palette.border,
-            background = palette.background,
-            toward = palette.title,
-            minimumContrast = MINIMUM_NON_TEXT_CONTRAST,
-        )
-        /** 实心操作面从原始边框色出发，保证背景色作为反色文字时仍可阅读。 */
-        val filledSurface = ensureContrast(
             color = palette.border,
             background = palette.background,
             toward = palette.title,
             minimumContrast = MINIMUM_TEXT_CONTRAST,
         )
-        /** 选中指示块保留原有轻量填充起点，再增强到可明确辨认的状态。 */
-        val selectedFill = ensureContrast(
-            color = mix(palette.background, palette.title, 0.18f),
+        /** 实心操作面从原始边框色出发，保证背景色作为反色文字时仍可阅读。 */
+        val filledSurface = ensureContrast(
+            color = palette.border,
             background = palette.background,
             toward = palette.title,
             minimumContrast = MINIMUM_TEXT_CONTRAST,
@@ -239,7 +229,7 @@ internal object LauncherThemeCatalog {
             button = ButtonColors(
                 text = palette.title,
                 border = outline,
-                pressedFill = selectedFill,
+                pressedFill = outline,
                 selectedText = palette.background,
                 unselectedText = palette.dim,
                 filledSurface = filledSurface,

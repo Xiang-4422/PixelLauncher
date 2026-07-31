@@ -94,8 +94,6 @@ class SettingsSwitchSemanticsTest {
         val foreground = PixelColor.White
         /** 普通背景色。 */
         val background = PixelColor.Black
-        /** 选中填充色。 */
-        val accent = PixelColor.fromRgb(40, 100, 220)
         /** 禁用文字色。 */
         val disabled = PixelColor.fromRgb(90, 90, 90)
         return LauncherTheme(
@@ -118,7 +116,7 @@ class SettingsSwitchSemanticsTest {
             button = ButtonColors(
                 text = foreground,
                 border = foreground,
-                pressedFill = accent,
+                pressedFill = foreground,
                 selectedText = background,
                 unselectedText = foreground,
                 filledSurface = foreground,

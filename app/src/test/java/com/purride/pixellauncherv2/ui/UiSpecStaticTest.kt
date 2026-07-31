@@ -103,7 +103,7 @@ class UiSpecStaticTest {
                 !switchSource.contains("SettingsSelection(") ||
                 !switchSource.contains("SegmentedControlWidthPolicy.EqualToWidest") ||
                 !controlsSource.contains("private fun SettingsSelection(") ||
-                !controlsSource.contains("selectedFillColor = theme.button.pressedFill")
+                !controlsSource.contains("selectedFillColor = theme.button.border")
             ) {
                 "Settings Switch and polymorphic selectors must share the equal-width sliding selection core"
             } else {
