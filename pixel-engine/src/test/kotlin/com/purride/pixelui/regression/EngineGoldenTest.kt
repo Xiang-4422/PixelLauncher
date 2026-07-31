@@ -550,6 +550,16 @@ class EngineGoldenTest {
                 spacing = 3,
             )
         },
+        Scene(name = "translucent_border_single_blend", width = 12, height = 8) {
+            // 半透明描边回归探测：alpha=150 白色叠在黑色填充上，单次混合 = 150（'*'），
+            // 历史 drawRect 的四角双重混合 = 212（'#'）。任何重复混合回归都会翻转角字符。
+            Container(
+                width = 12,
+                height = 8,
+                fillColor = PixelColor.fromRgb(0, 0, 0),
+                borderColor = PixelColor.fromArgb(150, 255, 255, 255),
+            )
+        },
         Scene(name = "opacity_clip_translate_semantics", width = 34, height = 16) {
             Semantics(
                 label = "SHIFTED",

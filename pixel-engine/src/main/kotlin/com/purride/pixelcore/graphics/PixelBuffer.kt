@@ -90,25 +90,28 @@ public class PixelBuffer(
         val argb = color.argb
         val alpha = (argb ushr 24) and 0xFF
         if (blendMode == PixelBlendMode.SrcOver && alpha == 0) return
+        // 每个边框像素恰好绘制一次：横边覆盖整行（含四角），竖边只画中段；
+        // 单行/单列/1×1 退化尺寸靠 bottom!=top、right!=left 保护。
+        // 否则半透明 SrcOver 会对重复像素二次混合，四角与退化尺寸整体变深。
         for (x in left..right) {
             if (x in 0 until width) {
                 if (top in 0 until height) {
                     val index = top * width + x
                     blendPixel(src = argb, dst = pixels[index], blendMode = blendMode)?.let { writePixel(index, it) }
                 }
-                if (bottom in 0 until height) {
+                if (bottom != top && bottom in 0 until height) {
                     val index = bottom * width + x
                     blendPixel(src = argb, dst = pixels[index], blendMode = blendMode)?.let { writePixel(index, it) }
                 }
             }
         }
-        for (y in top..bottom) {
+        for (y in (top + 1)..(bottom - 1)) {
             if (y in 0 until height) {
                 if (left in 0 until width) {
                     val index = y * width + left
                     blendPixel(src = argb, dst = pixels[index], blendMode = blendMode)?.let { writePixel(index, it) }
                 }
-                if (right in 0 until width) {
+                if (right != left && right in 0 until width) {
                     val index = y * width + right
                     blendPixel(src = argb, dst = pixels[index], blendMode = blendMode)?.let { writePixel(index, it) }
                 }
