@@ -106,16 +106,19 @@ class SettingsScreen(
                     onToggle = { widget.onItemAction(SettingsMenuItem.PIXEL_GAP, +1) },
                 ),
             )
-            add(
-                SettingsOptionStepperRow(
-                    title = "STYLE",
-                    valueLabel = SettingsMenuModel.styleLabel(selectedPixelShape),
-                    theme = t,
-                    textEdgeResolvers = widget.textEdgeResolvers,
-                    onPrevious = { widget.onItemAction(SettingsMenuItem.STYLE, -1) },
-                    onNext = { widget.onItemAction(SettingsMenuItem.STYLE, +1) },
-                ),
-            )
+            if (isPixelGapEnabled) {
+                add(
+                    SettingsOptionStepperRow(
+                        title = "STYLE",
+                        valueLabel = SettingsMenuModel.styleLabel(selectedPixelShape),
+                        theme = t,
+                        textEdgeResolvers = widget.textEdgeResolvers,
+                        onPrevious = { widget.onItemAction(SettingsMenuItem.STYLE, -1) },
+                        onNext = { widget.onItemAction(SettingsMenuItem.STYLE, +1) },
+                    ),
+                )
+            }
+            addSection(SettingsSection.THEME, t)
             add(
                 SettingsOptionStepperRow(
                     title = "THEME",

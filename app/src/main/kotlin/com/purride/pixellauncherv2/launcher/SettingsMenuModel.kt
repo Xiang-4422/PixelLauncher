@@ -33,7 +33,10 @@ enum class SettingsMenuItem {
 }
 
 enum class SettingsSection {
+    /** 点阵尺度、像素间隙与像素形状等显示网格设置。 */
     DISPLAY,
+    /** 颜色主题、明暗模式与字体排版设置。 */
+    THEME,
     HOME,
     DRAWER,
     IDLE,
@@ -95,7 +98,7 @@ object SettingsMenuModel {
                     item = SettingsMenuItem.THEME,
                     title = "THEME",
                     value = themeFamilyLabel(state.selectedThemeFamily),
-                    section = SettingsSection.DISPLAY,
+                    section = SettingsSection.THEME,
                 ),
             )
             add(
@@ -103,7 +106,7 @@ object SettingsMenuModel {
                     item = SettingsMenuItem.THEME_MODE,
                     title = "MODE",
                     value = themeModeLabel(state.selectedThemeMode),
-                    section = SettingsSection.DISPLAY,
+                    section = SettingsSection.THEME,
                 ),
             )
             add(
@@ -111,7 +114,7 @@ object SettingsMenuModel {
                     item = SettingsMenuItem.FONT,
                     title = "FONT",
                     value = fontLabel(state.fontSelection.family),
-                    section = SettingsSection.DISPLAY,
+                    section = SettingsSection.THEME,
                 ),
             )
             add(
@@ -119,7 +122,7 @@ object SettingsMenuModel {
                     item = SettingsMenuItem.FONT_WIDTH,
                     title = "WIDTH",
                     value = fontWidthLabel(state.fontSelection.widthMode),
-                    section = SettingsSection.DISPLAY,
+                    section = SettingsSection.THEME,
                 ),
             )
             add(
@@ -127,7 +130,7 @@ object SettingsMenuModel {
                     item = SettingsMenuItem.FONT_SIZE,
                     title = "SIZE",
                     value = fontSizeLabel(state.fontSelection.size),
-                    section = SettingsSection.DISPLAY,
+                    section = SettingsSection.THEME,
                 ),
             )
             add(
@@ -433,6 +436,7 @@ object SettingsMenuModel {
     fun sectionLabel(section: SettingsSection): String {
         return when (section) {
             SettingsSection.DISPLAY -> "DISPLAY"
+            SettingsSection.THEME -> "THEME"
             SettingsSection.HOME -> "HOME"
             SettingsSection.DRAWER -> "DRAWER"
             SettingsSection.IDLE -> "IDLE"

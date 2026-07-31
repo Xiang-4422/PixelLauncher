@@ -274,6 +274,7 @@ class SettingsMenuModelTest {
         assertEquals(
             listOf(
                 SettingsSection.DISPLAY,
+                SettingsSection.THEME,
                 SettingsSection.HOME,
                 SettingsSection.DRAWER,
                 SettingsSection.IDLE,
@@ -283,11 +284,11 @@ class SettingsMenuModelTest {
             SettingsMenuModel.sections(state),
         )
         assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.RESOLUTION }.section)
-        assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.THEME }.section)
-        assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.THEME_MODE }.section)
-        assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.FONT }.section)
-        assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.FONT_WIDTH }.section)
-        assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.FONT_SIZE }.section)
+        assertEquals(SettingsSection.THEME, rows.first { it.item == SettingsMenuItem.THEME }.section)
+        assertEquals(SettingsSection.THEME, rows.first { it.item == SettingsMenuItem.THEME_MODE }.section)
+        assertEquals(SettingsSection.THEME, rows.first { it.item == SettingsMenuItem.FONT }.section)
+        assertEquals(SettingsSection.THEME, rows.first { it.item == SettingsMenuItem.FONT_WIDTH }.section)
+        assertEquals(SettingsSection.THEME, rows.first { it.item == SettingsMenuItem.FONT_SIZE }.section)
         assertEquals(SettingsSection.HOME, rows.first { it.item == SettingsMenuItem.HOME_STATUS }.section)
         assertEquals(SettingsSection.DRAWER, rows.first { it.item == SettingsMenuItem.APP_LIST_ALIGNMENT }.section)
         assertEquals(SettingsSection.DRAWER, rows.first { it.item == SettingsMenuItem.APP_MANAGEMENT }.section)
@@ -301,6 +302,7 @@ class SettingsMenuModelTest {
         assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG }.section)
         assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.ADVANCED }.section)
         assertEquals("DISPLAY", SettingsMenuModel.sectionLabel(SettingsSection.DISPLAY))
+        assertEquals("THEME", SettingsMenuModel.sectionLabel(SettingsSection.THEME))
         assertEquals("HOME", SettingsMenuModel.sectionLabel(SettingsSection.HOME))
     }
 

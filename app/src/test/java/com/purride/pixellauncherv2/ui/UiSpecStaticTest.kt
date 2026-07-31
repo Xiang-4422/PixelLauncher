@@ -236,6 +236,12 @@ class UiSpecStaticTest {
                 Regex("""SettingsSwitchRow\(\s*title = "GAP"""").containsMatchIn(screenSource),
         )
         assertTrue(
+            "STYLE must only be composed while GAP is enabled.",
+            Regex(
+                """if \(isPixelGapEnabled\) \{\s*add\(\s*SettingsOptionStepperRow\(\s*title = "STYLE"""",
+            ).containsMatchIn(screenSource),
+        )
+        assertTrue(
             "The PIXEL control must be one ValueAdjuster row without S/M/L presets.",
             screenSource.contains("valueLabel = SettingsMenuModel.resolutionLabel(selectedDotSizePx)") &&
                 controlsSource.contains("fun SettingsPixelSizeControl(") &&
