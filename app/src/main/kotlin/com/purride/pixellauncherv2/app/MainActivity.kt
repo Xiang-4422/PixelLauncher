@@ -904,6 +904,9 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        // render 不再采样能力（见 renderCurrentFrame 的纯读边界），任何权限结果都在此
+        // 统一重采一次 DataHealth 六项能力，保证授权后首帧就反映新能力状态。
+        refreshDerivedUiState(render = true)
     }
 
     @Deprecated("Deprecated in Java")
@@ -1275,19 +1278,15 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * 收集当前渲染输入并提交一帧完整像素画面到显示视图。
+     *
+     * render 是纯读边界：只投影已提交的 state 快照，不访问 repository、不采样系统能力、
+     * 不写 state。数据与能力刷新由明确入口负责——生命周期（onResume）、权限回调
+     * （onRequestPermissionsResult）、repository 回调（onMediaPlaybackChanged 等）和页面
+     * 打开动作（openDataHealth/openDiagnostics）。连续调用两次必须产生相同输出且无副作用；
+     * 该不变量由 MainActivityRenderPurityContractTest 守护。
      */
     private fun renderCurrentFrame() {
         if (!::launcherRootHost.isInitialized) return
-        refreshDataHealthState()
-        if (::mediaPlaybackRepository.isInitialized) {
-            val mediaPlayback = mediaPlaybackRepository.current()
-            if (state.mediaPlayback != mediaPlayback) {
-                state = LauncherStateTransitions.updateMediaPlayback(
-                    state = state,
-                    mediaPlayback = mediaPlayback,
-                )
-            }
-        }
         val uiState = state.toLauncherUiState()
         launcherRootHost.update(
             state           = uiState,
@@ -2050,6 +2049,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun openDiagnostics() {
         settleSettingsMotionBeforeExplicitAction()
+        // Diagnostics 展示 usage access 等能力快照；render 纯化后由打开动作负责采样，
+        // 与 openDataHealth 同一口径（但不更新 DataHealth 的用户刷新时间戳）。
+        refreshDataHealthState()
         state = LauncherStateTransitions.showDiagnostics(state)
         renderCurrentFrame()
         updateDrawerInputFocus()
