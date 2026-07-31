@@ -630,10 +630,9 @@ object LauncherStateTransitions {
     /** 委托 [LauncherNotificationTransitions.updateNotificationRules]。 */
     fun updateNotificationRules(
         state: LauncherState,
-        mutedSourceIds: Set<String>,
-        prioritySourceIds: Set<String>,
+        allowedSourceIds: Set<String>,
     ): LauncherState =
-        LauncherNotificationTransitions.updateNotificationRules(state, mutedSourceIds, prioritySourceIds)
+        LauncherNotificationTransitions.updateNotificationRules(state, allowedSourceIds)
 
     // ── System / Capabilities ───────────────────────────────────────────────
 

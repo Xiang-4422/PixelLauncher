@@ -249,14 +249,13 @@ class SettingsMenuModelTest {
                 smsPermissionState = SmsPermissionState.READY,
                 hasPostNotificationPermission = true,
                 hasNotificationListenerAccess = true,
-                mutedNotificationSourceIds = setOf("com.noisy"),
-                priorityNotificationSourceIds = setOf("com.bank"),
+                allowedNotificationSourceIds = setOf("com.bank"),
                 isPixelMatterHandControlEnabled = true,
             ),
         )
         val items = rows.map { it.item }
 
-        assertEquals("M1 P1", rows.first { it.item == SettingsMenuItem.NOTIFICATIONS }.value)
+        assertEquals("1 ON", rows.first { it.item == SettingsMenuItem.NOTIFICATIONS }.value)
         assertEquals("OK", rows.first { it.item == SettingsMenuItem.DATA_HEALTH }.value)
         assertEquals("ON", rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_EFFECT }.value)
         assertEquals("SAND", rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_EFFECT_MODE }.value)

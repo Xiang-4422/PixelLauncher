@@ -6,47 +6,114 @@ import org.junit.Test
 class NotificationSettingsModelTest {
 
     @Test
-    fun rowsMergeActiveConfiguredMutedAndPrioritySources() {
+    fun rowsMergeDrawerAppsActiveSourcesAndConfiguredWhitelistSources() {
         val rows = NotificationSettingsModel.rows(
+            apps = listOf(
+                app(label = "BANK", packageName = "com.bank"),
+                app(label = "CHAT", packageName = "com.chat"),
+            ),
             sources = listOf(
                 NotificationSourceInfo(sourceId = "com.bank", sourceLabel = "BANK"),
-                NotificationSourceInfo(sourceId = "com.chat", sourceLabel = "CHAT"),
+                NotificationSourceInfo(sourceId = "com.service", sourceLabel = "SERVICE"),
             ),
-            mutedSourceIds = setOf("com.noisy"),
-            prioritySourceIds = setOf("com.bank"),
+            allowedSourceIds = setOf("com.bank", "com.noisy"),
         )
 
         assertEquals(
             listOf(
-                NotificationSettingsRow("com.bank", "BANK", NotificationSourceMode.PRIORITY),
-                NotificationSettingsRow("com.chat", "CHAT", NotificationSourceMode.NORMAL),
-                NotificationSettingsRow("com.noisy", "NOISY", NotificationSourceMode.MUTED),
+                NotificationSettingsRow("com.bank", "BANK", true),
+                NotificationSettingsRow("com.noisy", "NOISY", true),
+                NotificationSettingsRow("com.chat", "CHAT", false),
+                NotificationSettingsRow("com.service", "SERVICE", false),
             ),
             rows,
         )
     }
 
     @Test
-    fun mutedModeWinsWhenASourceIsInBothSets() {
+    fun rowsMarkSourcesOutsideWhitelistAsBlocked() {
         val rows = NotificationSettingsModel.rows(
+            apps = emptyList(),
             sources = listOf(NotificationSourceInfo(sourceId = "com.bank", sourceLabel = "BANK")),
-            mutedSourceIds = setOf("com.bank"),
-            prioritySourceIds = setOf("com.bank"),
+            allowedSourceIds = emptySet(),
         )
 
-        assertEquals(NotificationSourceMode.MUTED, rows.single().mode)
+        assertEquals(false, rows.single().isAllowed)
     }
 
     @Test
-    fun nextModeCyclesNormalPriorityMuted() {
-        assertEquals(NotificationSourceMode.PRIORITY, NotificationSettingsModel.nextMode(NotificationSourceMode.NORMAL))
-        assertEquals(NotificationSourceMode.MUTED, NotificationSettingsModel.nextMode(NotificationSourceMode.PRIORITY))
-        assertEquals(NotificationSourceMode.NORMAL, NotificationSettingsModel.nextMode(NotificationSourceMode.MUTED))
+    fun rowsExposeDrawerAppsBeforeTheyPostNotificationsAndKeepAllowedAppsFirst() {
+        val rows = NotificationSettingsModel.rows(
+            apps = listOf(
+                app(label = "ALPHA", packageName = "com.alpha"),
+                app(label = "ZULU", packageName = "com.zulu"),
+            ),
+            sources = emptyList(),
+            allowedSourceIds = setOf("com.zulu"),
+        )
+
+        assertEquals(
+            listOf(
+                NotificationSettingsRow("com.zulu", "ZULU", true),
+                NotificationSettingsRow("com.alpha", "ALPHA", false),
+            ),
+            rows,
+        )
+    }
+
+    @Test
+    fun rowsReuseDrawerSearchAcrossPinyinAliasesAndPackageNames() {
+        val apps = listOf(
+            app(label = "微信", packageName = "com.tencent.mm", aliases = listOf("CHAT")),
+            app(label = "支付宝", packageName = "com.eg.android.AlipayGphone"),
+        )
+
+        assertEquals(
+            listOf("com.tencent.mm"),
+            NotificationSettingsModel.rows(
+                apps = apps,
+                sources = emptyList(),
+                allowedSourceIds = emptySet(),
+                query = "weixin",
+            ).map(NotificationSettingsRow::sourceId),
+        )
+        assertEquals(
+            listOf("com.tencent.mm"),
+            NotificationSettingsModel.rows(
+                apps = apps,
+                sources = emptyList(),
+                allowedSourceIds = emptySet(),
+                query = "chat",
+            ).map(NotificationSettingsRow::sourceId),
+        )
+        assertEquals(
+            listOf("com.eg.android.AlipayGphone"),
+            NotificationSettingsModel.rows(
+                apps = apps,
+                sources = emptyList(),
+                allowedSourceIds = emptySet(),
+                query = "alipay",
+            ).map(NotificationSettingsRow::sourceId),
+        )
     }
 
     @Test
     fun summaryShowsConfiguredCountsOnly() {
-        assertEquals("DEFAULT", NotificationSettingsModel.summary(emptySet(), emptySet()))
-        assertEquals("M2 P1", NotificationSettingsModel.summary(setOf("a", "b"), setOf("c")))
+        assertEquals("0 ON", NotificationSettingsModel.summary(emptySet()))
+        assertEquals("2 ON", NotificationSettingsModel.summary(setOf("a", "b")))
+    }
+
+    /** 构造只包含白名单搜索所需字段的测试应用。 */
+    private fun app(
+        label: String,
+        packageName: String,
+        aliases: List<String> = emptyList(),
+    ): AppEntry {
+        return AppEntry(
+            label = label,
+            packageName = packageName,
+            activityName = "$packageName.MainActivity",
+            aliases = aliases,
+        )
     }
 }

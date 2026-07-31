@@ -226,11 +226,8 @@ object SettingsMenuModel {
             add(
                 SettingsMenuRow(
                     item = SettingsMenuItem.NOTIFICATIONS,
-                    title = "SOURCES",
-                    value = NotificationSettingsModel.summary(
-                        mutedSourceIds = state.mutedNotificationSourceIds,
-                        prioritySourceIds = state.priorityNotificationSourceIds,
-                    ),
+                    title = "WHITELIST",
+                    value = NotificationSettingsModel.summary(state.allowedNotificationSourceIds),
                     section = SettingsSection.NOTIFICATIONS,
                 ),
             )

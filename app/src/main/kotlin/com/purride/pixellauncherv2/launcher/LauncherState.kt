@@ -125,8 +125,8 @@ data class LauncherState(
     val notificationCount: Int = 0,
     val notificationSources: List<NotificationSourceInfo> = emptyList(),
     val notificationItems: List<NotificationSignal> = emptyList(),
-    val mutedNotificationSourceIds: Set<String> = emptySet(),
-    val priorityNotificationSourceIds: Set<String> = emptySet(),
+    /** 允许显示在 Launcher 中的通知来源白名单。 */
+    val allowedNotificationSourceIds: Set<String> = emptySet(),
     val rainHintText: String = "",
     val rainUpdatedTimeText: String = "",
     val screenUsageTimeText: String = "--:--",

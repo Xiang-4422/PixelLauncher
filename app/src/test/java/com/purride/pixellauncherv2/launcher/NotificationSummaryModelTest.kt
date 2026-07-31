@@ -6,7 +6,7 @@ import org.junit.Test
 class NotificationSummaryModelTest {
 
     @Test
-    fun summarizeKeepsActiveNonMutedSignalsForHomeItems() {
+    fun summarizeKeepsOnlyAllowedSignalsForHomeItems() {
         val summary = NotificationSummaryModel.summarize(
             signals = listOf(
                 NotificationSignal(
@@ -39,7 +39,7 @@ class NotificationSummaryModelTest {
                     postedAtMillis = 20L,
                 ),
             ),
-            rules = NotificationSummaryRules(mutedSourceIds = setOf("muted")),
+            rules = NotificationSummaryRules(allowedSourceIds = setOf("chat", "silent", "service")),
         )
 
         assertEquals(3, summary.count)
@@ -49,7 +49,7 @@ class NotificationSummaryModelTest {
     }
 
     @Test
-    fun summarizeKeepsHighPriorityAndConfiguredPrioritySources() {
+    fun summarizeSortsAllowedSignalsByNotificationPriorityAndTime() {
         val summary = NotificationSummaryModel.summarize(
             signals = listOf(
                 NotificationSignal(
@@ -67,12 +67,12 @@ class NotificationSummaryModelTest {
                     postedAtMillis = 20L,
                 ),
             ),
-            rules = NotificationSummaryRules(prioritySourceIds = setOf("calendar")),
+            rules = NotificationSummaryRules(allowedSourceIds = setOf("bank", "calendar")),
         )
 
         assertEquals(2, summary.count)
-        assertEquals("CAL MEET  BANK OTP", summary.text)
-        assertEquals(listOf("calendar", "bank"), summary.items.map { it.sourceId })
+        assertEquals("BANK OTP  CAL MEET", summary.text)
+        assertEquals(listOf("bank", "calendar"), summary.items.map { it.sourceId })
         assertEquals(
             listOf(
                 NotificationSourceInfo(sourceId = "bank", sourceLabel = "BANK"),
@@ -83,7 +83,7 @@ class NotificationSummaryModelTest {
     }
 
     @Test
-    fun summarizeKeepsMutedSourcesVisibleForSettings() {
+    fun summarizeKeepsBlockedSourcesVisibleForWhitelistSettings() {
         val summary = NotificationSummaryModel.summarize(
             signals = listOf(
                 NotificationSignal(
@@ -92,7 +92,7 @@ class NotificationSummaryModelTest {
                     priority = NotificationSignalPriority.HIGH,
                 ),
             ),
-            rules = NotificationSummaryRules(mutedSourceIds = setOf("muted")),
+            rules = NotificationSummaryRules(),
         )
 
         assertEquals(0, summary.count)
@@ -120,6 +120,7 @@ class NotificationSummaryModelTest {
                     priority = NotificationSignalPriority.DEFAULT,
                 ),
             ),
+            rules = NotificationSummaryRules(allowedSourceIds = setOf("music", "chat")),
         )
 
         assertEquals(1, summary.count)
@@ -142,7 +143,7 @@ class NotificationSummaryModelTest {
                 NotificationSignal("b", "B", priority = NotificationSignalPriority.HIGH, postedAtMillis = 2L),
                 NotificationSignal("c", "C", priority = NotificationSignalPriority.HIGH, postedAtMillis = 3L),
             ),
-            rules = NotificationSummaryRules(maxItems = 2),
+            rules = NotificationSummaryRules(allowedSourceIds = setOf("a", "b", "c"), maxItems = 2),
         )
 
         assertEquals(3, summary.count)

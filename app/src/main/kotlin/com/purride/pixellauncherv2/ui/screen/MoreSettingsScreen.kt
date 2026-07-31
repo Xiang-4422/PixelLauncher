@@ -78,11 +78,8 @@ class MoreSettingsScreen(
             addSection(SettingsSection.NOTIFICATIONS, currentTheme)
             add(
                 SettingsActionRow(
-                    title = "SOURCES",
-                    valueLabel = NotificationSettingsModel.summary(
-                        mutedSourceIds = mutedNotificationSourceIds,
-                        prioritySourceIds = priorityNotificationSourceIds,
-                    ),
+                    title = "WHITELIST",
+                    valueLabel = NotificationSettingsModel.summary(allowedNotificationSourceIds),
                     theme = currentTheme,
                     textEdgeResolvers = widget.textEdgeResolvers,
                     onPressed = { widget.onItemAction(SettingsMenuItem.NOTIFICATIONS, +1) },

@@ -41,8 +41,8 @@ data class NotificationActionInfo(
 )
 
 data class NotificationSummaryRules(
-    val mutedSourceIds: Set<String> = emptySet(),
-    val prioritySourceIds: Set<String> = emptySet(),
+    /** 允许显示在 Launcher 中的通知来源 ID；空集合表示全部阻止。 */
+    val allowedSourceIds: Set<String> = emptySet(),
     val maxItems: Int = 2,
 )
 
@@ -79,11 +79,10 @@ object NotificationSummaryModel {
         val candidates = signals
             .asSequence()
             .filter { signal -> signal.sourceId.isNotBlank() }
-            .filterNot { signal -> signal.sourceId in rules.mutedSourceIds }
+            .filter { signal -> signal.sourceId in rules.allowedSourceIds }
             .filterNot(NotificationSummaryModel::isMediaControl)
             .sortedWith(
-                compareByDescending<NotificationSignal> { signal -> signal.sourceId in rules.prioritySourceIds }
-                    .thenByDescending { signal -> signal.priority == NotificationSignalPriority.HIGH }
+                compareByDescending<NotificationSignal> { signal -> signal.priority == NotificationSignalPriority.HIGH }
                     .thenByDescending { signal -> signal.postedAtMillis },
             )
             .toList()

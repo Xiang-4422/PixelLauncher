@@ -33,7 +33,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * 以完整非默认快照保护 [LauncherState] 到 [LauncherUiState] 的 109 字段身份映射。
+ * 以完整非默认快照保护 [LauncherState] 到 [LauncherUiState] 的 108 字段身份映射。
  *
  * 运行时断言负责验证真实 mapper 行为；源码契约仅用于在 schema 增删或 mapper 漏项时提供明确诊断。
  */
@@ -66,7 +66,7 @@ class LauncherUiStateMapperCompletenessTest {
      * 调用真实 [toLauncherUiState]，按字段名逐项比较完整输入与输出值。
      */
     @Test
-    fun toLauncherUiState_mapsAll109NonDefaultFieldsWithoutCrossingValues() {
+    fun toLauncherUiState_mapsAll108NonDefaultFieldsWithoutCrossingValues() {
         val state = completeNonDefaultState()
         val uiState = state.toLauncherUiState()
 
@@ -83,7 +83,7 @@ class LauncherUiStateMapperCompletenessTest {
      * 补充验证两个主构造器和 mapper 的精确清单，让新增、缺失、重复或错接字段直接报出名称。
      */
     @Test
-    fun sourceSchemasAndMapper_keepExact109FieldContract() {
+    fun sourceSchemasAndMapper_keepExact108FieldContract() {
         val moduleRoot = resolveModuleRoot()
         val launcherStateSource = moduleRoot
             .resolve("src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherState.kt")
@@ -111,7 +111,7 @@ class LauncherUiStateMapperCompletenessTest {
     }
 
     /**
-     * 构造全部 109 字段均显式赋值的合法状态；同类型字段使用不同哨兵以识别交叉映射。
+     * 构造全部 108 字段均显式赋值的合法状态；同类型字段使用不同哨兵以识别交叉映射。
      */
     private fun completeNonDefaultState(): LauncherState {
         // Drawer 数据同时保证选择下标与可见列表范围一致。
@@ -371,8 +371,7 @@ class LauncherUiStateMapperCompletenessTest {
             notificationCount = 2,
             notificationSources = notificationSources,
             notificationItems = notificationItems,
-            mutedNotificationSourceIds = setOf("fixture.noisy"),
-            priorityNotificationSourceIds = setOf("fixture.bank"),
+            allowedNotificationSourceIds = setOf("fixture.bank"),
             rainHintText = "18:00 有雨",
             rainUpdatedTimeText = "09:42",
             screenUsageTimeText = "02:34",
@@ -537,7 +536,7 @@ class LauncherUiStateMapperCompletenessTest {
 
     private companion object {
         /** 当前扁平 schema 的字段总数。 */
-        const val EXPECTED_FIELD_COUNT = 109
+        const val EXPECTED_FIELD_COUNT = 108
 
         /** 按规范 schema 顺序列出全部字段，供行为循环与结构诊断共用。 */
         val EXPECTED_FIELD_NAMES: List<String> = listOf(
@@ -633,8 +632,7 @@ class LauncherUiStateMapperCompletenessTest {
             "notificationCount",
             "notificationSources",
             "notificationItems",
-            "mutedNotificationSourceIds",
-            "priorityNotificationSourceIds",
+            "allowedNotificationSourceIds",
             "rainHintText",
             "rainUpdatedTimeText",
             "screenUsageTimeText",

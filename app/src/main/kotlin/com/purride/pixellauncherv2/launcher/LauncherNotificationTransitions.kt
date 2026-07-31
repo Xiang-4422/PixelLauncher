@@ -24,16 +24,13 @@ object LauncherNotificationTransitions {
         )
     }
 
-    /** 写入持久通知规则；muted 与 priority 冲突时 muted 优先。 */
+    /** 写入持久通知白名单规则；来源 id 先做去空白归一化。 */
     fun updateNotificationRules(
         state: LauncherState,
-        mutedSourceIds: Set<String>,
-        prioritySourceIds: Set<String>,
+        allowedSourceIds: Set<String>,
     ): LauncherState {
-        val muted = mutedSourceIds.sanitizeSourceIds()
         return state.copy(
-            mutedNotificationSourceIds = muted,
-            priorityNotificationSourceIds = prioritySourceIds.sanitizeSourceIds() - muted,
+            allowedNotificationSourceIds = allowedSourceIds.sanitizeSourceIds(),
         )
     }
 
