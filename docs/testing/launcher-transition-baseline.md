@@ -1,13 +1,14 @@
 # Launcher 状态转换行为基线
 
-- 盘点日期：2026-07-30
+- 盘点日期：2026-07-30（2026-07-31 增补：MORE 二级设置页引入 2 个新流，入口 108→110；
+  ADR-0001 阶段 2 已完成，实现按九域拆分，facade 保持全部入口）
 - 生产入口：`app/src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherStateTransitions.kt`
 - 目标：在拆分 reducer 前，锁定全部公开入口的领域归属、生产调用、写入面和 JVM 行为证据，并为 reducer 外既有写入准备具名转换
 - 非目标：本基线不改变生产行为，不替代 Controller、Activity 或真机链路测试
 
 ## 1. 口径与结论
 
-`LauncherStateTransitions` 当前有 **108 个**公开 `fun`。本盘点将跨切片、包含顶层路由的入口标成
+`LauncherStateTransitions` 当前有 **110 个**公开 `fun`。本盘点将跨切片、包含顶层路由的入口标成
 `Flow/<领域>`；只写单一切片的入口使用 ADR-0001 的九个切片名：
 `Shell`、`AppCatalog`、`Settings`、`Sms`、`Phone`、`Effect`、`Home`、
 `Notification`、`System`。
@@ -19,6 +20,7 @@
 | 阶段 0 开始前 | 56 | 0 | 44 |
 | 阶段 0 完成后 | 100 | 0 | 0 |
 | 本任务完成后 | 108 | 0 | 0 |
+| MORE 设置页引入后（2026-07-31） | 110 | 0 | 0 |
 
 这里不把读取源码后做字符串匹配的静态契约算成行为覆盖，也不把“相邻模型有测试”算成 reducer 的间接覆盖。
 阶段 0 新增的 11 组测试按行为域组织，检查窗口一致性、路由返回、互斥字段和异步回填不覆盖独立状态。
@@ -38,9 +40,9 @@
 - `LSW`：新增 `LauncherStateWriteTransitionsTest`
 - “无外部调用”表示生产源码在 reducer 对象外没有引用；不等于已经决定删除
 
-## 2. 108 个公开入口完整矩阵
+## 2. 110 个公开入口完整矩阵
 
-### 2.1 Shell 与跨页 Flow（17）
+### 2.1 Shell 与跨页 Flow（19）
 
 | # | 方法 | 目标领域 | 主要写入字段 | 生产调用 | 直接行为测试证据 |
 |---:|---|---|---|---|---|
@@ -61,6 +63,8 @@
 | 15 | `hideIdle` | `Flow/Effect` | `mode` | `MA` | 既有 `LST#hideIdle_returnsToModeBeforeIdle` |
 | 16 | `updateStatusBarMessage` | `Shell` | message 与 action 原子组 | `MA` | 既有 `LST#updateStatusBarMessage_trimsGlobalTransientMessage` |
 | 17 | `updateStatusBarAction` | `Shell` | message 与 action 原子组 | `MA` | 新增 `LTB#statusBarAction_clearsMessageAndUpdatesAtomicActionFields` |
+| 109 | `showMoreSettings` | `Flow/Settings` | `mode` | `MA` | `LST` MORE 设置往返用例（2026-07-31 增补） |
+| 110 | `hideMoreSettings` | `Flow/Settings` | `mode` | `MA` | `LST` MORE 设置往返用例（2026-07-31 增补） |
 
 ### 2.2 AppCatalog / Drawer（24）
 
@@ -207,11 +211,11 @@ Controller 内 5 个直接聚合 `copy`，`MainActivity` 的 4 个入口消除�
 因此该 `else` 对真实 Pager 回调不可达。当前已直接收窄为 `else -> state`，没有为死路径新增 transition，
 也没有引入可写任意路由的 generic mode setter；它不再计入 baseline。
 
-全部表格恰好包含 108 个唯一入口；跨切片职责已经直接写入每个入口的 `Flow/...` 目标领域，不重复列行。
+全部表格恰好包含 110 个唯一入口；跨切片职责已经直接写入每个入口的 `Flow/...` 目标领域，不重复列行。
 
 ## 3. 机器复核
 
-以下命令从生产源码提取 108 个方法，再与所有 JVM 测试中的真实调用求差集：
+以下命令从生产源码提取 110 个方法，再与所有 JVM 测试中的真实调用求差集：
 
 ```bash
 SOURCE_METHODS="$(mktemp)"
@@ -226,8 +230,8 @@ rg -o 'LauncherStateTransitions\.[A-Za-z_][A-Za-z0-9_]*' app/src/test/java \
   | sed 's/.*\.//' \
   | sort -u > "$TEST_METHODS"
 
-wc -l "$SOURCE_METHODS"                         # 108
-comm -12 "$SOURCE_METHODS" "$TEST_METHODS" | wc -l  # 108
+wc -l "$SOURCE_METHODS"                         # 110
+comm -12 "$SOURCE_METHODS" "$TEST_METHODS" | wc -l  # 110
 comm -23 "$SOURCE_METHODS" "$TEST_METHODS"          # 无输出
 ```
 
@@ -242,7 +246,7 @@ rg -o 'LauncherStateTransitions\.[A-Za-z_][A-Za-z0-9_]*' app/src/test/java \
 comm -12 "$SOURCE_METHODS" "$TEST_METHODS" | wc -l  # 56
 ```
 
-文档表格的 108 行应与源码集合一一对应：
+文档表格的 110 行应与源码集合一一对应：
 
 ```bash
 DOC_METHODS="$(mktemp)"
@@ -251,7 +255,7 @@ rg -o '^\| [0-9]+ \| `[A-Za-z_][A-Za-z0-9_]*` \\|' \
   | sed -E 's/.*`([A-Za-z_][A-Za-z0-9_]*)`.*/\1/' \
   | sort -u > "$DOC_METHODS"
 
-wc -l "$DOC_METHODS"                              # 108
+wc -l "$DOC_METHODS"                              # 110
 comm -3 "$SOURCE_METHODS" "$DOC_METHODS"           # 无输出
 ```
 
