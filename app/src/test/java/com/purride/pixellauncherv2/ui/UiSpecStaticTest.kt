@@ -242,6 +242,12 @@ class UiSpecStaticTest {
             ).containsMatchIn(screenSource),
         )
         assertTrue(
+            "Settings must not expose font diagnostic rows or retain their unused row component.",
+            !screenSource.contains("\"FONT INFO\"") &&
+                !screenSource.contains("\"SAMPLE\"") &&
+                !controlsSource.contains("fun SettingsInfoRow("),
+        )
+        assertTrue(
             "The PIXEL control must be one ValueAdjuster row without S/M/L presets.",
             screenSource.contains("valueLabel = SettingsMenuModel.resolutionLabel(selectedDotSizePx)") &&
                 controlsSource.contains("fun SettingsPixelSizeControl(") &&

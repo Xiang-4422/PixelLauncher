@@ -24,7 +24,6 @@ import com.purride.pixellauncherv2.launcher.SettingsSection
 import com.purride.pixellauncherv2.launcher.pixelMatterEffectModeLabel
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.SettingsActionRow
-import com.purride.pixellauncherv2.ui.widget.SettingsInfoRow
 import com.purride.pixellauncherv2.ui.widget.SettingsOptionStepperRow
 import com.purride.pixellauncherv2.ui.widget.SettingsPixelSizeControl
 import com.purride.pixellauncherv2.ui.widget.SettingsSectionHeader
@@ -170,20 +169,6 @@ class SettingsScreen(
                         fontSelection.family,
                         fontSelection.widthMode,
                     ).size > 1,
-                ),
-            )
-            add(
-                SettingsInfoRow(
-                    title = "FONT INFO",
-                    valueLabel = PixelFontCatalog.fontInfoLabel(fontSelection),
-                    theme = t,
-                ),
-            )
-            add(
-                SettingsInfoRow(
-                    title = "SAMPLE",
-                    valueLabel = "ABC 012 中文 .,:!?",
-                    theme = t,
                 ),
             )
             addSection(SettingsSection.HOME, t)

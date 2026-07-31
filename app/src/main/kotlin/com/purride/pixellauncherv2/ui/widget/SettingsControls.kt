@@ -191,23 +191,6 @@ fun SettingsOptionStepperRow(
     ),
 )
 
-/** 不参与点击和焦点遍历的设置只读信息行。 */
-fun SettingsInfoRow(
-    title: String,
-    valueLabel: String,
-    theme: LauncherTheme,
-    textEdgeResolvers: SettingsTextEdgeResolvers = SettingsTextEdgeResolvers.None,
-): Widget = Container(
-    child = settingsInlineRow(
-        title = settingsTitleCell(title = title, theme = theme, textEdgeResolvers = textEdgeResolvers),
-        trailing = settingsValueCell(
-            valueLabel = valueLabel,
-            theme = theme,
-            textEdgeResolvers = textEdgeResolvers,
-        ),
-    ),
-)
-
 fun SettingsActionRow(
     title: String,
     valueLabel: String,
