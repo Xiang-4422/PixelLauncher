@@ -8,1072 +8,234 @@ import com.purride.pixellauncherv2.model.ContactEntry
 import com.purride.pixellauncherv2.model.SmsMessageEntry
 import com.purride.pixellauncherv2.model.SmsThreadSummary
 import com.purride.pixelcore.PixelShape
-import java.text.Collator
-import java.util.Locale
 
+/**
+ * Launcher 状态转换的统一入口 facade（ADR-0001 阶段 2）。
+ *
+ * 108 个公开入口的实现已按九个状态域拆分到独立文件：
+ * [LauncherShellTransitions]、[LauncherAppCatalogTransitions]、[LauncherSettingsTransitions]、
+ * [LauncherSmsTransitions]、[LauncherPhoneTransitions]、[LauncherEffectTransitions]、
+ * [LauncherHomeTransitions]、[LauncherNotificationTransitions]、[LauncherSystemTransitions]。
+ *
+ * 本对象只做零逻辑委托：签名、默认参数与行为同拆分前逐一等价，既有调用点无需改名。
+ * 各入口的领域归属与行为测试证据见 docs/testing/launcher-transition-baseline.md。
+ */
 object LauncherStateTransitions {
 
-    /** 切回 Home 模式，不改动其他派生字段。 */
-    fun showHome(state: LauncherState): LauncherState {
-        return state.copy(
-            mode = LauncherMode.HOME,
-            isDrawerSearchFocused = false,
-            isAppActionMenuVisible = false,
-        )
-    }
+    // ── Shell 与跨页 Flow ────────────────────────────────────────────────────
 
-    /**
-     * 打开设置页，并记录关闭设置后应该回到哪个页面。
-     */
-    fun showSettings(state: LauncherState, visibleRows: Int): LauncherState {
-        val returnMode = when (state.mode) {
-            LauncherMode.HOME,
-            LauncherMode.APP_DRAWER,
-            LauncherMode.IDLE,
-            LauncherMode.SMS_ROLE_PROMPT,
-            LauncherMode.SMS_THREADS,
-            LauncherMode.SMS_THREAD_DETAIL,
-            LauncherMode.DIALER,
-            LauncherMode.CONTACT_DETAIL,
-            LauncherMode.CONTACT_EDITOR -> state.mode
+    /** 委托 [LauncherShellTransitions.showHome]。 */
+    fun showHome(state: LauncherState): LauncherState =
+        LauncherShellTransitions.showHome(state)
 
-            LauncherMode.SETTINGS,
-            LauncherMode.APP_MANAGEMENT,
-            LauncherMode.DATA_HEALTH,
-            LauncherMode.NOTIFICATION_SETTINGS,
-            LauncherMode.LOADING_PREVIEW,
-            LauncherMode.DIAGNOSTICS,
-            LauncherMode.SNAKE -> state.returnMode
-        }
-        val maxIndex = SettingsMenuModel.rows(state).lastIndex.coerceAtLeast(0)
-        return syncSettingsWindow(
-            state = state.copy(
-                mode = LauncherMode.SETTINGS,
-                returnMode = returnMode,
-                settingsSelectedIndex = state.settingsSelectedIndex.coerceIn(0, maxIndex),
-                isDrawerSearchFocused = false,
-                isAppActionMenuVisible = false,
-            ),
-            visibleRows = visibleRows,
-        )
-    }
+    /** 委托 [LauncherShellTransitions.showSettings]。 */
+    fun showSettings(state: LauncherState, visibleRows: Int): LauncherState =
+        LauncherShellTransitions.showSettings(state, visibleRows)
 
-    /**
-     * 关闭设置页。
-     *
-     * 如果记录的返回模式已经失效，会回退到最后一个合法的 pager 页面。
-     */
-    fun hideSettings(state: LauncherState): LauncherState {
-        val fallbackMode = when (state.returnMode) {
-            LauncherMode.HOME,
-            LauncherMode.APP_DRAWER,
-            LauncherMode.IDLE,
-            LauncherMode.SMS_ROLE_PROMPT,
-            LauncherMode.SMS_THREADS,
-            LauncherMode.SMS_THREAD_DETAIL,
-            LauncherMode.DIALER,
-            LauncherMode.CONTACT_DETAIL,
-            LauncherMode.CONTACT_EDITOR -> state.returnMode
+    /** 委托 [LauncherShellTransitions.hideSettings]。 */
+    fun hideSettings(state: LauncherState): LauncherState =
+        LauncherShellTransitions.hideSettings(state)
 
-            LauncherMode.SETTINGS,
-            LauncherMode.APP_MANAGEMENT,
-            LauncherMode.DATA_HEALTH,
-            LauncherMode.NOTIFICATION_SETTINGS,
-            LauncherMode.LOADING_PREVIEW,
-            LauncherMode.DIAGNOSTICS,
-            LauncherMode.SNAKE -> LauncherMode.HOME
-        }
-        return state.copy(
-            mode = fallbackMode,
-            returnMode = fallbackMode,
-            isAppActionMenuVisible = false,
-        )
-    }
+    /** 委托 [LauncherShellTransitions.showSnake]。 */
+    fun showSnake(state: LauncherState): LauncherState =
+        LauncherShellTransitions.showSnake(state)
 
-    /** 从设置页进入贪吃蛇。 */
-    fun showSnake(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.SNAKE)
-    }
+    /** 委托 [LauncherShellTransitions.hideSnake]。 */
+    fun hideSnake(state: LauncherState): LauncherState =
+        LauncherShellTransitions.hideSnake(state)
 
-    /** 关闭贪吃蛇，返回设置页。 */
-    fun hideSnake(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.SETTINGS)
-    }
+    /** 委托 [LauncherShellTransitions.showDiagnostics]。 */
+    fun showDiagnostics(state: LauncherState): LauncherState =
+        LauncherShellTransitions.showDiagnostics(state)
 
-    /** 从设置页进入轻量 diagnostics 页面。 */
-    fun showDiagnostics(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.DIAGNOSTICS)
-    }
+    /** 委托 [LauncherShellTransitions.hideDiagnostics]。 */
+    fun hideDiagnostics(state: LauncherState): LauncherState =
+        LauncherShellTransitions.hideDiagnostics(state)
 
-    /** 关闭 diagnostics，并返回设置页。 */
-    fun hideDiagnostics(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.SETTINGS)
-    }
+    /** 委托 [LauncherShellTransitions.showDataHealth]。 */
+    fun showDataHealth(state: LauncherState): LauncherState =
+        LauncherShellTransitions.showDataHealth(state)
 
-    /** 从设置页进入数据健康页。 */
-    fun showDataHealth(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.DATA_HEALTH)
-    }
+    /** 委托 [LauncherShellTransitions.hideDataHealth]。 */
+    fun hideDataHealth(state: LauncherState): LauncherState =
+        LauncherShellTransitions.hideDataHealth(state)
 
-    /** 关闭数据健康页，并返回设置页。 */
-    fun hideDataHealth(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.SETTINGS)
-    }
+    /** 委托 [LauncherShellTransitions.showNotificationSettings]。 */
+    fun showNotificationSettings(state: LauncherState): LauncherState =
+        LauncherShellTransitions.showNotificationSettings(state)
 
-    fun showNotificationSettings(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.NOTIFICATION_SETTINGS)
-    }
+    /** 委托 [LauncherShellTransitions.hideNotificationSettings]。 */
+    fun hideNotificationSettings(state: LauncherState): LauncherState =
+        LauncherShellTransitions.hideNotificationSettings(state)
 
-    fun hideNotificationSettings(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.SETTINGS)
-    }
+    /** 委托 [LauncherShellTransitions.showLoadingPreview]。 */
+    fun showLoadingPreview(state: LauncherState): LauncherState =
+        LauncherShellTransitions.showLoadingPreview(state)
 
-    fun showLoadingPreview(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.LOADING_PREVIEW)
-    }
+    /** 委托 [LauncherShellTransitions.hideLoadingPreview]。 */
+    fun hideLoadingPreview(state: LauncherState): LauncherState =
+        LauncherShellTransitions.hideLoadingPreview(state)
 
-    fun hideLoadingPreview(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.SETTINGS)
-    }
+    /** 委托 [LauncherShellTransitions.showIdle]。 */
+    fun showIdle(state: LauncherState): LauncherState =
+        LauncherShellTransitions.showIdle(state)
 
-    fun showAppActionMenu(state: LauncherState, selectedIndex: Int): LauncherState {
-        if (state.mode != LauncherMode.APP_DRAWER || state.apps.isEmpty()) {
-            return state.copy(isAppActionMenuVisible = false)
-        }
-        val safeIndex = selectedIndex.coerceIn(0, state.apps.lastIndex)
-        val selectedApp = state.apps[safeIndex]
-        return state.copy(
-            isAppActionMenuVisible = true,
-            isDrawerSearchFocused = false,
-            isDrawerRailSliding = false,
-            appEditorSelectedIndex = safeIndex,
-            appEditorNameDraft = selectedApp.label,
-            appEditorAliasDraft = selectedApp.aliases.joinToString(" "),
-        )
-    }
+    /** 委托 [LauncherShellTransitions.hideIdle]。 */
+    fun hideIdle(state: LauncherState): LauncherState =
+        LauncherShellTransitions.hideIdle(state)
 
-    fun hideAppActionMenu(state: LauncherState): LauncherState {
-        return state.copy(isAppActionMenuVisible = false)
-    }
-
-    /**
-     * 主 Pager 开始拖动时关闭 Drawer 的输入焦点与应用操作浮层。
-     *
-     * Rail 动画状态不属于本手势回调的既有写入面，因此保持原值。
-     */
-    fun dismissDrawerOverlaysForPagerDrag(state: LauncherState): LauncherState {
-        return state.copy(
-            isDrawerSearchFocused = false,
-            isAppActionMenuVisible = false,
-        )
-    }
-
-    fun showAppManagement(state: LauncherState, selectedIndex: Int = state.appEditorSelectedIndex): LauncherState {
-        val apps = state.apps
-        val safeIndex = selectedIndex.coerceIn(0, (apps.size - 1).coerceAtLeast(0))
-        val selectedApp = apps.getOrNull(safeIndex)
-        val returnMode = if (state.mode == LauncherMode.APP_MANAGEMENT) state.returnMode else state.mode
-        return state.copy(
-            mode = LauncherMode.APP_MANAGEMENT,
-            returnMode = returnMode,
-            isAppActionMenuVisible = false,
-            appEditorSelectedIndex = safeIndex,
-            appEditorNameDraft = selectedApp?.label.orEmpty(),
-            appEditorAliasDraft = selectedApp?.aliases.orEmpty().joinToString(" "),
-        )
-    }
-
-    fun hideAppManagement(state: LauncherState): LauncherState {
-        val returnMode = when (state.returnMode) {
-            LauncherMode.HOME,
-            LauncherMode.APP_DRAWER,
-            LauncherMode.SETTINGS -> state.returnMode
-
-            LauncherMode.APP_MANAGEMENT,
-            LauncherMode.DATA_HEALTH,
-            LauncherMode.NOTIFICATION_SETTINGS,
-            LauncherMode.LOADING_PREVIEW,
-            LauncherMode.DIAGNOSTICS,
-            LauncherMode.IDLE,
-            LauncherMode.SMS_ROLE_PROMPT,
-            LauncherMode.SMS_THREADS,
-            LauncherMode.SMS_THREAD_DETAIL,
-            LauncherMode.DIALER,
-            LauncherMode.CONTACT_DETAIL,
-            LauncherMode.CONTACT_EDITOR,
-            LauncherMode.SNAKE -> LauncherMode.SETTINGS
-        }
-        return state.copy(mode = returnMode)
-    }
-
-    fun moveAppEditorSelection(state: LauncherState, direction: Int): LauncherState {
-        val apps = state.apps
-        if (apps.isEmpty()) {
-            return state.copy(
-                appEditorSelectedIndex = 0,
-                appEditorNameDraft = "",
-                appEditorAliasDraft = "",
-            )
-        }
-        val nextIndex = wrapIndex(state.appEditorSelectedIndex + direction, apps.size)
-        val selectedApp = apps[nextIndex]
-        return state.copy(
-            appEditorSelectedIndex = nextIndex,
-            appEditorNameDraft = selectedApp.label,
-            appEditorAliasDraft = selectedApp.aliases.joinToString(" "),
-        )
-    }
-
-    fun updateAppEditorNameDraft(state: LauncherState, nameDraft: String): LauncherState {
-        return state.copy(appEditorNameDraft = nameDraft)
-    }
-
-    fun updateAppEditorAliasDraft(state: LauncherState, aliasDraft: String): LauncherState {
-        return state.copy(appEditorAliasDraft = aliasDraft)
-    }
-
-    /**
-     * 进入 Idle。
-     *
-     * 只有在 Home / Drawer 中且功能开关开启时，才允许进入待机页。
-     */
-    fun showIdle(state: LauncherState): LauncherState {
-        if (!state.isIdlePageEnabled) {
-            return state
-        }
-        if (state.mode != LauncherMode.HOME && state.mode != LauncherMode.APP_DRAWER) {
-            return state
-        }
-        return state.copy(
-            mode = LauncherMode.IDLE,
-            returnMode = state.mode,
-        )
-    }
-
-    /** 从 Idle 返回到进入前的页面模式。 */
-    fun hideIdle(state: LauncherState): LauncherState {
-        return state.copy(mode = state.returnMode)
-    }
-
-    /** 打开通话记录页；选中下标归零。 */
-    fun showCallLog(state: LauncherState): LauncherState {
-        return state.copy(
-            mode = LauncherMode.DIALER,
-            returnMode = LauncherMode.HOME,
-            // 读不到通话记录时直接落到拨号盘：让用户停在一个空页上没有意义，
-            // 而拨号盘只需要 CALL_PHONE，与记录权限无关。
-            callPageIndex = if (state.hasCallLogPermission) CallPageIndex.RECENT else CallPageIndex.DIAL,
-        )
-    }
-
-    /** 关闭拨号模块，返回 Home；拨号盘输入一并清空。 */
-    fun hideCallLog(state: LauncherState): LauncherState {
-        return state.copy(
-            mode = LauncherMode.HOME,
-            dialInput = "",
-            dialMatches = emptyList(),
-        )
-    }
-
-    /** 切换拨号模块的页（最近通话 / 拨号盘）。 */
-    fun selectCallPage(state: LauncherState, index: Int): LauncherState {
-        return state.copy(callPageIndex = CallPageIndex.coerce(index))
-    }
-
-    /** 更新拨号盘输入；号码变化时匹配结果先清空，由异步检索回填。 */
-    fun updateDialInput(state: LauncherState, input: String): LauncherState {
-        if (state.dialInput == input) {
-            return state
-        }
-        return state.copy(dialInput = input, dialMatches = emptyList())
-    }
-
-    /** 回填 T9 检索结果；输入已变化时丢弃这次结果，避免旧结果盖住新号码。 */
-    fun updateDialMatches(
+    /** 委托 [LauncherShellTransitions.updateStatusBarMessage]。 */
+    fun updateStatusBarMessage(
         state: LauncherState,
-        input: String,
-        matches: List<ContactEntry>,
-    ): LauncherState {
-        if (state.dialInput != input) {
-            return state
-        }
-        return state.copy(dialMatches = matches)
-    }
+        message: String,
+    ): LauncherState =
+        LauncherShellTransitions.updateStatusBarMessage(state, message)
 
-    /** 同步通话记录数据。 */
-    fun updateCallLogGroups(
+    /** 委托 [LauncherShellTransitions.updateStatusBarAction]。 */
+    fun updateStatusBarAction(
         state: LauncherState,
-        groups: List<CallLogGroup>,
-    ): LauncherState {
-        return state.copy(
-            callLogGroups = groups,
-            isCallLogLoading = false,
-        )
-    }
+        leadingText: String,
+        actionLabel: String,
+        isDanger: Boolean,
+    ): LauncherState =
+        LauncherShellTransitions.updateStatusBarAction(state, leadingText, actionLabel, isDanger)
 
-    /**
-     * 根据通话记录读取能力与现有缓存决定首次加载提示。
-     *
-     * 无读取权限或已有缓存时不展示 loading，后台刷新仍可继续执行。
-     */
-    fun prepareCallLogLoading(
-        state: LauncherState,
-        canReadCallLog: Boolean,
-    ): LauncherState {
-        return state.copy(
-            isCallLogLoading = canReadCallLog && state.callLogGroups.isEmpty(),
-        )
-    }
+    // ── AppCatalog / Drawer ─────────────────────────────────────────────────
 
-    /**
-     * 打开联系人详情。只校验 lookupKey 非空，不校验来源 mode——当前生产调用均来自
-     * 拨号模块（ContactsController），是否需要来源限制留待产品决策
-     * （见 docs/testing/launcher-transition-baseline.md §6）。
-     */
-    fun showContactDetail(state: LauncherState, lookupKey: String): LauncherState {
-        if (lookupKey.isBlank()) {
-            return state
-        }
-        return state.copy(
-            mode = LauncherMode.CONTACT_DETAIL,
-            contactDetailLookupKey = lookupKey,
-        )
-    }
+    /** 委托 [LauncherAppCatalogTransitions.showAppActionMenu]。 */
+    fun showAppActionMenu(state: LauncherState, selectedIndex: Int): LauncherState =
+        LauncherAppCatalogTransitions.showAppActionMenu(state, selectedIndex)
 
-    /** 关闭联系人详情，回到拨号模块的联系人页。 */
-    fun hideContactDetail(state: LauncherState): LauncherState {
-        return state.copy(
-            mode = LauncherMode.DIALER,
-            callPageIndex = CallPageIndex.CONTACTS,
-            contactDetailLookupKey = "",
-        )
-    }
+    /** 委托 [LauncherAppCatalogTransitions.hideAppActionMenu]。 */
+    fun hideAppActionMenu(state: LauncherState): LauncherState =
+        LauncherAppCatalogTransitions.hideAppActionMenu(state)
 
-    /**
-     * 打开联系人编辑器。[lookupKey] 为空串时是新建；编辑既有联系人时
-     * 姓名草稿预填当前名，"新增号码"草稿始终从空开始。
-     */
-    fun showContactEditor(state: LauncherState, lookupKey: String): LauncherState {
-        val existingName = state.contacts
-            .firstOrNull { contact -> contact.lookupKey == lookupKey }
-            ?.displayName
-            .orEmpty()
-        return state.copy(
-            mode = LauncherMode.CONTACT_EDITOR,
-            contactEditorLookupKey = lookupKey,
-            contactEditorNameDraft = existingName,
-            contactEditorNumberDraft = "",
-        )
-    }
+    /** 委托 [LauncherAppCatalogTransitions.dismissDrawerOverlaysForPagerDrag]。 */
+    fun dismissDrawerOverlaysForPagerDrag(state: LauncherState): LauncherState =
+        LauncherAppCatalogTransitions.dismissDrawerOverlaysForPagerDrag(state)
 
-    /** 关闭编辑器：编辑既有联系人回其详情，新建回联系人页；草稿一并丢弃。 */
-    fun hideContactEditor(state: LauncherState): LauncherState {
-        val editedExisting = state.contactEditorLookupKey.isNotBlank()
-        return state.copy(
-            mode = if (editedExisting) LauncherMode.CONTACT_DETAIL else LauncherMode.DIALER,
-            callPageIndex = if (editedExisting) state.callPageIndex else CallPageIndex.CONTACTS,
-            contactDetailLookupKey = if (editedExisting) state.contactEditorLookupKey else "",
-            contactEditorLookupKey = "",
-            contactEditorNameDraft = "",
-            contactEditorNumberDraft = "",
-        )
-    }
+    /** 委托 [LauncherAppCatalogTransitions.showAppManagement]。 */
+    fun showAppManagement(state: LauncherState, selectedIndex: Int = state.appEditorSelectedIndex): LauncherState =
+        LauncherAppCatalogTransitions.showAppManagement(state, selectedIndex)
 
-    /** 编辑器姓名草稿。 */
-    fun updateContactEditorName(state: LauncherState, name: String): LauncherState {
-        return state.copy(contactEditorNameDraft = name)
-    }
+    /** 委托 [LauncherAppCatalogTransitions.hideAppManagement]。 */
+    fun hideAppManagement(state: LauncherState): LauncherState =
+        LauncherAppCatalogTransitions.hideAppManagement(state)
 
-    /** 编辑器"新增号码"草稿。 */
-    fun updateContactEditorNumber(state: LauncherState, number: String): LauncherState {
-        return state.copy(contactEditorNumberDraft = number)
-    }
+    /** 委托 [LauncherAppCatalogTransitions.moveAppEditorSelection]。 */
+    fun moveAppEditorSelection(state: LauncherState, direction: Int): LauncherState =
+        LauncherAppCatalogTransitions.moveAppEditorSelection(state, direction)
 
-    /** 联系人目录开始加载；已有数据时不清空，静默换新避免列表闪空。 */
-    fun beginContactsLoading(state: LauncherState): LauncherState {
-        return state.copy(isContactsLoading = state.contacts.isEmpty())
-    }
+    /** 委托 [LauncherAppCatalogTransitions.updateAppEditorNameDraft]。 */
+    fun updateAppEditorNameDraft(state: LauncherState, nameDraft: String): LauncherState =
+        LauncherAppCatalogTransitions.updateAppEditorNameDraft(state, nameDraft)
 
-    /** 同步联系人目录与读取权限。 */
-    fun updateContacts(
-        state: LauncherState,
-        hasPermission: Boolean,
-        contacts: List<ContactDetail>,
-    ): LauncherState {
-        return state.copy(
-            contacts = contacts,
-            isContactsLoading = false,
-            hasContactsPermission = hasPermission,
-        )
-    }
+    /** 委托 [LauncherAppCatalogTransitions.updateAppEditorAliasDraft]。 */
+    fun updateAppEditorAliasDraft(state: LauncherState, aliasDraft: String): LauncherState =
+        LauncherAppCatalogTransitions.updateAppEditorAliasDraft(state, aliasDraft)
 
-    /** 同步是否具备发起通话的权限。 */
-    fun updateCallCapability(
-        state: LauncherState,
-        hasCallPhonePermission: Boolean,
-        hasCallLogPermission: Boolean,
-    ): LauncherState {
-        return state.copy(
-            hasCallPhonePermission = hasCallPhonePermission,
-            hasCallLogPermission = hasCallLogPermission,
-        )
-    }
+    /** 委托 [LauncherAppCatalogTransitions.showAppDrawer]。 */
+    fun showAppDrawer(state: LauncherState, visibleRows: Int): LauncherState =
+        LauncherAppCatalogTransitions.showAppDrawer(state, visibleRows)
 
-    /** 打开短信角色引导页。 */
-    fun showSmsRolePrompt(state: LauncherState): LauncherState {
-        return state.copy(
-            mode = LauncherMode.SMS_ROLE_PROMPT,
-            returnMode = LauncherMode.HOME,
-        )
-    }
-
-    /** 打开短信首页。 */
-    fun showSmsThreads(
-        state: LauncherState,
-        visibleRows: Int,
-        pageIndex: Int = SmsPageIndex.UNREAD,
-    ): LauncherState {
-        val requestedPageIndex = SmsPageIndex.coerce(pageIndex)
-        val nextPageIndex =
-            if (requestedPageIndex == SmsPageIndex.UNREAD &&
-                state.unreadSmsEntries.isEmpty() &&
-                !state.isSmsThreadsLoading
-            ) {
-                SmsPageIndex.ALL
-            } else {
-                requestedPageIndex
-            }
-        return syncSmsThreadWindow(
-            state = state.copy(
-                mode = LauncherMode.SMS_THREADS,
-                returnMode = LauncherMode.HOME,
-                smsPageIndex = nextPageIndex,
-                smsThreadSelectedIndex = state.smsThreadSelectedIndex.coerceAtLeast(0),
-            ),
-            visibleRows = visibleRows,
-        )
-    }
-
-    /** 关闭短信模块并回到 Home。 */
-    fun hideSmsThreads(state: LauncherState): LauncherState {
-        return state.copy(
-            mode = LauncherMode.HOME,
-            smsDraftText = "",
-            smsThreadSearchQuery = "",
-            smsSendStatus = SmsSendStatus.NONE,
-            isSmsThreadMenuVisible = false,
-            smsThreadMenuConversationKey = "",
-        )
-    }
-
-    /** 打开指定短信线程详情页。 */
-    fun showSmsThreadDetail(
-        state: LauncherState,
-        conversationKey: String,
-        conversationTitle: String,
-        isServiceConversation: Boolean,
-        threadId: Long?,
-        address: String,
-    ): LauncherState {
-        return state.copy(
-            mode = LauncherMode.SMS_THREAD_DETAIL,
-            returnMode = LauncherMode.SMS_THREADS,
-            smsCurrentConversationKey = conversationKey,
-            smsCurrentConversationTitle = conversationTitle,
-            smsCurrentIsServiceConversation = isServiceConversation,
-            smsCurrentThreadId = threadId,
-            smsCurrentAddress = address,
-            smsMessages = emptyList(),
-            smsSendStatus = SmsSendStatus.NONE,
-            isSmsMessageMenuVisible = false,
-            smsMessageMenuMessageId = -1L,
-            // 会话列表的菜单标志同样要清：否则从详情页返回列表时菜单会凭空复活。
-            isSmsThreadMenuVisible = false,
-            smsThreadMenuConversationKey = "",
-        )
-    }
-
-    /** 打开详情页消息长按浮层菜单；消息不在当前会话时保持关闭。 */
-    fun showSmsMessageMenu(state: LauncherState, messageId: Long): LauncherState {
-        if (state.mode != LauncherMode.SMS_THREAD_DETAIL ||
-            state.smsMessages.none { it.messageId == messageId }
-        ) {
-            return hideSmsMessageMenu(state)
-        }
-        return state.copy(
-            isSmsMessageMenuVisible = true,
-            smsMessageMenuMessageId = messageId,
-        )
-    }
-
-    /** 关闭详情页消息长按浮层菜单。 */
-    fun hideSmsMessageMenu(state: LauncherState): LauncherState {
-        return state.copy(
-            isSmsMessageMenuVisible = false,
-            smsMessageMenuMessageId = -1L,
-        )
-    }
-
-    /** 打开会话列表长按浮层菜单；会话不存在时保持关闭。 */
-    fun showSmsThreadMenu(state: LauncherState, conversationKey: String): LauncherState {
-        if (state.mode != LauncherMode.SMS_THREADS ||
-            state.smsThreads.none { it.conversationKey == conversationKey }
-        ) {
-            return hideSmsThreadMenu(state)
-        }
-        return state.copy(
-            isSmsThreadMenuVisible = true,
-            smsThreadMenuConversationKey = conversationKey,
-        )
-    }
-
-    /** 关闭会话列表长按浮层菜单。 */
-    fun hideSmsThreadMenu(state: LauncherState): LauncherState {
-        return state.copy(
-            isSmsThreadMenuVisible = false,
-            smsThreadMenuConversationKey = "",
-        )
-    }
-
-    /** 同步被静音的会话键集合。 */
-    fun updateSmsMutedConversations(state: LauncherState, mutedKeys: Set<String>): LauncherState {
-        return state.copy(smsMutedConversationKeys = mutedKeys)
-    }
-
-    /** 从详情页返回短信会话列表。 */
-    fun hideSmsThreadDetail(state: LauncherState): LauncherState {
-        return state.copy(
-            mode = LauncherMode.SMS_THREADS,
-            returnMode = LauncherMode.HOME,
-            smsDraftText = "",
-            smsSendStatus = SmsSendStatus.NONE,
-            isSmsMessageMenuVisible = false,
-            smsMessageMenuMessageId = -1L,
-            isSmsThreadMenuVisible = false,
-            smsThreadMenuConversationKey = "",
-        )
-    }
-
-    /**
-     * 短信能力不足或数据已经落地时结束会话列表加载提示。
-     */
-    fun finishSmsThreadsLoading(state: LauncherState): LauncherState {
-        return state.copy(isSmsThreadsLoading = false)
-    }
-
-    /**
-     * 开始一次用户明确触发的短信全量刷新。
-     *
-     * 强制刷新会丢弃三份 provider 派生快照并展示 loading；草稿、菜单和会话身份保持不变。
-     */
-    fun beginForcedSmsRefresh(state: LauncherState): LauncherState {
-        return state.copy(
-            unreadSmsEntries = emptyList(),
-            smsThreads = emptyList(),
-            smsAllMessages = emptyList(),
-            isSmsThreadsLoading = true,
-        )
-    }
-
-    /**
-     * 以默认状态打开抽屉，并把焦点和窗口重置到第一项。
-     */
-    fun showAppDrawer(state: LauncherState, visibleRows: Int): LauncherState {
-        val stateWithDrawerApps = if (state.apps.isNotEmpty() && state.drawerQuery.isBlank()) {
-            state.copy(drawerVisibleApps = orderDefaultApps(state.apps, state.recentApps))
-        } else {
-            state
-        }
-        val drawerApps = currentDrawerApps(stateWithDrawerApps)
-        if (drawerApps.isEmpty()) {
-            return state.copy(
-                mode = LauncherMode.APP_DRAWER,
-                selectedIndex = 0,
-                listStartIndex = 0,
-                drawerPageIndex = 0,
-                drawerFocus = DrawerFocus.LIST,
-            )
-        }
-
-        return syncDrawerWindow(
-            state = stateWithDrawerApps.copy(
-                mode = LauncherMode.APP_DRAWER,
-                selectedIndex = 0,
-                listStartIndex = 0,
-            ),
-            visibleRows = visibleRows,
-        )
-    }
-
-    /**
-     * 完成 Drawer 入场后的搜索焦点同步，并结束可能残留的 Rail 滑动状态。
-     *
-     * 非 Drawer 页面不会写入隐藏的输入焦点。
-     */
+    /** 委托 [LauncherAppCatalogTransitions.prepareDrawerEntryFocus]。 */
     fun prepareDrawerEntryFocus(
         state: LauncherState,
         focusSearch: Boolean,
-    ): LauncherState {
-        if (state.mode != LauncherMode.APP_DRAWER) {
-            return state
-        }
-        return state.copy(
-            isDrawerSearchFocused = focusSearch,
-            isDrawerRailSliding = false,
-        )
-    }
+    ): LauncherState =
+        LauncherAppCatalogTransitions.prepareDrawerEntryFocus(state, focusSearch)
 
-    /**
-     * 让 Drawer 搜索输入接管焦点，并结束 Rail 滑动。
-     *
-     * 该事件只在 Drawer 可见时生效，不能用来预写其他页面的隐藏状态。
-     */
-    fun focusDrawerSearchInput(state: LauncherState): LauncherState {
-        if (state.mode != LauncherMode.APP_DRAWER) {
-            return state
-        }
-        return state.copy(
-            isDrawerSearchFocused = true,
-            isDrawerRailSliding = false,
-        )
-    }
+    /** 委托 [LauncherAppCatalogTransitions.focusDrawerSearchInput]。 */
+    fun focusDrawerSearchInput(state: LauncherState): LauncherState =
+        LauncherAppCatalogTransitions.focusDrawerSearchInput(state)
 
-    /**
-     * 应用目录没有可用缓存时开始首轮加载。
-     */
-    fun beginAppCatalogLoading(state: LauncherState): LauncherState {
-        return state.copy(isLoading = true)
-    }
+    /** 委托 [LauncherAppCatalogTransitions.beginAppCatalogLoading]。 */
+    fun beginAppCatalogLoading(state: LauncherState): LauncherState =
+        LauncherAppCatalogTransitions.beginAppCatalogLoading(state)
 
-    /**
-     * 在应用仓库重新加载后重建抽屉列表，并尽量保留合理的当前选择。
-     */
-    fun withApps(previous: LauncherState, apps: List<AppEntry>, visibleRows: Int): LauncherState {
-        val orderedApps = orderDefaultApps(apps, previous.recentApps)
-        val drawerApps = filterDrawerApps(
-            orderedApps = orderedApps,
-            query = previous.drawerQuery,
-            recentApps = previous.recentApps,
-        )
-        if (orderedApps.isEmpty()) {
-            return previous.copy(
-                apps = emptyList(),
-                drawerVisibleApps = emptyList(),
-                selectedIndex = 0,
-                listStartIndex = 0,
-                drawerPageIndex = 0,
-                drawerFocus = DrawerFocus.LIST,
-                isLoading = false,
-            )
-        }
+    /** 委托 [LauncherAppCatalogTransitions.withApps]。 */
+    fun withApps(previous: LauncherState, apps: List<AppEntry>, visibleRows: Int): LauncherState =
+        LauncherAppCatalogTransitions.withApps(previous, apps, visibleRows)
 
-        val preservedApp = currentDrawerApps(previous).getOrNull(previous.selectedIndex)
-        val selectedIndex = preservedApp?.let { selected ->
-            drawerApps.indexOfFirst { candidate ->
-                candidate.packageName == selected.packageName &&
-                    candidate.activityName == selected.activityName
-            }
-        }?.takeIf { it >= 0 }
-            ?: previous.recentApps.firstNotNullOfOrNull { recentPackage ->
-                drawerApps.indexOfFirst { it.packageName == recentPackage }.takeIf { it >= 0 }
-            }
-            ?: 0
+    /** 委托 [LauncherAppCatalogTransitions.moveSelection]。 */
+    fun moveSelection(state: LauncherState, delta: Int, visibleRows: Int): LauncherState =
+        LauncherAppCatalogTransitions.moveSelection(state, delta, visibleRows)
 
-        return syncDrawerWindow(
-            state = previous.copy(
-                apps = apps,
-                drawerVisibleApps = drawerApps,
-                selectedIndex = selectedIndex,
-                isLoading = false,
-            ),
-            visibleRows = visibleRows,
-        )
-    }
+    /** 委托 [LauncherAppCatalogTransitions.scrollDrawerWindow]。 */
+    fun scrollDrawerWindow(state: LauncherState, delta: Int, visibleRows: Int): LauncherState =
+        LauncherAppCatalogTransitions.scrollDrawerWindow(state, delta, visibleRows)
 
-    /** 按相对行数移动抽屉焦点，并同步重排可视窗口。 */
-    fun moveSelection(state: LauncherState, delta: Int, visibleRows: Int): LauncherState {
-        val drawerApps = currentDrawerApps(state)
-        if (drawerApps.isEmpty()) {
-            return state.copy(
-                selectedIndex = 0,
-                listStartIndex = 0,
-                drawerPageIndex = 0,
-                drawerFocus = DrawerFocus.LIST,
-            )
-        }
+    /** 委托 [LauncherAppCatalogTransitions.pageSelection]。 */
+    fun pageSelection(state: LauncherState, direction: Int, visibleRows: Int): LauncherState =
+        LauncherAppCatalogTransitions.pageSelection(state, direction, visibleRows)
 
-        val newSelectedIndex = (state.selectedIndex + delta).coerceIn(0, drawerApps.lastIndex)
-        return syncDrawerWindow(
-            state = state.copy(selectedIndex = newSelectedIndex),
-            visibleRows = visibleRows,
-        )
-    }
+    /** 委托 [LauncherAppCatalogTransitions.selectIndex]。 */
+    fun selectIndex(state: LauncherState, index: Int, visibleRows: Int): LauncherState =
+        LauncherAppCatalogTransitions.selectIndex(state, index, visibleRows)
 
-    /**
-     * 按相对行数滚动抽屉可视窗口，并让选中项保持在新的可视范围内。
-     */
-    fun scrollDrawerWindow(state: LauncherState, delta: Int, visibleRows: Int): LauncherState {
-        val drawerApps = currentDrawerApps(state)
-        if (drawerApps.isEmpty()) {
-            return state.copy(
-                selectedIndex = 0,
-                listStartIndex = 0,
-                drawerPageIndex = 0,
-                drawerFocus = DrawerFocus.LIST,
-            )
-        }
+    /** 委托 [LauncherAppCatalogTransitions.selectDrawerPage]。 */
+    fun selectDrawerPage(state: LauncherState, pageIndex: Int, visibleRows: Int): LauncherState =
+        LauncherAppCatalogTransitions.selectDrawerPage(state, pageIndex, visibleRows)
 
-        val safeRows = visibleRows.coerceAtLeast(1)
-        val maxStartIndex = (drawerApps.size - safeRows).coerceAtLeast(0)
-        val previousStartIndex = state.listStartIndex.coerceIn(0, maxStartIndex)
-        val newStartIndex = (previousStartIndex + delta).coerceIn(0, maxStartIndex)
-        val visibleEndIndex = (newStartIndex + safeRows - 1).coerceAtMost(drawerApps.lastIndex)
-        val relativeSelectionRow = (state.selectedIndex - previousStartIndex).coerceIn(0, safeRows - 1)
-        val newSelectedIndex = (newStartIndex + relativeSelectionRow).coerceIn(newStartIndex, visibleEndIndex)
+    /** 委托 [LauncherAppCatalogTransitions.selectByPackageName]。 */
+    fun selectByPackageName(state: LauncherState, packageName: String, visibleRows: Int): LauncherState =
+        LauncherAppCatalogTransitions.selectByPackageName(state, packageName, visibleRows)
 
-        return state.copy(
-            selectedIndex = newSelectedIndex,
-            listStartIndex = newStartIndex,
-            drawerPageIndex = AppDrawerIndexModel.create(
-                apps = drawerApps,
-                visibleRows = visibleRows,
-                selectedIndex = newSelectedIndex,
-            ).currentPageIndex,
-            drawerFocus = DrawerFocus.LIST,
-        )
-    }
+    /** 委托 [LauncherAppCatalogTransitions.selectByLetterIndex]。 */
+    fun selectByLetterIndex(state: LauncherState, letterIndex: Int, visibleRows: Int): LauncherState =
+        LauncherAppCatalogTransitions.selectByLetterIndex(state, letterIndex, visibleRows)
 
-    /**
-     * 以当前顶部项为基准，按一个 viewport 的大小向前或向后翻动抽屉。
-     */
-    fun pageSelection(state: LauncherState, direction: Int, visibleRows: Int): LauncherState {
-        val drawerApps = currentDrawerApps(state)
-        if (drawerApps.isEmpty()) {
-            return state.copy(
-                selectedIndex = 0,
-                listStartIndex = 0,
-                drawerPageIndex = 0,
-                drawerFocus = DrawerFocus.LIST,
-            )
-        }
+    /** 委托 [LauncherAppCatalogTransitions.updateDrawerQuery]。 */
+    fun updateDrawerQuery(state: LauncherState, query: String, visibleRows: Int): LauncherState =
+        LauncherAppCatalogTransitions.updateDrawerQuery(state, query, visibleRows)
 
-        val pageSize = visibleRows.coerceAtLeast(1)
-        val currentTopIndex = state.listStartIndex.coerceIn(0, drawerApps.lastIndex)
-        val targetIndex = (currentTopIndex + (direction * pageSize)).coerceIn(0, drawerApps.lastIndex)
-        return syncDrawerWindow(
-            state = state.copy(
-                selectedIndex = targetIndex,
-                listStartIndex = targetIndex,
-            ),
-            visibleRows = visibleRows,
-        )
-    }
+    /** 委托 [LauncherAppCatalogTransitions.appendDrawerQuery]。 */
+    fun appendDrawerQuery(state: LauncherState, text: String, visibleRows: Int): LauncherState =
+        LauncherAppCatalogTransitions.appendDrawerQuery(state, text, visibleRows)
 
-    /** 选中抽屉中的绝对索引，并把顶对齐窗口同步到该项。 */
-    fun selectIndex(state: LauncherState, index: Int, visibleRows: Int): LauncherState {
-        val drawerApps = currentDrawerApps(state)
-        if (drawerApps.isEmpty()) {
-            return state.copy(
-                selectedIndex = 0,
-                listStartIndex = 0,
-                drawerPageIndex = 0,
-                drawerFocus = DrawerFocus.LIST,
-            )
-        }
+    /** 委托 [LauncherAppCatalogTransitions.backspaceDrawerQuery]。 */
+    fun backspaceDrawerQuery(state: LauncherState, visibleRows: Int): LauncherState =
+        LauncherAppCatalogTransitions.backspaceDrawerQuery(state, visibleRows)
 
-        val newSelectedIndex = index.coerceIn(0, drawerApps.lastIndex)
-        return syncDrawerWindow(
-            state = state.copy(selectedIndex = newSelectedIndex),
-            visibleRows = visibleRows,
-        )
-    }
+    /** 委托 [LauncherAppCatalogTransitions.clearDrawerQuery]。 */
+    fun clearDrawerQuery(state: LauncherState, visibleRows: Int): LauncherState =
+        LauncherAppCatalogTransitions.clearDrawerQuery(state, visibleRows)
 
-    fun selectDrawerPage(state: LauncherState, pageIndex: Int, visibleRows: Int): LauncherState {
-        val drawerApps = currentDrawerApps(state)
-        if (drawerApps.isEmpty()) {
-            return state.copy(
-                selectedIndex = 0,
-                listStartIndex = 0,
-                drawerPageIndex = 0,
-                drawerFocus = DrawerFocus.LIST,
-            )
-        }
+    /** 委托 [LauncherAppCatalogTransitions.exitDrawerSearch]。 */
+    fun exitDrawerSearch(state: LauncherState, visibleRows: Int): LauncherState =
+        LauncherAppCatalogTransitions.exitDrawerSearch(state, visibleRows)
 
-        val indexModel = AppDrawerIndexModel.create(
-            apps = drawerApps,
-            visibleRows = visibleRows,
-            selectedIndex = state.selectedIndex,
-        )
-        if (indexModel.pageCount == 0) {
-            return state
-        }
+    /** 委托 [LauncherAppCatalogTransitions.reflowWindow]。 */
+    fun reflowWindow(state: LauncherState, visibleRows: Int): LauncherState =
+        LauncherAppCatalogTransitions.reflowWindow(state, visibleRows)
 
-        val safePageIndex = pageIndex.coerceIn(0, indexModel.pageCount - 1)
-        val pageStartIndex = indexModel.pageStartIndices[safePageIndex]
-        return syncDrawerWindow(
-            state = state.copy(
-                selectedIndex = pageStartIndex,
-                listStartIndex = pageStartIndex,
-                drawerPageIndex = safePageIndex,
-                drawerFocus = DrawerFocus.LIST,
-            ),
-            visibleRows = visibleRows,
-        )
-    }
+    /** 委托 [LauncherAppCatalogTransitions.calculateListStartIndex]。 */
+    fun calculateListStartIndex(selectedIndex: Int, visibleRows: Int, totalCount: Int): Int =
+        LauncherAppCatalogTransitions.calculateListStartIndex(selectedIndex, visibleRows, totalCount)
 
-    fun selectByPackageName(state: LauncherState, packageName: String, visibleRows: Int): LauncherState {
-        val selectedIndex = currentDrawerApps(state).indexOfFirst { it.packageName == packageName }
-        return if (selectedIndex >= 0) {
-            selectIndex(state, selectedIndex, visibleRows)
-        } else {
-            state
-        }
-    }
+    /** 委托 [LauncherAppCatalogTransitions.updateStats]。 */
+    fun updateStats(state: LauncherState, stats: LauncherStatsSnapshot): LauncherState =
+        LauncherAppCatalogTransitions.updateStats(state, stats)
 
-    fun selectByLetterIndex(state: LauncherState, letterIndex: Int, visibleRows: Int): LauncherState {
-        val drawerApps = currentDrawerApps(state)
-        if (drawerApps.isEmpty()) {
-            return state.copy(
-                selectedIndex = 0,
-                listStartIndex = 0,
-                drawerPageIndex = 0,
-                drawerFocus = DrawerFocus.LIST,
-            )
-        }
-        val alphaIndexModel = DrawerAlphaIndexModel.create(
-            apps = drawerApps,
-            selectedIndex = state.selectedIndex,
-        )
-        val targetIndex = alphaIndexModel.resolveNearestLetterAppIndex(letterIndex)
-            ?.coerceIn(0, drawerApps.lastIndex)
-            ?: return state
-        return selectIndex(
-            state = state,
-            index = targetIndex,
-            visibleRows = visibleRows,
-        )
-    }
+    // ── Settings ────────────────────────────────────────────────────────────
 
-    /**
-     * 根据新的 query 重新计算抽屉过滤结果，并把焦点重置到第一条结果。
-     */
-    fun updateDrawerQuery(state: LauncherState, query: String, visibleRows: Int): LauncherState {
-        val safeQuery = DrawerAsciiInputSanitizer.filter(query).take(maxDrawerQueryLength)
-        val orderedApps = orderBlankQueryApps(state.apps, state.recentApps)
-        val drawerApps = filterDrawerApps(
-            orderedApps = orderedApps,
-            query = safeQuery,
-            recentApps = state.recentApps,
-        )
+    /** 委托 [LauncherSettingsTransitions.selectSettingsIndex]。 */
+    fun selectSettingsIndex(state: LauncherState, index: Int, visibleRows: Int): LauncherState =
+        LauncherSettingsTransitions.selectSettingsIndex(state, index, visibleRows)
 
-        return syncDrawerWindow(
-            state = state.copy(
-                drawerQuery = safeQuery,
-                drawerVisibleApps = drawerApps,
-                selectedIndex = 0,
-                listStartIndex = 0,
-            ),
-            visibleRows = visibleRows,
-        )
-    }
+    /** 委托 [LauncherSettingsTransitions.moveSettingsSelection]。 */
+    fun moveSettingsSelection(state: LauncherState, delta: Int, visibleRows: Int): LauncherState =
+        LauncherSettingsTransitions.moveSettingsSelection(state, delta, visibleRows)
 
-    /** 把已经过过滤的搜索文本追加到当前抽屉 query 后。 */
-    fun appendDrawerQuery(state: LauncherState, text: String, visibleRows: Int): LauncherState {
-        if (text.isEmpty()) {
-            return state
-        }
-        return updateDrawerQuery(
-            state = state,
-            query = state.drawerQuery + text,
-            visibleRows = visibleRows,
-        )
-    }
+    /** 委托 [LauncherSettingsTransitions.scrollSettingsWindow]。 */
+    fun scrollSettingsWindow(state: LauncherState, delta: Int, visibleRows: Int): LauncherState =
+        LauncherSettingsTransitions.scrollSettingsWindow(state, delta, visibleRows)
 
-    /** 删除最后一个搜索字符，并保持过滤结果和窗口状态同步。 */
-    fun backspaceDrawerQuery(state: LauncherState, visibleRows: Int): LauncherState {
-        if (state.drawerQuery.isEmpty()) {
-            return state
-        }
-        return updateDrawerQuery(
-            state = state,
-            query = state.drawerQuery.dropLast(1),
-            visibleRows = visibleRows,
-        )
-    }
+    /** 委托 [LauncherSettingsTransitions.reflowSettingsWindow]。 */
+    fun reflowSettingsWindow(state: LauncherState, visibleRows: Int): LauncherState =
+        LauncherSettingsTransitions.reflowSettingsWindow(state, visibleRows)
 
-    /** 清空当前抽屉 query，并恢复默认排序后的抽屉列表。 */
-    fun clearDrawerQuery(state: LauncherState, visibleRows: Int): LauncherState {
-        return updateDrawerQuery(
-            state = state,
-            query = "",
-            visibleRows = visibleRows,
-        )
-    }
-
-    /**
-     * 退出抽屉搜索，并尽量把搜索态当前焦点保留为默认列表中的顶部项。
-     */
-    fun exitDrawerSearch(state: LauncherState, visibleRows: Int): LauncherState {
-        val preservedApp = currentDrawerApps(state).getOrNull(state.selectedIndex)
-        val defaultDrawerApps = orderDefaultApps(state.apps, state.recentApps)
-        val clearedState = syncDrawerWindow(
-            state = state.copy(
-                drawerQuery = "",
-                drawerVisibleApps = defaultDrawerApps,
-                selectedIndex = 0,
-                listStartIndex = 0,
-            ),
-            visibleRows = visibleRows,
-        ).copy(
-            isDrawerSearchFocused = false,
-            isDrawerRailSliding = false,
-        )
-        val restoredIndex = preservedApp?.let { selected ->
-            currentDrawerApps(clearedState).indexOfFirst { candidate ->
-                candidate.packageName == selected.packageName &&
-                    candidate.activityName == selected.activityName
-            }.takeIf { it >= 0 }
-        } ?: 0
-        return syncDrawerWindow(
-            state = clearedState.copy(
-                selectedIndex = restoredIndex,
-                listStartIndex = restoredIndex,
-            ),
-            visibleRows = visibleRows,
-        ).copy(
-            isDrawerSearchFocused = false,
-            isDrawerRailSliding = false,
-        )
-    }
-
-    /** 选中设置页中的某一行，并按当前可视行数重排设置窗口。 */
-    fun selectSettingsIndex(state: LauncherState, index: Int, visibleRows: Int): LauncherState {
-        val maxIndex = (SettingsMenuModel.rows(state).size - 1).coerceAtLeast(0)
-        return syncSettingsWindow(
-            state = state.copy(settingsSelectedIndex = index.coerceIn(0, maxIndex)),
-            visibleRows = visibleRows,
-        )
-    }
-
-    /** 按相对行数移动设置页内部焦点。 */
-    fun moveSettingsSelection(state: LauncherState, delta: Int, visibleRows: Int): LauncherState {
-        return selectSettingsIndex(
-            state = state,
-            index = state.settingsSelectedIndex + delta,
-            visibleRows = visibleRows,
-        )
-    }
-
-    /**
-     * 滚动设置页可视窗口，并尽量让当前焦点保持在相同的相对位置。
-     */
-    fun scrollSettingsWindow(state: LauncherState, delta: Int, visibleRows: Int): LauncherState {
-        val rows = SettingsMenuModel.rows(state)
-        if (rows.isEmpty() || delta == 0) {
-            return reflowSettingsWindow(state, visibleRows)
-        }
-
-        val safeVisibleRows = visibleRows.coerceAtLeast(1)
-        val maxStartIndex = (rows.size - safeVisibleRows).coerceAtLeast(0)
-        val safeListStartIndex = state.settingsListStartIndex.coerceIn(0, maxStartIndex)
-        val nextListStartIndex = (safeListStartIndex + delta).coerceIn(0, maxStartIndex)
-        val relativeFocusIndex = (state.settingsSelectedIndex - safeListStartIndex)
-            .coerceIn(0, safeVisibleRows - 1)
-        val maxVisibleIndex = (nextListStartIndex + safeVisibleRows - 1).coerceAtMost(rows.lastIndex)
-        val nextSelectedIndex = (nextListStartIndex + relativeFocusIndex)
-            .coerceIn(nextListStartIndex, maxVisibleIndex)
-
-        return state.copy(
-            settingsSelectedIndex = nextSelectedIndex,
-            settingsListStartIndex = nextListStartIndex,
-        )
-    }
-
-    /** 在 viewport 或内容变化后，重新校正设置页的焦点和窗口。 */
-    fun reflowSettingsWindow(state: LauncherState, visibleRows: Int): LauncherState {
-        val maxIndex = (SettingsMenuModel.rows(state).size - 1).coerceAtLeast(0)
-        return syncSettingsWindow(
-            state = state.copy(settingsSelectedIndex = state.settingsSelectedIndex.coerceIn(0, maxIndex)),
-            visibleRows = visibleRows,
-        )
-    }
-
-    /** 用最新未读短信列表更新短信页状态，并尽量保持当前选中有效。 */
-    fun updateUnreadSmsEntries(state: LauncherState, entries: List<SmsMessageEntry>, visibleRows: Int): LauncherState {
-        val safeSelectedIndex = state.smsSelectedIndex.coerceIn(0, (entries.size - 1).coerceAtLeast(0))
-        val nextPageIndex = if (entries.isEmpty() && !state.isSmsThreadsLoading) SmsPageIndex.ALL else state.smsPageIndex
-        return syncSmsWindow(
-            state = state.copy(
-                unreadSmsEntries = entries,
-                smsSelectedIndex = safeSelectedIndex,
-                smsPageIndex = nextPageIndex,
-            ),
-            visibleRows = visibleRows,
-        )
-    }
-
-    /** 选中短信页中的某一行。 */
-    fun selectSmsIndex(state: LauncherState, index: Int, visibleRows: Int): LauncherState {
-        val maxIndex = (state.unreadSmsEntries.size - 1).coerceAtLeast(0)
-        return syncSmsWindow(
-            state = state.copy(smsSelectedIndex = index.coerceIn(0, maxIndex)),
-            visibleRows = visibleRows,
-        )
-    }
-
-    /** 切换短信首页内部 Tab/Page。 */
-    fun selectSmsPage(state: LauncherState, index: Int): LauncherState {
-        val requestedPageIndex = SmsPageIndex.coerce(index)
-        val nextPageIndex =
-            if (requestedPageIndex == SmsPageIndex.UNREAD &&
-                state.unreadSmsEntries.isEmpty() &&
-                !state.isSmsThreadsLoading
-            ) {
-                SmsPageIndex.ALL
-            } else {
-                requestedPageIndex
-            }
-        // 切页后原会话菜单不再有对应上下文（UNREAD 页也没有长按入口），一并关闭。
-        return state.copy(
-            smsPageIndex = nextPageIndex,
-            isSmsThreadMenuVisible = false,
-            smsThreadMenuConversationKey = "",
-        )
-    }
-
-    /** 按相对行数移动短信页内部焦点。 */
-    fun moveSmsSelection(state: LauncherState, delta: Int, visibleRows: Int): LauncherState {
-        return selectSmsIndex(
-            state = state,
-            index = state.smsSelectedIndex + delta,
-            visibleRows = visibleRows,
-        )
-    }
-
-    /** 在 viewport 或内容变化后，重新校正短信页的焦点和窗口。 */
-    fun reflowSmsWindow(state: LauncherState, visibleRows: Int): LauncherState {
-        val maxIndex = (state.unreadSmsEntries.size - 1).coerceAtLeast(0)
-        return syncSmsWindow(
-            state = state.copy(smsSelectedIndex = state.smsSelectedIndex.coerceIn(0, maxIndex)),
-            visibleRows = visibleRows,
-        )
-    }
-
-    /** 更新头部和 Home 固定区使用的时间相关文本。 */
-    fun updateTime(
-        state: LauncherState,
-        currentTimeText: String,
-        currentDateText: String = state.currentDateText,
-        currentWeekdayText: String = state.currentWeekdayText,
-    ): LauncherState {
-        return state.copy(
-            currentTimeText = currentTimeText,
-            currentDateText = currentDateText,
-            currentWeekdayText = currentWeekdayText,
-        )
-    }
-
-    /** 把当前外观选择写回状态。 */
+    /** 委托 [LauncherSettingsTransitions.updateAppearance]。 */
     fun updateAppearance(
         state: LauncherState,
         selectedPixelShape: PixelShape = state.selectedPixelShape,
@@ -1082,26 +244,26 @@ object LauncherStateTransitions {
         selectedThemeFamily: LauncherThemeFamily = state.selectedThemeFamily,
         selectedThemeMode: LauncherThemeMode = state.selectedThemeMode,
         fontSelection: LauncherFontSelection = state.fontSelection,
-    ): LauncherState {
-        return state.copy(
+    ): LauncherState =
+        LauncherSettingsTransitions.updateAppearance(
+            state = state,
             selectedPixelShape = selectedPixelShape,
             selectedDotSizePx = selectedDotSizePx,
             isPixelGapEnabled = isPixelGapEnabled,
             selectedThemeFamily = selectedThemeFamily,
             selectedThemeMode = selectedThemeMode,
-            fontSelection = PixelFontCatalog.normalize(fontSelection),
+            fontSelection = fontSelection,
         )
-    }
 
-    /** 只更新字体后台准备状态，不提前改变当前激活字体。 */
+    /** 委托 [LauncherSettingsTransitions.updateFontLoading]。 */
     fun updateFontLoading(state: LauncherState, isLoading: Boolean): LauncherState =
-        state.copy(isFontLoading = isLoading)
+        LauncherSettingsTransitions.updateFontLoading(state, isLoading)
 
-    /** 更新字体资源缓存诊断文本，不改变字体选择。 */
+    /** 委托 [LauncherSettingsTransitions.updateFontCacheSummary]。 */
     fun updateFontCacheSummary(state: LauncherState, summary: String): LauncherState =
-        state.copy(fontCacheSummary = summary.trim().ifBlank { "0/0K" })
+        LauncherSettingsTransitions.updateFontCacheSummary(state, summary)
 
-    /** 把抽屉对齐、Idle 开关等非视觉行为偏好写回状态。 */
+    /** 委托 [LauncherSettingsTransitions.updateUiBehavior]。 */
     fun updateUiBehavior(
         state: LauncherState,
         drawerListAlignment: DrawerListAlignment = state.drawerListAlignment,
@@ -1115,13 +277,14 @@ object LauncherStateTransitions {
         pixelMatterEffectMode: PixelMatterEffectMode = state.pixelMatterEffectMode,
         isPixelMatterHandControlEnabled: Boolean = state.isPixelMatterHandControlEnabled,
         isPixelMatterHandDebugEnabled: Boolean = state.isPixelMatterHandDebugEnabled,
-    ): LauncherState {
-        return state.copy(
+    ): LauncherState =
+        LauncherSettingsTransitions.updateUiBehavior(
+            state = state,
             drawerListAlignment = drawerListAlignment,
             isIdlePageEnabled = isIdlePageEnabled,
             chargeAutoIdleEnabled = chargeAutoIdleEnabled,
             inactivityAutoIdleEnabled = inactivityAutoIdleEnabled,
-            idleTimeoutSeconds = IdleSettings.normalizeTimeoutSeconds(idleTimeoutSeconds),
+            idleTimeoutSeconds = idleTimeoutSeconds,
             openDrawerInSearchMode = openDrawerInSearchMode,
             chargeIdleEffect = chargeIdleEffect,
             isPixelMatterEffectEnabled = isPixelMatterEffectEnabled,
@@ -1129,123 +292,348 @@ object LauncherStateTransitions {
             isPixelMatterHandControlEnabled = isPixelMatterHandControlEnabled,
             isPixelMatterHandDebugEnabled = isPixelMatterHandDebugEnabled,
         )
-    }
 
-    fun updateDeviceStatus(state: LauncherState, deviceStatus: DeviceStatus): LauncherState {
-        return state.copy(
-            batteryLevel = deviceStatus.batteryLevel,
-            isCharging = deviceStatus.isCharging,
+    // ── SMS ─────────────────────────────────────────────────────────────────
+
+    /** 委托 [LauncherSmsTransitions.showSmsRolePrompt]。 */
+    fun showSmsRolePrompt(state: LauncherState): LauncherState =
+        LauncherSmsTransitions.showSmsRolePrompt(state)
+
+    /** 委托 [LauncherSmsTransitions.showSmsThreads]。 */
+    fun showSmsThreads(
+        state: LauncherState,
+        visibleRows: Int,
+        pageIndex: Int = SmsPageIndex.UNREAD,
+    ): LauncherState =
+        LauncherSmsTransitions.showSmsThreads(state, visibleRows, pageIndex)
+
+    /** 委托 [LauncherSmsTransitions.hideSmsThreads]。 */
+    fun hideSmsThreads(state: LauncherState): LauncherState =
+        LauncherSmsTransitions.hideSmsThreads(state)
+
+    /** 委托 [LauncherSmsTransitions.showSmsThreadDetail]。 */
+    fun showSmsThreadDetail(
+        state: LauncherState,
+        conversationKey: String,
+        conversationTitle: String,
+        isServiceConversation: Boolean,
+        threadId: Long?,
+        address: String,
+    ): LauncherState =
+        LauncherSmsTransitions.showSmsThreadDetail(
+            state = state,
+            conversationKey = conversationKey,
+            conversationTitle = conversationTitle,
+            isServiceConversation = isServiceConversation,
+            threadId = threadId,
+            address = address,
         )
-    }
 
-    fun updateStats(state: LauncherState, stats: LauncherStatsSnapshot): LauncherState {
-        return state.copy(
-            recentApps = stats.recentApps,
-            launchCount = stats.launchCount,
-            lastLaunchPackageName = stats.lastLaunchPackageName,
+    /** 委托 [LauncherSmsTransitions.showSmsMessageMenu]。 */
+    fun showSmsMessageMenu(state: LauncherState, messageId: Long): LauncherState =
+        LauncherSmsTransitions.showSmsMessageMenu(state, messageId)
+
+    /** 委托 [LauncherSmsTransitions.hideSmsMessageMenu]。 */
+    fun hideSmsMessageMenu(state: LauncherState): LauncherState =
+        LauncherSmsTransitions.hideSmsMessageMenu(state)
+
+    /** 委托 [LauncherSmsTransitions.showSmsThreadMenu]。 */
+    fun showSmsThreadMenu(state: LauncherState, conversationKey: String): LauncherState =
+        LauncherSmsTransitions.showSmsThreadMenu(state, conversationKey)
+
+    /** 委托 [LauncherSmsTransitions.hideSmsThreadMenu]。 */
+    fun hideSmsThreadMenu(state: LauncherState): LauncherState =
+        LauncherSmsTransitions.hideSmsThreadMenu(state)
+
+    /** 委托 [LauncherSmsTransitions.updateSmsMutedConversations]。 */
+    fun updateSmsMutedConversations(state: LauncherState, mutedKeys: Set<String>): LauncherState =
+        LauncherSmsTransitions.updateSmsMutedConversations(state, mutedKeys)
+
+    /** 委托 [LauncherSmsTransitions.hideSmsThreadDetail]。 */
+    fun hideSmsThreadDetail(state: LauncherState): LauncherState =
+        LauncherSmsTransitions.hideSmsThreadDetail(state)
+
+    /** 委托 [LauncherSmsTransitions.finishSmsThreadsLoading]。 */
+    fun finishSmsThreadsLoading(state: LauncherState): LauncherState =
+        LauncherSmsTransitions.finishSmsThreadsLoading(state)
+
+    /** 委托 [LauncherSmsTransitions.beginForcedSmsRefresh]。 */
+    fun beginForcedSmsRefresh(state: LauncherState): LauncherState =
+        LauncherSmsTransitions.beginForcedSmsRefresh(state)
+
+    /** 委托 [LauncherSmsTransitions.updateUnreadSmsEntries]。 */
+    fun updateUnreadSmsEntries(state: LauncherState, entries: List<SmsMessageEntry>, visibleRows: Int): LauncherState =
+        LauncherSmsTransitions.updateUnreadSmsEntries(state, entries, visibleRows)
+
+    /** 委托 [LauncherSmsTransitions.selectSmsIndex]。 */
+    fun selectSmsIndex(state: LauncherState, index: Int, visibleRows: Int): LauncherState =
+        LauncherSmsTransitions.selectSmsIndex(state, index, visibleRows)
+
+    /** 委托 [LauncherSmsTransitions.selectSmsPage]。 */
+    fun selectSmsPage(state: LauncherState, index: Int): LauncherState =
+        LauncherSmsTransitions.selectSmsPage(state, index)
+
+    /** 委托 [LauncherSmsTransitions.moveSmsSelection]。 */
+    fun moveSmsSelection(state: LauncherState, delta: Int, visibleRows: Int): LauncherState =
+        LauncherSmsTransitions.moveSmsSelection(state, delta, visibleRows)
+
+    /** 委托 [LauncherSmsTransitions.reflowSmsWindow]。 */
+    fun reflowSmsWindow(state: LauncherState, visibleRows: Int): LauncherState =
+        LauncherSmsTransitions.reflowSmsWindow(state, visibleRows)
+
+    /** 委托 [LauncherSmsTransitions.updateSmsCapability]。 */
+    fun updateSmsCapability(
+        state: LauncherState,
+        isDefaultSmsApp: Boolean,
+        smsPermissionState: SmsPermissionState,
+    ): LauncherState =
+        LauncherSmsTransitions.updateSmsCapability(state, isDefaultSmsApp, smsPermissionState)
+
+    /** 委托 [LauncherSmsTransitions.updateSmsThreads]。 */
+    fun updateSmsThreads(
+        state: LauncherState,
+        threads: List<SmsThreadSummary>,
+        visibleRows: Int,
+    ): LauncherState =
+        LauncherSmsTransitions.updateSmsThreads(state, threads, visibleRows)
+
+    /** 委托 [LauncherSmsTransitions.selectSmsThreadIndex]。 */
+    fun selectSmsThreadIndex(state: LauncherState, index: Int, visibleRows: Int): LauncherState =
+        LauncherSmsTransitions.selectSmsThreadIndex(state, index, visibleRows)
+
+    /** 委托 [LauncherSmsTransitions.moveSmsThreadSelection]。 */
+    fun moveSmsThreadSelection(state: LauncherState, delta: Int, visibleRows: Int): LauncherState =
+        LauncherSmsTransitions.moveSmsThreadSelection(state, delta, visibleRows)
+
+    /** 委托 [LauncherSmsTransitions.moveSmsSearchSelection]。 */
+    fun moveSmsSearchSelection(
+        state: LauncherState,
+        delta: Int,
+        resultCount: Int,
+    ): LauncherState =
+        LauncherSmsTransitions.moveSmsSearchSelection(state, delta, resultCount)
+
+    /** 委托 [LauncherSmsTransitions.reflowSmsThreadWindow]。 */
+    fun reflowSmsThreadWindow(state: LauncherState, visibleRows: Int): LauncherState =
+        LauncherSmsTransitions.reflowSmsThreadWindow(state, visibleRows)
+
+    /** 委托 [LauncherSmsTransitions.updateSmsMessages]。 */
+    fun updateSmsMessages(
+        state: LauncherState,
+        conversationKey: String = state.smsCurrentConversationKey,
+        conversationTitle: String = state.smsCurrentConversationTitle,
+        isServiceConversation: Boolean = state.smsCurrentIsServiceConversation,
+        threadId: Long?,
+        address: String,
+        messages: List<SmsMessageEntry>,
+    ): LauncherState =
+        LauncherSmsTransitions.updateSmsMessages(
+            state = state,
+            conversationKey = conversationKey,
+            conversationTitle = conversationTitle,
+            isServiceConversation = isServiceConversation,
+            threadId = threadId,
+            address = address,
+            messages = messages,
         )
-    }
 
-    fun updateNextAlarmText(state: LauncherState, nextAlarmText: String): LauncherState {
-        return state.copy(nextAlarmText = nextAlarmText)
-    }
+    /** 委托 [LauncherSmsTransitions.updateSmsAllMessages]。 */
+    fun updateSmsAllMessages(
+        state: LauncherState,
+        messages: List<SmsMessageEntry>,
+    ): LauncherState =
+        LauncherSmsTransitions.updateSmsAllMessages(state, messages)
 
-    /** 写入 Home 动态信息行使用的通话和短信计数。 */
+    /** 委托 [LauncherSmsTransitions.updateSmsDraftText]。 */
+    fun updateSmsDraftText(
+        state: LauncherState,
+        smsDraftText: String,
+    ): LauncherState =
+        LauncherSmsTransitions.updateSmsDraftText(state, smsDraftText)
+
+    /** 委托 [LauncherSmsTransitions.updateSmsThreadSearchQuery]。 */
+    fun updateSmsThreadSearchQuery(
+        state: LauncherState,
+        query: String,
+    ): LauncherState =
+        LauncherSmsTransitions.updateSmsThreadSearchQuery(state, query)
+
+    /** 委托 [LauncherSmsTransitions.updateSmsSendStatus]。 */
+    fun updateSmsSendStatus(
+        state: LauncherState,
+        smsSendStatus: SmsSendStatus,
+    ): LauncherState =
+        LauncherSmsTransitions.updateSmsSendStatus(state, smsSendStatus)
+
+    // ── Phone / Contacts ────────────────────────────────────────────────────
+
+    /** 委托 [LauncherPhoneTransitions.showCallLog]。 */
+    fun showCallLog(state: LauncherState): LauncherState =
+        LauncherPhoneTransitions.showCallLog(state)
+
+    /** 委托 [LauncherPhoneTransitions.hideCallLog]。 */
+    fun hideCallLog(state: LauncherState): LauncherState =
+        LauncherPhoneTransitions.hideCallLog(state)
+
+    /** 委托 [LauncherPhoneTransitions.selectCallPage]。 */
+    fun selectCallPage(state: LauncherState, index: Int): LauncherState =
+        LauncherPhoneTransitions.selectCallPage(state, index)
+
+    /** 委托 [LauncherPhoneTransitions.updateDialInput]。 */
+    fun updateDialInput(state: LauncherState, input: String): LauncherState =
+        LauncherPhoneTransitions.updateDialInput(state, input)
+
+    /** 委托 [LauncherPhoneTransitions.updateDialMatches]。 */
+    fun updateDialMatches(
+        state: LauncherState,
+        input: String,
+        matches: List<ContactEntry>,
+    ): LauncherState =
+        LauncherPhoneTransitions.updateDialMatches(state, input, matches)
+
+    /** 委托 [LauncherPhoneTransitions.updateCallLogGroups]。 */
+    fun updateCallLogGroups(
+        state: LauncherState,
+        groups: List<CallLogGroup>,
+    ): LauncherState =
+        LauncherPhoneTransitions.updateCallLogGroups(state, groups)
+
+    /** 委托 [LauncherPhoneTransitions.prepareCallLogLoading]。 */
+    fun prepareCallLogLoading(
+        state: LauncherState,
+        canReadCallLog: Boolean,
+    ): LauncherState =
+        LauncherPhoneTransitions.prepareCallLogLoading(state, canReadCallLog)
+
+    /** 委托 [LauncherPhoneTransitions.showContactDetail]。 */
+    fun showContactDetail(state: LauncherState, lookupKey: String): LauncherState =
+        LauncherPhoneTransitions.showContactDetail(state, lookupKey)
+
+    /** 委托 [LauncherPhoneTransitions.hideContactDetail]。 */
+    fun hideContactDetail(state: LauncherState): LauncherState =
+        LauncherPhoneTransitions.hideContactDetail(state)
+
+    /** 委托 [LauncherPhoneTransitions.showContactEditor]。 */
+    fun showContactEditor(state: LauncherState, lookupKey: String): LauncherState =
+        LauncherPhoneTransitions.showContactEditor(state, lookupKey)
+
+    /** 委托 [LauncherPhoneTransitions.hideContactEditor]。 */
+    fun hideContactEditor(state: LauncherState): LauncherState =
+        LauncherPhoneTransitions.hideContactEditor(state)
+
+    /** 委托 [LauncherPhoneTransitions.updateContactEditorName]。 */
+    fun updateContactEditorName(state: LauncherState, name: String): LauncherState =
+        LauncherPhoneTransitions.updateContactEditorName(state, name)
+
+    /** 委托 [LauncherPhoneTransitions.updateContactEditorNumber]。 */
+    fun updateContactEditorNumber(state: LauncherState, number: String): LauncherState =
+        LauncherPhoneTransitions.updateContactEditorNumber(state, number)
+
+    /** 委托 [LauncherPhoneTransitions.beginContactsLoading]。 */
+    fun beginContactsLoading(state: LauncherState): LauncherState =
+        LauncherPhoneTransitions.beginContactsLoading(state)
+
+    /** 委托 [LauncherPhoneTransitions.updateContacts]。 */
+    fun updateContacts(
+        state: LauncherState,
+        hasPermission: Boolean,
+        contacts: List<ContactDetail>,
+    ): LauncherState =
+        LauncherPhoneTransitions.updateContacts(state, hasPermission, contacts)
+
+    /** 委托 [LauncherPhoneTransitions.updateCallCapability]。 */
+    fun updateCallCapability(
+        state: LauncherState,
+        hasCallPhonePermission: Boolean,
+        hasCallLogPermission: Boolean,
+    ): LauncherState =
+        LauncherPhoneTransitions.updateCallCapability(state, hasCallPhonePermission, hasCallLogPermission)
+
+    // ── Effect / Idle ───────────────────────────────────────────────────────
+
+    /** 委托 [LauncherEffectTransitions.recordInteraction]。 */
+    fun recordInteraction(state: LauncherState, uptimeMs: Long): LauncherState =
+        LauncherEffectTransitions.recordInteraction(state, uptimeMs)
+
+    // ── Home feed ───────────────────────────────────────────────────────────
+
+    /** 委托 [LauncherHomeTransitions.updateTime]。 */
+    fun updateTime(
+        state: LauncherState,
+        currentTimeText: String,
+        currentDateText: String = state.currentDateText,
+        currentWeekdayText: String = state.currentWeekdayText,
+    ): LauncherState =
+        LauncherHomeTransitions.updateTime(state, currentTimeText, currentDateText, currentWeekdayText)
+
+    /** 委托 [LauncherHomeTransitions.updateNextAlarmText]。 */
+    fun updateNextAlarmText(state: LauncherState, nextAlarmText: String): LauncherState =
+        LauncherHomeTransitions.updateNextAlarmText(state, nextAlarmText)
+
+    /** 委托 [LauncherHomeTransitions.updateCommunicationStatus]。 */
     fun updateCommunicationStatus(
         state: LauncherState,
         missedCallCount: Int,
         unreadSmsCount: Int,
-    ): LauncherState {
-        return state.copy(
-            missedCallCount = missedCallCount.coerceAtLeast(0),
-            unreadSmsCount = unreadSmsCount.coerceAtLeast(0),
-        )
-    }
+    ): LauncherState =
+        LauncherHomeTransitions.updateCommunicationStatus(state, missedCallCount, unreadSmsCount)
 
+    /** 委托 [LauncherHomeTransitions.updateMediaPlayback]。 */
     fun updateMediaPlayback(
         state: LauncherState,
         mediaPlayback: MediaPlaybackSnapshot,
-    ): LauncherState {
-        return state.copy(mediaPlayback = mediaPlayback)
-    }
+    ): LauncherState =
+        LauncherHomeTransitions.updateMediaPlayback(state, mediaPlayback)
 
+    /** 委托 [LauncherHomeTransitions.updateRainHintText]。 */
+    fun updateRainHintText(
+        state: LauncherState,
+        rainHintText: String,
+        rainUpdatedTimeText: String = state.rainUpdatedTimeText,
+    ): LauncherState =
+        LauncherHomeTransitions.updateRainHintText(state, rainHintText, rainUpdatedTimeText)
+
+    /** 委托 [LauncherHomeTransitions.updateScreenUsageSummary]。 */
+    fun updateScreenUsageSummary(
+        state: LauncherState,
+        screenUsageTimeText: String,
+        screenOpenCountText: String,
+    ): LauncherState =
+        LauncherHomeTransitions.updateScreenUsageSummary(state, screenUsageTimeText, screenOpenCountText)
+
+    // ── Notification ────────────────────────────────────────────────────────
+
+    /** 委托 [LauncherNotificationTransitions.updateNotificationSummary]。 */
     fun updateNotificationSummary(
         state: LauncherState,
         notificationSummaryText: String,
         notificationCount: Int,
         notificationSources: List<NotificationSourceInfo> = state.notificationSources,
         notificationItems: List<NotificationSignal> = state.notificationItems,
-    ): LauncherState {
-        return state.copy(
-            notificationSummaryText = notificationSummaryText.trim(),
-            notificationCount = notificationCount.coerceAtLeast(0),
+    ): LauncherState =
+        LauncherNotificationTransitions.updateNotificationSummary(
+            state = state,
+            notificationSummaryText = notificationSummaryText,
+            notificationCount = notificationCount,
             notificationSources = notificationSources,
             notificationItems = notificationItems,
         )
-    }
 
+    /** 委托 [LauncherNotificationTransitions.updateNotificationRules]。 */
     fun updateNotificationRules(
         state: LauncherState,
         mutedSourceIds: Set<String>,
         prioritySourceIds: Set<String>,
-    ): LauncherState {
-        val muted = mutedSourceIds.sanitizeSourceIds()
-        return state.copy(
-            mutedNotificationSourceIds = muted,
-            priorityNotificationSourceIds = prioritySourceIds.sanitizeSourceIds() - muted,
-        )
-    }
+    ): LauncherState =
+        LauncherNotificationTransitions.updateNotificationRules(state, mutedSourceIds, prioritySourceIds)
 
-    /** 写入 Home 的天气与温度摘要文本及最近刷新时间。 */
-    fun updateRainHintText(
-        state: LauncherState,
-        rainHintText: String,
-        rainUpdatedTimeText: String = state.rainUpdatedTimeText,
-    ): LauncherState {
-        return state.copy(
-            rainHintText = rainHintText,
-            rainUpdatedTimeText = rainUpdatedTimeText,
-        )
-    }
+    // ── System / Capabilities ───────────────────────────────────────────────
 
-    /** 更新 Home 中当天屏幕使用时长和打开次数摘要。 */
-    fun updateScreenUsageSummary(
-        state: LauncherState,
-        screenUsageTimeText: String,
-        screenOpenCountText: String,
-    ): LauncherState {
-        return state.copy(
-            screenUsageTimeText = screenUsageTimeText,
-            screenOpenCountText = screenOpenCountText,
-        )
-    }
+    /** 委托 [LauncherSystemTransitions.updateDeviceStatus]。 */
+    fun updateDeviceStatus(state: LauncherState, deviceStatus: DeviceStatus): LauncherState =
+        LauncherSystemTransitions.updateDeviceStatus(state, deviceStatus)
 
-    fun updateStatusBarMessage(
-        state: LauncherState,
-        message: String,
-    ): LauncherState {
-        return state.copy(
-            statusBarMessageText = message.trim(),
-            statusBarActionLeadingText = "",
-            statusBarActionLabel = "",
-            isStatusBarActionDanger = false,
-        )
-    }
-
-    fun updateStatusBarAction(
-        state: LauncherState,
-        leadingText: String,
-        actionLabel: String,
-        isDanger: Boolean,
-    ): LauncherState {
-        return state.copy(
-            statusBarMessageText = "",
-            statusBarActionLeadingText = leadingText.trim(),
-            statusBarActionLabel = actionLabel.trim(),
-            isStatusBarActionDanger = isDanger,
-        )
-    }
-
+    /** 委托 [LauncherSystemTransitions.updateDataHealth]。 */
     fun updateDataHealth(
         state: LauncherState,
         hasUsageAccess: Boolean,
@@ -1255,8 +643,9 @@ object LauncherStateTransitions {
         hasPostNotificationPermission: Boolean,
         hasNotificationListenerAccess: Boolean,
         dataHealthUpdatedTimeText: String = state.dataHealthUpdatedTimeText,
-    ): LauncherState {
-        return state.copy(
+    ): LauncherState =
+        LauncherSystemTransitions.updateDataHealth(
+            state = state,
             hasUsageAccess = hasUsageAccess,
             hasLocationPermission = hasLocationPermission,
             hasCallLogPermission = hasCallLogPermission,
@@ -1265,505 +654,4 @@ object LauncherStateTransitions {
             hasNotificationListenerAccess = hasNotificationListenerAccess,
             dataHealthUpdatedTimeText = dataHealthUpdatedTimeText,
         )
-    }
-
-    fun recordInteraction(state: LauncherState, uptimeMs: Long): LauncherState {
-        return state.copy(lastInteractionUptimeMs = uptimeMs)
-    }
-
-    fun updateSmsCapability(
-        state: LauncherState,
-        isDefaultSmsApp: Boolean,
-        smsPermissionState: SmsPermissionState,
-    ): LauncherState {
-        return state.copy(
-            isDefaultSmsApp = isDefaultSmsApp,
-            smsPermissionState = smsPermissionState,
-        )
-    }
-
-    fun updateSmsThreads(
-        state: LauncherState,
-        threads: List<SmsThreadSummary>,
-        visibleRows: Int,
-    ): LauncherState {
-        val safeSelectedIndex = state.smsThreadSelectedIndex.coerceIn(0, (threads.size - 1).coerceAtLeast(0))
-        return syncSmsThreadWindow(
-            state = state.copy(
-                smsThreads = threads,
-                smsThreadSelectedIndex = safeSelectedIndex,
-            ),
-            visibleRows = visibleRows,
-        )
-    }
-
-    fun selectSmsThreadIndex(state: LauncherState, index: Int, visibleRows: Int): LauncherState {
-        val maxIndex = (state.smsThreads.size - 1).coerceAtLeast(0)
-        return syncSmsThreadWindow(
-            state = state.copy(smsThreadSelectedIndex = index.coerceIn(0, maxIndex)),
-            visibleRows = visibleRows,
-        )
-    }
-
-    fun moveSmsThreadSelection(state: LauncherState, delta: Int, visibleRows: Int): LauncherState {
-        return selectSmsThreadIndex(
-            state = state,
-            index = state.smsThreadSelectedIndex + delta,
-            visibleRows = visibleRows,
-        )
-    }
-
-    /**
-     * 在短信搜索结果中按相对行数移动焦点。
-     *
-     * 搜索未开启时保持原状态；空结果也把下标规范为零，且不改动普通会话列表窗口。
-     */
-    fun moveSmsSearchSelection(
-        state: LauncherState,
-        delta: Int,
-        resultCount: Int,
-    ): LauncherState {
-        if (state.smsThreadSearchQuery.isBlank()) {
-            return state
-        }
-        val maxIndex = (resultCount - 1).coerceAtLeast(0)
-        return state.copy(
-            smsThreadSelectedIndex = (state.smsThreadSelectedIndex + delta).coerceIn(0, maxIndex),
-        )
-    }
-
-    fun reflowSmsThreadWindow(state: LauncherState, visibleRows: Int): LauncherState {
-        val maxIndex = (state.smsThreads.size - 1).coerceAtLeast(0)
-        return syncSmsThreadWindow(
-            state = state.copy(
-                smsThreadSelectedIndex = state.smsThreadSelectedIndex.coerceIn(0, maxIndex),
-            ),
-            visibleRows = visibleRows,
-        )
-    }
-
-    fun updateSmsMessages(
-        state: LauncherState,
-        conversationKey: String = state.smsCurrentConversationKey,
-        conversationTitle: String = state.smsCurrentConversationTitle,
-        isServiceConversation: Boolean = state.smsCurrentIsServiceConversation,
-        threadId: Long?,
-        address: String,
-        messages: List<SmsMessageEntry>,
-    ): LauncherState {
-        return state.copy(
-            smsCurrentConversationKey = conversationKey,
-            smsCurrentConversationTitle = conversationTitle,
-            smsCurrentIsServiceConversation = isServiceConversation,
-            smsCurrentThreadId = threadId,
-            smsCurrentAddress = address,
-            smsMessages = messages,
-        )
-    }
-
-    fun updateSmsAllMessages(
-        state: LauncherState,
-        messages: List<SmsMessageEntry>,
-    ): LauncherState {
-        return state.copy(smsAllMessages = messages)
-    }
-
-    fun updateSmsDraftText(
-        state: LauncherState,
-        smsDraftText: String,
-    ): LauncherState {
-        return state.copy(smsDraftText = smsDraftText)
-    }
-
-    fun updateSmsThreadSearchQuery(
-        state: LauncherState,
-        query: String,
-    ): LauncherState {
-        return state.copy(
-            smsThreadSearchQuery = query.take(MAX_SMS_SEARCH_QUERY_LENGTH),
-            smsThreadSelectedIndex = 0,
-            smsThreadListStartIndex = 0,
-        )
-    }
-
-    fun updateSmsSendStatus(
-        state: LauncherState,
-        smsSendStatus: SmsSendStatus,
-    ): LauncherState {
-        return state.copy(smsSendStatus = smsSendStatus)
-    }
-
-    /**
-     * 在屏幕尺寸、应用数据或焦点变化后，重新校正抽屉窗口。
-     */
-    fun reflowWindow(state: LauncherState, visibleRows: Int): LauncherState {
-        val drawerApps = currentDrawerApps(state)
-        if (drawerApps.isEmpty()) {
-            return state.copy(
-                selectedIndex = 0,
-                listStartIndex = 0,
-                drawerPageIndex = 0,
-                drawerFocus = DrawerFocus.LIST,
-            )
-        }
-
-        val safeSelectedIndex = state.selectedIndex.coerceIn(0, drawerApps.lastIndex)
-        return syncDrawerWindow(
-            state = state.copy(selectedIndex = safeSelectedIndex),
-            visibleRows = visibleRows,
-        )
-    }
-
-    /**
-     * 根据当前可视行数，为选中项计算一个尽量靠前但不会留下底部空白的窗口起点。
-     */
-    fun calculateListStartIndex(selectedIndex: Int, visibleRows: Int, totalCount: Int): Int {
-        if (totalCount <= 0) {
-            return 0
-        }
-
-        val safeRows = visibleRows.coerceAtLeast(1)
-        val safeSelectedIndex = selectedIndex.coerceIn(0, totalCount - 1)
-        val maxStartIndex = (totalCount - safeRows).coerceAtLeast(0)
-        return safeSelectedIndex.coerceAtMost(maxStartIndex)
-    }
-
-    /**
-     * 保持抽屉的焦点、顶部项和派生页索引处于一致状态。
-     */
-    private fun syncDrawerWindow(state: LauncherState, visibleRows: Int): LauncherState {
-        val drawerApps = currentDrawerApps(state)
-        if (drawerApps.isEmpty()) {
-            return state.copy(
-                selectedIndex = 0,
-                listStartIndex = 0,
-                drawerPageIndex = 0,
-                drawerFocus = DrawerFocus.LIST,
-            )
-        }
-
-        val safeSelectedIndex = state.selectedIndex.coerceIn(0, drawerApps.lastIndex)
-        val indexModel = AppDrawerIndexModel.create(
-            apps = drawerApps,
-            visibleRows = visibleRows,
-            selectedIndex = safeSelectedIndex,
-        )
-        val listStartIndex = calculateListStartIndex(
-            selectedIndex = safeSelectedIndex,
-            visibleRows = visibleRows,
-            totalCount = drawerApps.size,
-        )
-
-        return state.copy(
-            selectedIndex = safeSelectedIndex,
-            listStartIndex = listStartIndex,
-            drawerPageIndex = indexModel.currentPageIndex,
-            drawerFocus = DrawerFocus.LIST,
-        )
-    }
-
-    private fun currentDrawerApps(state: LauncherState): List<AppEntry> {
-        if (state.drawerVisibleApps.isNotEmpty()) {
-            return state.drawerVisibleApps
-        }
-        if (state.drawerQuery.isNotBlank()) {
-            return emptyList()
-        }
-        return state.apps
-    }
-
-    private fun orderBlankQueryApps(apps: List<AppEntry>, recentApps: List<String>): List<AppEntry> {
-        if (apps.isEmpty()) {
-            return apps
-        }
-        val metadataByIdentity = buildMetadataMap(apps)
-        val recentRankByPackage = recentApps
-            .take(maxRecentBoostAppCount)
-            .withIndex()
-            .associate { indexed -> indexed.value to indexed.index }
-
-        return apps.sortedWith(
-            compareBy<AppEntry> { recentRankByPackage[it.packageName] ?: Int.MAX_VALUE }
-                .thenComparator { left, right ->
-                    val leftMeta = metadataByIdentity.getValue(appIdentity(left))
-                    val rightMeta = metadataByIdentity.getValue(appIdentity(right))
-                    val sortCompare = labelCollator.compare(leftMeta.sortKey, rightMeta.sortKey)
-                    if (sortCompare != 0) {
-                        sortCompare
-                    } else {
-                        labelCollator.compare(left.label, right.label)
-                    }
-                },
-        )
-    }
-
-    /**
-     * 在不破坏字母排序心智模型的前提下，给最近使用的应用做轻量前移。
-     */
-    private fun orderDefaultApps(apps: List<AppEntry>, recentApps: List<String>): List<AppEntry> {
-        if (apps.isEmpty()) {
-            return apps
-        }
-        val metadataByIdentity = buildMetadataMap(apps)
-        val alphabetical = apps.sortedWith { left, right ->
-            val leftMeta = metadataByIdentity.getValue(appIdentity(left))
-            val rightMeta = metadataByIdentity.getValue(appIdentity(right))
-            val letterCompare = leftMeta.letterIndex.compareTo(rightMeta.letterIndex)
-            if (letterCompare != 0) {
-                return@sortedWith letterCompare
-            }
-            val sortCompare = labelCollator.compare(
-                leftMeta.sortKey,
-                rightMeta.sortKey,
-            )
-            if (sortCompare != 0) {
-                return@sortedWith sortCompare
-            }
-            labelCollator.compare(left.label, right.label)
-        }
-        return applyLightRecentBoost(
-            orderedApps = alphabetical,
-            recentApps = recentApps,
-            metadataByIdentity = metadataByIdentity,
-        )
-    }
-
-    /**
-     * 根据归一化标签、别名和轻量 recent 规则过滤并排序抽屉搜索结果。
-     */
-    private fun filterDrawerApps(
-        orderedApps: List<AppEntry>,
-        query: String,
-        recentApps: List<String>,
-    ): List<AppEntry> {
-        if (query.isBlank()) {
-            return orderedApps
-        }
-        val normalizedQuery = DrawerSearchSupport.normalizeForSearch(query)
-        if (normalizedQuery.isEmpty()) {
-            return orderedApps
-        }
-        val metadataByIdentity = buildMetadataMap(orderedApps)
-        val recentRankByPackage = recentApps
-            .take(maxRecentBoostAppCount)
-            .withIndex()
-            .associate { indexed -> indexed.value to indexed.index }
-
-        return orderedApps
-            .asSequence()
-            .mapNotNull { app ->
-                val metadata = metadataByIdentity.getValue(appIdentity(app))
-                val score = resolveSearchScore(
-                    normalizedQuery = normalizedQuery,
-                    metadata = metadata,
-                ) ?: return@mapNotNull null
-
-                DrawerSearchHit(
-                    app = app,
-                    score = score,
-                    recentRank = recentRankByPackage[app.packageName] ?: Int.MAX_VALUE,
-                    sortKey = metadata.sortKey,
-                )
-            }
-            .sortedWith(
-                compareBy<DrawerSearchHit> { it.score }
-                    .thenBy { it.recentRank }
-                    .thenComparator { left, right ->
-                        val sortCompare = labelCollator.compare(left.sortKey, right.sortKey)
-                        if (sortCompare != 0) {
-                            sortCompare
-                        } else {
-                            labelCollator.compare(left.app.label, right.app.label)
-                        }
-                    },
-            )
-            .map { it.app }
-            .toList()
-    }
-
-    private fun applyLightRecentBoost(
-        orderedApps: List<AppEntry>,
-        recentApps: List<String>,
-        metadataByIdentity: Map<String, DrawerSearchMetadata>,
-    ): List<AppEntry> {
-        if (orderedApps.size < 2 || recentApps.isEmpty()) {
-            return orderedApps
-        }
-        val adjustedApps = orderedApps.toMutableList()
-        recentApps
-            .take(maxRecentBoostAppCount)
-            .forEachIndexed { recentRank, packageName ->
-                val fromIndex = adjustedApps.indexOfFirst { it.packageName == packageName }
-                if (fromIndex <= 0) {
-                    return@forEachIndexed
-                }
-                val movingApp = adjustedApps[fromIndex]
-                val movingMeta = metadataByIdentity.getValue(appIdentity(movingApp))
-                val letterStartIndex = adjustedApps.indexOfFirst { candidate ->
-                    metadataByIdentity.getValue(appIdentity(candidate)).letterIndex == movingMeta.letterIndex
-                }
-                if (letterStartIndex < 0) {
-                    return@forEachIndexed
-                }
-                val maxShift = (maxRecentBoostShift - recentRank).coerceAtLeast(1)
-                val targetIndex = (fromIndex - maxShift).coerceAtLeast(letterStartIndex)
-                if (targetIndex >= fromIndex) {
-                    return@forEachIndexed
-                }
-                adjustedApps.removeAt(fromIndex)
-                adjustedApps.add(targetIndex, movingApp)
-            }
-        return adjustedApps
-    }
-
-    private fun resolveSearchScore(
-        normalizedQuery: String,
-        metadata: DrawerSearchMetadata,
-    ): Int? {
-        return when {
-            metadata.normalizedLabel == normalizedQuery ||
-                metadata.normalizedEnglishLabel == normalizedQuery ||
-                metadata.normalizedAlias == normalizedQuery ||
-                metadata.normalizedUserAliases.any { it == normalizedQuery } ||
-                metadata.normalizedPackage == normalizedQuery ||
-                metadata.normalizedActivity == normalizedQuery ||
-                metadata.pinyinFull == normalizedQuery ||
-                metadata.pinyinInitial == normalizedQuery -> 0
-
-            metadata.normalizedLabel.startsWith(normalizedQuery) -> 1
-            metadata.normalizedEnglishLabel.startsWith(normalizedQuery) -> 1
-            metadata.normalizedUserAliases.any { it.startsWith(normalizedQuery) } -> 1
-            metadata.normalizedAlias.startsWith(normalizedQuery) -> 2
-            metadata.normalizedPackage.startsWith(normalizedQuery) -> 2
-            metadata.normalizedActivity.startsWith(normalizedQuery) -> 2
-            metadata.pinyinFull.startsWith(normalizedQuery) -> 3
-            metadata.pinyinInitial.startsWith(normalizedQuery) -> 4
-            metadata.normalizedLabel.contains(normalizedQuery) ||
-                metadata.normalizedEnglishLabel.contains(normalizedQuery) ||
-                metadata.normalizedUserAliases.any { it.contains(normalizedQuery) } ||
-                metadata.normalizedAlias.contains(normalizedQuery) ||
-                metadata.normalizedPackage.contains(normalizedQuery) ||
-                metadata.normalizedActivity.contains(normalizedQuery) ||
-                metadata.pinyinFull.contains(normalizedQuery) ||
-                metadata.pinyinInitial.contains(normalizedQuery) -> 5
-
-            else -> null
-        }
-    }
-
-    private fun buildMetadataMap(apps: List<AppEntry>): Map<String, DrawerSearchMetadata> {
-        return apps.associate { appEntry ->
-            appIdentity(appEntry) to DrawerSearchSupport.buildMetadata(appEntry)
-        }
-    }
-
-    private fun appIdentity(appEntry: AppEntry): String {
-        return "${appEntry.packageName}/${appEntry.activityName}"
-    }
-
-    private fun syncSettingsWindow(state: LauncherState, visibleRows: Int): LauncherState {
-        val rows = SettingsMenuModel.rows(state)
-        if (rows.isEmpty()) {
-            return state.copy(
-                settingsSelectedIndex = 0,
-                settingsListStartIndex = 0,
-            )
-        }
-
-        val safeVisibleRows = visibleRows.coerceAtLeast(1)
-        val safeSelectedIndex = state.settingsSelectedIndex.coerceIn(0, rows.lastIndex)
-        val maxStartIndex = (rows.size - safeVisibleRows).coerceAtLeast(0)
-        val safeListStartIndex = state.settingsListStartIndex.coerceIn(0, maxStartIndex)
-        val nextListStartIndex = when {
-            safeSelectedIndex < safeListStartIndex -> safeSelectedIndex
-            safeSelectedIndex >= safeListStartIndex + safeVisibleRows -> {
-                (safeSelectedIndex - safeVisibleRows + 1).coerceIn(0, maxStartIndex)
-            }
-            else -> safeListStartIndex
-        }
-
-        return state.copy(
-            settingsSelectedIndex = safeSelectedIndex,
-            settingsListStartIndex = nextListStartIndex,
-        )
-    }
-
-    private fun syncSmsWindow(state: LauncherState, visibleRows: Int): LauncherState {
-        val rows = state.unreadSmsEntries
-        if (rows.isEmpty()) {
-            return state.copy(
-                smsSelectedIndex = 0,
-                smsListStartIndex = 0,
-            )
-        }
-
-        val safeVisibleRows = visibleRows.coerceAtLeast(1)
-        val safeSelectedIndex = state.smsSelectedIndex.coerceIn(0, rows.lastIndex)
-        val maxStartIndex = (rows.size - safeVisibleRows).coerceAtLeast(0)
-        val safeListStartIndex = state.smsListStartIndex.coerceIn(0, maxStartIndex)
-        val nextListStartIndex = when {
-            safeSelectedIndex < safeListStartIndex -> safeSelectedIndex
-            safeSelectedIndex >= safeListStartIndex + safeVisibleRows -> {
-                (safeSelectedIndex - safeVisibleRows + 1).coerceIn(0, maxStartIndex)
-            }
-            else -> safeListStartIndex
-        }
-
-        return state.copy(
-            smsSelectedIndex = safeSelectedIndex,
-            smsListStartIndex = nextListStartIndex,
-        )
-    }
-
-    private fun syncSmsThreadWindow(state: LauncherState, visibleRows: Int): LauncherState {
-        val rows = state.smsThreads
-        if (rows.isEmpty()) {
-            return state.copy(
-                smsThreadSelectedIndex = 0,
-                smsThreadListStartIndex = 0,
-            )
-        }
-
-        val safeVisibleRows = visibleRows.coerceAtLeast(1)
-        val safeSelectedIndex = state.smsThreadSelectedIndex.coerceIn(0, rows.lastIndex)
-        val maxStartIndex = (rows.size - safeVisibleRows).coerceAtLeast(0)
-        val safeListStartIndex = state.smsThreadListStartIndex.coerceIn(0, maxStartIndex)
-        val nextListStartIndex = when {
-            safeSelectedIndex < safeListStartIndex -> safeSelectedIndex
-            safeSelectedIndex >= safeListStartIndex + safeVisibleRows -> {
-                (safeSelectedIndex - safeVisibleRows + 1).coerceIn(0, maxStartIndex)
-            }
-            else -> safeListStartIndex
-        }
-
-        return state.copy(
-            smsThreadSelectedIndex = safeSelectedIndex,
-            smsThreadListStartIndex = nextListStartIndex,
-        )
-    }
-
-    private fun wrapIndex(index: Int, size: Int): Int {
-        if (size <= 0) return 0
-        val mod = index % size
-        return if (mod < 0) mod + size else mod
-    }
-
-    private fun Set<String>.sanitizeSourceIds(): Set<String> {
-        return mapNotNull { value ->
-            value.trim().takeIf(String::isNotEmpty)
-        }.toSet()
-    }
-
-    private data class DrawerSearchHit(
-        val app: AppEntry,
-        val score: Int,
-        val recentRank: Int,
-        val sortKey: String,
-    )
-
-    private val labelCollator: Collator = Collator.getInstance(Locale.getDefault())
-    private const val maxDrawerQueryLength: Int = 40
-    private const val maxRecentBoostAppCount: Int = 3
-    private const val maxRecentBoostShift: Int = 3
-    private const val MAX_SMS_SEARCH_QUERY_LENGTH: Int = 40
 }

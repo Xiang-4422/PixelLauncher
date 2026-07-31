@@ -20,13 +20,22 @@ DEFAULT_BASELINE = Path("tools/launcher-state-copy-baseline.json")
 # Gradle 门禁保留的确定性机器报告路径。
 DEFAULT_REPORT = Path("app/build/reports/architecture/launcher-state-copy-guard.json")
 # 规范 reducer 内部拥有聚合状态写权限，不属于本阶段需要清退的绕过入口。
+# ADR-0001 阶段 2 起，reducer 层 = facade + 九个域转换文件；门禁继续拦截
+# 该集合之外的一切生产聚合 copy。
 CANONICAL_REDUCER_FILES = frozenset(
-    {
-        Path(
-            "app/src/main/kotlin/com/purride/pixellauncherv2/launcher/"
-            "LauncherStateTransitions.kt"
-        ),
-    }
+    Path("app/src/main/kotlin/com/purride/pixellauncherv2/launcher") / name
+    for name in (
+        "LauncherStateTransitions.kt",
+        "LauncherShellTransitions.kt",
+        "LauncherAppCatalogTransitions.kt",
+        "LauncherSettingsTransitions.kt",
+        "LauncherSmsTransitions.kt",
+        "LauncherPhoneTransitions.kt",
+        "LauncherEffectTransitions.kt",
+        "LauncherHomeTransitions.kt",
+        "LauncherNotificationTransitions.kt",
+        "LauncherSystemTransitions.kt",
+    )
 )
 # Kotlin 标识符允许使用的 ASCII 起始字符；当前 Launcher schema 字段均采用该形式。
 IDENTIFIER_START = frozenset(
