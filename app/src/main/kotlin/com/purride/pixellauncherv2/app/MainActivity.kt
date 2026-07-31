@@ -164,8 +164,6 @@ class MainActivity : AppCompatActivity() {
     private var loadGeneration = 0
     private var launchPending = false
     private var launchRunnable: Runnable? = null
-    private var usageAccessPromptShown = false
-    private var homeDataPermissionPromptShown = false
     private var rainRefreshInFlight = false
     private var lastRainRefreshElapsedRealtimeMs: Long = 0L
     private var lastRainLocation: GeoPoint? = null
@@ -634,16 +632,14 @@ class MainActivity : AppCompatActivity() {
         }
         state = LauncherStateTransitions.recordInteraction(state, SystemClock.uptimeMillis())
         refreshDerivedUiState(render = false)
-        val launchedUsageAccessSettings = maybeRequestUsageAccess()
-        if (!launchedUsageAccessSettings) {
-            communicationStatusRepository.start(::onCommunicationStatusChanged)
-            smsController.start()
-            callController.start()
-            refreshScreenUsageSummary(render = false)
-            smsController.refreshSmsCapability(render = false)
-            refreshRainHint(force = true, render = false)
-            maybeRequestHomeDataPermissions()
-        }
+        // Launcher 冷启动不能被统计、通话记录、短信或位置等可选能力阻塞。
+        // 缺少权限时对应数据源返回空态，用户可在 DATA HEALTH 或具体功能页主动修复。
+        communicationStatusRepository.start(::onCommunicationStatusChanged)
+        smsController.start()
+        callController.start()
+        refreshScreenUsageSummary(render = false)
+        smsController.refreshSmsCapability(render = false)
+        refreshRainHint(force = true, render = false)
         renderCurrentFrame()
         startAnimationTickerIfNeeded()
         syncPixelMatterMotionListening()
@@ -2172,7 +2168,10 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.ACCESS_FINE_LOCATION,
             )
 
-            DataHealthRepairAction.REQUEST_CALL_LOG_PERMISSION -> requestHomeDataPermissions(Manifest.permission.READ_CALL_LOG)
+            DataHealthRepairAction.REQUEST_CALL_LOG_PERMISSION -> requestHomeDataPermissions(
+                Manifest.permission.READ_CALL_LOG,
+                Manifest.permission.WRITE_CALL_LOG,
+            )
 
             DataHealthRepairAction.REQUEST_SMS_READ_PERMISSION -> requestHomeDataPermissions(Manifest.permission.READ_SMS)
 
@@ -2718,8 +2717,11 @@ class MainActivity : AppCompatActivity() {
             applyRainHintText(rainLocationPromptText, render = render)
             if (showFeedback) {
                 showStatusBarMessage(HomeInfoDetailModel.notice(HomeInfoAction.RAIN, state))
+                requestHomeDataPermissions(
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                )
             }
-            maybeRequestHomeDataPermissions()
             return
         }
 
@@ -2842,41 +2844,7 @@ class MainActivity : AppCompatActivity() {
             .any { it.packageName == packageName }
     }
 
-    private fun maybeRequestHomeDataPermissions() {
-        if (homeDataPermissionPromptShown) {
-            return
-        }
-        val missingPermissions = buildList {
-            if (!deviceLocationRepository.hasLocationPermission()) {
-                add(Manifest.permission.ACCESS_COARSE_LOCATION)
-                add(Manifest.permission.ACCESS_FINE_LOCATION)
-            }
-            if (!communicationStatusRepository.hasCallLogPermission()) {
-                add(Manifest.permission.READ_CALL_LOG)
-            }
-            // WRITE 与 READ 同属 CALL_LOG 权限组，一起请求只弹同一个框，不额外打扰用户。
-            // 而漏掉它是净损失：API 26+ 只授予被显式请求的那一个权限，从未请求过
-            // WRITE_CALL_LOG 就恒为 DENIED，markCallsAcknowledged 会一直静默失败，
-            // 未接角标在看过通话记录后依然不清零。
-            if (checkSelfPermission(Manifest.permission.WRITE_CALL_LOG) != PackageManager.PERMISSION_GRANTED) {
-                add(Manifest.permission.WRITE_CALL_LOG)
-            }
-            if (!communicationStatusRepository.hasSmsPermission()) {
-                add(Manifest.permission.READ_SMS)
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-            ) {
-                add(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }.distinct()
-        if (missingPermissions.isEmpty()) {
-            return
-        }
-        homeDataPermissionPromptShown = true
-        requestHomeDataPermissions(*missingPermissions.toTypedArray())
-    }
-
+    /** 用户从 DATA HEALTH 或具体功能入口主动申请一组 Home 数据权限。 */
     private fun requestHomeDataPermissions(vararg permissions: String) {
         val missingPermissions = permissions
             .filter { permission -> checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED }
@@ -2888,19 +2856,6 @@ class MainActivity : AppCompatActivity() {
             missingPermissions.toTypedArray(),
             homeDataPermissionRequestCode,
         )
-    }
-
-    private fun maybeRequestUsageAccess(): Boolean {
-        if (usageAccessPromptShown || screenUsageRepository.hasUsageAccess()) {
-            return false
-        }
-        usageAccessPromptShown = true
-        startActivity(
-            Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            },
-        )
-        return true
     }
 
     private fun refreshDerivedUiState(render: Boolean) {

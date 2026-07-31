@@ -37,32 +37,49 @@ class CallPermissionChainContractTest {
         )
     }
 
-    /**
-     * 未接角标的清零走 `CallLog.Calls.NEW = 0` 的写入，需要 WRITE_CALL_LOG。
-     * 启动时只申请 READ_CALL_LOG 的话，WRITE 在 API 26+ 上恒为 DENIED，
-     * `markCallsAcknowledged` 永久失败，用户看完通话记录角标依然挂着。
-     *
-     * 两者同属 CALL_LOG 权限组，一起请求只弹同一个系统框，加上它没有额外打扰成本。
-     */
+    /** 未接角标修复入口必须同时申请读写通话记录权限。 */
     @Test
-    fun homeStartupRequestIncludesWriteCallLogAlongsideRead() {
+    fun dataHealthRepairRequestsReadAndWriteCallLogTogether() {
         val source = sourceOf("src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt")
         val requestBlock = Regex(
-            """private fun maybeRequestHomeDataPermissions\([\s\S]*?\n    }""",
+            """DataHealthRepairAction\.REQUEST_CALL_LOG_PERMISSION[\s\S]*?\n\s*DataHealthRepairAction\.""",
         ).find(source)?.value.orEmpty()
 
         assertTrue(
-            "maybeRequestHomeDataPermissions must be found for this contract to mean anything.",
+            "DATA HEALTH call-log repair branch must be found for this contract to mean anything.",
             requestBlock.isNotEmpty(),
         )
         assertTrue(
-            "Startup permission request must include READ_CALL_LOG.",
+            "Call-log repair must include READ_CALL_LOG.",
             requestBlock.contains("Manifest.permission.READ_CALL_LOG"),
         )
         assertTrue(
-            "Startup permission request must also include WRITE_CALL_LOG — API 26+ only grants " +
+            "Call-log repair must also include WRITE_CALL_LOG — API 26+ only grants " +
                 "the permission actually requested, so the missed-call badge would never clear.",
             requestBlock.contains("Manifest.permission.WRITE_CALL_LOG"),
+        )
+    }
+
+    /** 冷启动不得自动打开设置页或弹出敏感权限请求。 */
+    @Test
+    fun onResumeDoesNotRequestOptionalPermissions() {
+        val source = sourceOf("src/main/kotlin/com/purride/pixellauncherv2/app/MainActivity.kt")
+        val resumeBlock = Regex(
+            """override fun onResume\(\)[\s\S]*?\n    }""",
+        ).find(source)?.value.orEmpty()
+
+        assertTrue("MainActivity.onResume must be found.", resumeBlock.isNotEmpty())
+        assertTrue(
+            "Cold start must not open usage-access settings.",
+            !resumeBlock.contains("ACTION_USAGE_ACCESS_SETTINGS"),
+        )
+        assertTrue(
+            "Cold start must not request optional Home-data permissions.",
+            !resumeBlock.contains("requestHomeDataPermissions"),
+        )
+        assertTrue(
+            "Cold start must not invoke the platform permission dialog.",
+            !resumeBlock.contains("requestPermissions("),
         )
     }
 
