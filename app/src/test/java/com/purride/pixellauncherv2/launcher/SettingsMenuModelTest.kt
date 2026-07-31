@@ -1,6 +1,7 @@
 package com.purride.pixellauncherv2.launcher
 
 import com.purride.pixelcore.PixelShape
+import com.purride.pixellauncherv2.BuildConfig
 import com.purride.pixellauncherv2.layout.LauncherLayoutProfileFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -196,16 +197,50 @@ class SettingsMenuModelTest {
     }
 
     @Test
-    fun rows_includeHomeIdleDataHealthAndAdvancedActions() {
+    fun rows_keepOnlyPrimarySettingsAndMoreEntry() {
         val rows = SettingsMenuModel.rows(
             LauncherState(
-                screenUsageTimeText = "00:20",
-                screenOpenCountText = "2",
                 isIdlePageEnabled = true,
                 chargeAutoIdleEnabled = true,
                 inactivityAutoIdleEnabled = true,
                 idleTimeoutSeconds = 60,
                 chargeIdleEffect = ChargeIdleEffect.TANK,
+                selectedThemeFamily = LauncherThemeFamily.CRT,
+                selectedThemeMode = LauncherThemeMode.NIGHT,
+            ),
+        )
+        val items = rows.map { it.item }
+
+        assertTrue(items.contains(SettingsMenuItem.IDLE_PAGE))
+        assertTrue(items.contains(SettingsMenuItem.CHARGE_AUTO_IDLE))
+        assertTrue(items.contains(SettingsMenuItem.INACTIVITY_AUTO_IDLE))
+        assertTrue(items.contains(SettingsMenuItem.IDLE_TIMEOUT))
+        assertTrue(items.contains(SettingsMenuItem.CHARGE_IDLE_EFFECT))
+        assertTrue(items.contains(SettingsMenuItem.MORE))
+        assertTrue(items.contains(SettingsMenuItem.FONT))
+        assertTrue(items.contains(SettingsMenuItem.FONT_WIDTH))
+        assertTrue(items.contains(SettingsMenuItem.FONT_SIZE))
+        assertFalse(items.contains(SettingsMenuItem.NOTIFICATIONS))
+        assertFalse(items.contains(SettingsMenuItem.DATA_HEALTH))
+        assertFalse(items.contains(SettingsMenuItem.PIXEL_MATTER_EFFECT))
+        assertFalse(items.contains(SettingsMenuItem.LOADING_PREVIEW))
+        assertEquals("ON", rows.first { it.item == SettingsMenuItem.IDLE_PAGE }.value)
+        assertEquals("ON", rows.first { it.item == SettingsMenuItem.CHARGE_AUTO_IDLE }.value)
+        assertEquals("ON", rows.first { it.item == SettingsMenuItem.INACTIVITY_AUTO_IDLE }.value)
+        assertEquals("60S", rows.first { it.item == SettingsMenuItem.IDLE_TIMEOUT }.value)
+        assertEquals("TANK", rows.first { it.item == SettingsMenuItem.CHARGE_IDLE_EFFECT }.value)
+        assertEquals("OPEN", rows.first { it.item == SettingsMenuItem.MORE }.value)
+        assertEquals("FUSION", rows.first { it.item == SettingsMenuItem.FONT }.value)
+        assertEquals("PROP", rows.first { it.item == SettingsMenuItem.FONT_WIDTH }.value)
+        assertEquals("10PX", rows.first { it.item == SettingsMenuItem.FONT_SIZE }.value)
+        assertEquals("CRT", rows.first { it.item == SettingsMenuItem.THEME }.value)
+        assertEquals("NIGHT", rows.first { it.item == SettingsMenuItem.THEME_MODE }.value)
+    }
+
+    @Test
+    fun moreRows_includeLowFrequencyAndDebugOnlySettings() {
+        val rows = SettingsMenuModel.moreRows(
+            LauncherState(
                 hasUsageAccess = true,
                 hasLocationPermission = true,
                 hasCallLogPermission = true,
@@ -216,51 +251,19 @@ class SettingsMenuModelTest {
                 hasNotificationListenerAccess = true,
                 mutedNotificationSourceIds = setOf("com.noisy"),
                 priorityNotificationSourceIds = setOf("com.bank"),
-                apps = listOf(AppEntry(label = "Bank", packageName = "com.bank", activityName = "BankActivity")),
-                selectedThemeFamily = LauncherThemeFamily.CRT,
-                selectedThemeMode = LauncherThemeMode.NIGHT,
+                isPixelMatterHandControlEnabled = true,
             ),
         )
         val items = rows.map { it.item }
 
-        assertTrue(items.contains(SettingsMenuItem.HOME_STATUS))
-        assertTrue(items.contains(SettingsMenuItem.IDLE_PAGE))
-        assertTrue(items.contains(SettingsMenuItem.CHARGE_AUTO_IDLE))
-        assertTrue(items.contains(SettingsMenuItem.INACTIVITY_AUTO_IDLE))
-        assertTrue(items.contains(SettingsMenuItem.IDLE_TIMEOUT))
-        assertTrue(items.contains(SettingsMenuItem.CHARGE_IDLE_EFFECT))
-        assertTrue(items.contains(SettingsMenuItem.APP_MANAGEMENT))
-        assertTrue(items.contains(SettingsMenuItem.NOTIFICATIONS))
-        assertTrue(items.contains(SettingsMenuItem.DATA_HEALTH))
-        assertTrue(items.contains(SettingsMenuItem.LOADING_PREVIEW))
-        assertTrue(items.contains(SettingsMenuItem.PIXEL_MATTER_EFFECT))
-        assertTrue(items.contains(SettingsMenuItem.PIXEL_MATTER_EFFECT_MODE))
-        assertTrue(items.contains(SettingsMenuItem.PIXEL_MATTER_HAND_CONTROL))
-        assertTrue(items.contains(SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG))
-        assertTrue(items.contains(SettingsMenuItem.ADVANCED))
-        assertTrue(items.contains(SettingsMenuItem.FONT))
-        assertTrue(items.contains(SettingsMenuItem.FONT_WIDTH))
-        assertTrue(items.contains(SettingsMenuItem.FONT_SIZE))
-        assertEquals("1 ROW", rows.first { it.item == SettingsMenuItem.HOME_STATUS }.value)
-        assertEquals("ON", rows.first { it.item == SettingsMenuItem.IDLE_PAGE }.value)
-        assertEquals("ON", rows.first { it.item == SettingsMenuItem.CHARGE_AUTO_IDLE }.value)
-        assertEquals("ON", rows.first { it.item == SettingsMenuItem.INACTIVITY_AUTO_IDLE }.value)
-        assertEquals("60S", rows.first { it.item == SettingsMenuItem.IDLE_TIMEOUT }.value)
-        assertEquals("TANK", rows.first { it.item == SettingsMenuItem.CHARGE_IDLE_EFFECT }.value)
-        assertEquals("OPEN", rows.first { it.item == SettingsMenuItem.APP_MANAGEMENT }.value)
         assertEquals("M1 P1", rows.first { it.item == SettingsMenuItem.NOTIFICATIONS }.value)
         assertEquals("OK", rows.first { it.item == SettingsMenuItem.DATA_HEALTH }.value)
-        assertEquals("OPEN", rows.first { it.item == SettingsMenuItem.LOADING_PREVIEW }.value)
         assertEquals("ON", rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_EFFECT }.value)
         assertEquals("SAND", rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_EFFECT_MODE }.value)
-        assertEquals("OFF", rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_HAND_CONTROL }.value)
-        assertEquals("ON", rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG }.value)
-        assertEquals("OPEN", rows.first { it.item == SettingsMenuItem.ADVANCED }.value)
-        assertEquals("FUSION", rows.first { it.item == SettingsMenuItem.FONT }.value)
-        assertEquals("PROP", rows.first { it.item == SettingsMenuItem.FONT_WIDTH }.value)
-        assertEquals("10PX", rows.first { it.item == SettingsMenuItem.FONT_SIZE }.value)
-        assertEquals("CRT", rows.first { it.item == SettingsMenuItem.THEME }.value)
-        assertEquals("NIGHT", rows.first { it.item == SettingsMenuItem.THEME_MODE }.value)
+        assertEquals("ON", rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_HAND_CONTROL }.value)
+        assertEquals(BuildConfig.DEBUG, items.contains(SettingsMenuItem.LOADING_PREVIEW))
+        assertEquals(BuildConfig.DEBUG, items.contains(SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG))
+        assertEquals(BuildConfig.DEBUG, items.contains(SettingsMenuItem.ADVANCED))
     }
 
     @Test
@@ -271,46 +274,90 @@ class SettingsMenuModelTest {
         )
         val rows = SettingsMenuModel.rows(state)
 
-        assertEquals(
-            listOf(
-                SettingsSection.DISPLAY,
-                SettingsSection.THEME,
-                SettingsSection.HOME,
-                SettingsSection.DRAWER,
-                SettingsSection.IDLE,
-                SettingsSection.DATA,
-                SettingsSection.ADVANCED,
-            ),
-            SettingsMenuModel.sections(state),
-        )
+        val expectedSections = buildList {
+            add(SettingsSection.DISPLAY)
+            add(SettingsSection.THEME)
+            add(SettingsSection.DRAWER)
+            add(SettingsSection.IDLE)
+            add(SettingsSection.MORE)
+        }
+        assertEquals(expectedSections, SettingsMenuModel.sections(state))
         assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.RESOLUTION }.section)
         assertEquals(SettingsSection.THEME, rows.first { it.item == SettingsMenuItem.THEME }.section)
         assertEquals(SettingsSection.THEME, rows.first { it.item == SettingsMenuItem.THEME_MODE }.section)
         assertEquals(SettingsSection.THEME, rows.first { it.item == SettingsMenuItem.FONT }.section)
         assertEquals(SettingsSection.THEME, rows.first { it.item == SettingsMenuItem.FONT_WIDTH }.section)
         assertEquals(SettingsSection.THEME, rows.first { it.item == SettingsMenuItem.FONT_SIZE }.section)
-        assertEquals(SettingsSection.HOME, rows.first { it.item == SettingsMenuItem.HOME_STATUS }.section)
         assertEquals(SettingsSection.DRAWER, rows.first { it.item == SettingsMenuItem.APP_LIST_ALIGNMENT }.section)
-        assertEquals(SettingsSection.DRAWER, rows.first { it.item == SettingsMenuItem.APP_MANAGEMENT }.section)
-        assertEquals(SettingsSection.IDLE, rows.first { it.item == SettingsMenuItem.IDLE_TIMEOUT }.section)
-        assertEquals(SettingsSection.DATA, rows.first { it.item == SettingsMenuItem.NOTIFICATIONS }.section)
-        assertEquals(SettingsSection.DATA, rows.first { it.item == SettingsMenuItem.DATA_HEALTH }.section)
-        assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.LOADING_PREVIEW }.section)
-        assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_EFFECT }.section)
-        assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_EFFECT_MODE }.section)
-        assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_HAND_CONTROL }.section)
-        assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG }.section)
-        assertEquals(SettingsSection.ADVANCED, rows.first { it.item == SettingsMenuItem.ADVANCED }.section)
+        assertEquals(SettingsSection.IDLE, rows.first { it.item == SettingsMenuItem.IDLE_PAGE }.section)
+        assertEquals(SettingsSection.MORE, rows.first { it.item == SettingsMenuItem.MORE }.section)
         assertEquals("DISPLAY", SettingsMenuModel.sectionLabel(SettingsSection.DISPLAY))
         assertEquals("THEME", SettingsMenuModel.sectionLabel(SettingsSection.THEME))
-        assertEquals("HOME", SettingsMenuModel.sectionLabel(SettingsSection.HOME))
+        assertEquals("MORE", SettingsMenuModel.sectionLabel(SettingsSection.MORE))
     }
 
     @Test
-    fun rows_marksAppManagementEmptyWhenNoAppsAreLoaded() {
-        val rows = SettingsMenuModel.rows(LauncherState(apps = emptyList()))
+    fun moreRows_areGroupedByLowFrequencyProductAreas() {
+        val state = LauncherState()
+        val rows = SettingsMenuModel.moreRows(state)
+        val expectedSections = buildList {
+            add(SettingsSection.NOTIFICATIONS)
+            add(SettingsSection.ACCESS)
+            add(SettingsSection.EXPERIMENTAL)
+            if (BuildConfig.DEBUG) add(SettingsSection.DEVELOPER)
+        }
 
-        assertEquals("EMPTY", rows.first { it.item == SettingsMenuItem.APP_MANAGEMENT }.value)
+        assertEquals(expectedSections, SettingsMenuModel.moreSections(state))
+        assertEquals(SettingsSection.NOTIFICATIONS, rows.first { it.item == SettingsMenuItem.NOTIFICATIONS }.section)
+        assertEquals(SettingsSection.ACCESS, rows.first { it.item == SettingsMenuItem.DATA_HEALTH }.section)
+        assertEquals(SettingsSection.EXPERIMENTAL, rows.first { it.item == SettingsMenuItem.PIXEL_MATTER_EFFECT }.section)
+        if (BuildConfig.DEBUG) {
+            assertEquals(SettingsSection.DEVELOPER, rows.first { it.item == SettingsMenuItem.LOADING_PREVIEW }.section)
+        }
+        assertEquals("NOTIFICATIONS", SettingsMenuModel.sectionLabel(SettingsSection.NOTIFICATIONS))
+        assertEquals("ACCESS", SettingsMenuModel.sectionLabel(SettingsSection.ACCESS))
+        assertEquals("EXPERIMENTAL", SettingsMenuModel.sectionLabel(SettingsSection.EXPERIMENTAL))
+        assertEquals("DEVELOPER", SettingsMenuModel.sectionLabel(SettingsSection.DEVELOPER))
+    }
+
+    @Test
+    fun rows_hideDependentSettingsWhenParentFeaturesAreDisabled() {
+        val state = LauncherState(
+            isIdlePageEnabled = false,
+            inactivityAutoIdleEnabled = false,
+            isPixelMatterEffectEnabled = false,
+            isPixelMatterHandControlEnabled = false,
+        )
+        val rows = SettingsMenuModel.rows(state)
+        val moreRows = SettingsMenuModel.moreRows(state)
+        val items = rows.map { it.item }
+        val moreItems = moreRows.map { it.item }
+
+        assertFalse(items.contains(SettingsMenuItem.CHARGE_AUTO_IDLE))
+        assertFalse(items.contains(SettingsMenuItem.INACTIVITY_AUTO_IDLE))
+        assertFalse(items.contains(SettingsMenuItem.IDLE_TIMEOUT))
+        assertFalse(items.contains(SettingsMenuItem.CHARGE_IDLE_EFFECT))
+        assertFalse(moreItems.contains(SettingsMenuItem.PIXEL_MATTER_EFFECT_MODE))
+        assertFalse(moreItems.contains(SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG))
+    }
+
+    @Test
+    fun moreRows_hideDeveloperToolsWhenDeveloperVisibilityIsDisabled() {
+        val rows = SettingsMenuModel.moreRows(
+            state = LauncherState(isPixelMatterHandControlEnabled = true),
+            includeDeveloperTools = false,
+        )
+        val items = rows.map { it.item }
+
+        assertFalse(items.contains(SettingsMenuItem.LOADING_PREVIEW))
+        assertFalse(items.contains(SettingsMenuItem.ADVANCED))
+        assertFalse(items.contains(SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG))
+        assertFalse(
+            SettingsMenuModel.moreSections(
+                LauncherState(),
+                includeDeveloperTools = false,
+            ).contains(SettingsSection.DEVELOPER),
+        )
     }
 
     @Test

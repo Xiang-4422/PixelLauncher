@@ -22,6 +22,10 @@ class LauncherRootHostPageOrderTest {
         assertEquals(LauncherRouteDestination.MAIN, LauncherRootHost.destinationFor(LauncherMode.HOME))
         assertEquals(LauncherRouteDestination.MAIN, LauncherRootHost.destinationFor(LauncherMode.APP_DRAWER))
         assertEquals(LauncherRouteDestination.MAIN, LauncherRootHost.destinationFor(LauncherMode.SETTINGS))
+        assertEquals(
+            LauncherRouteDestination.MORE_SETTINGS,
+            LauncherRootHost.destinationFor(LauncherMode.MORE_SETTINGS),
+        )
         assertEquals(LauncherRouteDestination.LOADING_PREVIEW, LauncherRootHost.destinationFor(LauncherMode.LOADING_PREVIEW))
         assertEquals(LauncherRouteDestination.SMS_THREADS, LauncherRootHost.destinationFor(LauncherMode.SMS_THREADS))
         assertEquals(
@@ -33,6 +37,7 @@ class LauncherRootHostPageOrderTest {
     @Test
     fun routeTransitionsDefaultToHorizontalButSmsOpensFromBottom() {
         assertEquals(null, LauncherRootHost.transitionFor(LauncherRouteDestination.MAIN))
+        assertEquals(null, LauncherRootHost.transitionFor(LauncherRouteDestination.MORE_SETTINGS))
         assertEquals(null, LauncherRootHost.transitionFor(LauncherRouteDestination.SMS_THREAD_DETAIL))
         assertEquals(null, LauncherRootHost.transitionFor(LauncherRouteDestination.DATA_HEALTH))
         assertEquals(null, LauncherRootHost.transitionFor(LauncherRouteDestination.LOADING_PREVIEW))
@@ -48,6 +53,24 @@ class LauncherRootHostPageOrderTest {
 
     @Test
     fun navigatorRouteChangesUseStackSemanticsForDirectionalTransitions() {
+        assertEquals(
+            LauncherRouteNavigationAction.PUSH,
+            LauncherRootHost.navigationAction(
+                listOf(LauncherRouteDestination.MAIN.routeName),
+                LauncherRouteDestination.MORE_SETTINGS,
+            ),
+        )
+        assertEquals(
+            LauncherRouteNavigationAction.POP,
+            LauncherRootHost.navigationAction(
+                listOf(
+                    LauncherRouteDestination.MAIN.routeName,
+                    LauncherRouteDestination.MORE_SETTINGS.routeName,
+                    LauncherRouteDestination.DATA_HEALTH.routeName,
+                ),
+                LauncherRouteDestination.MORE_SETTINGS,
+            ),
+        )
         assertEquals(
             LauncherRouteNavigationAction.PUSH,
             LauncherRootHost.navigationAction(

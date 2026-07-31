@@ -12,16 +12,12 @@ import com.purride.pixelui.StatefulWidget
 import com.purride.pixelui.Widget
 import com.purride.pixelui.state.PixelListController
 import com.purride.pixelui.state.PixelListState
-import com.purride.pixellauncherv2.launcher.DataHealthModel
-import com.purride.pixellauncherv2.launcher.HomeInfoModel
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
-import com.purride.pixellauncherv2.launcher.NotificationSettingsModel
 import com.purride.pixellauncherv2.launcher.PixelFontCatalog
 import com.purride.pixellauncherv2.launcher.SettingsListGeometry
 import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
 import com.purride.pixellauncherv2.launcher.SettingsSection
-import com.purride.pixellauncherv2.launcher.pixelMatterEffectModeLabel
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
 import com.purride.pixellauncherv2.ui.widget.SettingsActionRow
 import com.purride.pixellauncherv2.ui.widget.SettingsOptionStepperRow
@@ -171,16 +167,6 @@ class SettingsScreen(
                     ).size > 1,
                 ),
             )
-            addSection(SettingsSection.HOME, t)
-            add(
-                SettingsActionRow(
-                    title = "STATUS",
-                    valueLabel = HomeInfoModel.summary(this@toSettingsWidgets),
-                    theme = t,
-                    textEdgeResolvers = widget.textEdgeResolvers,
-                    onPressed = { widget.onItemAction(SettingsMenuItem.HOME_STATUS, +1) },
-                ),
-            )
             addSection(SettingsSection.DRAWER, t)
             add(
                 SettingsOptionStepperRow(
@@ -202,19 +188,10 @@ class SettingsScreen(
                     onToggle = { widget.onItemAction(SettingsMenuItem.DRAWER_AUTO_SEARCH, +1) },
                 ),
             )
-            add(
-                SettingsActionRow(
-                    title = "APPS",
-                    valueLabel = if (apps.isEmpty()) "EMPTY" else "OPEN",
-                    theme = t,
-                    textEdgeResolvers = widget.textEdgeResolvers,
-                    onPressed = { widget.onItemAction(SettingsMenuItem.APP_MANAGEMENT, +1) },
-                ),
-            )
             addSection(SettingsSection.IDLE, t)
             add(
                 SettingsSwitchRow(
-                    title = "IDLE",
+                    title = "ENABLE",
                     checked = isIdlePageEnabled,
                     theme = t,
                     textEdgeResolvers = widget.textEdgeResolvers,
@@ -222,133 +199,58 @@ class SettingsScreen(
                     onToggle = { widget.onItemAction(SettingsMenuItem.IDLE_PAGE, +1) },
                 ),
             )
-            add(
-                SettingsSwitchRow(
-                    title = "CHARGE",
-                    checked = chargeAutoIdleEnabled,
-                    theme = t,
-                    textEdgeResolvers = widget.textEdgeResolvers,
-                    showLabels = true,
-                    onToggle = { widget.onItemAction(SettingsMenuItem.CHARGE_AUTO_IDLE, +1) },
-                ),
-            )
-            add(
-                SettingsSwitchRow(
-                    title = "AUTO",
-                    checked = inactivityAutoIdleEnabled,
-                    theme = t,
-                    textEdgeResolvers = widget.textEdgeResolvers,
-                    showLabels = true,
-                    onToggle = { widget.onItemAction(SettingsMenuItem.INACTIVITY_AUTO_IDLE, +1) },
-                ),
-            )
-            add(
-                SettingsOptionStepperRow(
-                    title = "TIMEOUT",
-                    valueLabel = SettingsMenuModel.idleTimeoutLabel(idleTimeoutSeconds),
-                    theme = t,
-                    textEdgeResolvers = widget.textEdgeResolvers,
-                    onPrevious = { widget.onItemAction(SettingsMenuItem.IDLE_TIMEOUT, -1) },
-                    onNext = { widget.onItemAction(SettingsMenuItem.IDLE_TIMEOUT, +1) },
-                ),
-            )
-            add(
-                SettingsOptionStepperRow(
-                    title = "EFFECT",
-                    valueLabel = SettingsMenuModel.chargeIdleEffectLabel(chargeIdleEffect),
-                    theme = t,
-                    textEdgeResolvers = widget.textEdgeResolvers,
-                    onPrevious = { widget.onItemAction(SettingsMenuItem.CHARGE_IDLE_EFFECT, -1) },
-                    onNext = { widget.onItemAction(SettingsMenuItem.CHARGE_IDLE_EFFECT, +1) },
-                ),
-            )
-            addSection(SettingsSection.DATA, t)
-            add(
-                SettingsActionRow(
-                    title = "NOTIFY",
-                    valueLabel = NotificationSettingsModel.summary(
-                        mutedSourceIds = mutedNotificationSourceIds,
-                        prioritySourceIds = priorityNotificationSourceIds,
+            if (isIdlePageEnabled) {
+                add(
+                    SettingsSwitchRow(
+                        title = "CHARGE",
+                        checked = chargeAutoIdleEnabled,
+                        theme = t,
+                        textEdgeResolvers = widget.textEdgeResolvers,
+                        showLabels = true,
+                        onToggle = { widget.onItemAction(SettingsMenuItem.CHARGE_AUTO_IDLE, +1) },
                     ),
-                    theme = t,
-                    textEdgeResolvers = widget.textEdgeResolvers,
-                    onPressed = { widget.onItemAction(SettingsMenuItem.NOTIFICATIONS, +1) },
-                ),
-            )
+                )
+                add(
+                    SettingsSwitchRow(
+                        title = "AUTO",
+                        checked = inactivityAutoIdleEnabled,
+                        theme = t,
+                        textEdgeResolvers = widget.textEdgeResolvers,
+                        showLabels = true,
+                        onToggle = { widget.onItemAction(SettingsMenuItem.INACTIVITY_AUTO_IDLE, +1) },
+                    ),
+                )
+                if (inactivityAutoIdleEnabled) {
+                    add(
+                        SettingsOptionStepperRow(
+                            title = "TIMEOUT",
+                            valueLabel = SettingsMenuModel.idleTimeoutLabel(idleTimeoutSeconds),
+                            theme = t,
+                            textEdgeResolvers = widget.textEdgeResolvers,
+                            onPrevious = { widget.onItemAction(SettingsMenuItem.IDLE_TIMEOUT, -1) },
+                            onNext = { widget.onItemAction(SettingsMenuItem.IDLE_TIMEOUT, +1) },
+                        ),
+                    )
+                }
+                add(
+                    SettingsOptionStepperRow(
+                        title = "EFFECT",
+                        valueLabel = SettingsMenuModel.chargeIdleEffectLabel(chargeIdleEffect),
+                        theme = t,
+                        textEdgeResolvers = widget.textEdgeResolvers,
+                        onPrevious = { widget.onItemAction(SettingsMenuItem.CHARGE_IDLE_EFFECT, -1) },
+                        onNext = { widget.onItemAction(SettingsMenuItem.CHARGE_IDLE_EFFECT, +1) },
+                    ),
+                )
+            }
+            addSection(SettingsSection.MORE, t)
             add(
                 SettingsActionRow(
-                    title = "DATA",
-                    valueLabel = DataHealthModel.summary(this@toSettingsWidgets),
-                    theme = t,
-                    textEdgeResolvers = widget.textEdgeResolvers,
-                    onPressed = { widget.onItemAction(SettingsMenuItem.DATA_HEALTH, +1) },
-                ),
-            )
-            addSection(SettingsSection.ADVANCED, t)
-            add(
-                SettingsActionRow(
-                    title = "LOADING",
+                    title = "MORE",
                     valueLabel = "OPEN",
                     theme = t,
                     textEdgeResolvers = widget.textEdgeResolvers,
-                    onPressed = { widget.onItemAction(SettingsMenuItem.LOADING_PREVIEW, +1) },
-                ),
-            )
-            add(
-                SettingsSwitchRow(
-                    title = "SHAKE",
-                    checked = isPixelMatterEffectEnabled,
-                    theme = t,
-                    textEdgeResolvers = widget.textEdgeResolvers,
-                    showLabels = true,
-                    onToggle = { widget.onItemAction(SettingsMenuItem.PIXEL_MATTER_EFFECT, +1) },
-                ),
-            )
-            add(
-                SettingsActionRow(
-                    title = "MODE",
-                    valueLabel = pixelMatterEffectModeLabel(pixelMatterEffectMode),
-                    theme = t,
-                    textEdgeResolvers = widget.textEdgeResolvers,
-                    onPressed = { widget.onItemAction(SettingsMenuItem.PIXEL_MATTER_EFFECT_MODE, +1) },
-                ),
-            )
-            add(
-                SettingsSwitchRow(
-                    title = "HAND",
-                    checked = isPixelMatterHandControlEnabled,
-                    theme = t,
-                    textEdgeResolvers = widget.textEdgeResolvers,
-                    showLabels = true,
-                    onToggle = { widget.onItemAction(SettingsMenuItem.PIXEL_MATTER_HAND_CONTROL, +1) },
-                ),
-            )
-            add(
-                SettingsSwitchRow(
-                    title = "HAND DEBUG",
-                    checked = isPixelMatterHandDebugEnabled,
-                    theme = t,
-                    textEdgeResolvers = widget.textEdgeResolvers,
-                    showLabels = true,
-                    onToggle = { widget.onItemAction(SettingsMenuItem.PIXEL_MATTER_HAND_DEBUG, +1) },
-                ),
-            )
-            add(
-                SettingsActionRow(
-                    title = "SNAKE",
-                    valueLabel = "PLAY",
-                    theme = t,
-                    textEdgeResolvers = widget.textEdgeResolvers,
-                    onPressed = { widget.onItemAction(SettingsMenuItem.SNAKE, +1) },
-                ),
-            )
-            add(
-                SettingsActionRow(
-                    title = "ADVANCED",
-                    valueLabel = "OPEN",
-                    theme = t,
-                    textEdgeResolvers = widget.textEdgeResolvers,
-                    onPressed = { widget.onItemAction(SettingsMenuItem.ADVANCED, +1) },
+                    onPressed = { widget.onItemAction(SettingsMenuItem.MORE, +1) },
                 ),
             )
         }

@@ -158,6 +158,7 @@ enum class LauncherMode {
     HOME,
     APP_DRAWER,
     SETTINGS,
+    MORE_SETTINGS,
     SMS_ROLE_PROMPT,
     SMS_THREADS,
     SMS_THREAD_DETAIL,

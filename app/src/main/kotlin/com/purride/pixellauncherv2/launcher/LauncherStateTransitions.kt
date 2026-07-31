@@ -38,6 +38,7 @@ object LauncherStateTransitions {
             LauncherMode.CONTACT_EDITOR -> state.mode
 
             LauncherMode.SETTINGS,
+            LauncherMode.MORE_SETTINGS,
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,
@@ -76,6 +77,7 @@ object LauncherStateTransitions {
             LauncherMode.CONTACT_EDITOR -> state.returnMode
 
             LauncherMode.SETTINGS,
+            LauncherMode.MORE_SETTINGS,
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
             LauncherMode.NOTIFICATION_SETTINGS,
@@ -90,6 +92,16 @@ object LauncherStateTransitions {
         )
     }
 
+    /** 从顶层设置进入低频设置二级页面。 */
+    fun showMoreSettings(state: LauncherState): LauncherState {
+        return state.copy(mode = LauncherMode.MORE_SETTINGS)
+    }
+
+    /** 关闭低频设置二级页面并返回顶层设置。 */
+    fun hideMoreSettings(state: LauncherState): LauncherState {
+        return state.copy(mode = LauncherMode.SETTINGS)
+    }
+
     /** 从设置页进入贪吃蛇。 */
     fun showSnake(state: LauncherState): LauncherState {
         return state.copy(mode = LauncherMode.SNAKE)
@@ -100,24 +112,24 @@ object LauncherStateTransitions {
         return state.copy(mode = LauncherMode.SETTINGS)
     }
 
-    /** 从设置页进入轻量 diagnostics 页面。 */
+    /** 从 MORE 页面进入轻量 diagnostics 页面。 */
     fun showDiagnostics(state: LauncherState): LauncherState {
         return state.copy(mode = LauncherMode.DIAGNOSTICS)
     }
 
-    /** 关闭 diagnostics，并返回设置页。 */
+    /** 关闭 diagnostics，并返回 MORE 页面。 */
     fun hideDiagnostics(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.SETTINGS)
+        return state.copy(mode = LauncherMode.MORE_SETTINGS)
     }
 
-    /** 从设置页进入数据健康页。 */
+    /** 从 MORE 页面进入数据健康页。 */
     fun showDataHealth(state: LauncherState): LauncherState {
         return state.copy(mode = LauncherMode.DATA_HEALTH)
     }
 
-    /** 关闭数据健康页，并返回设置页。 */
+    /** 关闭数据健康页，并返回 MORE 页面。 */
     fun hideDataHealth(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.SETTINGS)
+        return state.copy(mode = LauncherMode.MORE_SETTINGS)
     }
 
     fun showNotificationSettings(state: LauncherState): LauncherState {
@@ -125,7 +137,7 @@ object LauncherStateTransitions {
     }
 
     fun hideNotificationSettings(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.SETTINGS)
+        return state.copy(mode = LauncherMode.MORE_SETTINGS)
     }
 
     fun showLoadingPreview(state: LauncherState): LauncherState {
@@ -133,7 +145,7 @@ object LauncherStateTransitions {
     }
 
     fun hideLoadingPreview(state: LauncherState): LauncherState {
-        return state.copy(mode = LauncherMode.SETTINGS)
+        return state.copy(mode = LauncherMode.MORE_SETTINGS)
     }
 
     fun showAppActionMenu(state: LauncherState, selectedIndex: Int): LauncherState {
@@ -187,7 +199,8 @@ object LauncherStateTransitions {
         val returnMode = when (state.returnMode) {
             LauncherMode.HOME,
             LauncherMode.APP_DRAWER,
-            LauncherMode.SETTINGS -> state.returnMode
+            LauncherMode.SETTINGS,
+            LauncherMode.MORE_SETTINGS -> state.returnMode
 
             LauncherMode.APP_MANAGEMENT,
             LauncherMode.DATA_HEALTH,
