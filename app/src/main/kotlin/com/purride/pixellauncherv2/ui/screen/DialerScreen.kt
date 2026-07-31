@@ -140,7 +140,7 @@ private fun callTopTabs(
                             child = Container(
                                 alignment = Alignment.CENTER,
                                 fillColor = if (index == selectedIndex) {
-                                    theme.button.border
+                                    theme.button.pressedFill
                                 } else {
                                     PixelColor.Transparent
                                 },
@@ -151,9 +151,9 @@ private fun callTopTabs(
                                 child = dialText(
                                     text = label,
                                     color = if (index == selectedIndex) {
-                                        theme.surface.offPixelColor
+                                        theme.button.selectedText
                                     } else {
-                                        theme.button.text
+                                        theme.button.unselectedText
                                     },
                                     theme = theme,
                                     align = TextAlign.CENTER,
@@ -349,7 +349,7 @@ private fun dialCallBar(
             onTap = onDialCall,
             child = Container(
                 alignment = Alignment.CENTER,
-                fillColor = if (enabled) theme.button.border else PixelColor.Transparent,
+                fillColor = if (enabled) theme.button.filledSurface else PixelColor.Transparent,
                 borderColor = if (enabled) null else theme.button.border,
                 padding = EdgeInsets.symmetric(
                     horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
@@ -357,7 +357,7 @@ private fun dialCallBar(
                 ),
                 child = dialText(
                     text = "CALL",
-                    color = if (enabled) theme.surface.offPixelColor else theme.button.disabledText,
+                    color = if (enabled) theme.button.filledText else theme.button.disabledText,
                     theme = theme,
                     align = TextAlign.CENTER,
                 ),

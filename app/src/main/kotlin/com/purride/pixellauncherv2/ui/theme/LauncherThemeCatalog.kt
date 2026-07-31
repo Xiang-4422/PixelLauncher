@@ -4,6 +4,15 @@ import com.purride.pixelcore.PixelColor
 import com.purride.pixellauncherv2.launcher.LauncherThemeBrightness
 import com.purride.pixellauncherv2.launcher.LauncherThemeFamily
 
+/** 普通信息文字与其背景之间的最低对比度。 */
+private const val MINIMUM_TEXT_CONTRAST = 4.5
+
+/** 控件轮廓与相邻背景之间的最低对比度。 */
+private const val MINIMUM_NON_TEXT_CONTRAST = 3.0
+
+/** 在基础色与主色之间寻找可读颜色时使用的插值精度。 */
+private const val ACCESSIBLE_COLOR_SEARCH_STEPS = 100
+
 /** Launcher 内置的 Showcase 风格主题目录。 */
 internal object LauncherThemeCatalog {
     /** 与 Showcase 六色主题语言一致的单个原始色板。 */
@@ -157,8 +166,41 @@ internal object LauncherThemeCatalog {
         val offPixel = mix(palette.background, palette.title, 0.06f)
         /** 次级面板使用更明显但仍属于本主题的插值颜色。 */
         val panelSubtle = mix(palette.background, palette.title, 0.12f)
-        /** 按压状态使用 Showcase token 相同思路生成的轨道颜色。 */
-        val pressedFill = mix(palette.background, palette.title, 0.18f)
+        /** 可读信息文字从 Showcase 弱化色出发，仅向主色补足必要对比度。 */
+        val metadataText = ensureContrast(
+            color = palette.faint,
+            background = palette.background,
+            toward = palette.title,
+            minimumContrast = MINIMUM_TEXT_CONTRAST,
+        )
+        /** 控件轮廓保留原色倾向，并满足非文字控件的最低识别要求。 */
+        val outline = ensureContrast(
+            color = palette.border,
+            background = palette.background,
+            toward = palette.title,
+            minimumContrast = MINIMUM_NON_TEXT_CONTRAST,
+        )
+        /** 实心操作面从原始边框色出发，保证背景色作为反色文字时仍可阅读。 */
+        val filledSurface = ensureContrast(
+            color = palette.border,
+            background = palette.background,
+            toward = palette.title,
+            minimumContrast = MINIMUM_TEXT_CONTRAST,
+        )
+        /** 选中指示块保留原有轻量填充起点，再增强到可明确辨认的状态。 */
+        val selectedFill = ensureContrast(
+            color = mix(palette.background, palette.title, 0.18f),
+            background = palette.background,
+            toward = palette.title,
+            minimumContrast = MINIMUM_TEXT_CONTRAST,
+        )
+        /** 警告色在保持原始色相的前提下补足信息文字对比度。 */
+        val alert = ensureContrast(
+            color = palette.alert,
+            background = palette.background,
+            toward = palette.title,
+            minimumContrast = MINIMUM_TEXT_CONTRAST,
+        )
         return LauncherTheme(
             id = "${family.idPrefix}-${brightness.idSuffix}",
             label = "${family.displayLabel} ${brightness.idSuffix.uppercase()}",
@@ -172,23 +214,23 @@ internal object LauncherThemeCatalog {
             text = TextColors(
                 primary = palette.title,
                 secondary = palette.dim,
-                muted = palette.faint,
+                muted = metadataText,
                 inverse = palette.background,
             ),
             statusBar = StatusBarColors(
                 text = palette.title,
-                mutedText = palette.faint,
+                mutedText = metadataText,
                 batteryHigh = palette.title,
-                batteryMedium = palette.alert,
-                batteryLow = palette.alert,
+                batteryMedium = alert,
+                batteryLow = alert,
                 searchText = palette.title,
-                searchPlaceholder = palette.faint,
+                searchPlaceholder = metadataText,
             ),
             drawer = DrawerColors(
                 itemText = palette.title,
-                itemTextMuted = palette.faint,
+                itemTextMuted = metadataText,
                 searchText = palette.title,
-                searchPlaceholder = palette.faint,
+                searchPlaceholder = metadataText,
             ),
             settings = SettingsColors(
                 itemTitle = palette.title,
@@ -196,20 +238,24 @@ internal object LauncherThemeCatalog {
             ),
             button = ButtonColors(
                 text = palette.title,
-                border = palette.border,
-                pressedFill = pressedFill,
-                disabledText = palette.faint,
+                border = outline,
+                pressedFill = selectedFill,
+                selectedText = palette.background,
+                unselectedText = palette.dim,
+                filledSurface = filledSurface,
+                filledText = palette.background,
+                disabledText = metadataText,
             ),
             sms = SmsColors(
                 sender = palette.title,
-                timestamp = palette.faint,
+                timestamp = metadataText,
                 body = palette.title,
-                draftBorder = palette.border,
+                draftBorder = outline,
             ),
             semantic = SemanticColors(
                 success = palette.title,
-                warning = palette.alert,
-                danger = palette.alert,
+                warning = alert,
+                danger = alert,
                 info = palette.dim,
             ),
         )
@@ -229,5 +275,57 @@ internal object LauncherThemeCatalog {
             (from.green + (to.green - from.green) * fraction).toInt(),
             (from.blue + (to.blue - from.blue) * fraction).toInt(),
         )
+    }
+
+    /**
+     * 从基础色向同主题主色逐步插值，返回首个满足最低对比度的颜色。
+     *
+     * 这种方式只调整必要的亮度距离，不把 Showcase 家族统一洗成同一套灰阶。
+     */
+    private fun ensureContrast(
+        color: PixelColor,
+        background: PixelColor,
+        toward: PixelColor,
+        minimumContrast: Double,
+    ): PixelColor {
+        require(minimumContrast >= 1.0) { "minimumContrast 必须不小于 1.0" }
+        if (contrastRatio(color, background) >= minimumContrast) return color
+        for (step in 1..ACCESSIBLE_COLOR_SEARCH_STEPS) {
+            /** 当前搜索步对应的主题内部插值颜色。 */
+            val candidate = mix(
+                from = color,
+                to = toward,
+                fraction = step.toFloat() / ACCESSIBLE_COLOR_SEARCH_STEPS,
+            )
+            if (contrastRatio(candidate, background) >= minimumContrast) return candidate
+        }
+        return toward
+    }
+
+    /** 计算两个不透明 sRGB 颜色之间的 WCAG 对比度。 */
+    private fun contrastRatio(first: PixelColor, second: PixelColor): Double {
+        /** 第一种颜色的相对亮度。 */
+        val firstLuminance = relativeLuminance(first)
+        /** 第二种颜色的相对亮度。 */
+        val secondLuminance = relativeLuminance(second)
+        return (maxOf(firstLuminance, secondLuminance) + 0.05) /
+            (minOf(firstLuminance, secondLuminance) + 0.05)
+    }
+
+    /** 计算一个不透明 sRGB 颜色的相对亮度。 */
+    private fun relativeLuminance(color: PixelColor): Double {
+        /** 把八位 sRGB 通道转换为线性通道。 */
+        fun linear(channel: Int): Double {
+            /** 归一化后的 sRGB 通道。 */
+            val normalized = channel / 255.0
+            return if (normalized <= 0.03928) {
+                normalized / 12.92
+            } else {
+                Math.pow((normalized + 0.055) / 1.055, 2.4)
+            }
+        }
+        return 0.2126 * linear(color.red) +
+            0.7152 * linear(color.green) +
+            0.0722 * linear(color.blue)
     }
 }

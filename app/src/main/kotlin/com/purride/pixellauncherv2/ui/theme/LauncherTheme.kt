@@ -58,9 +58,21 @@ data class SettingsColors(
 )
 
 data class ButtonColors(
+    /** 透明背景按钮的普通文字颜色。 */
     val text: PixelColor,
+    /** 控件轮廓与分隔线颜色。 */
     val border: PixelColor,
+    /** 分段选择器选中指示块颜色。 */
     val pressedFill: PixelColor,
+    /** 选中指示块覆盖区域内的文字颜色。 */
+    val selectedText: PixelColor,
+    /** 分段选择器中仍可操作的未选中项文字颜色。 */
+    val unselectedText: PixelColor,
+    /** 实心主操作与实心标签的背景颜色。 */
+    val filledSurface: PixelColor,
+    /** 实心主操作与实心标签的前景颜色。 */
+    val filledText: PixelColor,
+    /** 真正不可操作内容的弱化文字颜色。 */
     val disabledText: PixelColor,
 )
 

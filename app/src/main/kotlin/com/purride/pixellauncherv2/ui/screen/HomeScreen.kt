@@ -584,13 +584,13 @@ private fun homeNotificationActionButton(
     val enabled = !action.requiresInput
     val content = Container(
         height = chromeGeometry.segmentHeightPx,
-        fillColor = if (enabled) theme.button.border else theme.surface.panelSubtle,
+        fillColor = if (enabled) theme.button.filledSurface else theme.surface.panelSubtle,
         alignment = Alignment.CENTER,
         padding = EdgeInsets.symmetric(horizontal = HOME_ACTION_SEGMENT_HORIZONTAL_PADDING_PX),
         child = Text(
             action.title.uppercase(Locale.getDefault()),
             style = theme.typography.textStyle(
-                color = if (enabled) theme.surface.offPixelColor else theme.button.disabledText,
+                color = if (enabled) theme.button.filledText else theme.button.disabledText,
                 role = LauncherTextRole.CHROME,
             ),
             overflow = TextOverflow.ELLIPSIS,
@@ -752,10 +752,10 @@ private fun HomeActionButton(
         val countSegment = homeActionSegment(
             text = count.toString(),
             textStyle = theme.typography.textStyle(
-                color = theme.surface.offPixelColor,
+                color = theme.button.filledText,
                 role = LauncherTextRole.CHROME,
             ),
-            fillColor = theme.button.border,
+            fillColor = theme.button.filledSurface,
             chromeGeometry = chromeGeometry,
         )
         val divider = homeActionDivider(theme, chromeGeometry)
@@ -943,7 +943,7 @@ private fun mediaControlSegment(
     chromeGeometry: LauncherChromeGeometry,
 ): Widget {
     val fillColor = when {
-        filled -> theme.button.border
+        filled -> theme.button.filledSurface
         else -> null
     }
     val content = Container(
@@ -953,7 +953,7 @@ private fun mediaControlSegment(
         child = mediaControlIcon(
             icon = icon,
             color = when {
-                filled -> theme.surface.offPixelColor
+                filled -> theme.button.filledText
                 !enabled -> theme.button.disabledText
                 else -> theme.button.text
             },

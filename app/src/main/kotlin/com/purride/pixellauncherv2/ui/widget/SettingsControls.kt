@@ -237,7 +237,7 @@ fun SettingsSectionHeader(
     topMargin: Int = 0,
 ): Widget = Container(
     margin = EdgeInsets.only(top = topMargin),
-    fillColor = theme.button.border,
+    fillColor = theme.button.filledSurface,
     padding = EdgeInsets.symmetric(
         horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
         vertical = LauncherSpacing.ROW_SPACING,
@@ -248,7 +248,7 @@ fun SettingsSectionHeader(
         resolveLeadingInkInset = textEdgeResolvers.leadingInkInset,
         child = Text(
             title,
-            style = TextStyle(color = theme.surface.offPixelColor),
+            style = TextStyle(color = theme.button.filledText),
             overflow = TextOverflow.ELLIPSIS,
             softWrap = false,
             maxLines = 1,
@@ -321,8 +321,8 @@ private fun settingsValueCell(
 
 private fun settingsValueAdjusterStyle(theme: LauncherTheme): ValueAdjusterStyle = ValueAdjusterStyle(
     borderColor = theme.button.border,
-    buttonFillColor = theme.button.border,
-    buttonSymbolColor = theme.surface.offPixelColor,
+    buttonFillColor = theme.button.filledSurface,
+    buttonSymbolColor = theme.button.filledText,
     valueTextColor = theme.settings.itemValue,
     disabledColor = theme.button.disabledText,
     focusColor = theme.button.border,
@@ -359,8 +359,8 @@ private fun SettingsSwitch(
             containerColor = PixelColor.Transparent,
             borderColor = theme.button.border,
             selectedFillColor = theme.button.pressedFill,
-            selectedContentColor = if (showLabels) theme.button.text else PixelColor.Transparent,
-            unselectedContentColor = if (showLabels) theme.button.disabledText else PixelColor.Transparent,
+            selectedContentColor = if (showLabels) theme.button.selectedText else PixelColor.Transparent,
+            unselectedContentColor = if (showLabels) theme.button.unselectedText else PixelColor.Transparent,
             disabledContentColor = theme.button.disabledText,
             padding = EdgeInsets.symmetric(
                 horizontal = LauncherSpacing.BORDERED_CONTROL_INSET,

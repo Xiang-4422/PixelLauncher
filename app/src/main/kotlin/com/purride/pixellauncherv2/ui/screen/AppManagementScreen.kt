@@ -220,7 +220,7 @@ private fun fieldLabel(
 
 private fun appTextFieldStyle(theme: LauncherTheme): TextFieldStyle = TextFieldStyle(
     fillColor = PixelColor.Transparent,
-    borderColor = theme.text.inverse,
+    borderColor = theme.button.border,
     focusedBorderColor = theme.semantic.info,
     disabledBorderColor = theme.button.disabledText,
     textStyle = TextStyle(color = theme.text.primary),

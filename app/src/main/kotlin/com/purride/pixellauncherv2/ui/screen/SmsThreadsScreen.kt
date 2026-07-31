@@ -251,7 +251,11 @@ private fun smsBottomTabs(
                         onTap = { onSelected(index) },
                         child = Container(
                             alignment = Alignment.CENTER,
-                            fillColor = if (index == selectedIndex) theme.button.border else PixelColor.Transparent,
+                            fillColor = if (index == selectedIndex) {
+                                theme.button.pressedFill
+                            } else {
+                                PixelColor.Transparent
+                            },
                             padding = EdgeInsets.symmetric(
                                 horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
                                 vertical = LauncherSpacing.ROW_SPACING,
@@ -259,7 +263,11 @@ private fun smsBottomTabs(
                             child = Text(
                                 label,
                                 style = TextStyle(
-                                    color = if (index == selectedIndex) theme.surface.offPixelColor else theme.button.text,
+                                    color = if (index == selectedIndex) {
+                                        theme.button.selectedText
+                                    } else {
+                                        theme.button.unselectedText
+                                    },
                                 ),
                                 textAlign = TextAlign.CENTER,
                                 overflow = TextOverflow.ELLIPSIS,
@@ -491,7 +499,7 @@ private fun unreadReadActionPane(
         SlidableAction(
             label = "READ",
             backgroundColor = theme.semantic.success,
-            foregroundColor = theme.surface.offPixelColor,
+            foregroundColor = theme.button.filledText,
             onPressed = onRead,
         ),
     ),

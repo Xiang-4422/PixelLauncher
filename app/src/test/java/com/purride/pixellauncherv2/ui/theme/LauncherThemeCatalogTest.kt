@@ -32,9 +32,9 @@ class LauncherThemeCatalogTest {
         }
     }
 
-    /** Showcase 原生色板必须在对应基准亮度下保持完全一致。 */
+    /** Showcase 原生身份色保持不变，需要增强的弱色则只做最低限度的可读性派生。 */
     @Test
-    fun nativeVariantsPreserveShowcaseCoreColors() {
+    fun nativeVariantsPreserveShowcaseIdentityAndAccessibleDerivations() {
         assertCoreColors(
             family = LauncherThemeFamily.MIDNIGHT,
             brightness = LauncherThemeBrightness.DARK,
@@ -112,6 +112,55 @@ class LauncherThemeCatalogTest {
         }
     }
 
+    /** 承载时间、状态、占位符等信息的弱化文字也必须保持普通文字可读性。 */
+    @Test
+    fun everyVariantKeepsInformativeTextReadable() {
+        LauncherThemeCatalog.byVariant.forEach { (variant, theme) ->
+            /** 当前主题的信息文字与背景组合。 */
+            val informativeColors = mapOf(
+                "secondary" to theme.text.secondary,
+                "muted" to theme.text.muted,
+                "statusMuted" to theme.statusBar.mutedText,
+                "statusPlaceholder" to theme.statusBar.searchPlaceholder,
+                "drawerMuted" to theme.drawer.itemTextMuted,
+                "drawerPlaceholder" to theme.drawer.searchPlaceholder,
+                "settingsValue" to theme.settings.itemValue,
+                "buttonDisabled" to theme.button.disabledText,
+                "buttonUnselected" to theme.button.unselectedText,
+                "smsTimestamp" to theme.sms.timestamp,
+                "semanticSuccess" to theme.semantic.success,
+                "semanticWarning" to theme.semantic.warning,
+                "semanticDanger" to theme.semantic.danger,
+                "semanticInfo" to theme.semantic.info,
+            )
+            informativeColors.forEach { (role, color) ->
+                /** 当前信息角色与整机背景之间的对比度。 */
+                val contrast = contrastRatio(color, theme.surface.bezelColor)
+                assertTrue("$variant $role 对比度不足：$contrast", contrast >= 4.5)
+            }
+        }
+    }
+
+    /** 控件轮廓、选中块以及实心操作必须分别拥有清晰边界和成对前景色。 */
+    @Test
+    fun everyVariantKeepsControlsReadable() {
+        LauncherThemeCatalog.byVariant.forEach { (variant, theme) ->
+            /** 控件轮廓与页面背景之间的对比度。 */
+            val outlineContrast = contrastRatio(theme.button.border, theme.surface.bezelColor)
+            /** 选中块与未选中背景之间的对比度。 */
+            val selectionContrast = contrastRatio(theme.button.pressedFill, theme.surface.bezelColor)
+            /** 选中文字与选中块之间的对比度。 */
+            val selectedTextContrast = contrastRatio(theme.button.selectedText, theme.button.pressedFill)
+            /** 实心操作文字与实心背景之间的对比度。 */
+            val filledTextContrast = contrastRatio(theme.button.filledText, theme.button.filledSurface)
+
+            assertTrue("$variant 控件轮廓对比度不足：$outlineContrast", outlineContrast >= 3.0)
+            assertTrue("$variant 选中块对比度不足：$selectionContrast", selectionContrast >= 3.0)
+            assertTrue("$variant 选中文字对比度不足：$selectedTextContrast", selectedTextContrast >= 4.5)
+            assertTrue("$variant 实心操作文字对比度不足：$filledTextContrast", filledTextContrast >= 4.5)
+        }
+    }
+
     /** 断言一个 Showcase 基准色板的六个核心角色。 */
     private fun assertCoreColors(
         family: LauncherThemeFamily,
@@ -125,12 +174,25 @@ class LauncherThemeCatalogTest {
     ) {
         /** 待验证的完整 Launcher 主题。 */
         val theme = LauncherThemes.resolve(family, brightness)
-        assertEquals(rgb(background), theme.surface.bezelColor)
-        assertEquals(rgb(title), theme.text.primary)
+        /** Showcase 原始背景色。 */
+        val backgroundColor = rgb(background)
+        /** Showcase 原始主色。 */
+        val titleColor = rgb(title)
+        assertEquals(backgroundColor, theme.surface.bezelColor)
+        assertEquals(titleColor, theme.text.primary)
         assertEquals(rgb(dim), theme.text.secondary)
-        assertEquals(rgb(faint), theme.text.muted)
-        assertEquals(rgb(border), theme.button.border)
-        assertEquals(rgb(alert), theme.semantic.danger)
+        assertEquals(
+            ensureContrast(rgb(faint), backgroundColor, titleColor, minimumContrast = 4.5),
+            theme.text.muted,
+        )
+        assertEquals(
+            ensureContrast(rgb(border), backgroundColor, titleColor, minimumContrast = 3.0),
+            theme.button.border,
+        )
+        assertEquals(
+            ensureContrast(rgb(alert), backgroundColor, titleColor, minimumContrast = 4.5),
+            theme.semantic.danger,
+        )
     }
 
     /** 把整数 RGB 常量转换为 PixelColor。 */
@@ -139,6 +201,35 @@ class LauncherThemeCatalogTest {
         (value shr 8) and 0xFF,
         value and 0xFF,
     )
+
+    /** 复现主题目录的最小必要对比度派生规则。 */
+    private fun ensureContrast(
+        color: PixelColor,
+        background: PixelColor,
+        toward: PixelColor,
+        minimumContrast: Double,
+    ): PixelColor {
+        if (contrastRatio(color, background) >= minimumContrast) return color
+        for (step in 1..100) {
+            /** 当前搜索步对应的主题内部插值颜色。 */
+            val candidate = mix(
+                from = color,
+                to = toward,
+                fraction = step / 100f,
+            )
+            if (contrastRatio(candidate, background) >= minimumContrast) return candidate
+        }
+        return toward
+    }
+
+    /** 按逐通道线性插值复现主题内部颜色派生。 */
+    private fun mix(from: PixelColor, to: PixelColor, fraction: Float): PixelColor {
+        return PixelColor.fromRgb(
+            (from.red + (to.red - from.red) * fraction).toInt(),
+            (from.green + (to.green - from.green) * fraction).toInt(),
+            (from.blue + (to.blue - from.blue) * fraction).toInt(),
+        )
+    }
 
     /** 计算两种颜色的 WCAG 对比度。 */
     private fun contrastRatio(first: PixelColor, second: PixelColor): Double {

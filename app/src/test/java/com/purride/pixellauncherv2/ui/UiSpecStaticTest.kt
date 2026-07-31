@@ -115,8 +115,8 @@ class UiSpecStaticTest {
             },
             if (!settingsSource.contains("LauncherSpacing.SETTINGS_SECTION_GAP") ||
                 !controlsSource.contains("topMargin: Int = 0") ||
-                !controlsSource.contains("fillColor = theme.button.border") ||
-                !controlsSource.contains("style = TextStyle(color = theme.surface.offPixelColor)")
+                !controlsSource.contains("fillColor = theme.button.filledSurface") ||
+                !controlsSource.contains("style = TextStyle(color = theme.button.filledText)")
             ) {
                 "Settings section headers must have distinct title bars and section separation"
             } else {
@@ -241,8 +241,8 @@ class UiSpecStaticTest {
                 controlsSource.contains("fun SettingsPixelSizeControl(") &&
                 controlsSource.contains("ValueAdjuster(") &&
                 controlsSource.contains("style = settingsValueAdjusterStyle(theme)") &&
-                controlsSource.contains("buttonFillColor = theme.button.border") &&
-                controlsSource.contains("buttonSymbolColor = theme.surface.offPixelColor") &&
+                controlsSource.contains("buttonFillColor = theme.button.filledSurface") &&
+                controlsSource.contains("buttonSymbolColor = theme.button.filledText") &&
                 controlsSource.contains("valueTextColor = theme.settings.itemValue") &&
                 !screenSource.contains("presetLabels =") &&
                 !screenSource.contains("selectedPresetIndex =") &&
@@ -341,9 +341,10 @@ class UiSpecStaticTest {
                 null
             },
             if (!headerSource.contains("val fillColor = if (filled) statusBarActionBackgroundColor(isDanger, theme) else null") ||
-                !headerSource.contains("PixelColor.fromRgb(255, 0, 0)")
+                !headerSource.contains("theme.semantic.danger") ||
+                !headerSource.contains("statusBarActionTextColor(isDanger, theme)")
             ) {
-                "danger status bar actions must keep the neutral red fill"
+                "danger status bar actions must use the theme danger fill and its paired text color"
             } else {
                 null
             },
@@ -498,8 +499,8 @@ class UiSpecStaticTest {
                 headerSource.contains("padding = EdgeInsets.all(STATUS_BAR_TITLE_EDGE_PADDING_PX)") &&
                 headerSource.contains("height = chromeGeometry.segmentHeightPx") &&
                 headerSource.contains("padding = EdgeInsets.all(STATUS_BAR_MEDIA_BORDER_PX)") &&
-                headerSource.contains("fillColor = content.color ?: theme.button.border") &&
-                headerSource.contains("textColor = theme.surface.offPixelColor") &&
+                headerSource.contains("fillColor = content.color ?: theme.button.filledSurface") &&
+                headerSource.contains("theme.button.filledText") &&
                 headerSource.contains("StatusBarCenterContent.MediaTitle") &&
                 headerSource.contains("statusBarPageTag(") &&
                 headerSource.contains("AnimatedSwitcher(") &&
@@ -574,8 +575,8 @@ class UiSpecStaticTest {
         assertTrue(
             "Home action counts must use the ValueAdjuster-style shared border on the normal CALL/SMS actions.",
             homeSource.contains("borderColor = theme.button.border") &&
-                homeSource.contains("fillColor = theme.button.border") &&
-                homeSource.contains("color = theme.surface.offPixelColor") &&
+                homeSource.contains("fillColor = theme.button.filledSurface") &&
+                homeSource.contains("color = theme.button.filledText") &&
                 homeSource.contains("role = LauncherTextRole.CHROME") &&
                 homeSource.contains("HOME_ACTION_DIVIDER_PX = 1"),
         )

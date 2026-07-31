@@ -136,7 +136,7 @@ private fun editorSaveBar(
         onTap = onSave,
         child = Container(
             alignment = Alignment.CENTER,
-            fillColor = if (enabled) theme.button.border else PixelColor.Transparent,
+            fillColor = if (enabled) theme.button.filledSurface else PixelColor.Transparent,
             borderColor = if (enabled) null else theme.button.border,
             padding = EdgeInsets.symmetric(
                 horizontal = LauncherSpacing.CONTENT_HORIZONTAL,
@@ -145,7 +145,7 @@ private fun editorSaveBar(
             child = Text(
                 "SAVE",
                 style = theme.typography.textStyle(
-                    color = if (enabled) theme.surface.offPixelColor else theme.button.disabledText,
+                    color = if (enabled) theme.button.filledText else theme.button.disabledText,
                 ),
                 textAlign = TextAlign.CENTER,
                 overflow = TextOverflow.ELLIPSIS,
@@ -169,7 +169,7 @@ private fun editorText(text: String, color: PixelColor, theme: LauncherTheme): W
 
 private fun editorTextFieldStyle(theme: LauncherTheme): TextFieldStyle = TextFieldStyle(
     fillColor = PixelColor.Transparent,
-    borderColor = theme.text.inverse,
+    borderColor = theme.button.border,
     focusedBorderColor = theme.semantic.info,
     disabledBorderColor = theme.button.disabledText,
     textStyle = TextStyle(color = theme.text.primary),

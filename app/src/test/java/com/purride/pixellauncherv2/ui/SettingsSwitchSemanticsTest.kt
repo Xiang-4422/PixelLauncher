@@ -81,7 +81,16 @@ class SettingsSwitchSemanticsTest {
             ),
             drawer = DrawerColors(foreground, disabled, foreground, disabled),
             settings = SettingsColors(foreground, foreground),
-            button = ButtonColors(foreground, foreground, accent, disabled),
+            button = ButtonColors(
+                text = foreground,
+                border = foreground,
+                pressedFill = accent,
+                selectedText = background,
+                unselectedText = foreground,
+                filledSurface = foreground,
+                filledText = background,
+                disabledText = disabled,
+            ),
             sms = SmsColors(foreground, foreground, foreground, foreground),
             semantic = SemanticColors(foreground, foreground, foreground, foreground),
         )

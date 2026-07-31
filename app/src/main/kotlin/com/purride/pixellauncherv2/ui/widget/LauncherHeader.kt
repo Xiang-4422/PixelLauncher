@@ -320,8 +320,12 @@ private fun statusBarCenterContent(
     )
     is StatusBarCenterContent.MediaTitle -> statusBarCenter(
         text = content.text,
-        fillColor = content.color ?: theme.button.border,
-        textColor = theme.surface.offPixelColor,
+        fillColor = content.color ?: theme.button.filledSurface,
+        textColor = if (content.color == null) {
+            theme.button.filledText
+        } else {
+            theme.surface.bezelColor
+        },
         theme = theme,
         onTap = onCenterTap,
         onDoubleTap = onCenterDoubleTap,
@@ -339,7 +343,7 @@ private fun statusBarFullWidthAction(
     chromeGeometry: LauncherChromeGeometry,
 ): Widget {
     val fillColor = statusBarActionBackgroundColor(isDanger, theme)
-    val textColor = PixelColor.White
+    val textColor = statusBarActionTextColor(isDanger, theme)
     val labelText = Text(
         actionLabel,
         style = theme.typography.textStyle(color = textColor, role = LauncherTextRole.CHROME),
@@ -414,7 +418,7 @@ private fun statusBarCenterAction(
 ): Widget {
     val textColor = when {
         !enabled -> theme.statusBar.mutedText
-        filled -> PixelColor.White
+        filled -> statusBarActionTextColor(isDanger, theme)
         else -> theme.statusBar.text
     }
     val actionButton = TextButton(
@@ -755,9 +759,19 @@ private fun statusBarActionBackgroundColor(
     isDanger: Boolean,
     theme: LauncherTheme,
 ): PixelColor = if (isDanger) {
-    PixelColor.fromRgb(255, 0, 0)
+    theme.semantic.danger
 } else {
-    theme.surface.panel
+    theme.button.filledSurface
+}
+
+/** 返回与状态栏实心操作背景成对、满足可读性的文字颜色。 */
+private fun statusBarActionTextColor(
+    isDanger: Boolean,
+    theme: LauncherTheme,
+): PixelColor = if (isDanger) {
+    theme.surface.bezelColor
+} else {
+    theme.button.filledText
 }
 
 private fun statusBarChildren(
