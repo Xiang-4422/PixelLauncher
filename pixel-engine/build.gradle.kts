@@ -313,7 +313,6 @@ val checkStableApiBoundary by tasks.registering(Exec::class) {
     )
 }
 
-val publicApiBaseline = layout.projectDirectory.file("api/pixel-engine.api")
 val binaryApiBaseline = layout.projectDirectory.file("api/pixel-engine.binary-api")
 /** 1.0 发布要求所有显式 public/protected 声明都有有效 KDoc。 */
 val kdocCoverageMinimumPercent = 100.0
@@ -478,139 +477,6 @@ val testPixelGlyphPackConverter by tasks.registering {
     dependsOn(testPixelTooling)
 }
 
-val dumpPublicApi by tasks.registering {
-    group = "verification"
-    description = "Writes a deterministic text dump of pixel-engine public Kotlin declarations."
-
-    val sourceFiles = fileTree("src/main/kotlin") {
-        include("**/*.kt")
-    }
-    inputs.files(sourceFiles)
-    outputs.file(layout.buildDirectory.file("reports/api/pixel-engine.api"))
-
-    doLast {
-        val declarations = sourceFiles.files
-            .sortedBy { it.relativeTo(projectDir).path }
-            .flatMap { file ->
-                /** 当前源码文件声明的 Kotlin package。 */
-                var currentPackage = ""
-                /** 当前文件的简单花括号深度，用于跳过整个内部 artifact 容器。 */
-                var braceDepth = 0
-                /** 正在跳过的内部容器正文深度；null 表示当前不在该容器中。 */
-                var hiddenBlockDepth: Int? = null
-                /** 标记已识别内部容器声明、但其左花括号仍在后续行。 */
-                var hiddenContainerPending = false
-                /** 标记下一个 public 声明带有内部 artifact 注解。 */
-                var hideNextDeclaration = false
-                /** public class/interface/object 声明的轻量识别式。 */
-                val publicContainerPattern = Regex(
-                    "^public\\s+(?:(?:data|enum|sealed|abstract|annotation|value)\\s+)?" +
-                        "(?:class|interface|object)\\b",
-                )
-
-                buildList {
-                    file.readLines().forEach { raw ->
-                        /** 当前行去除首尾空白后的声明文本。 */
-                        val line = raw.trim()
-                        /** 当前行打开的花括号数量。 */
-                        val openingBraces = raw.count { character -> character == '{' }
-                        /** 当前行关闭的花括号数量。 */
-                        val closingBraces = raw.count { character -> character == '}' }
-
-                        if (hiddenBlockDepth != null) {
-                            braceDepth += openingBraces - closingBraces
-                            if (braceDepth < hiddenBlockDepth!!) hiddenBlockDepth = null
-                            return@forEach
-                        }
-
-                        if (hiddenContainerPending) {
-                            braceDepth += openingBraces - closingBraces
-                            if (openingBraces > 0) {
-                                hiddenBlockDepth = braceDepth
-                                hiddenContainerPending = false
-                            } else if (line == ")" || line.endsWith(";")) {
-                                hiddenContainerPending = false
-                            }
-                            return@forEach
-                        }
-
-                        when {
-                            line.startsWith("package ") -> {
-                                currentPackage = line.removePrefix("package ").trim()
-                            }
-                            line.startsWith("@PixelArtifactInternalApi") -> {
-                                hideNextDeclaration = true
-                            }
-                            hideNextDeclaration && line.startsWith("public ") -> {
-                                hideNextDeclaration = false
-                                if (publicContainerPattern.containsMatchIn(line)) {
-                                    if (openingBraces > 0) {
-                                        braceDepth += openingBraces - closingBraces
-                                        hiddenBlockDepth = braceDepth
-                                    } else {
-                                        hiddenContainerPending = true
-                                    }
-                                    return@forEach
-                                }
-                            }
-                            line.startsWith("public ") && !currentPackage.contains(".internal") -> {
-                                add("$currentPackage ${line.normalizePublicApiLine()}")
-                            }
-                        }
-                        braceDepth += openingBraces - closingBraces
-                    }
-                }
-            }
-            /** 文件物理迁移不得制造虚假的 API diff；声明文本全局排序后再冻结。 */
-            .sorted()
-        val output = buildString {
-            appendLine("# pixel-engine public API baseline")
-            declarations.forEach { appendLine(it) }
-        }
-        val report = layout.buildDirectory.file("reports/api/pixel-engine.api").get().asFile
-        report.parentFile.mkdirs()
-        report.writeText(output)
-    }
-}
-
-tasks.register("checkPublicApi") {
-    group = "verification"
-    description = "Checks the tracked pixel-engine public API baseline."
-    dependsOn(dumpPublicApi)
-
-    inputs.file(publicApiBaseline)
-    inputs.file(layout.buildDirectory.file("reports/api/pixel-engine.api"))
-
-    doLast {
-        val baselineFile = publicApiBaseline.asFile
-        val actualFile = layout.buildDirectory.file("reports/api/pixel-engine.api").get().asFile
-        if (!baselineFile.exists()) {
-            throw GradleException("Missing API baseline: ${baselineFile.path}. Run :pixel-engine:dumpPublicApi and review the report.")
-        }
-        val expected = baselineFile.readText()
-        val actual = actualFile.readText()
-        if (expected != actual) {
-            throw GradleException(
-                "pixel-engine public API changed. Review ${actualFile.path} and update ${baselineFile.path} intentionally.",
-            )
-        }
-    }
-}
-
-/** 将人工审阅后的轻量公开声明报告冻结为当前 baseline。 */
-val updatePublicApiBaseline by tasks.registering {
-    group = "verification"
-    dependsOn(dumpPublicApi)
-    doLast {
-        /** 当前生成且已完成评审的轻量 API 报告。 */
-        val generated = layout.buildDirectory.file("reports/api/pixel-engine.api").get().asFile
-        /** 纳入源码控制的轻量 API baseline。 */
-        val baseline = publicApiBaseline.asFile
-        baseline.parentFile.mkdirs()
-        generated.copyTo(baseline, overwrite = true)
-    }
-}
-
 val releaseRuntimeClasses = layout.buildDirectory.dir(
     "intermediates/runtime_library_classes_dir/release/bundleLibRuntimeToDirRelease",
 )
@@ -737,6 +603,19 @@ val updateBinaryApiBaseline by tasks.registering {
     }
 }
 
+/**
+ * 一条命令更新全部 API 基线（Metalava 源码签名 + javap 二进制 ABI）。
+ *
+ * 只降低操作成本，不改变门禁语义：check 仍逐字节比对已提交的基线文件，
+ * 生成结果必须经人工评审并提交才会生效；本任务不会也不得接入 check。
+ */
+tasks.register("updateApiBaselines") {
+    group = "verification"
+    description = "Regenerates both reviewed API baselines (Metalava + binary) in one command."
+    dependsOn(updateMetalavaApiBaseline)
+    dependsOn(updateBinaryApiBaseline)
+}
+
 /** 使用可测试的词法扫描器校验完整 public/protected KDoc，而不是依赖单行正则。 */
 val checkKdocCoverage by tasks.registering(Exec::class) {
     group = "verification"
@@ -842,7 +721,6 @@ val checkReleaseArtifactBudget by tasks.registering(Exec::class) {
 }
 
 tasks.named("check") {
-    dependsOn("checkPublicApi")
     dependsOn("checkBinaryApi")
     dependsOn(checkMetalavaApi)
     dependsOn(checkStableApiBoundary)
@@ -986,15 +864,6 @@ fun buildMetalavaArguments(
     )
     arguments += listOf("--api", apiOutput.absolutePath)
     return arguments
-}
-
-fun String.normalizePublicApiLine(): String {
-    return replace(Regex("/\\*\\*.*?\\*/\\s*"), "")
-        /* KDoc 属于文档而不是源码签名，主构造参数的行内注释不得制造 API diff。 */
-        .replace(Regex("\\s+"), " ")
-        .replace(Regex("\\s*\\{\\s*$"), "")
-        .replace(Regex(" = (Internal\\w+|com\\.purride\\.pixelui\\.internal\\.\\w+)$"), "")
-        .trim()
 }
 
 /** Returns true when this class file belongs to a package eligible for published ABI inspection. */

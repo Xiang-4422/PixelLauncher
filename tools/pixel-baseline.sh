@@ -18,7 +18,6 @@ fi
 
 # Build every artifact and JUnit report consumed by collect_pixel_baseline.py.
 "$GRADLEW_BIN" \
-  :pixel-engine:checkPublicApi \
   :pixel-engine:checkBinaryApi \
   :pixel-engine:checkKdocCoverage \
   :pixel-engine:testPixelTooling \

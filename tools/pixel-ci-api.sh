@@ -14,7 +14,6 @@ cd "$ROOT_DIR"
 # API 报告必须由本次源码重新生成，不能读取上一次 build 目录。
 "$GRADLEW_BIN" clean --no-build-cache --no-daemon
 "$GRADLEW_BIN" \
-  :pixel-engine:checkPublicApi \
   :pixel-engine:checkBinaryApi \
   :pixel-engine:checkMetalavaApi \
   :pixel-engine:checkStableApiBoundary \

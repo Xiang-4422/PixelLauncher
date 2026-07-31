@@ -15,7 +15,6 @@ cd "$ROOT_DIR"
 # ALL failures instead of aborting at the first. Gradle still exits non-zero if
 # any task failed, so the gate's pass/fail outcome is unchanged.
 "$GRADLEW_BIN" \
-  :pixel-engine:checkPublicApi \
   :pixel-engine:checkBinaryApi \
   :pixel-engine:checkMetalavaApi \
   :pixel-engine:checkStableApiBoundary \
