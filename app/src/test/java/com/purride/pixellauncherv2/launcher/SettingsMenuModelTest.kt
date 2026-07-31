@@ -51,14 +51,27 @@ class SettingsMenuModelTest {
     }
 
     @Test
-    fun nextTheme_wrapsAtBothEndsAndRoundTrips() {
-        val first = PixelTheme.entries.first()
-        val last = PixelTheme.entries.last()
-        assertEquals(last, SettingsMenuModel.nextTheme(first, -1))
-        assertEquals(first, SettingsMenuModel.nextTheme(last, 1))
+    fun nextThemeMode_wrapsAtBothEndsAndRoundTrips() {
+        val first = LauncherThemeMode.entries.first()
+        val last = LauncherThemeMode.entries.last()
+        assertEquals(last, SettingsMenuModel.nextThemeMode(first, -1))
+        assertEquals(first, SettingsMenuModel.nextThemeMode(last, 1))
         // forward then backward returns to the original
-        val stepped = SettingsMenuModel.nextTheme(first, 1)
-        assertEquals(first, SettingsMenuModel.nextTheme(stepped, -1))
+        val stepped = SettingsMenuModel.nextThemeMode(first, 1)
+        assertEquals(first, SettingsMenuModel.nextThemeMode(stepped, -1))
+    }
+
+    /** 主题家族与亮暗模式必须作为两个独立选项循环。 */
+    @Test
+    fun nextThemeFamilyWrapsIndependentlyFromMode() {
+        assertEquals(
+            LauncherThemeFamily.CRT,
+            SettingsMenuModel.nextThemeFamily(LauncherThemeFamily.MIDNIGHT, 1),
+        )
+        assertEquals(
+            LauncherThemeFamily.PAPER,
+            SettingsMenuModel.nextThemeFamily(LauncherThemeFamily.MIDNIGHT, -1),
+        )
     }
 
     /** 字体家族切换后应保留受支持维度，并把不支持字号收敛到最近选项。 */
@@ -204,6 +217,8 @@ class SettingsMenuModelTest {
                 mutedNotificationSourceIds = setOf("com.noisy"),
                 priorityNotificationSourceIds = setOf("com.bank"),
                 apps = listOf(AppEntry(label = "Bank", packageName = "com.bank", activityName = "BankActivity")),
+                selectedThemeFamily = LauncherThemeFamily.CRT,
+                selectedThemeMode = LauncherThemeMode.NIGHT,
             ),
         )
         val items = rows.map { it.item }
@@ -244,6 +259,8 @@ class SettingsMenuModelTest {
         assertEquals("FUSION", rows.first { it.item == SettingsMenuItem.FONT }.value)
         assertEquals("PROP", rows.first { it.item == SettingsMenuItem.FONT_WIDTH }.value)
         assertEquals("10PX", rows.first { it.item == SettingsMenuItem.FONT_SIZE }.value)
+        assertEquals("CRT", rows.first { it.item == SettingsMenuItem.THEME }.value)
+        assertEquals("NIGHT", rows.first { it.item == SettingsMenuItem.THEME_MODE }.value)
     }
 
     @Test
@@ -267,6 +284,7 @@ class SettingsMenuModelTest {
         )
         assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.RESOLUTION }.section)
         assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.THEME }.section)
+        assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.THEME_MODE }.section)
         assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.FONT }.section)
         assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.FONT_WIDTH }.section)
         assertEquals(SettingsSection.DISPLAY, rows.first { it.item == SettingsMenuItem.FONT_SIZE }.section)

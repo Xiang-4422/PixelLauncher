@@ -1075,14 +1075,16 @@ object LauncherStateTransitions {
         selectedPixelShape: PixelShape = state.selectedPixelShape,
         selectedDotSizePx: Int = state.selectedDotSizePx,
         isPixelGapEnabled: Boolean = state.isPixelGapEnabled,
-        selectedTheme: PixelTheme = state.selectedTheme,
+        selectedThemeFamily: LauncherThemeFamily = state.selectedThemeFamily,
+        selectedThemeMode: LauncherThemeMode = state.selectedThemeMode,
         fontSelection: LauncherFontSelection = state.fontSelection,
     ): LauncherState {
         return state.copy(
             selectedPixelShape = selectedPixelShape,
             selectedDotSizePx = selectedDotSizePx,
             isPixelGapEnabled = isPixelGapEnabled,
-            selectedTheme = selectedTheme,
+            selectedThemeFamily = selectedThemeFamily,
+            selectedThemeMode = selectedThemeMode,
             fontSelection = PixelFontCatalog.normalize(fontSelection),
         )
     }

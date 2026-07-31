@@ -11,12 +11,13 @@ import com.purride.pixellauncherv2.launcher.DrawerListAlignment
 import com.purride.pixellauncherv2.launcher.IdleSettings
 import com.purride.pixellauncherv2.launcher.LauncherFontSelection
 import com.purride.pixellauncherv2.launcher.LauncherMode
+import com.purride.pixellauncherv2.launcher.LauncherThemeFamily
+import com.purride.pixellauncherv2.launcher.LauncherThemeMode
 import com.purride.pixellauncherv2.launcher.MediaPlaybackSnapshot
 import com.purride.pixellauncherv2.launcher.NotificationSignal
 import com.purride.pixellauncherv2.launcher.NotificationSourceInfo
 import com.purride.pixellauncherv2.launcher.PixelFontCatalog
 import com.purride.pixellauncherv2.launcher.PixelMatterEffectMode
-import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.launcher.SmsSendStatus
@@ -123,7 +124,10 @@ data class LauncherUiState(
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = LauncherLayoutProfileFactory.defaultDotSizePx,
     val isPixelGapEnabled: Boolean = true,
-    val selectedTheme: PixelTheme = PixelTheme.DAY,
+    /** 当前选中的主题家族。 */
+    val selectedThemeFamily: LauncherThemeFamily = LauncherThemeFamily.MIDNIGHT,
+    /** 当前主题家族内部采用的亮暗模式。 */
+    val selectedThemeMode: LauncherThemeMode = LauncherThemeMode.NIGHT,
     /** 设置页当前明确选中的字体家族、宽度模式和默认字号。 */
     val fontSelection: LauncherFontSelection = PixelFontCatalog.defaultUiFontSelection,
     /** 字体设置当前是否等待后台资源准备。 */

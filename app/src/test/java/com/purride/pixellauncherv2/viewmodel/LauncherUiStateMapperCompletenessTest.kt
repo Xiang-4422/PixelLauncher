@@ -11,12 +11,13 @@ import com.purride.pixellauncherv2.launcher.LauncherFontSelection
 import com.purride.pixellauncherv2.launcher.LauncherFontWidthMode
 import com.purride.pixellauncherv2.launcher.LauncherMode
 import com.purride.pixellauncherv2.launcher.LauncherState
+import com.purride.pixellauncherv2.launcher.LauncherThemeFamily
+import com.purride.pixellauncherv2.launcher.LauncherThemeMode
 import com.purride.pixellauncherv2.launcher.MediaPlaybackSnapshot
 import com.purride.pixellauncherv2.launcher.NotificationSignal
 import com.purride.pixellauncherv2.launcher.NotificationSourceInfo
 import com.purride.pixellauncherv2.launcher.PixelFontSize
 import com.purride.pixellauncherv2.launcher.PixelMatterEffectMode
-import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixellauncherv2.launcher.SmsPageIndex
 import com.purride.pixellauncherv2.launcher.SmsPermissionState
 import com.purride.pixellauncherv2.launcher.SmsSendStatus
@@ -32,7 +33,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * 以完整非默认快照保护 [LauncherState] 到 [LauncherUiState] 的 108 字段身份映射。
+ * 以完整非默认快照保护 [LauncherState] 到 [LauncherUiState] 的 109 字段身份映射。
  *
  * 运行时断言负责验证真实 mapper 行为；源码契约仅用于在 schema 增删或 mapper 漏项时提供明确诊断。
  */
@@ -65,7 +66,7 @@ class LauncherUiStateMapperCompletenessTest {
      * 调用真实 [toLauncherUiState]，按字段名逐项比较完整输入与输出值。
      */
     @Test
-    fun toLauncherUiState_mapsAll108NonDefaultFieldsWithoutCrossingValues() {
+    fun toLauncherUiState_mapsAll109NonDefaultFieldsWithoutCrossingValues() {
         val state = completeNonDefaultState()
         val uiState = state.toLauncherUiState()
 
@@ -82,7 +83,7 @@ class LauncherUiStateMapperCompletenessTest {
      * 补充验证两个主构造器和 mapper 的精确清单，让新增、缺失、重复或错接字段直接报出名称。
      */
     @Test
-    fun sourceSchemasAndMapper_keepExact108FieldContract() {
+    fun sourceSchemasAndMapper_keepExact109FieldContract() {
         val moduleRoot = resolveModuleRoot()
         val launcherStateSource = moduleRoot
             .resolve("src/main/kotlin/com/purride/pixellauncherv2/launcher/LauncherState.kt")
@@ -110,7 +111,7 @@ class LauncherUiStateMapperCompletenessTest {
     }
 
     /**
-     * 构造全部 108 字段均显式赋值的合法状态；同类型字段使用不同哨兵以识别交叉映射。
+     * 构造全部 109 字段均显式赋值的合法状态；同类型字段使用不同哨兵以识别交叉映射。
      */
     private fun completeNonDefaultState(): LauncherState {
         // Drawer 数据同时保证选择下标与可见列表范围一致。
@@ -317,7 +318,8 @@ class LauncherUiStateMapperCompletenessTest {
             selectedPixelShape = PixelShape.DIAMOND,
             selectedDotSizePx = 9,
             isPixelGapEnabled = false,
-            selectedTheme = PixelTheme.NIGHT,
+            selectedThemeFamily = LauncherThemeFamily.PAPER,
+            selectedThemeMode = LauncherThemeMode.DAY,
             fontSelection = LauncherFontSelection(
                 family = LauncherFontFamily.ARK,
                 widthMode = LauncherFontWidthMode.MONOSPACED,
@@ -535,7 +537,7 @@ class LauncherUiStateMapperCompletenessTest {
 
     private companion object {
         /** 当前扁平 schema 的字段总数。 */
-        const val EXPECTED_FIELD_COUNT = 108
+        const val EXPECTED_FIELD_COUNT = 109
 
         /** 按规范 schema 顺序列出全部字段，供行为循环与结构诊断共用。 */
         val EXPECTED_FIELD_NAMES: List<String> = listOf(
@@ -601,7 +603,8 @@ class LauncherUiStateMapperCompletenessTest {
             "selectedPixelShape",
             "selectedDotSizePx",
             "isPixelGapEnabled",
-            "selectedTheme",
+            "selectedThemeFamily",
+            "selectedThemeMode",
             "fontSelection",
             "isFontLoading",
             "fontCacheSummary",

@@ -8,6 +8,7 @@ enum class SettingsMenuItem {
     PIXEL_GAP,
     STYLE,
     THEME,
+    THEME_MODE,
     FONT,
     FONT_WIDTH,
     FONT_SIZE,
@@ -54,7 +55,10 @@ object SettingsMenuModel {
         PixelShape.CIRCLE,
         PixelShape.DIAMOND,
     )
-    val themeOptions: List<PixelTheme> = PixelTheme.entries
+    /** 设置页允许循环选择的主题家族。 */
+    val themeFamilyOptions: List<LauncherThemeFamily> = LauncherThemeFamily.entries
+    /** 设置页允许循环选择的亮暗模式。 */
+    val themeModeOptions: List<LauncherThemeMode> = LauncherThemeMode.entries
     /** 设置页允许循环选择的字体家族。 */
     val fontOptions: List<LauncherFontFamily> = PixelFontCatalog.fontFamilyOptions()
 
@@ -90,7 +94,15 @@ object SettingsMenuModel {
                 SettingsMenuRow(
                     item = SettingsMenuItem.THEME,
                     title = "THEME",
-                    value = themeLabel(state.selectedTheme),
+                    value = themeFamilyLabel(state.selectedThemeFamily),
+                    section = SettingsSection.DISPLAY,
+                ),
+            )
+            add(
+                SettingsMenuRow(
+                    item = SettingsMenuItem.THEME_MODE,
+                    title = "MODE",
+                    value = themeModeLabel(state.selectedThemeMode),
                     section = SettingsSection.DISPLAY,
                 ),
             )
@@ -297,10 +309,21 @@ object SettingsMenuModel {
         return resolutionOptions().indexOf(current).takeIf { it >= 0 } ?: 0
     }
 
-    fun nextTheme(current: PixelTheme, direction: Int): PixelTheme {
-        val currentIndex = themeOptions.indexOf(current).takeIf { it >= 0 } ?: 0
-        val nextIndex = wrapIndex(currentIndex + direction, themeOptions.size)
-        return themeOptions[nextIndex]
+    /** 按设置页方向循环选择主题家族。 */
+    fun nextThemeFamily(
+        current: LauncherThemeFamily,
+        direction: Int,
+    ): LauncherThemeFamily {
+        val currentIndex = themeFamilyOptions.indexOf(current).takeIf { it >= 0 } ?: 0
+        val nextIndex = wrapIndex(currentIndex + direction, themeFamilyOptions.size)
+        return themeFamilyOptions[nextIndex]
+    }
+
+    /** 按设置页方向循环选择亮暗模式。 */
+    fun nextThemeMode(current: LauncherThemeMode, direction: Int): LauncherThemeMode {
+        val currentIndex = themeModeOptions.indexOf(current).takeIf { it >= 0 } ?: 0
+        val nextIndex = wrapIndex(currentIndex + direction, themeModeOptions.size)
+        return themeModeOptions[nextIndex]
     }
 
     /** 按设置页方向循环选择字体家族，并收敛到新家族支持的最近组合。 */
@@ -336,8 +359,14 @@ object SettingsMenuModel {
         }
     }
 
-    fun themeLabel(theme: PixelTheme): String {
-        return theme.displayLabel
+    /** 返回设置页展示的主题家族名称。 */
+    fun themeFamilyLabel(family: LauncherThemeFamily): String {
+        return family.displayLabel
+    }
+
+    /** 返回设置页展示的亮暗模式名称。 */
+    fun themeModeLabel(mode: LauncherThemeMode): String {
+        return mode.displayLabel
     }
 
     /** 返回设置页展示的字体名称。 */

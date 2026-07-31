@@ -387,13 +387,15 @@ class LauncherTransitionBaselineTest {
             selectedPixelShape = PixelShape.DIAMOND,
             selectedDotSizePx = 7,
             isPixelGapEnabled = false,
-            selectedTheme = PixelTheme.NIGHT,
+            selectedThemeFamily = LauncherThemeFamily.AMBER,
+            selectedThemeMode = LauncherThemeMode.NIGHT,
             fontSelection = unsupportedSelection,
         )
         assertEquals(PixelShape.DIAMOND, appearanceState.selectedPixelShape)
         assertEquals(7, appearanceState.selectedDotSizePx)
         assertFalse(appearanceState.isPixelGapEnabled)
-        assertEquals(PixelTheme.NIGHT, appearanceState.selectedTheme)
+        assertEquals(LauncherThemeFamily.AMBER, appearanceState.selectedThemeFamily)
+        assertEquals(LauncherThemeMode.NIGHT, appearanceState.selectedThemeMode)
         assertEquals(PixelFontCatalog.defaultUiFontSelection, appearanceState.fontSelection)
 
         val loadingState = LauncherStateTransitions.updateFontLoading(appearanceState, isLoading = true)

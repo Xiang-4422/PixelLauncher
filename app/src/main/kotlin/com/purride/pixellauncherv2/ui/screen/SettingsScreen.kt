@@ -119,11 +119,21 @@ class SettingsScreen(
             add(
                 SettingsOptionStepperRow(
                     title = "THEME",
-                    valueLabel = SettingsMenuModel.themeLabel(selectedTheme),
+                    valueLabel = SettingsMenuModel.themeFamilyLabel(selectedThemeFamily),
                     theme = t,
                     textEdgeResolvers = widget.textEdgeResolvers,
                     onPrevious = { widget.onItemAction(SettingsMenuItem.THEME, -1) },
                     onNext = { widget.onItemAction(SettingsMenuItem.THEME, +1) },
+                ),
+            )
+            add(
+                SettingsOptionStepperRow(
+                    title = "MODE",
+                    valueLabel = SettingsMenuModel.themeModeLabel(selectedThemeMode),
+                    theme = t,
+                    textEdgeResolvers = widget.textEdgeResolvers,
+                    onPrevious = { widget.onItemAction(SettingsMenuItem.THEME_MODE, -1) },
+                    onNext = { widget.onItemAction(SettingsMenuItem.THEME_MODE, +1) },
                 ),
             )
             add(

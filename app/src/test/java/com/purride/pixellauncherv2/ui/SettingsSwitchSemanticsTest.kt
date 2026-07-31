@@ -4,10 +4,10 @@ import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.PixelSemanticRole
 import com.purride.pixelui.PixelSemanticsAction
 import com.purride.pixelui.testing.PixelTester
+import com.purride.pixellauncherv2.launcher.LauncherThemeBrightness
 import com.purride.pixellauncherv2.ui.theme.ButtonColors
 import com.purride.pixellauncherv2.ui.theme.DrawerColors
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
-import com.purride.pixellauncherv2.ui.theme.LauncherThemeMode
 import com.purride.pixellauncherv2.ui.theme.SemanticColors
 import com.purride.pixellauncherv2.ui.theme.SettingsColors
 import com.purride.pixellauncherv2.ui.theme.SmsColors
@@ -67,7 +67,7 @@ class SettingsSwitchSemanticsTest {
         return LauncherTheme(
             id = "test",
             label = "Test",
-            mode = LauncherThemeMode.DARK,
+            mode = LauncherThemeBrightness.DARK,
             surface = SurfaceColors(background, background, background, background),
             text = TextColors(foreground, foreground, disabled, background),
             statusBar = StatusBarColors(

@@ -90,7 +90,10 @@ data class LauncherState(
     val selectedPixelShape: PixelShape = PixelShape.SQUARE,
     val selectedDotSizePx: Int = LauncherLayoutProfileFactory.defaultDotSizePx,
     val isPixelGapEnabled: Boolean = true,
-    val selectedTheme: PixelTheme = PixelTheme.DAY,
+    /** 当前选中的主题家族。 */
+    val selectedThemeFamily: LauncherThemeFamily = LauncherThemeFamily.MIDNIGHT,
+    /** 当前主题家族内部采用的亮暗模式。 */
+    val selectedThemeMode: LauncherThemeMode = LauncherThemeMode.NIGHT,
     /** 设置页当前明确选中的字体家族、宽度模式和默认字号。 */
     val fontSelection: LauncherFontSelection = PixelFontCatalog.defaultUiFontSelection,
     /** 候选字体正在后台准备，当前字体仍保持激活。 */

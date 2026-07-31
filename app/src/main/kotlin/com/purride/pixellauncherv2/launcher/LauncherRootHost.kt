@@ -79,7 +79,10 @@ internal class LauncherRootHost(
 ) {
     // ── Mutable model fields ──────────────────────────────────────────────────
     private var uiState: LauncherUiState = LauncherUiState()
-    private var theme: LauncherTheme = LauncherThemes.fallbackFrom(PixelTheme.DAY).copy(
+    private var theme: LauncherTheme = LauncherThemes.resolve(
+        family = LauncherThemeFamily.MIDNIGHT,
+        brightness = LauncherThemeBrightness.DARK,
+    ).copy(
         typography = initialFont.typography,
     )
     private var chargeTick: Int = 0

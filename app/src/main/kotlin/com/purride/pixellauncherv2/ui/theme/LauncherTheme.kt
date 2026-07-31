@@ -1,15 +1,14 @@
 package com.purride.pixellauncherv2.ui.theme
 
-import android.content.Context
 import com.purride.pixelcore.PixelColor
-import com.purride.pixellauncherv2.launcher.PixelTheme
+import com.purride.pixellauncherv2.launcher.LauncherThemeBrightness
+import com.purride.pixellauncherv2.launcher.LauncherThemeFamily
 import com.purride.pixellauncherv2.ui.text.LauncherTypography
-import org.json.JSONObject
 
 data class LauncherTheme(
     val id: String,
     val label: String,
-    val mode: LauncherThemeMode,
+    val mode: LauncherThemeBrightness,
     val surface: SurfaceColors,
     val text: TextColors,
     val statusBar: StatusBarColors,
@@ -21,11 +20,6 @@ data class LauncherTheme(
     /** 当前字体选择以及供组件显式覆盖字号的入口。 */
     val typography: LauncherTypography = LauncherTypography.Default,
 )
-
-enum class LauncherThemeMode {
-    LIGHT,
-    DARK,
-}
 
 data class SurfaceColors(
     val bezelColor: PixelColor,
@@ -84,112 +78,23 @@ data class SemanticColors(
     val info: PixelColor,
 )
 
+/** 唯一标识一个主题家族的具体亮度变体。 */
+internal data class LauncherThemeVariant(
+    /** 主题家族。 */
+    val family: LauncherThemeFamily,
+    /** 家族内部实际生效的亮度。 */
+    val brightness: LauncherThemeBrightness,
+)
+
+/** 提供 Launcher 内置主题家族的具体亮度变体。 */
 object LauncherThemes {
-    private val cache = mutableMapOf<PixelTheme, LauncherTheme>()
-
-    fun from(context: Context, pixelTheme: PixelTheme): LauncherTheme =
-        cache.getOrPut(pixelTheme) {
-            context.assets.open("themes/${pixelTheme.fileName}").bufferedReader().use { reader ->
-                parse(reader.readText())
-            }
-        }
-
-    fun fallbackFrom(pixelTheme: PixelTheme): LauncherTheme =
-        // AUTO is a setting sentinel, not a real theme; resolve it (no system info
-        // here, so default to DAY) before looking up the fallback map.
-        fallbackThemes.getValue(pixelTheme.resolve(systemInDarkMode = false))
-
-    private fun parse(rawJson: String): LauncherTheme {
-        val json = JSONObject(rawJson)
-        val colors = json.getJSONObject("colors")
-        return LauncherTheme(
-            id = json.getString("id"),
-            label = json.getString("label"),
-            mode = LauncherThemeMode.valueOf(json.getString("mode").uppercase()),
-            surface = colors.getJSONObject("surface").let {
-                SurfaceColors(
-                    bezelColor = it.color("bezelColor"),
-                    offPixelColor = it.color("offPixelColor"),
-                    panel = it.color("panel"),
-                    panelSubtle = it.color("panelSubtle"),
-                )
-            },
-            text = colors.getJSONObject("text").let {
-                TextColors(
-                    primary = it.color("primary"),
-                    secondary = it.color("secondary"),
-                    muted = it.color("muted"),
-                    inverse = it.color("inverse"),
-                )
-            },
-            statusBar = colors.getJSONObject("statusBar").let {
-                StatusBarColors(
-                    text = it.color("text"),
-                    mutedText = it.color("mutedText"),
-                    batteryHigh = it.color("batteryHigh"),
-                    batteryMedium = it.color("batteryMedium"),
-                    batteryLow = it.color("batteryLow"),
-                    searchText = it.color("searchText"),
-                    searchPlaceholder = it.color("searchPlaceholder"),
-                )
-            },
-            drawer = colors.getJSONObject("drawer").let {
-                DrawerColors(
-                    itemText = it.color("itemText"),
-                    itemTextMuted = it.color("itemTextMuted"),
-                    searchText = it.color("searchText"),
-                    searchPlaceholder = it.color("searchPlaceholder"),
-                )
-            },
-            settings = colors.getJSONObject("settings").let {
-                SettingsColors(
-                    itemTitle = it.color("itemTitle"),
-                    itemValue = it.color("itemValue"),
-                )
-            },
-            button = colors.getJSONObject("button").let {
-                ButtonColors(
-                    text = it.color("text"),
-                    border = it.color("border"),
-                    pressedFill = it.color("pressedFill"),
-                    disabledText = it.color("disabledText"),
-                )
-            },
-            sms = colors.getJSONObject("sms").let {
-                SmsColors(
-                    sender = it.color("sender"),
-                    timestamp = it.color("timestamp"),
-                    body = it.color("body"),
-                    draftBorder = it.color("draftBorder"),
-                )
-            },
-            semantic = colors.getJSONObject("semantic").let {
-                SemanticColors(
-                    success = it.color("success"),
-                    warning = it.color("warning"),
-                    danger = it.color("danger"),
-                    info = it.color("info"),
-                )
-            },
-        )
-    }
-
-    private fun JSONObject.color(name: String): PixelColor =
-        parseColor(getString(name))
-
-    private fun parseColor(hex: String): PixelColor {
-        val value = hex.removePrefix("#")
-        require(value.length == 6) { "Expected #RRGGBB color, got $hex" }
-        return PixelColor.fromRgb(
-            value.substring(0, 2).toInt(16),
-            value.substring(2, 4).toInt(16),
-            value.substring(4, 6).toInt(16),
-        )
-    }
-
-    private val fallbackThemes: Map<PixelTheme, LauncherTheme> by lazy {
-        // Build only from the themes that have fallback JSON (DAY / NIGHT). AUTO is a
-        // setting sentinel resolved to DAY/NIGHT before lookup, never a key here.
-        FallbackThemeJson.byTheme.mapValues { (_, rawJson) -> parse(rawJson) }
+    /** 返回指定主题家族与亮度对应的完整运行时主题。 */
+    fun resolve(
+        family: LauncherThemeFamily,
+        brightness: LauncherThemeBrightness,
+    ): LauncherTheme {
+        /** 当前主题变体的稳定缓存键。 */
+        val variant = LauncherThemeVariant(family = family, brightness = brightness)
+        return LauncherThemeCatalog.byVariant.getValue(variant)
     }
 }

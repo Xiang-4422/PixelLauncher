@@ -7,10 +7,11 @@ import com.purride.pixellauncherv2.launcher.IdleSettings
 import com.purride.pixellauncherv2.launcher.LauncherFontFamily
 import com.purride.pixellauncherv2.launcher.LauncherFontSelection
 import com.purride.pixellauncherv2.launcher.LauncherFontWidthMode
+import com.purride.pixellauncherv2.launcher.LauncherThemeFamily
+import com.purride.pixellauncherv2.launcher.LauncherThemeMode
 import com.purride.pixellauncherv2.launcher.PixelFontCatalog
 import com.purride.pixellauncherv2.launcher.PixelFontSize
 import com.purride.pixellauncherv2.launcher.PixelMatterEffectMode
-import com.purride.pixellauncherv2.launcher.PixelTheme
 import com.purride.pixelcore.PixelShape
 import com.purride.pixellauncherv2.layout.LauncherLayoutProfileFactory
 import org.json.JSONObject
@@ -26,7 +27,10 @@ class FontSettingsRepository(
         val pixelShape: PixelShape,
         val dotSizePx: Int,
         val pixelGapEnabled: Boolean,
-        val theme: PixelTheme,
+        /** 用户选择的主题家族。 */
+        val themeFamily: LauncherThemeFamily,
+        /** 当前主题家族内部采用的亮暗模式。 */
+        val themeMode: LauncherThemeMode,
         /** 用户在设置页明确选择的字体家族、宽度模式和字号。 */
         val fontSelection: LauncherFontSelection,
     )
@@ -51,7 +55,8 @@ class FontSettingsRepository(
             pixelShape = readStoredPixelShape() ?: PixelShape.SQUARE,
             dotSizePx = dotSizePx,
             pixelGapEnabled = readStoredPixelGapEnabled(),
-            theme = readStoredTheme(),
+            themeFamily = readStoredThemeFamily(),
+            themeMode = readStoredThemeMode(),
             fontSelection = readStoredFontSelection(),
         )
     }
@@ -76,7 +81,8 @@ class FontSettingsRepository(
         pixelShape: PixelShape,
         dotSizePx: Int,
         pixelGapEnabled: Boolean,
-        theme: PixelTheme,
+        themeFamily: LauncherThemeFamily,
+        themeMode: LauncherThemeMode,
         fontSelection: LauncherFontSelection,
     ) {
         val safeDotSizePx = dotSizePx.coerceAtLeast(1)
@@ -87,7 +93,8 @@ class FontSettingsRepository(
             .putString(KEY_PIXEL_SHAPE, pixelShape.name)
             .putInt(KEY_DOT_SIZE_PX, safeDotSizePx)
             .putBoolean(KEY_PIXEL_GAP_ENABLED, pixelGapEnabled)
-            .putString(KEY_THEME, theme.name)
+            .putString(KEY_THEME_FAMILY, themeFamily.name)
+            .putString(KEY_THEME_MODE, themeMode.name)
             .putString(KEY_FONT_STATE_JSON, fontStateJson)
             .apply()
     }
@@ -150,9 +157,17 @@ class FontSettingsRepository(
         return storedValue.coerceAtLeast(1)
     }
 
-    private fun readStoredTheme(): PixelTheme {
-        val storedValue = sharedPreferences.getString(KEY_THEME, null)
-        return PixelTheme.entries.firstOrNull { it.name == storedValue } ?: PixelTheme.DAY
+    /** 读取主题家族；缺失或无效值使用 Midnight。 */
+    private fun readStoredThemeFamily(): LauncherThemeFamily {
+        val storedValue = sharedPreferences.getString(KEY_THEME_FAMILY, null)
+        return LauncherThemeFamily.entries.firstOrNull { it.name == storedValue }
+            ?: LauncherThemeFamily.MIDNIGHT
+    }
+
+    /** 读取亮暗模式；缺失或无效值使用 Night。 */
+    private fun readStoredThemeMode(): LauncherThemeMode {
+        val storedValue = sharedPreferences.getString(KEY_THEME_MODE, null)
+        return LauncherThemeMode.entries.firstOrNull { it.name == storedValue } ?: LauncherThemeMode.NIGHT
     }
 
     /** 读取当前开发版字体状态；缺失、损坏或过期数据直接使用 catalog 默认值。 */
@@ -267,7 +282,10 @@ class FontSettingsRepository(
         const val KEY_PIXEL_SHAPE = "selected_pixel_shape"
         const val KEY_DOT_SIZE_PX = "selected_dot_size_px"
         const val KEY_PIXEL_GAP_ENABLED = "pixel_gap_enabled"
-        const val KEY_THEME = "selected_theme"
+        /** 主题家族独立持久化键。 */
+        const val KEY_THEME_FAMILY = "selected_theme_family"
+        /** 亮暗模式独立持久化键。 */
+        const val KEY_THEME_MODE = "selected_theme_mode"
         /** 当前版本化字体选择和 family/width 历史。 */
         const val KEY_FONT_STATE_JSON = "font_state_json_v3"
         const val FONT_STATE_SCHEMA_VERSION = 3

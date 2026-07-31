@@ -78,7 +78,8 @@ import com.purride.pixellauncherv2.launcher.SettingsMenuItem
 import com.purride.pixellauncherv2.launcher.SettingsMenuLayout
 import com.purride.pixellauncherv2.launcher.SettingsMenuModel
 import com.purride.pixellauncherv2.animation.LauncherAnimationState
-import com.purride.pixellauncherv2.launcher.PixelTheme
+import com.purride.pixellauncherv2.launcher.LauncherThemeFamily
+import com.purride.pixellauncherv2.launcher.LauncherThemeMode
 import com.purride.pixellauncherv2.layout.LauncherLayoutProfileFactory
 import com.purride.pixelcore.PixelShape
 import com.purride.pixellauncherv2.launcher.ChargeIdleEffect
@@ -152,7 +153,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var appLauncher: AndroidAppLauncher
     private lateinit var windowModeController: WindowModeController
     private var screenProfile: LauncherLayoutProfile = LauncherLayoutProfileFactory.create(widthPx = 1, heightPx = 1)
-    private var selectedTheme: PixelTheme = PixelTheme.DAY
+    /** 冷启动至状态初始化期间使用的主题家族。 */
+    private var selectedThemeFamily: LauncherThemeFamily = LauncherThemeFamily.MIDNIGHT
+    /** 冷启动至状态初始化期间使用的主题亮暗模式。 */
+    private var selectedThemeMode: LauncherThemeMode = LauncherThemeMode.NIGHT
     private var pendingPixelAppearanceBaseline: PixelAppearanceBaseline? = null
     private var pendingPixelConfirmDeadlineUptimeMs: Long = 0L
     // Single source of truth lives in [launcherViewModel]; `state` delegates onto it,
@@ -372,13 +376,15 @@ class MainActivity : AppCompatActivity() {
         rainForecastRepository = appContainer.rainForecastRepository
         val appearanceSettings = fontSettingsRepository.getAppearanceSettings()
         val uiBehaviorSettings = fontSettingsRepository.getUiBehaviorSettings()
-        selectedTheme = appearanceSettings.theme
+        selectedThemeFamily = appearanceSettings.themeFamily
+        selectedThemeMode = appearanceSettings.themeMode
         state = LauncherStateTransitions.updateAppearance(
             state = state,
             selectedPixelShape = appearanceSettings.pixelShape,
             selectedDotSizePx = appearanceSettings.dotSizePx,
             isPixelGapEnabled = appearanceSettings.pixelGapEnabled,
-            selectedTheme = appearanceSettings.theme,
+            selectedThemeFamily = appearanceSettings.themeFamily,
+            selectedThemeMode = appearanceSettings.themeMode,
             fontSelection = appearanceSettings.fontSelection,
         )
         state = LauncherStateTransitions.updateUiBehavior(
@@ -428,7 +434,12 @@ class MainActivity : AppCompatActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT,
             )
-            setBackgroundColor(LauncherThemes.from(applicationContext, selectedTheme.resolve(isSystemInDarkMode())).surface.bezelColor.argb)
+            setBackgroundColor(
+                LauncherThemes.resolve(
+                    family = selectedThemeFamily,
+                    brightness = selectedThemeMode.resolve(isSystemInDarkMode()),
+                ).surface.bezelColor.argb,
+            )
         }
         setContentView(rootContainer)
         launcherFontRepository = LauncherFontRepository(applicationContext, fontExecutor, mainHandler)
@@ -1280,7 +1291,10 @@ class MainActivity : AppCompatActivity() {
         val uiState = state.toLauncherUiState()
         launcherRootHost.update(
             state           = uiState,
-            theme           = LauncherThemes.from(applicationContext, uiState.selectedTheme.resolve(isSystemInDarkMode())),
+            theme           = LauncherThemes.resolve(
+                family = uiState.selectedThemeFamily,
+                brightness = uiState.selectedThemeMode.resolve(isSystemInDarkMode()),
+            ),
             screenProfile   = screenProfile,
             chargeTick      = animationState.headerChargeTick,
             preparedFont    = activePreparedFont,
@@ -1393,7 +1407,7 @@ class MainActivity : AppCompatActivity() {
                     newPixelShape = SettingsMenuModel.nextStyle(current.selectedPixelShape, direction),
                     newDotSizePx = current.selectedDotSizePx,
                     newPixelGapEnabled = current.isPixelGapEnabled,
-                    newTheme = current.selectedTheme,
+                    newThemeMode = current.selectedThemeMode,
                 )
             }
             SettingsMenuItem.THEME -> {
@@ -1403,7 +1417,22 @@ class MainActivity : AppCompatActivity() {
                     newPixelShape = current.selectedPixelShape,
                     newDotSizePx = current.selectedDotSizePx,
                     newPixelGapEnabled = current.isPixelGapEnabled,
-                    newTheme = SettingsMenuModel.nextTheme(current.selectedTheme, direction),
+                    newThemeFamily = SettingsMenuModel.nextThemeFamily(
+                        current.selectedThemeFamily,
+                        direction,
+                    ),
+                    newThemeMode = current.selectedThemeMode,
+                )
+            }
+            SettingsMenuItem.THEME_MODE -> {
+                restorePendingPixelAppearanceChange(render = false)
+                val current = state
+                applyAppearance(
+                    newPixelShape = current.selectedPixelShape,
+                    newDotSizePx = current.selectedDotSizePx,
+                    newPixelGapEnabled = current.isPixelGapEnabled,
+                    newThemeFamily = current.selectedThemeFamily,
+                    newThemeMode = SettingsMenuModel.nextThemeMode(current.selectedThemeMode, direction),
                 )
             }
             SettingsMenuItem.FONT -> {
@@ -2328,7 +2357,7 @@ class MainActivity : AppCompatActivity() {
             newPixelShape = current.selectedPixelShape,
             newDotSizePx = newDotSizePx,
             newPixelGapEnabled = newPixelGapEnabled,
-            newTheme = current.selectedTheme,
+            newThemeMode = current.selectedThemeMode,
         )
 
         if (
@@ -2345,21 +2374,24 @@ class MainActivity : AppCompatActivity() {
         newPixelShape: PixelShape,
         newDotSizePx: Int,
         newPixelGapEnabled: Boolean,
-        newTheme: PixelTheme,
+        newThemeFamily: LauncherThemeFamily = state.selectedThemeFamily,
+        newThemeMode: LauncherThemeMode,
         newFontSelection: LauncherFontSelection = state.fontSelection,
     ) {
         persistAppearance(
             pixelShape = newPixelShape,
             dotSizePx = newDotSizePx,
             pixelGapEnabled = newPixelGapEnabled,
-            theme = newTheme,
+            themeFamily = newThemeFamily,
+            themeMode = newThemeMode,
             fontSelection = newFontSelection,
         )
         applyAppearanceState(
             newPixelShape = newPixelShape,
             newDotSizePx = newDotSizePx,
             newPixelGapEnabled = newPixelGapEnabled,
-            newTheme = newTheme,
+            newThemeFamily = newThemeFamily,
+            newThemeMode = newThemeMode,
             newFontSelection = newFontSelection,
         )
     }
@@ -2385,7 +2417,7 @@ class MainActivity : AppCompatActivity() {
                     newPixelShape = current.selectedPixelShape,
                     newDotSizePx = current.selectedDotSizePx,
                     newPixelGapEnabled = current.isPixelGapEnabled,
-                    newTheme = current.selectedTheme,
+                    newThemeMode = current.selectedThemeMode,
                     newFontSelection = candidate,
                 )
                 state = LauncherStateTransitions.updateStatusBarMessage(state, message = "")
@@ -2410,14 +2442,16 @@ class MainActivity : AppCompatActivity() {
         pixelShape: PixelShape,
         dotSizePx: Int,
         pixelGapEnabled: Boolean,
-        theme: PixelTheme,
+        themeFamily: LauncherThemeFamily,
+        themeMode: LauncherThemeMode,
         fontSelection: LauncherFontSelection = state.fontSelection,
     ) {
         fontSettingsRepository.setAppearanceSettings(
             pixelShape = pixelShape,
             dotSizePx = dotSizePx,
             pixelGapEnabled = pixelGapEnabled,
-            theme = theme,
+            themeFamily = themeFamily,
+            themeMode = themeMode,
             fontSelection = fontSelection,
         )
     }
@@ -2426,17 +2460,20 @@ class MainActivity : AppCompatActivity() {
         newPixelShape: PixelShape,
         newDotSizePx: Int,
         newPixelGapEnabled: Boolean,
-        newTheme: PixelTheme,
+        newThemeFamily: LauncherThemeFamily = state.selectedThemeFamily,
+        newThemeMode: LauncherThemeMode,
         newFontSelection: LauncherFontSelection = state.fontSelection,
         render: Boolean = true,
     ) {
-        selectedTheme = newTheme
+        selectedThemeFamily = newThemeFamily
+        selectedThemeMode = newThemeMode
         state = LauncherStateTransitions.updateAppearance(
             state = state,
             selectedPixelShape = newPixelShape,
             selectedDotSizePx = newDotSizePx,
             isPixelGapEnabled = newPixelGapEnabled,
-            selectedTheme = newTheme,
+            selectedThemeFamily = newThemeFamily,
+            selectedThemeMode = newThemeMode,
             fontSelection = newFontSelection,
         )
 
@@ -2482,7 +2519,8 @@ class MainActivity : AppCompatActivity() {
             pixelShape = confirmedState.selectedPixelShape,
             dotSizePx = confirmedState.selectedDotSizePx,
             pixelGapEnabled = confirmedState.isPixelGapEnabled,
-            theme = confirmedState.selectedTheme,
+            themeFamily = confirmedState.selectedThemeFamily,
+            themeMode = confirmedState.selectedThemeMode,
             fontSelection = confirmedState.fontSelection,
         )
         clearPendingPixelAppearanceChange()
@@ -2495,7 +2533,7 @@ class MainActivity : AppCompatActivity() {
             newPixelShape = state.selectedPixelShape,
             newDotSizePx = baseline.dotSizePx,
             newPixelGapEnabled = baseline.pixelGapEnabled,
-            newTheme = state.selectedTheme,
+            newThemeMode = state.selectedThemeMode,
             render = render,
         )
         state = LauncherStateTransitions.updateStatusBarMessage(state, message = "")
