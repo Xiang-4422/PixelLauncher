@@ -78,6 +78,45 @@ class SegmentedControlLayoutTest {
         assertEquals(0, tester.vsync.liveTickerCount)
     }
 
+    /** 选中文字只在移动高亮块实际覆盖到字形像素时出现。 */
+    @Test
+    fun selectedTextColorIsClippedToMovingIndicator() {
+        /** 调用方持有的受控选择下标。 */
+        val selected = ValueNotifier(0)
+        /** 为裁剪动画提供确定性虚拟时钟的测试宿主。 */
+        val tester = PixelTester()
+        tester.pumpWidget(
+            motionSelector(
+                tester = tester,
+                selected = selected,
+                settings = PixelMotionSettings.Default,
+                labels = OVERLAP_LABELS,
+                widthPolicy = SegmentedControlWidthPolicy.Fixed(width = OVERLAP_SEGMENT_WIDTH),
+                style = OVERLAP_STYLE,
+            ),
+            logicalWidth = 80,
+            logicalHeight = 16,
+        )
+
+        selected.value = 1
+        beginMotion(tester)
+        tester.pumpFrame(500)
+        /** 中点帧高亮填充的完整水平范围。 */
+        val highlightRun = selectedPixelRun(tester)
+        /** 中点帧全部选中文字像素的水平坐标。 */
+        val selectedTextXs = pixelCoordinates(tester, SELECTED_TEXT_COLOR)
+        /** 中点帧仍保持普通颜色的文字像素水平坐标。 */
+        val baseTextXs = pixelCoordinates(tester, BASE_TEXT_COLOR)
+
+        assertTrue(selectedTextXs.isNotEmpty())
+        assertTrue(selectedTextXs.all { x -> x in highlightRun.first()..highlightRun.last() })
+        assertTrue(baseTextXs.any { x -> x !in highlightRun.first()..highlightRun.last() })
+
+        tester.pumpFrame(500)
+        tester.dispose()
+        assertEquals(0, tester.vsync.liveTickerCount)
+    }
+
     /** reduce-motion 下受控选中块同步移动到终点且不创建 ticker。 */
     @Test
     fun reduceMotionMovesIndicatorImmediately() {
@@ -135,6 +174,9 @@ class SegmentedControlLayoutTest {
         tester: PixelTester,
         selected: ValueNotifier<Int>,
         settings: PixelMotionSettings,
+        labels: List<String> = LABELS,
+        widthPolicy: SegmentedControlWidthPolicy = SegmentedControlWidthPolicy.Content,
+        style: SegmentedControlStyle = TEST_STYLE,
     ): Widget {
         /** 一秒线性动画让中点位置和宽度可以确定性断言。 */
         val selectionMotion = PixelMotionSpec(
@@ -149,11 +191,11 @@ class SegmentedControlLayoutTest {
                 data = PixelMotionThemeData.Default.copy(selection = selectionMotion),
                 child = ValueListenableBuilder(selected) { _, selectedIndex ->
                     SegmentedControl(
-                        labels = LABELS,
+                        labels = labels,
                         selectedIndex = selectedIndex,
                         onSelected = { selected.value = it },
-                        widthPolicy = SegmentedControlWidthPolicy.Content,
-                        style = TEST_STYLE,
+                        widthPolicy = widthPolicy,
+                        style = style,
                         key = "animated-segmented-control",
                     )
                 },
@@ -167,7 +209,19 @@ class SegmentedControlLayoutTest {
         return (0 until 80).filter { x -> tester.pixelAt(x, INDICATOR_SCAN_Y) == SELECTED_COLOR }
     }
 
-    /** 锚定 AnimatedPositioned ticker 的零进度首帧。 */
+    /** 收集固定测试画布中指定颜色的全部水平坐标。 */
+    private fun pixelCoordinates(tester: PixelTester, color: PixelColor): List<Int> {
+        /** 同一水平坐标可对应多个字形像素，保留重复值不影响范围断言。 */
+        return buildList {
+            for (y in 0 until 16) {
+                for (x in 0 until 80) {
+                    if (tester.pixelAt(x, y) == color) add(x)
+                }
+            }
+        }
+    }
+
+    /** 锚定分段选择边界动画 ticker 的零进度首帧。 */
     private fun beginMotion(tester: PixelTester) {
         tester.pumpFrame(0)
         tester.pumpFrame(0)
@@ -181,8 +235,20 @@ class SegmentedControlLayoutTest {
         /** 固定宽策略的每项目标宽度。 */
         const val FIXED_WIDTH: Int = 24
 
+        /** 用于验证高亮横跨两个标签时逐像素变色的等宽标签。 */
+        val OVERLAP_LABELS: List<String> = listOf("AAAA", "BBBB")
+
+        /** 裁剪测试中每项的固定宽度。 */
+        const val OVERLAP_SEGMENT_WIDTH: Int = 30
+
         /** 指示块使用的唯一填充色。 */
         val SELECTED_COLOR: PixelColor = PixelColor.fromRgb(220, 40, 40)
+
+        /** 未被高亮覆盖的基础文字颜色。 */
+        val BASE_TEXT_COLOR: PixelColor = PixelColor.fromRgb(150, 150, 150)
+
+        /** 只允许出现在高亮裁剪范围内的选中文字颜色。 */
+        val SELECTED_TEXT_COLOR: PixelColor = PixelColor.fromRgb(255, 220, 20)
 
         /** 扫描行位于上边框下方、标签字形上方。 */
         const val INDICATOR_SCAN_Y: Int = 1
@@ -195,6 +261,17 @@ class SegmentedControlLayoutTest {
             selectedContentColor = PixelColor.Transparent,
             unselectedContentColor = PixelColor.Transparent,
             disabledContentColor = PixelColor.Transparent,
+            padding = EdgeInsets.symmetric(horizontal = 2, vertical = 2),
+        )
+
+        /** 使用唯一文字颜色验证裁剪范围的可见标签样式。 */
+        val OVERLAP_STYLE: SegmentedControlStyle = SegmentedControlStyle(
+            containerColor = PixelColor.Black,
+            borderColor = PixelColor.fromRgb(20, 200, 80),
+            selectedFillColor = SELECTED_COLOR,
+            selectedContentColor = SELECTED_TEXT_COLOR,
+            unselectedContentColor = BASE_TEXT_COLOR,
+            disabledContentColor = BASE_TEXT_COLOR,
             padding = EdgeInsets.symmetric(horizontal = 2, vertical = 2),
         )
     }

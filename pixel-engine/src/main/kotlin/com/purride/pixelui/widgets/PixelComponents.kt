@@ -7,6 +7,7 @@ import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixelui.animation.PixelTicker
 import com.purride.pixelui.animation.PixelTickerProvider
 import com.purride.pixelui.animation.PixelColorTween
+import com.purride.pixelui.animation.Tween
 import com.purride.pixelui.internal.HitTestResult
 import com.purride.pixelui.internal.InteractionDetector
 import com.purride.pixelui.internal.AutomaticFocusAction
@@ -29,7 +30,7 @@ import com.purride.pixelui.internal.SafeOverlayViewportWidget
 import com.purride.pixelui.internal.activationKeyHandler
 import com.purride.pixelui.internal.withHostTextScale
 import com.purride.pixelui.internal.withControlFocusIndicator
-import com.purride.pixelui.widgets.animated.AnimatedPositioned
+import com.purride.pixelui.widgets.animated.TweenAnimationBuilder
 import kotlin.math.PI
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -2489,47 +2490,12 @@ private data class PixelSegmentStrip(
         /** 滑动选中块颜色，显式覆盖优先于 token。 */
         val selectedFillColor = style.selectedFillColor
             ?: tokens.resolveContainerColor(selectedStates, theme.colors)
-        /** 文字层始终保持位置稳定，仅由受控状态更新前景色。 */
-        val segmentRow = Row(
-            children = labels.mapIndexed { index, label ->
-                /** 当前分段的 pointer 与语义选择动作；不可交互时统一为 null。 */
-                val select: (() -> Boolean)? = if (interactive) {
-                    {
-                        onSelected(index)
-                        true
-                    }
-                } else {
-                    null
-                }
-                /** Controlled selection merged independently into this segment's persistent states. */
-                val segmentStates = if (index == selectedIndex) {
-                    states + PixelControlState.Selected
-                } else {
-                    states
-                }
-                PixelSegmentStateWidget(
-                    label = label,
-                    index = index,
-                    selected = index == selectedIndex,
-                    width = widths[index],
-                    padding = padding,
-                    states = segmentStates,
-                    style = style,
-                    select = select,
-                    key = PixelSegmentKey(parentKey = key, label = label),
-                )
-            },
-            spacing = spacing,
-            key = key?.let { "$it-label-row" },
-        )
-        /** 指示块在无宿主或减弱动态效果时直接落到受控终态。 */
-        val indicator = buildSegmentIndicator(
-            context = context,
-            left = selectedLeft,
-            right = selectedRight,
-            fillColor = selectedFillColor,
-            key = key?.let { "$it-selection-indicator" },
-        )
+        /** 选中文字颜色只由裁剪后的上层文字使用。 */
+        val selectedContentColor = when {
+            PixelControlState.Disabled in states -> style.disabledContentColor
+            else -> style.selectedContentColor
+        } ?: tokens.resolveContentColor(selectedStates, theme.colors)
+            ?: theme.colors.onSurface
         /** 边框作为最上层绘制，避免选中块覆盖外沿且不引入额外布局间隙。 */
         val borderOverlay = Positioned(
             left = 0,
@@ -2546,11 +2512,100 @@ private data class PixelSegmentStrip(
             ),
             key = key?.let { "$it-border" },
         )
-        /** 显式尺寸约束 Stack；Positioned 指示块不参与固有尺寸计算。 */
-        val stripStack = Stack(
-            children = listOf(indicator, segmentRow, borderOverlay),
-            key = key?.let { "$it-stack" },
+        /** 当前受控选择对应的目标裁剪边界。 */
+        val targetBounds = PixelSegmentSelectionBounds(
+            left = selectedLeft,
+            right = selectedRight,
         )
+        /** 每个分段在整条控件中的固定起始位置。 */
+        val segmentLefts = widths.indices.map { index ->
+            widths.take(index).sum() + spacing * index
+        }
+        /** 按当前高亮边界构建带局部文字裁剪的交互分段行。 */
+        fun buildSegmentRow(bounds: PixelSegmentSelectionBounds): Widget {
+            /** 当前高亮块在整条控件中的右边界。 */
+            val selectionRight = totalWidth - bounds.right
+            return Row(
+                children = labels.mapIndexed { index, label ->
+                    /** 当前分段的 pointer 与语义选择动作；不可交互时统一为 null。 */
+                    val select: (() -> Boolean)? = if (interactive) {
+                        {
+                            onSelected(index)
+                            true
+                        }
+                    } else {
+                        null
+                    }
+                    /** 把当前受控选中状态合入该分段的持久状态。 */
+                    val segmentStates = if (index == selectedIndex) {
+                        states + PixelControlState.Selected
+                    } else {
+                        states
+                    }
+                    /** 当前分段在整条控件中的左右边界。 */
+                    val segmentLeft = segmentLefts[index]
+                    /** 当前分段结束位置。 */
+                    val segmentRight = segmentLeft + widths[index]
+                    /** 高亮与当前分段相交区域的局部左边界。 */
+                    val overlapStart = (
+                        maxOf(bounds.left, segmentLeft) - segmentLeft
+                    ).coerceIn(0, widths[index])
+                    /** 高亮与当前分段相交区域的局部右边界。 */
+                    val overlapEnd = (
+                        minOf(selectionRight, segmentRight) - segmentLeft
+                    ).coerceIn(0, widths[index])
+                    PixelSegmentStateWidget(
+                        label = label,
+                        index = index,
+                        selected = index == selectedIndex,
+                        width = widths[index],
+                        height = height,
+                        padding = padding,
+                        states = segmentStates,
+                        style = style,
+                        selectedContentColor = selectedContentColor,
+                        selectedTextStart = overlapStart,
+                        selectedTextEnd = overlapEnd.coerceAtLeast(overlapStart),
+                        select = select,
+                        key = PixelSegmentKey(parentKey = key, label = label),
+                    )
+                },
+                spacing = spacing,
+                key = key?.let { "$it-label-row" },
+            )
+        }
+        /** 使用同一组插值边界绘制背景和选中文字裁剪，确保两层逐像素同步。 */
+        fun buildVisualStack(bounds: PixelSegmentSelectionBounds): Widget {
+            return buildSegmentVisualStack(
+                bounds = bounds,
+                selectedFillColor = selectedFillColor,
+                segmentRow = buildSegmentRow(bounds),
+                borderOverlay = borderOverlay,
+                key = key,
+            )
+        }
+        /** Host 动画环境；纯构建环境直接显示受控终态。 */
+        val motionScope = PixelMotionScope.maybeOf(context)
+        /** 选择 motion 已应用系统动画缩放和 reduce-motion 策略。 */
+        val motion = motionScope?.let { scope ->
+            PixelMotionTheme.of(context).selection.resolve(scope.settings)
+        }
+        /** 指示块和文字裁剪共享唯一动画进度，避免快速切换时出现错位。 */
+        val stripStack = if (motionScope == null || motion == null || motion.isImmediate) {
+            buildVisualStack(targetBounds)
+        } else {
+            TweenAnimationBuilder(
+                tween = PixelSegmentSelectionBoundsTween(
+                    begin = targetBounds,
+                    end = targetBounds,
+                ),
+                duration = motion.duration,
+                curve = motion.curve,
+                vsync = motionScope.vsync,
+                key = key?.let { "$it-selection-motion" },
+                builder = { _, bounds -> buildVisualStack(bounds) },
+            )
+        }
         return PixelSurface(
             decoration = PixelSurfaceDecoration(
                 fillColor = containerColor,
@@ -2568,51 +2623,108 @@ private data class PixelSegmentStrip(
     }
 }
 
-/** Retained per-segment configuration with runtime-owned hover and press states. */
+/** 移动高亮块在分段条内的左右约束。 */
+private data class PixelSegmentSelectionBounds(
+    /** 高亮块左侧到分段条起点的距离。 */
+    val left: Int,
+    /** 高亮块右侧到分段条终点的距离。 */
+    val right: Int,
+)
+
+/** 同时插值高亮块位置和宽度所需的左右约束。 */
+private class PixelSegmentSelectionBoundsTween(
+    begin: PixelSegmentSelectionBounds,
+    end: PixelSegmentSelectionBounds,
+) : Tween<PixelSegmentSelectionBounds>(begin = begin, end = end) {
+    /** 按同一进度计算左右边界，保证背景和文字裁剪始终重合。 */
+    override fun lerp(t: Float): PixelSegmentSelectionBounds {
+        return PixelSegmentSelectionBounds(
+            left = (begin.left + (end.left - begin.left) * t).roundToInt(),
+            right = (begin.right + (end.right - begin.right) * t).roundToInt(),
+        )
+    }
+}
+
+/** 按当前插值边界叠放高亮背景、普通文字、裁剪选中文字和最上层外边框。 */
+private fun buildSegmentVisualStack(
+    bounds: PixelSegmentSelectionBounds,
+    selectedFillColor: PixelColor?,
+    segmentRow: Widget,
+    borderOverlay: Widget,
+    key: Any?,
+): Widget {
+    /** 位于全部文字下方的移动高亮背景。 */
+    val indicator = Positioned(
+        left = bounds.left,
+        top = 0,
+        right = bounds.right,
+        bottom = 0,
+        child = Container(
+            fillColor = selectedFillColor,
+            key = key?.let { "$it-selection-fill" },
+        ),
+        key = key?.let { "$it-selection-indicator" },
+    )
+    /** 显式尺寸由外层 PixelSurface 提供，三层按从后到前顺序绘制。 */
+    return Stack(
+        children = listOf(indicator, segmentRow, borderOverlay),
+        key = key?.let { "$it-stack" },
+    )
+}
+
+/** 单个分段的稳定配置，悬停与按压瞬时状态由对应 State 持有。 */
 private data class PixelSegmentStateWidget(
-    /** Visible and accessible segment label. */
+    /** 同时用于显示和无障碍朗读的分段标签。 */
     val label: String,
-    /** Current zero-based visual column exported through collection semantics. */
+    /** 通过集合语义导出的当前零基视觉列序号。 */
     val index: Int,
-    /** Controlled selection state. */
+    /** 调用方控制的选中状态。 */
     val selected: Boolean,
-    /** Segment width including its horizontal padding. */
+    /** 包含水平内边距的分段宽度。 */
     val width: Int,
-    /** Text insets included in [width]. */
+    /** 包含垂直内边距的分段高度。 */
+    val height: Int,
+    /** 已包含在 [width] 内的文字内边距。 */
     val padding: EdgeInsets,
-    /** Persistent normalized states including controlled selection. */
+    /** 包含受控选中状态的持久标准化状态集合。 */
     val states: PixelControlStateSet,
-    /** Caller-owned foreground overrides. */
+    /** 调用方提供的前景色覆盖配置。 */
     val style: SegmentedControlStyle,
-    /** Shared pointer and semantics selection action. */
+    /** 与高亮相交的字形像素使用的前景色。 */
+    val selectedContentColor: PixelColor,
+    /** 高亮与当前分段相交区域的局部左边界。 */
+    val selectedTextStart: Int,
+    /** 高亮与当前分段相交区域的局部右边界。 */
+    val selectedTextEnd: Int,
+    /** 指针点击与无障碍选择共同调用的动作。 */
     val select: (() -> Boolean)?,
-    /** Stable segment identity. */
+    /** 单个分段的稳定标识。 */
     override val key: Any?,
 ) : StatefulWidget(key = key) {
-    /** Creates runtime pointer-state ownership for this segment. */
+    /** 创建负责维护该分段运行时指针状态的 State。 */
     override fun createState(): State<out StatefulWidget> = PixelSegmentState()
 }
 
-/** Runtime hover and press state for one segmented-control item. */
+/** 单个分段项目的运行时悬停与按压状态。 */
 private class PixelSegmentState : State<PixelSegmentStateWidget>() {
-    /** Whether this segment currently owns a pointer press. */
+    /** 当前分段是否处于指针按压状态。 */
     private var pressed: Boolean = false
 
-    /** Whether a pointer currently hovers over this segment. */
+    /** 指针当前是否悬停在该分段上。 */
     private var hovered: Boolean = false
 
-    /** Resolves the segment theme, transient states, semantics, and pointer wrapper. */
+    /** 解析分段主题、瞬时状态、语义与指针交互包装。 */
     override fun build(context: BuildContext): Widget {
-        /** Complete inherited theme graph. */
+        /** 当前继承得到的完整主题。 */
         val theme = PixelTheme.of(context)
-        /** Provider-aware status labels while segment names remain caller-owned. */
+        /** 可感知 Provider 的状态标签；分段名称仍由调用方提供。 */
         val localization = pixelComponentLocalizationOf(context, theme)
-        /** Segmented-control visual and geometry tokens. */
+        /** 分段控件的视觉与几何 token。 */
         val tokens = theme.components.segmented
-        /** Parent strip focus shared by the selected segment's focus visual. */
+        /** 选中分段焦点视觉所共享的父级焦点节点。 */
         val focusNode = context.getInheritedWidgetOfExactType<FocusNodeScope>()?.node
         if (focusNode != null) context.watch(focusNode)
-        /** Runtime state set after focus and pointer microstates. */
+        /** 合并焦点及指针瞬时状态后的运行时状态集合。 */
         var resolvedStates = widget.states
         if (widget.selected && focusNode?.isFocused == true) {
             resolvedStates += PixelControlState.Focused
@@ -2628,18 +2740,22 @@ private class PixelSegmentState : State<PixelSegmentStateWidget>() {
             resolvedStates -= PixelControlState.Pressed
             resolvedStates -= PixelControlState.Hovered
         }
-        /** Concrete foreground resolved after the fixed state priority. */
-        val contentColor = tokens.resolveContentColor(resolvedStates, theme.colors)
+        /** 底层文字排除 selected/pressed 前景，避免高亮未覆盖时提前变色。 */
+        val baseContentStates = resolvedStates -
+            PixelControlState.Selected -
+            PixelControlState.Pressed
+        /** 按固定状态优先级解析得到的未选中前景色。 */
+        val contentColor = tokens.resolveContentColor(baseContentStates, theme.colors)
             ?: theme.colors.onSurface
-        /** Caller foreground override chosen after selected and disabled state normalization. */
+        /** 完成选中及禁用状态标准化后采用的调用方前景色覆盖。 */
         val overriddenContentColor = when {
             PixelControlState.Disabled in resolvedStates -> widget.style.disabledContentColor
-            widget.selected -> widget.style.selectedContentColor
             else -> widget.style.unselectedContentColor
         }
-        /** Stable transparent segment content drawn above the shared moving indicator. */
-        val surface = Container(
+        /** 始终使用未选中色的稳定底层文字。 */
+        val baseTextSurface = Container(
             width = widget.width,
+            height = widget.height,
             padding = widget.padding,
             alignment = Alignment.CENTER,
             child = Text(
@@ -2650,6 +2766,57 @@ private class PixelSegmentState : State<PixelSegmentStateWidget>() {
                 overflow = PixelTextOverflow.ELLIPSIS,
                 softWrap = false,
                 maxLines = 1,
+            ),
+            key = widget.key?.let { "$it-base-text" },
+        )
+        /** 使用选中色的同坐标文字副本，仅供相交区域裁剪。 */
+        val selectedTextSurface = Container(
+            width = widget.width,
+            height = widget.height,
+            padding = widget.padding,
+            alignment = Alignment.CENTER,
+            child = Text(
+                widget.label,
+                style = theme.typography.label.resolve(theme.colors).copy(
+                    color = widget.selectedContentColor,
+                ),
+                overflow = PixelTextOverflow.ELLIPSIS,
+                softWrap = false,
+                maxLines = 1,
+            ),
+            key = widget.key?.let { "$it-selected-text" },
+        )
+        /** 选中文字副本反向平移后按当前局部相交宽度裁剪。 */
+        val selectedTextOverlay = Positioned(
+            left = widget.selectedTextStart,
+            top = 0,
+            right = widget.width - widget.selectedTextEnd,
+            bottom = 0,
+            child = ClipRect(
+                child = Stack(
+                    children = listOf(
+                        Positioned(
+                            left = -widget.selectedTextStart,
+                            top = 0,
+                            width = widget.width,
+                            height = widget.height,
+                            child = selectedTextSurface,
+                            key = widget.key?.let { "$it-selected-text-position" },
+                        ),
+                    ),
+                    key = widget.key?.let { "$it-selected-text-alignment" },
+                ),
+                key = widget.key?.let { "$it-selected-text-clip" },
+            ),
+            key = widget.key?.let { "$it-selected-text-overlay" },
+        )
+        /** 语义边界内部叠放普通文字和局部裁剪的选中文字。 */
+        val surface = Container(
+            width = widget.width,
+            height = widget.height,
+            child = Stack(
+                children = listOf(baseTextSurface, selectedTextOverlay),
+                key = widget.key?.let { "$it-text-stack" },
             ),
             key = widget.key?.let { "$it-surface" },
         )
@@ -2702,42 +2869,6 @@ private class PixelSegmentState : State<PixelSegmentStateWidget>() {
         if (hovered == nextHovered) return
         setState { hovered = nextHovered }
     }
-}
-
-/** 构建可响应系统减弱动态效果设置的选中背景块。 */
-private fun buildSegmentIndicator(
-    context: BuildContext,
-    left: Int,
-    right: Int,
-    fillColor: PixelColor?,
-    key: Any?,
-): Widget {
-    /** 仅负责绘制选中背景的无语义矩形。 */
-    val indicator = Container(
-        fillColor = fillColor,
-        key = key?.let { "$it-fill" },
-    )
-    /** Host 提供的 ticker 与动态效果偏好；预览或纯构建环境可能不存在。 */
-    val motionScope = PixelMotionScope.maybeOf(context)
-    if (motionScope == null) {
-        return Positioned(left = left, top = 0, right = right, bottom = 0, child = indicator)
-    }
-    /** 选择类动态效果 token 已应用系统动画缩放和 reduce-motion 策略。 */
-    val motion = PixelMotionTheme.of(context).selection.resolve(motionScope.settings)
-    if (motion.isImmediate) {
-        return Positioned(left = left, top = 0, right = right, bottom = 0, child = indicator)
-    }
-    return AnimatedPositioned(
-        duration = motion.duration,
-        curve = motion.curve,
-        vsync = motionScope.vsync,
-        left = left,
-        top = 0,
-        right = right,
-        bottom = 0,
-        key = key,
-        child = indicator,
-    )
 }
 
 /** 按调用方策略把真实文字测量结果转换为每项完整宽度。 */
