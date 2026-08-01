@@ -259,6 +259,20 @@ class LockscreenPreviewActivity : AppCompatActivity() {
                     },
                 ),
             )
+            controlsContainer.addView(
+                optionRow(
+                    label = "CONTENT",
+                    options = LockscreenPreviewContent.entries.map { content ->
+                        ControlOption(
+                            label = content.name,
+                            selected = content == configuration.content,
+                            onClick = {
+                                updateConfiguration { copy(content = content) }
+                            },
+                        )
+                    },
+                ),
+            )
         } else if (configuration.scene == LockscreenPreviewScene.PATTERN) {
             controlsContainer.addView(
                 optionRow(

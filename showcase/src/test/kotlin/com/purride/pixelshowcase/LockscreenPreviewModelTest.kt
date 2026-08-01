@@ -58,6 +58,31 @@ class LockscreenPreviewModelTest {
         assertEquals(4, LockscreenBiometricModality.entries.size)
         assertEquals(7, LockscreenBiometricPhase.entries.size)
         assertEquals(4, LockscreenSecurityNoticePhase.entries.size)
+        assertEquals(5, LockscreenPreviewContent.entries.size)
+    }
+
+    /** 内容预览必须覆盖空、公开、隐私替代、媒体和混合最大状态。 */
+    @Test
+    fun contentPreviewCoversPrivacyAndMediaMatrix() {
+        LockscreenPreviewContent.entries.forEach { content ->
+            /** 当前离线内容样本转换出的普通锁屏状态。 */
+            val state = LockscreenPreviewConfiguration(content = content).toUiState()
+            when (content) {
+                LockscreenPreviewContent.EMPTY -> {
+                    assertEquals(0, state.notifications.size)
+                    assertFalse(state.media.isVisible)
+                }
+                LockscreenPreviewContent.PUBLIC_NOTIFICATION ->
+                    assertFalse(state.notifications.single().isRedacted)
+                LockscreenPreviewContent.REDACTED_NOTIFICATION ->
+                    assertEquals(true, state.notifications.single().isRedacted)
+                LockscreenPreviewContent.MEDIA -> assertEquals(true, state.media.isVisible)
+                LockscreenPreviewContent.MIXED -> {
+                    assertEquals(3, state.notifications.size)
+                    assertEquals(true, state.media.isVisible)
+                }
+            }
+        }
     }
 
     /** 信任状态预览必须为每个活跃阶段提供稳定且可见的离线文字。 */

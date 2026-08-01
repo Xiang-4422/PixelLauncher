@@ -8,6 +8,8 @@ import com.purride.pixellockscreen.ui.LockscreenBiometricPhase
 import com.purride.pixellockscreen.ui.LockscreenBiometricUiState
 import com.purride.pixellockscreen.ui.LockscreenSecurityNoticePhase
 import com.purride.pixellockscreen.ui.LockscreenSecurityNoticeUiState
+import com.purride.pixellockscreen.ui.LockscreenMediaUiState
+import com.purride.pixellockscreen.ui.LockscreenNotificationUiState
 import com.purride.pixellockscreen.ui.PatternCredentialFeedback
 import com.purride.pixellockscreen.ui.PatternCredentialUiState
 import com.purride.pixellockscreen.ui.PasswordCredentialFeedback
@@ -63,6 +65,24 @@ internal enum class LockscreenPreviewBattery(
     HIGH(92),
 }
 
+/** 普通锁屏通知与媒体区域的稳定离线样本。 */
+internal enum class LockscreenPreviewContent {
+    /** 不展示通知或媒体。 */
+    EMPTY,
+
+    /** 展示一条允许公开正文的通知。 */
+    PUBLIC_NOTIFICATION,
+
+    /** 展示一条由系统隐私替代的通知。 */
+    REDACTED_NOTIFICATION,
+
+    /** 展示正在播放的媒体。 */
+    MEDIA,
+
+    /** 同时展示媒体、公开通知、隐私通知和超额计数。 */
+    MIXED,
+}
+
 /** Showcase 锁屏页的一次完整、可重复离线预览配置。 */
 internal data class LockscreenPreviewConfiguration(
     /** 当前预览的真实锁屏场景。 */
@@ -81,6 +101,8 @@ internal data class LockscreenPreviewConfiguration(
     val biometricPhase: LockscreenBiometricPhase = LockscreenBiometricPhase.UNAVAILABLE,
     /** 普通锁屏预览使用的信任代理或 Extend Unlock 阶段。 */
     val securityNoticePhase: LockscreenSecurityNoticePhase = LockscreenSecurityNoticePhase.NONE,
+    /** 普通锁屏通知与媒体区域的离线样本。 */
+    val content: LockscreenPreviewContent = LockscreenPreviewContent.EMPTY,
     /** 当前预览框方向。 */
     val orientation: LockscreenPreviewOrientation = LockscreenPreviewOrientation.PORTRAIT,
     /** 当前透明宿主下方的测试背景。 */
@@ -116,6 +138,8 @@ internal data class LockscreenPreviewConfiguration(
             phase = securityNoticePhase,
             messageText = previewSecurityNoticeMessage(securityNoticePhase),
         ),
+        notifications = previewNotifications(content),
+        media = previewMedia(content),
     )
 
     /** 选择传感器组合，并自动修复无传感器与活跃采集阶段的矛盾。 */
@@ -208,6 +232,39 @@ private fun previewSecurityNoticeMessage(phase: LockscreenSecurityNoticePhase): 
         LockscreenSecurityNoticePhase.TRUSTED -> "TRUSTED"
         LockscreenSecurityNoticePhase.TRUST_ERROR -> "TRUST AGENT ERROR"
         LockscreenSecurityNoticePhase.EXTENDED_UNLOCK -> "EXTEND UNLOCK ACTIVE"
+    }
+
+/** 为截图回归生成不依赖通知权限的固定通知摘要。 */
+private fun previewNotifications(
+    content: LockscreenPreviewContent,
+): List<LockscreenNotificationUiState> = when (content) {
+    LockscreenPreviewContent.EMPTY,
+    LockscreenPreviewContent.MEDIA,
+    -> emptyList()
+    LockscreenPreviewContent.PUBLIC_NOTIFICATION -> listOf(
+        LockscreenNotificationUiState("MESSAGE", "MESSAGES", "PIXEL HELLO"),
+    )
+    LockscreenPreviewContent.REDACTED_NOTIFICATION -> listOf(
+        LockscreenNotificationUiState("PRIVATE", "MESSAGES", isRedacted = true),
+    )
+    LockscreenPreviewContent.MIXED -> listOf(
+        LockscreenNotificationUiState("MESSAGE", "MESSAGES", "PIXEL HELLO"),
+        LockscreenNotificationUiState("PRIVATE", "MAIL", isRedacted = true),
+        LockscreenNotificationUiState("EVENT", "CALENDAR", "DESIGN REVIEW"),
+    )
+}
+
+/** 为截图回归生成不依赖媒体会话权限的固定媒体摘要。 */
+private fun previewMedia(content: LockscreenPreviewContent): LockscreenMediaUiState =
+    if (content == LockscreenPreviewContent.MEDIA || content == LockscreenPreviewContent.MIXED) {
+        LockscreenMediaUiState(
+            isVisible = true,
+            titleText = "PIXEL HEARTBEAT",
+            artistText = "PURRIDE",
+            isPlaying = true,
+        )
+    } else {
+        LockscreenMediaUiState()
     }
 
 /** 按枚举声明顺序循环选择前一个或后一个主题家族。 */
