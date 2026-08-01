@@ -96,12 +96,33 @@ internal class Titan2EmergencyActionBridge private constructor(
                 Titan2CredentialMode.PIN -> PIN_CONTROLLER_CLASS
                 Titan2CredentialMode.PASSWORD -> PASSWORD_CONTROLLER_CLASS
             }
-            /** 当前凭据模式对应的 Titan 2 控制器类。 */
-            val credentialControllerClass = Class.forName(
-                controllerClassName,
-                false,
-                classLoader,
-            )
+            return bindController(credentialController, controllerClassName, classLoader)
+        }
+
+        /** 绑定 SIM 或 AntiTheft 页面继承的同一套 ROM 原生紧急入口。 */
+        @SuppressLint("BlockedPrivateApi", "PrivateApi")
+        fun bindSpecial(
+            credentialController: Any,
+            mode: Titan2SpecialPinMode,
+            classLoader: ClassLoader,
+        ): Titan2EmergencyActionBridge = bindController(
+            credentialController = credentialController,
+            controllerClassName = if (mode.isSim) {
+                SIM_CONTROLLER_CLASS
+            } else {
+                ANTI_THEFT_CONTROLLER_CLASS
+            },
+            classLoader = classLoader,
+        )
+
+        /** 按已白名单化的最终控制器类名复用统一紧急按钮合同。 */
+        private fun bindController(
+            credentialController: Any,
+            controllerClassName: String,
+            classLoader: ClassLoader,
+        ): Titan2EmergencyActionBridge {
+            /** 当前页面对应的 Titan 2 最终控制器类。 */
+            val credentialControllerClass = Class.forName(controllerClassName, false, classLoader)
             check(credentialControllerClass.isInstance(credentialController)) {
                 "keyguard_credential_controller_instance"
             }
@@ -242,6 +263,14 @@ internal class Titan2EmergencyActionBridge private constructor(
         /** Titan 2 密码认证控制器类名。 */
         private const val PASSWORD_CONTROLLER_CLASS: String =
             "com.android.keyguard.KeyguardPasswordViewController"
+
+        /** Titan 2 MediaTek SIM PIN/PUK/ME 控制器类名。 */
+        private const val SIM_CONTROLLER_CLASS: String =
+            "com.mediatek.keyguard.Telephony.KeyguardSimPinPukMeViewController"
+
+        /** Titan 2 MediaTek 防盗控制器类名。 */
+        private const val ANTI_THEFT_CONTROLLER_CLASS: String =
+            "com.mediatek.keyguard.AntiTheft.KeyguardAntiTheftLockViewController"
 
         /** Titan 2 紧急按钮控制器类名。 */
         private const val EMERGENCY_CONTROLLER_CLASS: String =
