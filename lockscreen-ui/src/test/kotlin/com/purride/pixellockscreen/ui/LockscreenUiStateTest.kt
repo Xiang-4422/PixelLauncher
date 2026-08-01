@@ -427,6 +427,41 @@ class LockscreenUiStateTest {
         }
     }
 
+    /** 方屏主体信息与底部提示必须占用各自高度，不能由描边 Stack 吞掉整页。 */
+    @Test
+    fun squareSceneKeepsMainInformationAboveBottomHint() {
+        /** 当前测试使用的共享主题色板。 */
+        val palette = ProductThemeCatalog.resolve(
+            ProductThemeFamily.MIDNIGHT,
+            ProductThemeBrightness.LIGHT,
+        )
+        /** 离屏像素宿主。 */
+        val tester = PixelTester()
+        try {
+            tester.pumpWidget(
+                mediaRoot(
+                    child = buildLockscreenScene(
+                        LockscreenSceneRequest(
+                            state = state(),
+                            family = palette.family,
+                            brightness = palette.brightness,
+                        ),
+                    ),
+                    width = LOCKSCREEN_LOGICAL_WIDTH,
+                    height = LOCKSCREEN_LOGICAL_HEIGHT,
+                ),
+                logicalWidth = LOCKSCREEN_LOGICAL_WIDTH,
+                logicalHeight = LOCKSCREEN_LOGICAL_HEIGHT,
+            )
+
+            assertTrue(tester.hasPixelInRows(palette.primary, 20 until 100))
+            assertTrue(tester.hasPixelInRows(palette.muted, 100 until LOCKSCREEN_LOGICAL_HEIGHT))
+            assertFalse(tester.dumpRenderTree().contains("RenderFlexChild [132x0]"))
+        } finally {
+            tester.dispose()
+        }
+    }
+
     /** 所有可见生物识别阶段都应完成透明像素布局。 */
     @Test
     fun biometricPhasesRenderWithoutReplacingTransparentCanvas() {
@@ -529,6 +564,12 @@ class LockscreenUiStateTest {
         ),
         child = child,
     )
+
+    /** 判断指定颜色是否出现在给定逻辑行范围。 */
+    private fun PixelTester.hasPixelInRows(color: PixelColor, rows: IntRange): Boolean =
+        rows.any { y ->
+            (0 until LOCKSCREEN_LOGICAL_WIDTH).any { x -> pixelAt(x, y) == color }
+        }
 
     /** 断言指定状态构造逻辑抛出参数异常。 */
     private fun assertFails(block: () -> Unit) {

@@ -41,6 +41,9 @@ private const val LOCKSCREEN_CONTENT_INSET = 6
 /** 锁屏中央信息组内部的逻辑像素间距。 */
 private const val LOCKSCREEN_INFO_SPACING = 4
 
+/** 引擎内置 5×7 字体在单倍倍率下占用的固定逻辑高度。 */
+private const val LOCKSCREEN_FONT_HEIGHT = 7
+
 /** 普通锁屏直接绘制的通知卡数量，额外条目合并为计数提示。 */
 private const val MAXIMUM_RENDERED_NOTIFICATIONS = 2
 
@@ -666,16 +669,21 @@ internal fun outlinedLockscreenText(
     )
     return Padding(
         padding = EdgeInsets.all(1),
-        child = Stack(
-            alignment = Alignment.CENTER,
-            children = outlineOffsets.mapIndexed { index, offset ->
-                Transform.translate(
-                    offset = offset,
-                    child = textLayer(backing, "outline-$index"),
-                    key = "$key-outline-transform-$index",
-                )
-            } + textLayer(foreground, "foreground"),
-            key = "$key-stack",
+        child = SizedBox(
+            /** 限定描边栈的固有高度，避免 Stack 在 Column 的宽松约束下占满整页。 */
+            height = LOCKSCREEN_FONT_HEIGHT * fontScale,
+            child = Stack(
+                alignment = Alignment.CENTER,
+                children = outlineOffsets.mapIndexed { index, offset ->
+                    Transform.translate(
+                        offset = offset,
+                        child = textLayer(backing, "outline-$index"),
+                        key = "$key-outline-transform-$index",
+                    )
+                } + textLayer(foreground, "foreground"),
+                key = "$key-stack",
+            ),
+            key = "$key-height-boundary",
         ),
         key = "$key-padding",
     )
