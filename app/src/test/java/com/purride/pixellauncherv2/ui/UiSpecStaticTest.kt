@@ -1,5 +1,6 @@
 package com.purride.pixellauncherv2.ui
 
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -360,6 +361,64 @@ class UiSpecStaticTest {
                 ).containsMatchIn(settingsSource),
             )
         }
+    }
+
+    /** STYLE、MODE 与 ALIGN 使用随当前字体字号选择规格的系统图标。 */
+    @Test
+    fun compactVisualSettingsUseAdaptiveSystemIcons() {
+        /** 设置页源码，用于约束图标语义、顺序和字号映射。 */
+        val settingsSource = resolveModuleRoot()
+            .resolve("src/main/kotlin/com/purride/pixellauncherv2/ui/screen/SettingsScreen.kt")
+            .readText()
+
+        listOf(
+            "SQUARE",
+            "CIRCLE",
+            "DIAMOND",
+            "DAY",
+            "AUTO",
+            "NIGHT",
+            "ALIGN_LEFT",
+            "ALIGN_CENTER",
+            "ALIGN_RIGHT",
+        ).forEach { icon ->
+            assertTrue(
+                "$icon must be supplied by PixelSystemIcons instead of a font glyph.",
+                settingsSource.contains("PixelSystemIcons.mask(PixelSystemIcon.$icon, iconSize)"),
+            )
+        }
+        assertTrue(
+            "Settings icon size must follow the active font while capping inline controls at 11 pixels.",
+            settingsSource.contains("val iconSize = launcherInlineIconSize(fontSelection.size.px)") &&
+                !settingsSource.contains("PixelSystemIconSize.EXTRA_LARGE"),
+        )
+    }
+
+    /** 高频方向操作必须使用系统图标，不能继续依赖字体中的 ASCII 符号。 */
+    @Test
+    fun directionalActionsUseSystemIconsInsteadOfTextGlyphs() {
+        /** 应用模块源码根目录。 */
+        val sourceRoot = resolveModuleRoot().resolve("src/main/kotlin/com/purride/pixellauncherv2")
+        /** 设置通用控件源码。 */
+        val settingsControls = sourceRoot.resolve("ui/widget/SettingsControls.kt").readText()
+        /** 拨号页面源码。 */
+        val dialer = sourceRoot.resolve("ui/screen/DialerScreen.kt").readText()
+        /** 通话记录页面源码。 */
+        val callLog = sourceRoot.resolve("ui/screen/CallLogScreen.kt").readText()
+        /** 贪吃蛇页面源码。 */
+        val snake = sourceRoot.resolve("ui/screen/SnakeScreen.kt").readText()
+
+        assertTrue(settingsControls.contains("PixelSystemIcon.BACK"))
+        assertTrue(settingsControls.contains("PixelSystemIcon.FORWARD"))
+        assertTrue(settingsControls.contains("!valueLabel.equals(\"OPEN\", ignoreCase = true)"))
+        assertTrue(dialer.contains("icon = PixelSystemIcon.BACK"))
+        assertFalse(dialer.contains("text = \"DEL\""))
+        assertTrue(callLog.contains("PixelSystemIcon.VOICEMAIL"))
+        assertFalse(callLog.contains("CallLogModel.statusSymbol(group.type)"))
+        listOf("BACK", "ARROW_UP", "ARROW_DOWN", "FORWARD").forEach { icon ->
+            assertTrue(snake.contains("PixelSystemIcon.$icon"))
+        }
+        assertFalse(snake.contains("directionKey(\"<\""))
     }
 
     @Test

@@ -14,6 +14,8 @@ import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.PageView
 import com.purride.pixelui.Padding
 import com.purride.pixelui.PixelSemanticRole
+import com.purride.pixelui.PixelSemanticsActions
+import com.purride.pixelui.PixelSystemIcon
 import com.purride.pixelui.Row
 import com.purride.pixelui.Semantics
 import com.purride.pixelui.Text
@@ -31,6 +33,8 @@ import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.launcher.LauncherTextRole
 import com.purride.pixellauncherv2.launcher.T9Model
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
+import com.purride.pixellauncherv2.ui.widget.launcherInlineIconSize
+import com.purride.pixellauncherv2.ui.widget.launcherSystemIcon
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 private val CALL_PAGE_TABS = listOf("RECENT", "PEOPLE", "DIAL")
@@ -213,39 +217,66 @@ private fun dialNumberRow(
     theme: LauncherTheme,
     onDialBackspace: () -> Unit,
     onDialClear: () -> Unit,
-): Widget = Row(
-    spacing = LauncherSpacing.ROW_SPACING,
-    crossAxisAlignment = CrossAxisAlignment.CENTER,
-    children = listOf(
-        Expanded(
-            child = dialText(
-                text = DialInputModel.displayText(uiState.dialInput),
-                color = if (uiState.dialInput.isEmpty()) {
-                    theme.sms.timestamp
-                } else {
-                    theme.text.primary
-                },
-                theme = theme,
-                // 号码保尾截头：尾号是用户核对刚按下数字的唯一依据，从尾部截断等于
-                // 把刚输入的内容藏起来。截断点由引擎按真实可用宽度决定，UI 层不猜字符数。
-                overflow = TextOverflow.ELLIPSIS_START,
+): Widget {
+    /** 空号码时退格只保留禁用提示，不导出可执行语义动作。 */
+    val canDelete = uiState.dialInput.isNotEmpty()
+    /** 退格图标跟随当前正文字号，但不使用会撑高号码行的 15px 规格。 */
+    val iconSize = launcherInlineIconSize(uiState.fontSelection.size.px)
+    /** 返回箭头在号码输入上下文中表达删除上一位，长按继续承担清空语义。 */
+    val deleteIcon = launcherSystemIcon(
+        icon = PixelSystemIcon.BACK,
+        size = iconSize,
+        color = if (canDelete) theme.button.text else theme.button.disabledText,
+    )
+    return Row(
+        spacing = LauncherSpacing.ROW_SPACING,
+        crossAxisAlignment = CrossAxisAlignment.CENTER,
+        children = listOf(
+            Expanded(
+                child = dialText(
+                    text = DialInputModel.displayText(uiState.dialInput),
+                    color = if (uiState.dialInput.isEmpty()) {
+                        theme.sms.timestamp
+                    } else {
+                        theme.text.primary
+                    },
+                    theme = theme,
+                    // 号码保尾截头：尾号是用户核对刚按下数字的唯一依据，从尾部截断等于
+                    // 把刚输入的内容藏起来。截断点由引擎按真实可用宽度决定，UI 层不猜字符数。
+                    overflow = TextOverflow.ELLIPSIS_START,
+                ),
+            ),
+            Semantics(
+                label = "DELETE LAST DIGIT",
+                role = PixelSemanticRole.BUTTON,
+                enabled = canDelete,
+                actions = PixelSemanticsActions(
+                    onClick = if (canDelete) {
+                        {
+                            onDialBackspace()
+                            true
+                        }
+                    } else {
+                        null
+                    },
+                    onLongClick = if (canDelete) {
+                        {
+                            onDialClear()
+                            true
+                        }
+                    } else {
+                        null
+                    },
+                ),
+                child = GestureDetector(
+                    onTap = onDialBackspace,
+                    onLongPress = onDialClear,
+                    child = deleteIcon,
+                ),
             ),
         ),
-        GestureDetector(
-            onTap = onDialBackspace,
-            onLongPress = onDialClear,
-            child = dialText(
-                text = "DEL",
-                color = if (uiState.dialInput.isEmpty()) {
-                    theme.button.disabledText
-                } else {
-                    theme.button.text
-                },
-                theme = theme,
-            ),
-        ),
-    ),
-)
+    )
+}
 
 /**
  * T9 匹配槽：**固定占一行，永不塌陷**。

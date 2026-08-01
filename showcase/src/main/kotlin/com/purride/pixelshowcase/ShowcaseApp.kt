@@ -19,10 +19,14 @@ import com.purride.pixelui.Divider
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.Gap
+import com.purride.pixelui.Icon
 import com.purride.pixelui.ListTile
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Padding
 import com.purride.pixelui.PixelHostView
+import com.purride.pixelui.PixelSystemIcon
+import com.purride.pixelui.PixelSystemIconSize
+import com.purride.pixelui.PixelSystemIcons
 import com.purride.pixelui.PixelNavigator
 import com.purride.pixelui.PixelNavigatorState
 import com.purride.pixelui.PixelRouteDestination
@@ -43,11 +47,12 @@ import com.purride.pixelui.TextField
 import com.purride.pixelui.TextEditingController
 import com.purride.pixelui.TextStyle
 import com.purride.pixelui.Widget
+import com.purride.pixelui.Wrap
 import com.purride.pixelui.ScrollController
 import com.purride.pixelui.pixelRouteDestination
 import kotlin.time.Duration.Companion.milliseconds
 
-/** showcase 的三个目的地。 */
+/** Showcase 内全部可导航的演示目的地。 */
 enum class ShowcaseRoute(val routeName: String) {
     HOME("home"),
     DEMOS("demos"),
@@ -55,6 +60,8 @@ enum class ShowcaseRoute(val routeName: String) {
     TODO("todo"),
     STOPWATCH("stopwatch"),
     TIMER("timer"),
+    /** 独立像素系统图标的多规格与主题预览页。 */
+    ICONS("icons"),
     THEME("theme"),
     ABOUT("about"),
 }
@@ -112,6 +119,10 @@ class ShowcaseAppHost(
     )
     private val homeScrollController = ScrollController()
     private val homeScrollState = homeScrollController.create()
+    /** 图标预览页独立持有的滚动控制器。 */
+    private val iconScrollController = ScrollController()
+    /** 图标预览页与控制器绑定的稳定滚动状态。 */
+    private val iconScrollState = iconScrollController.create()
 
     // ── 性能 HUD ──────────────────────────────────────────────────────────────
     private var hudVisible = false
@@ -252,6 +263,7 @@ class ShowcaseAppHost(
             controller = timer,
             header = pageHeader("TIMER"),
         )
+        ShowcaseRoute.ICONS -> iconsPage()
         ShowcaseRoute.THEME -> themePage()
         ShowcaseRoute.ABOUT -> aboutPage()
     }
@@ -299,6 +311,11 @@ class ShowcaseAppHost(
                                         title = "TIMER",
                                         subtitle = "COUNTDOWN ALERT",
                                         route = ShowcaseRoute.TIMER,
+                                    ),
+                                    menuTile(
+                                        title = "ICONS",
+                                        subtitle = "PIXEL SYSTEM SET",
+                                        route = ShowcaseRoute.ICONS,
                                     ),
                                     menuTile(
                                         title = "THEME",
@@ -445,6 +462,148 @@ class ShowcaseAppHost(
             ),
         ),
     )
+
+    // ── 系统图标 ──────────────────────────────────────────────────────────────
+
+    /** 展示所有系统图标在四档画布规格和当前主题颜色下的实际栅格结果。 */
+    private fun iconsPage(): Widget = Container(
+        fillColor = ShowcaseTheme.BACKGROUND,
+        child = Padding(
+            padding = EdgeInsets.symmetric(horizontal = 8, vertical = 6),
+            child = Column(
+                mainAxisSize = MainAxisSize.MAX,
+                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                spacing = 0,
+                children = listOf(
+                    pageHeader("ICONS"),
+                    Expanded(
+                        child = SingleChildScrollView(
+                            child = Column(
+                                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                                spacing = 4,
+                                children = listOf(
+                                    Text(
+                                        "INDEPENDENT FROM FONT FAMILY",
+                                        color = ShowcaseTheme.FAINT,
+                                    ),
+                                    iconCategory(
+                                        title = "STYLE",
+                                        icons = listOf(
+                                            PixelSystemIcon.SQUARE,
+                                            PixelSystemIcon.CIRCLE,
+                                            PixelSystemIcon.DIAMOND,
+                                        ),
+                                    ),
+                                    iconCategory(
+                                        title = "ALIGN",
+                                        icons = listOf(
+                                            PixelSystemIcon.ALIGN_LEFT,
+                                            PixelSystemIcon.ALIGN_CENTER,
+                                            PixelSystemIcon.ALIGN_RIGHT,
+                                        ),
+                                    ),
+                                    iconCategory(
+                                        title = "MODE",
+                                        icons = listOf(
+                                            PixelSystemIcon.DAY,
+                                            PixelSystemIcon.AUTO,
+                                            PixelSystemIcon.NIGHT,
+                                        ),
+                                    ),
+                                    iconCategory(
+                                        title = "ACTIONS",
+                                        icons = listOf(
+                                            PixelSystemIcon.BACK,
+                                            PixelSystemIcon.FORWARD,
+                                            PixelSystemIcon.ARROW_UP,
+                                            PixelSystemIcon.ARROW_DOWN,
+                                            PixelSystemIcon.VOICEMAIL,
+                                            PixelSystemIcon.CLOSE,
+                                            PixelSystemIcon.SEARCH,
+                                            PixelSystemIcon.EDIT,
+                                            PixelSystemIcon.DELETE,
+                                            PixelSystemIcon.ADD,
+                                            PixelSystemIcon.REMOVE,
+                                        ),
+                                    ),
+                                    Gap(8),
+                                ),
+                            ),
+                            state = iconScrollState,
+                            controller = iconScrollController,
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    )
+
+    /** 为一个语义分类依次展示 7、9、11 与 15 像素图标。 */
+    private fun iconCategory(title: String, icons: List<PixelSystemIcon>): Widget = Column(
+        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+        spacing = 3,
+        children = listOf(sectionHeader(title)) + PixelSystemIconSize.entries.map { size ->
+            iconSizePreview(size = size, icons = icons)
+        },
+    )
+
+    /** 展示同一规格的一组图标，窄屏下由 Wrap 自动换行。 */
+    private fun iconSizePreview(size: PixelSystemIconSize, icons: List<PixelSystemIcon>): Widget = Column(
+        crossAxisAlignment = CrossAxisAlignment.STRETCH,
+        spacing = 2,
+        children = listOf(
+            Text("${size.pixels}PX", color = ShowcaseTheme.DIM),
+            Wrap(
+                spacing = 3,
+                runSpacing = 3,
+                children = icons.map { icon -> iconPreviewTile(icon = icon, size = size) },
+            ),
+        ),
+    )
+
+    /** 使用当前 Showcase 主题色绘制一个带名称的图标预览块。 */
+    private fun iconPreviewTile(icon: PixelSystemIcon, size: PixelSystemIconSize): Widget = Container(
+        borderColor = ShowcaseTheme.BORDER,
+        padding = EdgeInsets.all(2),
+        child = Column(
+            crossAxisAlignment = CrossAxisAlignment.CENTER,
+            spacing = 2,
+            children = listOf(
+                Icon(
+                    PixelSystemIcons.tinted(
+                        icon = icon,
+                        size = size,
+                        color = ShowcaseTheme.TITLE,
+                    ),
+                ),
+                Text(iconPreviewLabel(icon), color = ShowcaseTheme.DIM),
+            ),
+        ),
+    )
+
+    /** 返回图标画廊使用的紧凑名称，完整操作语义仍由图标枚举保存。 */
+    private fun iconPreviewLabel(icon: PixelSystemIcon): String = when (icon) {
+        PixelSystemIcon.SQUARE -> "SQUARE"
+        PixelSystemIcon.CIRCLE -> "CIRCLE"
+        PixelSystemIcon.DIAMOND -> "DIAMOND"
+        PixelSystemIcon.DAY -> "DAY"
+        PixelSystemIcon.AUTO -> "AUTO"
+        PixelSystemIcon.NIGHT -> "NIGHT"
+        PixelSystemIcon.ALIGN_LEFT -> "LEFT"
+        PixelSystemIcon.ALIGN_CENTER -> "CENTER"
+        PixelSystemIcon.ALIGN_RIGHT -> "RIGHT"
+        PixelSystemIcon.BACK -> "BACK"
+        PixelSystemIcon.FORWARD -> "FORWARD"
+        PixelSystemIcon.ARROW_UP -> "UP"
+        PixelSystemIcon.ARROW_DOWN -> "DOWN"
+        PixelSystemIcon.VOICEMAIL -> "VOICEMAIL"
+        PixelSystemIcon.CLOSE -> "CLOSE"
+        PixelSystemIcon.SEARCH -> "SEARCH"
+        PixelSystemIcon.EDIT -> "EDIT"
+        PixelSystemIcon.DELETE -> "DELETE"
+        PixelSystemIcon.ADD -> "ADD"
+        PixelSystemIcon.REMOVE -> "REMOVE"
+    }
 
     // ── 主题 ──────────────────────────────────────────────────────────────────
 

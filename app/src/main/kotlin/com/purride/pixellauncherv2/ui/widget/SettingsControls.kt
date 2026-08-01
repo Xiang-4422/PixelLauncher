@@ -7,9 +7,13 @@ import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
 import com.purride.pixelui.GestureDetector
+import com.purride.pixelui.IconSegmentedControl
 import com.purride.pixelui.MainAxisSize
+import com.purride.pixelui.PixelIconData
 import com.purride.pixelui.PixelSemanticRole
 import com.purride.pixelui.PixelSemanticsActions
+import com.purride.pixelui.PixelSystemIcon
+import com.purride.pixelui.PixelSystemIconSize
 import com.purride.pixelui.Row
 import com.purride.pixelui.SegmentedControl
 import com.purride.pixelui.SegmentedControlStyle
@@ -56,23 +60,28 @@ private const val SETTINGS_INLINE_SELECTION_MAX_OPTIONS = 3
  * 根据候选项数量选择设置枚举行：三项以内直接选择，更多项暂时回退步进器。
  *
  * 该入口集中约束设置页的组件选择；未来增加多候选项组件时只需替换超过三项的分支。
+ * 图标存在时只替换可见内容，文字标签继续承担无障碍语义和步进器回退显示。
  */
 fun SettingsChoiceRow(
     title: String,
     labels: List<String>,
+    icons: List<PixelIconData>? = null,
     selectedIndex: Int,
     theme: LauncherTheme,
     textEdgeResolvers: SettingsTextEdgeResolvers = SettingsTextEdgeResolvers.None,
     widthPolicy: SegmentedControlWidthPolicy = SegmentedControlWidthPolicy.Content,
     enabled: Boolean = true,
+    iconSize: PixelSystemIconSize = PixelSystemIconSize.SMALL,
     onSelected: (Int) -> Unit,
 ): Widget {
     require(labels.isNotEmpty()) { "SettingsChoiceRow labels must not be empty." }
     require(selectedIndex in labels.indices) { "SettingsChoiceRow selectedIndex must reference labels." }
+    require(icons == null || icons.size == labels.size) { "SettingsChoiceRow icons must match labels size." }
     if (labels.size <= SETTINGS_INLINE_SELECTION_MAX_OPTIONS) {
         return SettingsSegmentedControlRow(
             title = title,
             labels = labels,
+            icons = icons,
             selectedIndex = selectedIndex,
             theme = theme,
             textEdgeResolvers = textEdgeResolvers,
@@ -89,18 +98,21 @@ fun SettingsChoiceRow(
         onPrevious = { onSelected(wrappedOptionIndex(selectedIndex - 1, labels.size)) },
         onNext = { onSelected(wrappedOptionIndex(selectedIndex + 1, labels.size)) },
         enabled = enabled,
+        iconSize = iconSize,
     )
 }
 
 /**
  * 构建设置页的通用多态单选行，并把每项宽度策略透传给底层分段选择器。
  *
+ * @param icons 可选的可见图标遮罩，数量必须与文字语义标签一致。
  * @param widthPolicy 支持各项内容宽、按最长项等宽或调用方指定等宽。
  * @param enabled 是否允许点击、键盘和无障碍操作整组候选项。
  */
 fun SettingsSegmentedControlRow(
     title: String,
     labels: List<String>,
+    icons: List<PixelIconData>? = null,
     selectedIndex: Int,
     theme: LauncherTheme,
     textEdgeResolvers: SettingsTextEdgeResolvers = SettingsTextEdgeResolvers.None,
@@ -119,6 +131,7 @@ fun SettingsSegmentedControlRow(
             trailing = SettingsSelection(
                 title = title,
                 labels = labels,
+                icons = icons,
                 selectedIndex = selectedIndex,
                 theme = theme,
                 widthPolicy = widthPolicy,
@@ -210,28 +223,41 @@ fun SettingsOptionStepperRow(
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     enabled: Boolean = true,
+    iconSize: PixelSystemIconSize = PixelSystemIconSize.SMALL,
 ): Widget = Container(
     child = settingsInlineRow(
-        title = if (enabled) {
-            GestureDetector(
-                onTap = onPrevious,
-                child = settingsTitleCell(title = title, theme = theme, textEdgeResolvers = textEdgeResolvers),
-            )
-        } else {
-            settingsTitleCell(
-                title = title,
-                theme = theme,
-                textEdgeResolvers = textEdgeResolvers,
-                enabled = false,
-            )
-        },
+        title = settingsTitleCell(
+            title = title,
+            theme = theme,
+            textEdgeResolvers = textEdgeResolvers,
+            enabled = enabled,
+        ),
         trailing = if (enabled) {
-            GestureDetector(
-                onTap = onNext,
-                child = settingsValueCell(
-                    valueLabel = valueLabel,
-                    theme = theme,
-                    textEdgeResolvers = textEdgeResolvers,
+            Row(
+                mainAxisSize = MainAxisSize.MAX,
+                crossAxisAlignment = CrossAxisAlignment.CENTER,
+                spacing = SETTINGS_INLINE_COLUMN_GAP_PX,
+                children = listOf(
+                    settingsDirectionButton(
+                        icon = PixelSystemIcon.BACK,
+                        iconSize = iconSize,
+                        semanticLabel = "$title PREVIOUS",
+                        theme = theme,
+                        onPressed = onPrevious,
+                    ),
+                    Expanded(
+                        child = settingsCenteredValueCell(
+                            valueLabel = valueLabel,
+                            theme = theme,
+                        ),
+                    ),
+                    settingsDirectionButton(
+                        icon = PixelSystemIcon.FORWARD,
+                        iconSize = iconSize,
+                        semanticLabel = "$title NEXT",
+                        theme = theme,
+                        onPressed = onNext,
+                    ),
                 ),
             )
         } else {
@@ -242,6 +268,51 @@ fun SettingsOptionStepperRow(
                 enabled = false,
             )
         },
+        titleFlex = 1,
+        trailingFlex = 2,
+    ),
+)
+
+/** 设置步进器的独立方向按钮，图标负责视觉，文字标签继续提供完整无障碍语义。 */
+private fun settingsDirectionButton(
+    icon: PixelSystemIcon,
+    iconSize: PixelSystemIconSize,
+    semanticLabel: String,
+    theme: LauncherTheme,
+    onPressed: () -> Unit,
+): Widget {
+    /** 使用 Launcher 控件色提前着色，避免公共 IconButton 的主题 token 与页面颜色不一致。 */
+    val content = Container(
+        borderColor = theme.button.border,
+        padding = EdgeInsets.all(LauncherSpacing.BORDERED_CONTROL_INSET),
+        alignment = Alignment.CENTER,
+        child = launcherSystemIcon(icon = icon, size = iconSize, color = theme.button.text),
+    )
+    return Semantics(
+        label = semanticLabel,
+        role = PixelSemanticRole.BUTTON,
+        actions = PixelSemanticsActions(
+            onClick = {
+                onPressed()
+                true
+            },
+        ),
+        child = GestureDetector(onTap = onPressed, child = content),
+    )
+}
+
+/** 步进器中央值不再承担点击方向，因此使用真正的居中只读文本。 */
+private fun settingsCenteredValueCell(
+    valueLabel: String,
+    theme: LauncherTheme,
+): Widget = Container(
+    alignment = Alignment.CENTER,
+    child = Text(
+        valueLabel,
+        style = TextStyle(color = theme.settings.itemValue),
+        overflow = TextOverflow.ELLIPSIS,
+        softWrap = false,
+        maxLines = 1,
     ),
 )
 
@@ -250,6 +321,7 @@ fun SettingsActionRow(
     valueLabel: String,
     theme: LauncherTheme,
     textEdgeResolvers: SettingsTextEdgeResolvers = SettingsTextEdgeResolvers.None,
+    iconSize: PixelSystemIconSize = PixelSystemIconSize.SMALL,
     onPressed: () -> Unit,
     key: Any? = null,
 ): Widget = GestureDetector(
@@ -258,10 +330,28 @@ fun SettingsActionRow(
     child = Container(
         child = settingsInlineRow(
             title = settingsTitleCell(title = title, theme = theme, textEdgeResolvers = textEdgeResolvers),
-            trailing = settingsValueCell(
-                valueLabel = valueLabel,
-                theme = theme,
-                textEdgeResolvers = textEdgeResolvers,
+            trailing = Row(
+                mainAxisSize = MainAxisSize.MIN,
+                crossAxisAlignment = CrossAxisAlignment.CENTER,
+                spacing = SETTINGS_INLINE_COLUMN_GAP_PX,
+                children = buildList {
+                    if (!valueLabel.equals("OPEN", ignoreCase = true)) {
+                        add(
+                            settingsValueCell(
+                                valueLabel = valueLabel,
+                                theme = theme,
+                                textEdgeResolvers = textEdgeResolvers,
+                            ),
+                        )
+                    }
+                    add(
+                        launcherSystemIcon(
+                            icon = PixelSystemIcon.FORWARD,
+                            size = iconSize,
+                            color = theme.settings.itemValue,
+                        ),
+                    )
+                },
             ),
         ),
     ),
@@ -386,6 +476,7 @@ private fun SettingsSwitch(
     val selector = SettingsSelection(
         title = title,
         labels = listOf(offLabel, onLabel),
+        icons = null,
         selectedIndex = if (checked) 1 else 0,
         theme = theme,
         widthPolicy = widthPolicy,
@@ -423,18 +514,16 @@ private fun SettingsSwitch(
 private fun SettingsSelection(
     title: String,
     labels: List<String>,
+    icons: List<PixelIconData>?,
     selectedIndex: Int,
     theme: LauncherTheme,
     widthPolicy: SegmentedControlWidthPolicy,
     showLabels: Boolean,
     enabled: Boolean,
     onSelected: (Int) -> Unit,
-): Widget = SegmentedControl(
-    labels = labels,
-    selectedIndex = selectedIndex,
-    onSelected = onSelected,
-    widthPolicy = widthPolicy,
-    style = SegmentedControlStyle(
+): Widget {
+    /** 文字与图标选择器共享完全相同的颜色、间距和状态配置。 */
+    val style = SegmentedControlStyle(
         containerColor = PixelColor.Transparent,
         borderColor = theme.button.border,
         selectedFillColor = theme.button.border,
@@ -446,10 +535,30 @@ private fun SettingsSelection(
             vertical = LauncherSpacing.BORDERED_CONTROL_INSET,
         ),
         segmentSpacing = SETTINGS_SWITCH_SEGMENT_GAP_PX,
-    ),
-    key = "$title-settings-selection",
-    enabled = enabled,
-)
+    )
+    return if (icons == null) {
+        SegmentedControl(
+            labels = labels,
+            selectedIndex = selectedIndex,
+            onSelected = onSelected,
+            widthPolicy = widthPolicy,
+            style = style,
+            key = "$title-settings-selection",
+            enabled = enabled,
+        )
+    } else {
+        IconSegmentedControl(
+            labels = labels,
+            icons = icons,
+            selectedIndex = selectedIndex,
+            onSelected = onSelected,
+            widthPolicy = widthPolicy,
+            style = style,
+            key = "$title-settings-selection",
+            enabled = enabled,
+        )
+    }
+}
 
 /** 将步进器越过首尾的目标位置循环映射回合法候选项下标。 */
 private fun wrappedOptionIndex(index: Int, optionCount: Int): Int = ((index % optionCount) + optionCount) % optionCount

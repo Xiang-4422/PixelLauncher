@@ -3,6 +3,9 @@ package com.purride.pixellauncherv2.ui
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.PixelSemanticRole
 import com.purride.pixelui.PixelSemanticsAction
+import com.purride.pixelui.PixelSystemIcon
+import com.purride.pixelui.PixelSystemIconSize
+import com.purride.pixelui.PixelSystemIcons
 import com.purride.pixelui.SegmentedControlWidthPolicy
 import com.purride.pixelui.testing.PixelTester
 import com.purride.pixellauncherv2.launcher.LauncherThemeBrightness
@@ -17,6 +20,7 @@ import com.purride.pixellauncherv2.ui.theme.SurfaceColors
 import com.purride.pixellauncherv2.ui.theme.TextColors
 import com.purride.pixellauncherv2.ui.widget.SettingsSwitchRow
 import com.purride.pixellauncherv2.ui.widget.SettingsSegmentedControlRow
+import com.purride.pixellauncherv2.ui.widget.SettingsOptionStepperRow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -24,6 +28,43 @@ import org.junit.Test
 
 /** Settings 布尔封装必须隐藏底层 Tab 语义并重新导出标准 Switch 契约。 */
 class SettingsSwitchSemanticsTest {
+    /** 启用步进器必须为前后方向提供两个独立按钮语义，不能继续隐藏在标题和值上。 */
+    @Test
+    fun enabledStepperExportsPreviousAndNextButtons() {
+        /** 记录前一项动作次数。 */
+        var previousCount = 0
+        /** 记录后一项动作次数。 */
+        var nextCount = 0
+        /** 使用离屏像素宿主读取步进器的两个方向按钮。 */
+        val tester = PixelTester()
+        try {
+            tester.pumpWidget(
+                SettingsOptionStepperRow(
+                    title = "THEME",
+                    valueLabel = "CRT",
+                    theme = testTheme(),
+                    onPrevious = { previousCount += 1 },
+                    onNext = { nextCount += 1 },
+                ),
+                logicalWidth = 180,
+                logicalHeight = 30,
+            )
+            /** 前一项按钮语义节点。 */
+            val previous = tester.semanticsNodesByLabel("THEME PREVIOUS").single()
+            /** 后一项按钮语义节点。 */
+            val next = tester.semanticsNodesByLabel("THEME NEXT").single()
+
+            assertEquals(PixelSemanticRole.BUTTON, previous.role)
+            assertEquals(PixelSemanticRole.BUTTON, next.role)
+            assertTrue(tester.performSemanticsAction(previous.id, PixelSemanticsAction.CLICK))
+            assertTrue(tester.performSemanticsAction(next.id, PixelSemanticsAction.CLICK))
+            assertEquals(1, previousCount)
+            assertEquals(1, nextCount)
+        } finally {
+            tester.dispose()
+        }
+    }
+
     /** 三态 MODE 复用同一分段选择器，同时保留直接选择任意模式的 Tab 语义。 */
     @Test
     fun themeModeExportsDayAutoNightTabs() {
@@ -36,6 +77,11 @@ class SettingsSwitchSemanticsTest {
                 SettingsSegmentedControlRow(
                     title = "MODE",
                     labels = listOf("DAY", "AUTO", "NIGHT"),
+                    icons = listOf(
+                        PixelSystemIcons.mask(PixelSystemIcon.DAY, PixelSystemIconSize.SMALL),
+                        PixelSystemIcons.mask(PixelSystemIcon.AUTO, PixelSystemIconSize.SMALL),
+                        PixelSystemIcons.mask(PixelSystemIcon.NIGHT, PixelSystemIconSize.SMALL),
+                    ),
                     selectedIndex = 1,
                     theme = testTheme(),
                     widthPolicy = SegmentedControlWidthPolicy.EqualToWidest,

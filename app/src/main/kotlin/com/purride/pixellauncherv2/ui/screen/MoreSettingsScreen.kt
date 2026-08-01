@@ -29,6 +29,7 @@ import com.purride.pixellauncherv2.ui.widget.SettingsChoiceRow
 import com.purride.pixellauncherv2.ui.widget.SettingsSectionHeader
 import com.purride.pixellauncherv2.ui.widget.SettingsSwitchRow
 import com.purride.pixellauncherv2.ui.widget.SettingsTextEdgeResolvers
+import com.purride.pixellauncherv2.ui.widget.launcherInlineIconSize
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 /**
@@ -78,6 +79,8 @@ class MoreSettingsScreen(
 
         /** 将 MORE 页面状态映射成实际可交互的设置组件。 */
         private fun LauncherUiState.toMoreSettingsWidgets(currentTheme: LauncherTheme): List<Widget> = buildList {
+            /** 当前正文字号对应的行内系统图标规格。 */
+            val iconSize = launcherInlineIconSize(fontSelection.size.px)
             addSection(SettingsSection.NOTIFICATIONS, currentTheme)
             add(
                 SettingsActionRow(
@@ -85,6 +88,7 @@ class MoreSettingsScreen(
                     valueLabel = NotificationSettingsModel.summary(allowedNotificationSourceIds),
                     theme = currentTheme,
                     textEdgeResolvers = widget.textEdgeResolvers,
+                    iconSize = iconSize,
                     onPressed = { widget.onItemAction(SettingsMenuItem.NOTIFICATIONS, +1) },
                 ),
             )
@@ -95,6 +99,7 @@ class MoreSettingsScreen(
                     valueLabel = DataHealthModel.summary(this@toMoreSettingsWidgets),
                     theme = currentTheme,
                     textEdgeResolvers = widget.textEdgeResolvers,
+                    iconSize = iconSize,
                     onPressed = { widget.onItemAction(SettingsMenuItem.DATA_HEALTH, +1) },
                 ),
             )
@@ -122,6 +127,7 @@ class MoreSettingsScreen(
                         theme = currentTheme,
                         textEdgeResolvers = widget.textEdgeResolvers,
                         widthPolicy = SegmentedControlWidthPolicy.Content,
+                        iconSize = iconSize,
                         onSelected = { selectedIndex ->
                             /** SHAKE MODE 固定为三项，点击后直接换算到现有相对方向协议。 */
                             dispatchSelection(
@@ -152,6 +158,7 @@ class MoreSettingsScreen(
                         valueLabel = "OPEN",
                         theme = currentTheme,
                         textEdgeResolvers = widget.textEdgeResolvers,
+                        iconSize = iconSize,
                         onPressed = { widget.onItemAction(SettingsMenuItem.LOADING_PREVIEW, +1) },
                     ),
                 )
@@ -161,6 +168,7 @@ class MoreSettingsScreen(
                         valueLabel = "OPEN",
                         theme = currentTheme,
                         textEdgeResolvers = widget.textEdgeResolvers,
+                        iconSize = iconSize,
                         onPressed = { widget.onItemAction(SettingsMenuItem.ADVANCED, +1) },
                     ),
                 )

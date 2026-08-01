@@ -2129,6 +2129,8 @@ public final class com.purride.pixelui.PixelComponentsKt {
   public static com.purride.pixelui.Widget SegmentedControlWithLayout$default(java.util.List, int, kotlin.jvm.functions.Function1, com.purride.pixelui.SegmentedControlWidthPolicy, com.purride.pixelui.SegmentedControlStyle, int, java.lang.Object, boolean, int, java.lang.Object);
   public static final com.purride.pixelui.Widget SegmentedControlWithControlStates(java.util.List<java.lang.String>, int, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, int, java.lang.Object, boolean);
   public static com.purride.pixelui.Widget SegmentedControlWithControlStates$default(java.util.List, int, kotlin.jvm.functions.Function1, int, java.lang.Object, boolean, int, java.lang.Object);
+  public static final com.purride.pixelui.Widget IconSegmentedControl-gUZ4rNs(java.util.List<java.lang.String>, java.util.List<com.purride.pixelui.PixelIconData>, int, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, com.purride.pixelui.SegmentedControlWidthPolicy, com.purride.pixelui.SegmentedControlStyle, int, java.lang.Object, boolean);
+  public static com.purride.pixelui.Widget IconSegmentedControl-gUZ4rNs$default(java.util.List, java.util.List, int, kotlin.jvm.functions.Function1, com.purride.pixelui.SegmentedControlWidthPolicy, com.purride.pixelui.SegmentedControlStyle, int, java.lang.Object, boolean, int, java.lang.Object);
   public static final com.purride.pixelui.Widget ValueAdjuster(java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, java.lang.String, boolean, int, com.purride.pixelui.ValueAdjusterStyle, java.lang.Object);
   public static com.purride.pixelui.Widget ValueAdjuster$default(java.lang.String, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, java.lang.String, boolean, int, com.purride.pixelui.ValueAdjusterStyle, java.lang.Object, int, java.lang.Object);
   public static final com.purride.pixelui.Widget ValueAdjusterWithControlStates(java.lang.String, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function0<kotlin.Unit>, int, java.lang.String, boolean, int, com.purride.pixelui.ValueAdjusterStyle, java.lang.Object);
@@ -5100,6 +5102,46 @@ public final class com.purride.pixelui.PixelSurfaceKt {
 }
 public interface com.purride.pixelui.PixelSystemActionCapability {
   public abstract com.purride.pixelui.PixelCapabilityResult dispatch(com.purride.pixelui.PixelTypedSystemAction);
+}
+public final class com.purride.pixelui.PixelSystemIcon extends java.lang.Enum<com.purride.pixelui.PixelSystemIcon> {
+  public static final com.purride.pixelui.PixelSystemIcon SQUARE;
+  public static final com.purride.pixelui.PixelSystemIcon CIRCLE;
+  public static final com.purride.pixelui.PixelSystemIcon DIAMOND;
+  public static final com.purride.pixelui.PixelSystemIcon DAY;
+  public static final com.purride.pixelui.PixelSystemIcon AUTO;
+  public static final com.purride.pixelui.PixelSystemIcon NIGHT;
+  public static final com.purride.pixelui.PixelSystemIcon ALIGN_LEFT;
+  public static final com.purride.pixelui.PixelSystemIcon ALIGN_CENTER;
+  public static final com.purride.pixelui.PixelSystemIcon ALIGN_RIGHT;
+  public static final com.purride.pixelui.PixelSystemIcon BACK;
+  public static final com.purride.pixelui.PixelSystemIcon FORWARD;
+  public static final com.purride.pixelui.PixelSystemIcon ARROW_UP;
+  public static final com.purride.pixelui.PixelSystemIcon ARROW_DOWN;
+  public static final com.purride.pixelui.PixelSystemIcon VOICEMAIL;
+  public static final com.purride.pixelui.PixelSystemIcon CLOSE;
+  public static final com.purride.pixelui.PixelSystemIcon SEARCH;
+  public static final com.purride.pixelui.PixelSystemIcon EDIT;
+  public static final com.purride.pixelui.PixelSystemIcon DELETE;
+  public static final com.purride.pixelui.PixelSystemIcon ADD;
+  public static final com.purride.pixelui.PixelSystemIcon REMOVE;
+  public static com.purride.pixelui.PixelSystemIcon[] values();
+  public static com.purride.pixelui.PixelSystemIcon valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<com.purride.pixelui.PixelSystemIcon> getEntries();
+}
+public final class com.purride.pixelui.PixelSystemIconSize extends java.lang.Enum<com.purride.pixelui.PixelSystemIconSize> {
+  public static final com.purride.pixelui.PixelSystemIconSize SMALL;
+  public static final com.purride.pixelui.PixelSystemIconSize MEDIUM;
+  public static final com.purride.pixelui.PixelSystemIconSize LARGE;
+  public static final com.purride.pixelui.PixelSystemIconSize EXTRA_LARGE;
+  public final int getPixels();
+  public static com.purride.pixelui.PixelSystemIconSize[] values();
+  public static com.purride.pixelui.PixelSystemIconSize valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<com.purride.pixelui.PixelSystemIconSize> getEntries();
+}
+public final class com.purride.pixelui.PixelSystemIcons {
+  public static final com.purride.pixelui.PixelSystemIcons INSTANCE;
+  public final com.purride.pixelui.PixelIconData mask(com.purride.pixelui.PixelSystemIcon, com.purride.pixelui.PixelSystemIconSize);
+  public final com.purride.pixelui.PixelIconData tinted-olPvOxg(com.purride.pixelui.PixelSystemIcon, com.purride.pixelui.PixelSystemIconSize, int);
 }
 public final class com.purride.pixelui.PixelTextButtonStyle {
   public static final com.purride.pixelui.PixelTextButtonStyle$Companion Companion;

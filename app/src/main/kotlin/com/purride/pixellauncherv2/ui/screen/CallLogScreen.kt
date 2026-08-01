@@ -13,6 +13,8 @@ import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Padding
 import com.purride.pixelui.PixelSemanticRole
+import com.purride.pixelui.PixelSystemIcon
+import com.purride.pixelui.PixelSystemIconSize
 import com.purride.pixelui.Row
 import com.purride.pixelui.Semantics
 import com.purride.pixelui.SizedBox
@@ -26,11 +28,10 @@ import com.purride.pixellauncherv2.launcher.CallLogModel
 import com.purride.pixellauncherv2.launcher.LauncherSpacing
 import com.purride.pixellauncherv2.model.CallLogGroup
 import com.purride.pixellauncherv2.ui.theme.LauncherTheme
+import com.purride.pixellauncherv2.ui.widget.launcherInlineIconSize
+import com.purride.pixellauncherv2.ui.widget.launcherSystemIcon
 import com.purride.pixellauncherv2.util.RelativeTimeFormatter
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
-
-/** 状态符占位宽度（1 字符 + 间距），第二行据此缩进到姓名起点。 */
-private const val CALL_STATUS_INDENT_PX = 8
 
 /**
  * 拨号模块的「最近通话」页。
@@ -64,18 +65,21 @@ fun CallLogScreen(
     if (groups.isEmpty()) {
         return centeredCallStatus("NO CALLS", theme)
     }
+    /** 通话状态图标随当前正文字号选择规格。 */
+    val iconSize = launcherInlineIconSize(uiState.fontSelection.size.px)
     return ListViewBuilder(
         itemCount = groups.size,
         state = listState,
         controller = listController,
         spacing = LauncherSpacing.ROW_SPACING,
-        itemBuilder = { index -> buildCallRow(groups[index], theme, onCallGroupPressed) },
+        itemBuilder = { index -> buildCallRow(groups[index], theme, iconSize, onCallGroupPressed) },
     )
 }
 
 private fun buildCallRow(
     group: CallLogGroup,
     theme: LauncherTheme,
+    iconSize: PixelSystemIconSize,
     onCallGroupPressed: (number: String) -> Unit,
 ): Widget {
     val unanswered = CallLogModel.isUnanswered(group.type)
@@ -93,10 +97,10 @@ private fun buildCallRow(
                         spacing = LauncherSpacing.ROW_SPACING,
                         crossAxisAlignment = CrossAxisAlignment.CENTER,
                         children = listOf(
-                            callText(
-                                text = CallLogModel.statusSymbol(group.type),
-                                color = if (unanswered) theme.semantic.danger else theme.sms.timestamp,
+                            callStatusIcon(
+                                group = group,
                                 theme = theme,
+                                iconSize = iconSize,
                             ),
                             Expanded(
                                 child = callText(
@@ -117,7 +121,7 @@ private fun buildCallRow(
                         spacing = LauncherSpacing.ROW_SPACING,
                         crossAxisAlignment = CrossAxisAlignment.CENTER,
                         children = listOf(
-                            SizedBox(width = CALL_STATUS_INDENT_PX, height = 0),
+                            SizedBox(width = iconSize.pixels, height = 0),
                             Expanded(
                                 child = callText(
                                     // 无联系人姓名时第一行已经是号码，这里不再重复。
@@ -137,6 +141,28 @@ private fun buildCallRow(
             ),
         ),
     )
+}
+
+/** 将通话方向与结果映射为稳定像素图标，颜色继续承担未接警示层级。 */
+private fun callStatusIcon(
+    group: CallLogGroup,
+    theme: LauncherTheme,
+    iconSize: PixelSystemIconSize,
+): Widget {
+    /** 未接和拒接使用叉号；其余记录按呼入、呼出与语音信箱区分。 */
+    val icon = when {
+        CallLogModel.isUnanswered(group.type) -> PixelSystemIcon.CLOSE
+        CallLogModel.isOutgoing(group.type) -> PixelSystemIcon.FORWARD
+        CallLogModel.isVoicemail(group.type) -> PixelSystemIcon.VOICEMAIL
+        else -> PixelSystemIcon.BACK
+    }
+    /** 未接类图标使用危险色，普通方向图标保持时间信息的次级颜色。 */
+    val color = if (CallLogModel.isUnanswered(group.type)) {
+        theme.semantic.danger
+    } else {
+        theme.sms.timestamp
+    }
+    return launcherSystemIcon(icon = icon, size = iconSize, color = color)
 }
 
 /** 标题：姓名（或号码），合并多次时紧跟 (N)。 */

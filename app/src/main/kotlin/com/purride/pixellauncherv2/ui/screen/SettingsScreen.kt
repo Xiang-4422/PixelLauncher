@@ -7,6 +7,8 @@ import com.purride.pixelui.Expanded
 import com.purride.pixelui.ListView
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Padding
+import com.purride.pixelui.PixelSystemIcon
+import com.purride.pixelui.PixelSystemIcons
 import com.purride.pixelui.SegmentedControlWidthPolicy
 import com.purride.pixelui.State
 import com.purride.pixelui.StatefulWidget
@@ -30,6 +32,7 @@ import com.purride.pixellauncherv2.ui.widget.SettingsPixelSizeControl
 import com.purride.pixellauncherv2.ui.widget.SettingsSectionHeader
 import com.purride.pixellauncherv2.ui.widget.SettingsSwitchRow
 import com.purride.pixellauncherv2.ui.widget.SettingsTextEdgeResolvers
+import com.purride.pixellauncherv2.ui.widget.launcherInlineIconSize
 import com.purride.pixellauncherv2.viewmodel.LauncherUiState
 
 /**
@@ -85,6 +88,8 @@ class SettingsScreen(
         }
 
         private fun LauncherUiState.toSettingsWidgets(t: LauncherTheme): List<Widget> = buildList {
+            /** 当前字体字号映射出的系统图标画布规格。 */
+            val iconSize = launcherInlineIconSize(fontSelection.size.px)
             addSection(SettingsSection.DISPLAY, t)
             add(
                 SettingsPixelSizeControl(
@@ -111,10 +116,16 @@ class SettingsScreen(
                     SettingsChoiceRow(
                         title = "STYLE",
                         labels = SettingsMenuModel.styleOptions.map(SettingsMenuModel::styleLabel),
+                        icons = listOf(
+                            PixelSystemIcons.mask(PixelSystemIcon.SQUARE, iconSize),
+                            PixelSystemIcons.mask(PixelSystemIcon.CIRCLE, iconSize),
+                            PixelSystemIcons.mask(PixelSystemIcon.DIAMOND, iconSize),
+                        ),
                         selectedIndex = SettingsMenuModel.styleOptions.indexOf(selectedPixelShape).coerceAtLeast(0),
                         theme = t,
                         textEdgeResolvers = widget.textEdgeResolvers,
                         widthPolicy = SegmentedControlWidthPolicy.Content,
+                        iconSize = iconSize,
                         onSelected = { selectedIndex ->
                             /** 将直接选择的目标下标转换为现有设置动作协议使用的相对方向。 */
                             dispatchSelection(
@@ -136,16 +147,23 @@ class SettingsScreen(
                     textEdgeResolvers = widget.textEdgeResolvers,
                     onPrevious = { widget.onItemAction(SettingsMenuItem.THEME, -1) },
                     onNext = { widget.onItemAction(SettingsMenuItem.THEME, +1) },
+                    iconSize = iconSize,
                 ),
             )
             add(
                 SettingsChoiceRow(
                     title = "MODE",
                     labels = SettingsMenuModel.themeModeOptions.map(SettingsMenuModel::themeModeLabel),
+                    icons = listOf(
+                        PixelSystemIcons.mask(PixelSystemIcon.DAY, iconSize),
+                        PixelSystemIcons.mask(PixelSystemIcon.AUTO, iconSize),
+                        PixelSystemIcons.mask(PixelSystemIcon.NIGHT, iconSize),
+                    ),
                     selectedIndex = SettingsMenuModel.themeModeOptions.indexOf(selectedThemeMode).coerceAtLeast(0),
                     theme = t,
                     textEdgeResolvers = widget.textEdgeResolvers,
                     widthPolicy = SegmentedControlWidthPolicy.EqualToWidest,
+                    iconSize = iconSize,
                     onSelected = { selectedIndex ->
                         val currentIndex = SettingsMenuModel.themeModeOptions.indexOf(selectedThemeMode)
                         if (currentIndex >= 0 && selectedIndex != currentIndex) {
@@ -162,6 +180,7 @@ class SettingsScreen(
                     onPrevious = { widget.onItemAction(SettingsMenuItem.FONT, -1) },
                     onNext = { widget.onItemAction(SettingsMenuItem.FONT, +1) },
                     enabled = !isFontLoading && PixelFontCatalog.fontFamilyOptions().size > 1,
+                    iconSize = iconSize,
                 ),
             )
             /** 当前字体家族允许用户直接选择的宽度模式，最多展示三个分段。 */
@@ -174,6 +193,7 @@ class SettingsScreen(
                         selectedIndex = widthOptions.indexOf(fontSelection.widthMode).coerceAtLeast(0),
                         theme = t,
                         widthPolicy = SegmentedControlWidthPolicy.EqualToWidest,
+                        iconSize = iconSize,
                         onSelected = { selectedIndex ->
                             /** 可切换时按目标下标直接选择字体宽度。 */
                             dispatchSelection(
@@ -195,6 +215,7 @@ class SettingsScreen(
                         onPrevious = { widget.onItemAction(SettingsMenuItem.FONT_WIDTH, -1) },
                         onNext = { widget.onItemAction(SettingsMenuItem.FONT_WIDTH, +1) },
                         enabled = false,
+                        iconSize = iconSize,
                     ),
                 )
             }
@@ -208,6 +229,7 @@ class SettingsScreen(
                         selectedIndex = sizeOptions.indexOf(fontSelection.size).coerceAtLeast(0),
                         theme = t,
                         widthPolicy = SegmentedControlWidthPolicy.EqualToWidest,
+                        iconSize = iconSize,
                         onSelected = { selectedIndex ->
                             /** 通过目标字号下标复用既有方向动作，避免新增状态写入通道。 */
                             dispatchSelection(
@@ -229,6 +251,7 @@ class SettingsScreen(
                         onPrevious = { widget.onItemAction(SettingsMenuItem.FONT_SIZE, -1) },
                         onNext = { widget.onItemAction(SettingsMenuItem.FONT_SIZE, +1) },
                         enabled = false,
+                        iconSize = iconSize,
                     ),
                 )
             }
@@ -239,12 +262,18 @@ class SettingsScreen(
                     labels = DrawerListAlignment.entries.map(
                         SettingsMenuModel::drawerListAlignmentLabel,
                     ),
+                    icons = listOf(
+                        PixelSystemIcons.mask(PixelSystemIcon.ALIGN_LEFT, iconSize),
+                        PixelSystemIcons.mask(PixelSystemIcon.ALIGN_CENTER, iconSize),
+                        PixelSystemIcons.mask(PixelSystemIcon.ALIGN_RIGHT, iconSize),
+                    ),
                     selectedIndex = DrawerListAlignment.entries
                         .indexOf(drawerListAlignment)
                         .coerceAtLeast(0),
                     theme = t,
                     textEdgeResolvers = widget.textEdgeResolvers,
                     widthPolicy = SegmentedControlWidthPolicy.Content,
+                    iconSize = iconSize,
                     onSelected = { selectedIndex ->
                         /** 抽屉对齐方式固定为三项，允许直接点击目标位置。 */
                         dispatchSelection(
@@ -306,6 +335,7 @@ class SettingsScreen(
                             selectedIndex = IdleSettings.timeoutOptionsSeconds.indexOf(idleTimeoutSeconds).coerceAtLeast(0),
                             theme = t,
                             textEdgeResolvers = widget.textEdgeResolvers,
+                            iconSize = iconSize,
                             onSelected = { selectedIndex ->
                                 /** 四档超时继续显示步进器，但共享统一的受控候选项协议。 */
                                 dispatchSelection(
@@ -325,6 +355,7 @@ class SettingsScreen(
                         selectedIndex = ChargeIdleEffect.entries.indexOf(chargeIdleEffect).coerceAtLeast(0),
                         theme = t,
                         textEdgeResolvers = widget.textEdgeResolvers,
+                        iconSize = iconSize,
                         onSelected = { selectedIndex ->
                             /** 六种效果等待专用组件，当前由统一入口回退为步进器。 */
                             dispatchSelection(
@@ -344,6 +375,7 @@ class SettingsScreen(
                     valueLabel = "OPEN",
                     theme = t,
                     textEdgeResolvers = widget.textEdgeResolvers,
+                    iconSize = iconSize,
                     onPressed = { widget.onItemAction(SettingsMenuItem.MORE, +1) },
                 ),
             )

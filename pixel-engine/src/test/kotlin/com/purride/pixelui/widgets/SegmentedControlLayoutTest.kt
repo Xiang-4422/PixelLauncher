@@ -1,7 +1,10 @@
 package com.purride.pixelui.widgets
 
+import com.purride.pixelcore.PixelBitmap
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelui.EdgeInsets
+import com.purride.pixelui.IconSegmentedControl
+import com.purride.pixelui.PixelIconData
 import com.purride.pixelui.PixelMotionRole
 import com.purride.pixelui.PixelMotionScope
 import com.purride.pixelui.PixelMotionSettings
@@ -23,6 +26,37 @@ import kotlin.time.Duration.Companion.milliseconds
 
 /** 分段选择器宽度策略、滑动指示块和减弱动态效果的回归契约。 */
 class SegmentedControlLayoutTest {
+    /** 图标分段按位图尺寸布局，但 Tab 语义继续使用调用方提供的文字标签。 */
+    @Test
+    fun iconSegmentsMeasureBitmapsAndKeepTextSemantics() {
+        /** 两个差异明显的位图宽度用于验证内容宽策略。 */
+        val icons = listOf(solidIcon(width = 3, height = 5), solidIcon(width = 15, height = 9))
+        /** 隔离渲染树，用于读取图标分段的实际语义几何。 */
+        val tester = PixelTester()
+        try {
+            tester.pumpWidget(
+                IconSegmentedControl(
+                    labels = LABELS,
+                    icons = icons,
+                    selectedIndex = 0,
+                    onSelected = {},
+                    widthPolicy = SegmentedControlWidthPolicy.Content,
+                    style = OVERLAP_STYLE,
+                ),
+                logicalWidth = 80,
+                logicalHeight = 20,
+            )
+            /** 文字标签对应的两个 Tab 语义节点。 */
+            val segments = LABELS.map { label -> tester.semanticsNodesByLabel(label).single() }
+
+            assertTrue(segments[0].width < segments[1].width)
+            assertEquals(segments[0].height, segments[1].height)
+            assertTrue(segments[0].height >= icons.maxOf { icon -> icon.bitmap.height })
+        } finally {
+            tester.dispose()
+        }
+    }
+
     /** 内容宽、最长项等宽和固定等宽分别导出预期的分段语义宽度。 */
     @Test
     fun widthPoliciesResolveContentEqualAndFixedSegments() {
@@ -117,6 +151,38 @@ class SegmentedControlLayoutTest {
         assertEquals(0, tester.vsync.liveTickerCount)
     }
 
+    /** 图标内容与文字内容共用高亮裁剪边界，只在实际重合像素上切换颜色。 */
+    @Test
+    fun selectedIconColorIsClippedToMovingIndicator() {
+        /** 调用方持有的受控选择下标。 */
+        val selected = ValueNotifier(0)
+        /** 为图标裁剪动画提供确定性虚拟时钟的测试宿主。 */
+        val tester = PixelTester()
+        tester.pumpWidget(
+            motionIconSelector(tester = tester, selected = selected),
+            logicalWidth = 80,
+            logicalHeight = 16,
+        )
+
+        selected.value = 1
+        beginMotion(tester)
+        tester.pumpFrame(500)
+        /** 中点帧高亮填充的完整水平范围。 */
+        val highlightRun = selectedPixelRun(tester)
+        /** 中点帧与高亮相交后改为选中色的图标像素。 */
+        val selectedIconXs = pixelCoordinates(tester, SELECTED_TEXT_COLOR)
+        /** 中点帧仍位于高亮外的普通图标像素。 */
+        val baseIconXs = pixelCoordinates(tester, BASE_TEXT_COLOR)
+
+        assertTrue(selectedIconXs.isNotEmpty())
+        assertTrue(selectedIconXs.all { x -> x in highlightRun.first()..highlightRun.last() })
+        assertTrue(baseIconXs.any { x -> x !in highlightRun.first()..highlightRun.last() })
+
+        tester.pumpFrame(500)
+        tester.dispose()
+        assertEquals(0, tester.vsync.liveTickerCount)
+    }
+
     /** reduce-motion 下受控选中块同步移动到终点且不创建 ticker。 */
     @Test
     fun reduceMotionMovesIndicatorImmediately() {
@@ -202,6 +268,45 @@ class SegmentedControlLayoutTest {
             ),
         )
     }
+
+    /** 构造使用不透明图标遮罩的线性动画分段选择器。 */
+    private fun motionIconSelector(tester: PixelTester, selected: ValueNotifier<Int>): Widget {
+        /** 一秒线性动画用于确定性检查图标前景裁剪。 */
+        val selectionMotion = PixelMotionSpec(
+            duration = 1_000.milliseconds,
+            curve = Curves.Linear,
+            role = PixelMotionRole.Selection,
+        )
+        /** 两个相同尺寸图标确保测试只关注颜色裁剪而非宽度变化。 */
+        val icons = listOf(solidIcon(width = 7, height = 7), solidIcon(width = 7, height = 7))
+        return PixelMotionScope(
+            vsync = tester.vsync,
+            settings = PixelMotionSettings.Default,
+            child = PixelMotionTheme(
+                data = PixelMotionThemeData.Default.copy(selection = selectionMotion),
+                child = ValueListenableBuilder(selected) { _, selectedIndex ->
+                    IconSegmentedControl(
+                        labels = OVERLAP_LABELS,
+                        icons = icons,
+                        selectedIndex = selectedIndex,
+                        onSelected = { selected.value = it },
+                        widthPolicy = SegmentedControlWidthPolicy.Fixed(width = OVERLAP_SEGMENT_WIDTH),
+                        style = OVERLAP_STYLE,
+                        key = "animated-icon-segmented-control",
+                    )
+                },
+            ),
+        )
+    }
+
+    /** 创建一个所有像素完全不透明的测试图标遮罩。 */
+    private fun solidIcon(width: Int, height: Int): PixelIconData = PixelIconData(
+        PixelBitmap(
+            width = width,
+            height = height,
+            pixels = IntArray(width * height) { PixelColor.White.argb },
+        ),
+    )
 
     /** 读取避开文字和外边框的扫描行中全部选中填充色水平坐标。 */
     private fun selectedPixelRun(tester: PixelTester): List<Int> {

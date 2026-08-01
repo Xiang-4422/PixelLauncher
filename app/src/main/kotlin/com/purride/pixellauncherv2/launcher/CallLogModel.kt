@@ -23,6 +23,9 @@ object CallLogModel {
     /** 已接通的来电。 */
     fun isIncoming(type: Int): Boolean = type == TYPE_INCOMING
 
+    /** 语音信箱记录。 */
+    fun isVoicemail(type: Int): Boolean = type == TYPE_VOICEMAIL
+
     /** 需要在列表中以警示色呈现的类型（未接、拒接、被拦截）。 */
     fun isUnanswered(type: Int): Boolean =
         type == TYPE_MISSED || type == TYPE_REJECTED || type == TYPE_BLOCKED

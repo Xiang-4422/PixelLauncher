@@ -2294,6 +2294,7 @@ public fun SegmentedControl(
     enabled: Boolean = true,
 ): Widget = buildSegmentedControl(
     labels = labels,
+    icons = null,
     selectedIndex = selectedIndex,
     onSelected = onSelected,
     states = states,
@@ -2318,6 +2319,7 @@ public fun SegmentedControl(
     enabled: Boolean = true,
 ): Widget = buildSegmentedControl(
     labels = labels,
+    icons = null,
     selectedIndex = selectedIndex,
     onSelected = onSelected,
     states = states,
@@ -2327,9 +2329,48 @@ public fun SegmentedControl(
     enabled = enabled,
 )
 
+/**
+ * 使用像素图标作为可见内容渲染受控分段选择器，并继续以文字标签导出无障碍语义。
+ *
+ * 图标按透明度遮罩使用，实际颜色跟随分段的普通、选中和禁用前景色；高亮移动期间只有
+ * 与高亮区域重合的图标像素切换为选中色。
+ *
+ * @param labels 与图标一一对应的非空唯一无障碍标签。
+ * @param icons 按视觉顺序显示的像素图标遮罩，数量必须与 [labels] 相同且尺寸非零。
+ * @param selectedIndex 调用方持有的当前选中下标。
+ * @param onSelected Pointer、keyboard 或无障碍选择分段时回传其下标。
+ * @param widthPolicy 每项使用内容宽、最长内容等宽或指定等宽。
+ * @param style 对主题 segmented token 的可选视觉覆盖。
+ * @param states 调用方声明的持久控件状态。
+ * @param key 整个分段组及子语义节点的稳定 identity。
+ * @param enabled 是否启用整组 pointer、keyboard、DPAD 与无障碍选择。
+ */
+public fun IconSegmentedControl(
+    labels: List<String>,
+    icons: List<PixelIconData>,
+    selectedIndex: Int,
+    onSelected: (Int) -> Unit,
+    widthPolicy: SegmentedControlWidthPolicy = SegmentedControlWidthPolicy.Content,
+    style: SegmentedControlStyle = SegmentedControlStyle.Default,
+    states: PixelControlStateSet = PixelControlStateSet.Normal,
+    key: Any? = null,
+    enabled: Boolean = true,
+): Widget = buildSegmentedControl(
+    labels = labels,
+    icons = icons,
+    selectedIndex = selectedIndex,
+    onSelected = onSelected,
+    states = states,
+    widthPolicy = widthPolicy,
+    style = style,
+    key = key,
+    enabled = enabled,
+)
+
 /** 汇总分段选择器的校验、交互状态和主题解析，供公开重载共享。 */
 private fun buildSegmentedControl(
     labels: List<String>,
+    icons: List<PixelIconData>?,
     selectedIndex: Int,
     onSelected: (Int) -> Unit,
     states: PixelControlStateSet,
@@ -2343,6 +2384,12 @@ private fun buildSegmentedControl(
         labels = labels,
         selectedIndex = selectedIndex,
     )
+    require(icons == null || icons.size == labels.size) {
+        "IconSegmentedControl icons must match labels size."
+    }
+    require(icons == null || icons.all { icon -> icon.bitmap.width > 0 && icon.bitmap.height > 0 }) {
+        "IconSegmentedControl icons must have non-zero dimensions."
+    }
     /** Persistent group states normalized with caller availability. */
     var effectiveStates = states
     if (!enabled) effectiveStates += PixelControlState.Disabled
@@ -2384,6 +2431,7 @@ private fun buildSegmentedControl(
             /** 三种策略解析后的每项完整宽度。 */
             val segmentWidths = resolveSegmentWidths(
                 labels = labels,
+                icons = icons,
                 widthPolicy = widthPolicy,
                 padding = segmentPadding,
                 minimumWidth = theme.components.segmented.resolveMinimumWidth(theme.sizes),
@@ -2393,6 +2441,7 @@ private fun buildSegmentedControl(
             /** 与单行 Text 实际布局一致的分段内容高度。 */
             val segmentHeight = resolveSegmentHeight(
                 labels = labels,
+                icons = icons,
                 padding = segmentPadding,
                 minimumHeight = theme.components.segmented.resolveMinimumHeight(theme.sizes),
                 textStyle = labelStyle,
@@ -2401,6 +2450,7 @@ private fun buildSegmentedControl(
             /** 承载稳定文字层与滑动选中块的完整视觉条。 */
             val segmentStrip = PixelSegmentStrip(
                 labels = labels,
+                icons = icons,
                 selectedIndex = selectedIndex,
                 widths = segmentWidths,
                 height = segmentHeight,
@@ -2443,6 +2493,8 @@ private data class PixelSegmentKey(
 private data class PixelSegmentStrip(
     /** 按视觉顺序排列的唯一标签。 */
     val labels: List<String>,
+    /** 与标签一一对应的可选图标遮罩；null 表示绘制文字标签。 */
+    val icons: List<PixelIconData>?,
     /** 当前受控选中下标。 */
     val selectedIndex: Int,
     /** 每个分段包含内边距的完整宽度。 */
@@ -2556,6 +2608,7 @@ private data class PixelSegmentStrip(
                     ).coerceIn(0, widths[index])
                     PixelSegmentStateWidget(
                         label = label,
+                        icon = icons?.get(index),
                         index = index,
                         selected = index == selectedIndex,
                         width = widths[index],
@@ -2676,6 +2729,8 @@ private fun buildSegmentVisualStack(
 private data class PixelSegmentStateWidget(
     /** 同时用于显示和无障碍朗读的分段标签。 */
     val label: String,
+    /** 可选可见图标遮罩；存在时替代文字绘制但不替代文字语义。 */
+    val icon: PixelIconData?,
     /** 通过集合语义导出的当前零基视觉列序号。 */
     val index: Int,
     /** 调用方控制的选中状态。 */
@@ -2712,6 +2767,12 @@ private class PixelSegmentState : State<PixelSegmentStateWidget>() {
 
     /** 指针当前是否悬停在该分段上。 */
     private var hovered: Boolean = false
+
+    /** 普通前景层最近一次解析的图标着色缓存。 */
+    private var baseIconTintCache: PixelSegmentIconTintCache? = null
+
+    /** 选中前景层最近一次解析的图标着色缓存。 */
+    private var selectedIconTintCache: PixelSegmentIconTintCache? = null
 
     /** 解析分段主题、瞬时状态、语义与指针交互包装。 */
     override fun build(context: BuildContext): Widget {
@@ -2752,42 +2813,22 @@ private class PixelSegmentState : State<PixelSegmentStateWidget>() {
             PixelControlState.Disabled in resolvedStates -> widget.style.disabledContentColor
             else -> widget.style.unselectedContentColor
         }
-        /** 始终使用未选中色的稳定底层文字。 */
-        val baseTextSurface = Container(
-            width = widget.width,
-            height = widget.height,
-            padding = widget.padding,
-            alignment = Alignment.CENTER,
-            child = Text(
-                widget.label,
-                style = theme.typography.label.resolve(theme.colors).copy(
-                    color = overriddenContentColor ?: contentColor,
-                ),
-                overflow = PixelTextOverflow.ELLIPSIS,
-                softWrap = false,
-                maxLines = 1,
-            ),
-            key = widget.key?.let { "$it-base-text" },
+        /** 当前主题解析后的稳定分段文字样式，图标模式只复用其颜色状态。 */
+        val labelTextStyle = theme.typography.label.resolve(theme.colors)
+        /** 始终使用未选中色的稳定底层文字或图标。 */
+        val baseContentSurface = buildContentSurface(
+            textStyle = labelTextStyle,
+            color = overriddenContentColor ?: contentColor,
+            selectedLayer = false,
         )
-        /** 使用选中色的同坐标文字副本，仅供相交区域裁剪。 */
-        val selectedTextSurface = Container(
-            width = widget.width,
-            height = widget.height,
-            padding = widget.padding,
-            alignment = Alignment.CENTER,
-            child = Text(
-                widget.label,
-                style = theme.typography.label.resolve(theme.colors).copy(
-                    color = widget.selectedContentColor,
-                ),
-                overflow = PixelTextOverflow.ELLIPSIS,
-                softWrap = false,
-                maxLines = 1,
-            ),
-            key = widget.key?.let { "$it-selected-text" },
+        /** 使用选中色的同坐标内容副本，仅供相交区域裁剪。 */
+        val selectedContentSurface = buildContentSurface(
+            textStyle = labelTextStyle,
+            color = widget.selectedContentColor,
+            selectedLayer = true,
         )
-        /** 选中文字副本反向平移后按当前局部相交宽度裁剪。 */
-        val selectedTextOverlay = Positioned(
+        /** 选中内容副本反向平移后按当前局部相交宽度裁剪。 */
+        val selectedContentOverlay = Positioned(
             left = widget.selectedTextStart,
             top = 0,
             right = widget.width - widget.selectedTextEnd,
@@ -2800,23 +2841,23 @@ private class PixelSegmentState : State<PixelSegmentStateWidget>() {
                             top = 0,
                             width = widget.width,
                             height = widget.height,
-                            child = selectedTextSurface,
-                            key = widget.key?.let { "$it-selected-text-position" },
+                            child = selectedContentSurface,
+                            key = widget.key?.let { "$it-selected-content-position" },
                         ),
                     ),
-                    key = widget.key?.let { "$it-selected-text-alignment" },
+                    key = widget.key?.let { "$it-selected-content-alignment" },
                 ),
-                key = widget.key?.let { "$it-selected-text-clip" },
+                key = widget.key?.let { "$it-selected-content-clip" },
             ),
-            key = widget.key?.let { "$it-selected-text-overlay" },
+            key = widget.key?.let { "$it-selected-content-overlay" },
         )
-        /** 语义边界内部叠放普通文字和局部裁剪的选中文字。 */
+        /** 语义边界内部叠放普通内容和局部裁剪的选中内容。 */
         val surface = Container(
             width = widget.width,
             height = widget.height,
             child = Stack(
-                children = listOf(baseTextSurface, selectedTextOverlay),
-                key = widget.key?.let { "$it-text-stack" },
+                children = listOf(baseContentSurface, selectedContentOverlay),
+                key = widget.key?.let { "$it-content-stack" },
             ),
             key = widget.key?.let { "$it-surface" },
         )
@@ -2858,6 +2899,71 @@ private class PixelSegmentState : State<PixelSegmentStateWidget>() {
         )
     }
 
+    /** 根据当前模式构建文字或着色图标内容，两层保持完全相同的布局坐标。 */
+    private fun buildContentSurface(
+        textStyle: PixelTextStyle,
+        color: PixelColor,
+        selectedLayer: Boolean,
+    ): Widget {
+        /** 图标存在时按透明度着色；否则继续绘制原始文字标签。 */
+        val content = widget.icon?.let { source ->
+            Icon(resolveTintedIcon(source = source, color = color, selectedLayer = selectedLayer))
+        } ?: Text(
+            widget.label,
+            style = textStyle.copy(color = color),
+            overflow = PixelTextOverflow.ELLIPSIS,
+            softWrap = false,
+            maxLines = 1,
+        )
+        /** 两层使用不同稳定键，避免裁剪动画期间错误复用同一渲染节点。 */
+        val layerName = if (selectedLayer) "selected" else "base"
+        return Container(
+            width = widget.width,
+            height = widget.height,
+            padding = widget.padding,
+            alignment = Alignment.CENTER,
+            child = content,
+            key = widget.key?.let { "$it-$layerName-content" },
+        )
+    }
+
+    /** 为当前分段缓存普通层与选中层各自的图标透明度着色结果。 */
+    private fun resolveTintedIcon(
+        source: PixelIconData,
+        color: PixelColor,
+        selectedLayer: Boolean,
+    ): PixelIconData {
+        /** 当前绘制层最近一次生成的缓存。 */
+        val cached = if (selectedLayer) selectedIconTintCache else baseIconTintCache
+        if (cached?.source === source.bitmap && cached.color == color) return cached.icon
+        /** 公开不可变像素副本，用于保留源遮罩透明度并替换 RGB。 */
+        val sourcePixels = source.bitmap.pixels
+        /** 当前主题前景色着色后的新像素数组。 */
+        val tintedPixels = IntArray(sourcePixels.size) { index ->
+            /** 源图标像素的透明度。 */
+            val sourceAlpha = (sourcePixels[index] ushr 24) and 0xFF
+            /** 源透明度与主题前景色透明度相乘后的最终透明度。 */
+            val resolvedAlpha = sourceAlpha * color.alpha / 0xFF
+            if (resolvedAlpha == 0) {
+                PixelColor.Transparent.argb
+            } else {
+                PixelColor.fromArgb(resolvedAlpha, color.red, color.green, color.blue).argb
+            }
+        }
+        /** 缓存使用不可变位图封装的着色结果。 */
+        val resolved = PixelIconData(
+            PixelBitmap(
+                width = source.bitmap.width,
+                height = source.bitmap.height,
+                pixels = tintedPixels,
+            ),
+        )
+        /** 新缓存仅替换当前绘制层，不影响另一层的动画颜色。 */
+        val nextCache = PixelSegmentIconTintCache(source = source.bitmap, color = color, icon = resolved)
+        if (selectedLayer) selectedIconTintCache = nextCache else baseIconTintCache = nextCache
+        return resolved
+    }
+
     /** Updates press ownership exactly once per transition. */
     private fun updatePressed(nextPressed: Boolean) {
         if (pressed == nextPressed) return
@@ -2871,23 +2977,36 @@ private class PixelSegmentState : State<PixelSegmentStateWidget>() {
     }
 }
 
+/** 单个分段内容层最近一次图标着色结果。 */
+private data class PixelSegmentIconTintCache(
+    /** 作为透明度遮罩的不可变源位图身份。 */
+    val source: PixelBitmap,
+    /** 生成缓存时使用的主题前景色。 */
+    val color: PixelColor,
+    /** 已完成透明度合成的可绘制图标。 */
+    val icon: PixelIconData,
+)
+
 /** 按调用方策略把真实文字测量结果转换为每项完整宽度。 */
 private fun resolveSegmentWidths(
     labels: List<String>,
+    icons: List<PixelIconData>?,
     widthPolicy: SegmentedControlWidthPolicy,
     padding: EdgeInsets,
     minimumWidth: Int,
     textStyle: PixelTextStyle,
     defaultRasterizer: PixelTextRasterizer,
 ): List<Int> {
-    /** 每个标签包含水平内边距并受主题最小宽度约束的自然宽度。 */
-    val contentWidths = labels.map { label ->
+    /** 每项可见文字或图标包含水平内边距并受主题最小宽度约束的自然宽度。 */
+    val contentWidths = labels.mapIndexed { index, label ->
+        /** 图标模式使用位图真实宽度，文字模式继续使用栅格器测量结果。 */
+        val contentWidth = icons?.get(index)?.bitmap?.width ?: measureSegmentLabel(
+            label = label,
+            textStyle = textStyle,
+            defaultRasterizer = defaultRasterizer,
+        )
         (
-            measureSegmentLabel(
-                label = label,
-                textStyle = textStyle,
-                defaultRasterizer = defaultRasterizer,
-            ) + padding.left + padding.right
+            contentWidth + padding.left + padding.right
         ).coerceAtLeast(minimumWidth)
     }
     return when (widthPolicy) {
@@ -2904,20 +3023,24 @@ private fun resolveSegmentWidths(
 /** 根据单行标签实际字形高度和内边距解析整条分段控件高度。 */
 private fun resolveSegmentHeight(
     labels: List<String>,
+    icons: List<PixelIconData>?,
     padding: EdgeInsets,
     minimumHeight: Int,
     textStyle: PixelTextStyle,
     defaultRasterizer: PixelTextRasterizer,
 ): Int {
     if (labels.isEmpty()) return 0
-    /** 样式级栅格器优先于继承的宿主缩放栅格器。 */
-    val rasterizer = textStyle.textRasterizer ?: defaultRasterizer
-    /** 显式行高优先，否则测量全部标签中的最高字形。 */
-    val textHeight = textStyle.lineHeight ?: labels.maxOfOrNull { label ->
-        rasterizer.measureHeight(label.ifEmpty { " " }).coerceAtLeast(1) *
-            textStyle.fontScale.coerceAtLeast(1)
-    } ?: 0
-    return (textHeight.coerceAtLeast(1) + padding.top + padding.bottom)
+    /** 图标模式使用最高位图高度，文字模式继续遵循文字行高和栅格器。 */
+    val contentHeight = icons?.maxOfOrNull { icon -> icon.bitmap.height } ?: run {
+        /** 样式级栅格器优先于继承的宿主缩放栅格器。 */
+        val rasterizer = textStyle.textRasterizer ?: defaultRasterizer
+        /** 显式行高优先，否则测量全部标签中的最高字形。 */
+        textStyle.lineHeight ?: labels.maxOfOrNull { label ->
+            rasterizer.measureHeight(label.ifEmpty { " " }).coerceAtLeast(1) *
+                textStyle.fontScale.coerceAtLeast(1)
+        } ?: 0
+    }
+    return (contentHeight.coerceAtLeast(1) + padding.top + padding.bottom)
         .coerceAtLeast(minimumHeight)
 }
 

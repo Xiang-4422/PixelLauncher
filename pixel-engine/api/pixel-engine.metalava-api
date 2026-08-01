@@ -2225,6 +2225,7 @@ package com.purride.pixelui {
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget EmptyStateWithControlStates(int states, optional String? title, optional String? message, optional com.purride.pixelui.Widget? icon, optional com.purride.pixelui.Widget? action, optional Integer? width, optional com.purride.pixelui.PixelTextStyle? titleStyle, optional com.purride.pixelui.PixelTextStyle? messageStyle, optional Object? key);
     method public static com.purride.pixelui.Widget Gap(optional int width, optional int height, optional Object? key);
     method public static com.purride.pixelui.Widget Icon(com.purride.pixelui.PixelIconData icon, optional Object? key);
+    method @KotlinOnly public static com.purride.pixelui.Widget IconSegmentedControl(java.util.List<java.lang.String> labels, java.util.List<com.purride.pixelui.PixelIconData> icons, int selectedIndex, kotlin.jvm.functions.Function1<java.lang.Integer,kotlin.Unit> onSelected, optional com.purride.pixelui.SegmentedControlWidthPolicy widthPolicy, optional com.purride.pixelui.SegmentedControlStyle style, optional com.purride.pixelui.PixelControlStateSet states, optional Object? key, optional boolean enabled);
     method @KotlinOnly public static com.purride.pixelui.Widget ListTile(com.purride.pixelui.Widget title, com.purride.pixelui.PixelControlStateSet states, optional com.purride.pixelui.Widget? subtitle, optional com.purride.pixelui.Widget? leading, optional com.purride.pixelui.Widget? trailing, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onTap, optional boolean enabled, optional String? semanticLabel, optional Object? key, optional com.purride.pixelui.PixelSemanticRole semanticRole, optional boolean semanticSelected, optional Boolean? semanticChecked, optional Boolean? semanticExpanded);
     method public static com.purride.pixelui.Widget ListTile(com.purride.pixelui.Widget title, optional com.purride.pixelui.Widget? subtitle, optional com.purride.pixelui.Widget? leading, optional com.purride.pixelui.Widget? trailing, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onTap, optional boolean enabled, optional String? semanticLabel, optional Object? key, optional com.purride.pixelui.PixelSemanticRole semanticRole, optional boolean semanticSelected, optional Boolean? semanticChecked, optional Boolean? semanticExpanded);
     method @InaccessibleFromKotlin public static com.purride.pixelui.Widget ListTileWithControlStates(com.purride.pixelui.Widget title, int states, optional com.purride.pixelui.Widget? subtitle, optional com.purride.pixelui.Widget? leading, optional com.purride.pixelui.Widget? trailing, optional kotlin.jvm.functions.Function0<kotlin.Unit>? onTap, optional boolean enabled, optional String? semanticLabel, optional Object? key, optional com.purride.pixelui.PixelSemanticRole semanticRole, optional boolean semanticSelected, optional Boolean? semanticChecked, optional Boolean? semanticExpanded);
@@ -5320,6 +5321,44 @@ package com.purride.pixelui {
 
   public fun interface PixelSystemActionCapability {
     method public com.purride.pixelui.PixelCapabilityResult dispatch(com.purride.pixelui.PixelTypedSystemAction action);
+  }
+
+  public enum PixelSystemIcon {
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon ADD;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon ALIGN_CENTER;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon ALIGN_LEFT;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon ALIGN_RIGHT;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon ARROW_DOWN;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon ARROW_UP;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon AUTO;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon BACK;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon CIRCLE;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon CLOSE;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon DAY;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon DELETE;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon DIAMOND;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon EDIT;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon FORWARD;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon NIGHT;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon REMOVE;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon SEARCH;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon SQUARE;
+    enum_constant public static final com.purride.pixelui.PixelSystemIcon VOICEMAIL;
+  }
+
+  public enum PixelSystemIconSize {
+    method @InaccessibleFromKotlin public int getPixels();
+    property public int pixels;
+    enum_constant public static final com.purride.pixelui.PixelSystemIconSize EXTRA_LARGE;
+    enum_constant public static final com.purride.pixelui.PixelSystemIconSize LARGE;
+    enum_constant public static final com.purride.pixelui.PixelSystemIconSize MEDIUM;
+    enum_constant public static final com.purride.pixelui.PixelSystemIconSize SMALL;
+  }
+
+  public final class PixelSystemIcons {
+    method public com.purride.pixelui.PixelIconData mask(com.purride.pixelui.PixelSystemIcon icon, com.purride.pixelui.PixelSystemIconSize size);
+    method @KotlinOnly public com.purride.pixelui.PixelIconData tinted(com.purride.pixelui.PixelSystemIcon icon, com.purride.pixelui.PixelSystemIconSize size, com.purride.pixelcore.PixelColor color);
+    field public static final com.purride.pixelui.PixelSystemIcons INSTANCE;
   }
 
   public final class PixelTextButtonStyle {
