@@ -15,6 +15,7 @@ import com.purride.pixelui.Expanded
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Padding
+import com.purride.pixelui.Positioned
 import com.purride.pixelui.Row
 import com.purride.pixelui.SafeArea
 import com.purride.pixelui.SizedBox
@@ -44,6 +45,9 @@ private const val LOCKSCREEN_CONTENT_INSET = 6
 
 /** 锁屏中央信息组内部的逻辑像素间距。 */
 private const val LOCKSCREEN_INFO_SPACING = 4
+
+/** 普通锁屏直接绘制的通知卡数量，额外条目合并为计数提示。 */
+private const val MAXIMUM_RENDERED_NOTIFICATIONS = 2
 
 /** 透明锁屏静态场景所需的全部不可变输入。 */
 internal data class LockscreenSceneRequest(
@@ -115,6 +119,7 @@ internal fun buildLockscreenScene(request: LockscreenSceneRequest): Widget {
                         ),
                     ),
                 ),
+                lockscreenContentCards(request.state, palette),
                 outlinedLockscreenText(
                     text = request.state.unlockHint,
                     foreground = palette.muted,
@@ -126,6 +131,134 @@ internal fun buildLockscreenScene(request: LockscreenSceneRequest): Widget {
         ),
     )
 }
+
+/** 只在存在媒体或通知摘要时绘制底部紧凑内容区。 */
+private fun lockscreenContentCards(state: LockscreenUiState, palette: ProductPalette): Widget {
+    /** 当前需要展示的媒体卡和通知卡。 */
+    val cards = buildList {
+        if (state.media.isVisible) {
+            add(mediaCard(state.media, palette))
+        }
+        state.notifications.take(MAXIMUM_RENDERED_NOTIFICATIONS).forEach { notification ->
+            add(notificationCard(notification, palette))
+        }
+        if (state.notifications.size > MAXIMUM_RENDERED_NOTIFICATIONS) {
+            add(
+                outlinedLockscreenText(
+                    text = "+${state.notifications.size - MAXIMUM_RENDERED_NOTIFICATIONS} MORE",
+                    foreground = palette.muted,
+                    backing = palette.background,
+                    fontScale = 1,
+                    key = "lockscreen-notification-more",
+                ),
+            )
+        }
+    }
+    if (cards.isEmpty()) {
+        return SizedBox(width = 0, height = 0, key = "lockscreen-content-hidden")
+    }
+    return Padding(
+        padding = EdgeInsets.symmetric(horizontal = 5, vertical = 2),
+        child = Column(
+            mainAxisSize = MainAxisSize.MIN,
+            crossAxisAlignment = CrossAxisAlignment.CENTER,
+            spacing = 2,
+            children = cards,
+            key = "lockscreen-content-cards",
+        ),
+    )
+}
+
+/** 绘制一条经过 SystemUI 隐私裁剪的紧凑通知卡。 */
+private fun notificationCard(
+    state: LockscreenNotificationUiState,
+    palette: ProductPalette,
+): Widget {
+    /** 隐私替代通知不使用正文标题。 */
+    val title = when {
+        state.isRedacted -> "CONTENT HIDDEN"
+        state.titleText.isNotBlank() -> state.titleText
+        else -> "NEW NOTIFICATION"
+    }
+    return compactContentCard(
+        primaryText = state.appText,
+        secondaryText = title,
+        color = if (state.isRedacted) palette.muted else palette.primary,
+        backing = palette.background,
+        glyph = ContentGlyph.NOTIFICATION,
+        key = "lockscreen-notification-${state.key}",
+    )
+}
+
+/** 绘制 SystemUI 当前选中媒体会话的只读摘要卡。 */
+private fun mediaCard(state: LockscreenMediaUiState, palette: ProductPalette): Widget =
+    compactContentCard(
+        primaryText = state.titleText,
+        secondaryText = state.artistText.ifBlank { if (state.isPlaying) "PLAYING" else "PAUSED" },
+        color = palette.secondary,
+        backing = palette.background,
+        glyph = if (state.isPlaying) ContentGlyph.PAUSE else ContentGlyph.PLAY,
+        key = "lockscreen-media",
+    )
+
+/** 内容卡使用的三种稳定像素图形。 */
+private enum class ContentGlyph {
+    /** 通知铃铛。 */
+    NOTIFICATION,
+
+    /** 媒体播放三角。 */
+    PLAY,
+
+    /** 媒体暂停双竖线。 */
+    PAUSE,
+}
+
+/** 绘制固定 86×16 的双行像素内容卡。 */
+private fun compactContentCard(
+    primaryText: String,
+    secondaryText: String,
+    color: PixelColor,
+    backing: PixelColor,
+    glyph: ContentGlyph,
+    key: String,
+): Widget = Stack(
+    children = listOf(
+        CustomPaint(width = 86, height = 16, key = "$key-border") {
+            drawRect(left = 0, top = 0, width = 86, height = 16, color = color)
+            when (glyph) {
+                ContentGlyph.NOTIFICATION -> {
+                    drawRect(left = 4, top = 4, width = 7, height = 6, color = color)
+                    fillRect(left = 6, top = 2, width = 3, height = 2, color = color)
+                    fillRect(left = 6, top = 11, width = 3, height = 1, color = color)
+                }
+                ContentGlyph.PLAY -> {
+                    fillRect(left = 5, top = 4, width = 2, height = 8, color = color)
+                    fillRect(left = 7, top = 5, width = 2, height = 6, color = color)
+                    fillRect(left = 9, top = 7, width = 2, height = 2, color = color)
+                }
+                ContentGlyph.PAUSE -> {
+                    fillRect(left = 5, top = 4, width = 2, height = 8, color = color)
+                    fillRect(left = 9, top = 4, width = 2, height = 8, color = color)
+                }
+            }
+        },
+        Positioned(
+            left = 15,
+            top = 1,
+            width = 69,
+            height = 14,
+            child = Column(
+                mainAxisSize = MainAxisSize.MIN,
+                crossAxisAlignment = CrossAxisAlignment.STRETCH,
+                children = listOf(
+                    outlinedLockscreenText(primaryText, color, backing, 1, "$key-primary"),
+                    outlinedLockscreenText(secondaryText, color, backing, 1, "$key-secondary"),
+                ),
+            ),
+        ),
+    ),
+    key = key,
+)
 
 /** 信任提示存在时优先于生物识别阶段，确保单个安全区域只表达一个系统决策。 */
 private fun visibleSecurityStatus(

@@ -93,6 +93,70 @@ class LockscreenUiStateTest {
         }
     }
 
+    /** 通知和媒体摘要必须保持唯一、有界、单行且不接受不可展示状态。 */
+    @Test
+    fun contentStatesRejectUnsafeInputs() {
+        assertFails {
+            state().copy(
+                notifications = List(4) { index ->
+                    LockscreenNotificationUiState("KEY-$index", "APP")
+                },
+            )
+        }
+        assertFails {
+            state().copy(
+                notifications = listOf(
+                    LockscreenNotificationUiState("KEY", "APP"),
+                    LockscreenNotificationUiState("KEY", "OTHER"),
+                ),
+            )
+        }
+        assertFails { LockscreenNotificationUiState("KEY", "APP\nNAME") }
+        assertFails { LockscreenMediaUiState(isVisible = true, titleText = "") }
+    }
+
+    /** 媒体、公开通知与隐私替代通知应共同完成透明布局。 */
+    @Test
+    fun contentCardsRenderOnTransparentCanvas() {
+        /** 包含媒体和三条通知的最大合法内容状态。 */
+        val contentState = state().copy(
+            media = LockscreenMediaUiState(
+                isVisible = true,
+                titleText = "PIXEL SONG",
+                artistText = "ARTIST",
+                isPlaying = true,
+            ),
+            notifications = listOf(
+                LockscreenNotificationUiState("ONE", "MESSAGES", "HELLO"),
+                LockscreenNotificationUiState("TWO", "MAIL", isRedacted = true),
+                LockscreenNotificationUiState("THREE", "CALENDAR", "MEETING"),
+            ),
+        )
+        /** 离屏像素宿主。 */
+        val tester = PixelTester()
+        try {
+            tester.pumpWidget(
+                mediaRoot(
+                    child = buildLockscreenScene(
+                        LockscreenSceneRequest(
+                            state = contentState,
+                            family = ProductThemeFamily.ARCADE,
+                            brightness = ProductThemeBrightness.DARK,
+                            isLandscape = false,
+                        ),
+                    ),
+                    width = LOCKSCREEN_PORTRAIT_WIDTH,
+                    height = LOCKSCREEN_PORTRAIT_HEIGHT,
+                ),
+                logicalWidth = LOCKSCREEN_PORTRAIT_WIDTH,
+                logicalHeight = LOCKSCREEN_PORTRAIT_HEIGHT,
+            )
+            assertEquals(PixelColor.Transparent, tester.pixelAt(0, 0))
+        } finally {
+            tester.dispose()
+        }
+    }
+
     /** 信任提示应优先占用安全区域并覆盖所有可见阶段。 */
     @Test
     fun securityNoticePhasesRenderOverBiometricState() {
