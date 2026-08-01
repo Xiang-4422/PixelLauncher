@@ -1,5 +1,17 @@
 package com.purride.pixellockscreen.ui
 
+/** 普通锁屏内容卡向 SystemUI 原生操作链转发的最小事件接口。 */
+public interface LockscreenContentListener {
+    /** 请求 SystemUI 处理指定脱敏键对应的原生通知点击。 */
+    public fun onNotificationRequested(notificationKey: String)
+
+    /** 请求 SystemUI 执行当前媒体会话已有的播放或暂停按钮。 */
+    public fun onMediaPlayPauseRequested()
+
+    /** 事件接收方异常时要求模块立即恢复原生锁屏。 */
+    public fun onInteractionFailure(throwable: Throwable)
+}
+
 /** 锁屏允许公开展示的一条通知摘要。 */
 public data class LockscreenNotificationUiState(
     /** 当前会话内稳定但不包含通知正文的条目标识。 */

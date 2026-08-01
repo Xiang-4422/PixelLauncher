@@ -23,6 +23,8 @@ public class LockscreenRootHost @JvmOverloads constructor(
     context: Context,
     /** 可选 XML 属性；当前宿主不声明自定义属性。 */
     attrs: AttributeSet? = null,
+    /** 可选的 SystemUI 内容操作转发器；Showcase 和静态宿主保持为空。 */
+    private val contentListener: LockscreenContentListener? = null,
 ) : FrameLayout(context, attrs) {
     /** 实际执行透明像素渲染的唯一子 View。 */
     private val pixelHostView: PixelHostView = PixelHostView(context)
@@ -76,6 +78,7 @@ public class LockscreenRootHost @JvmOverloads constructor(
             family = family,
             brightness = brightness,
             isLandscape = isLandscape,
+            contentListener = contentListener,
         )
         if (!shouldSubmitLockscreenRequest(lastRequest, request)) return
         submitRequest(request)
@@ -95,8 +98,9 @@ public class LockscreenRootHost @JvmOverloads constructor(
         }
     }
 
-    /** 整个覆盖层始终拒绝触摸序列，让父级继续分发给原生锁屏内容。 */
-    override fun dispatchTouchEvent(event: MotionEvent): Boolean = false
+    /** 仅在运行时提供内容监听器时让像素卡片参与命中，空白区域继续交给原生手势。 */
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean =
+        if (contentListener == null) false else super.dispatchTouchEvent(event)
 
     /** 幂等释放 Pixel Engine 运行时和子 View，释放后宿主不可再次使用。 */
     public fun dispose() {

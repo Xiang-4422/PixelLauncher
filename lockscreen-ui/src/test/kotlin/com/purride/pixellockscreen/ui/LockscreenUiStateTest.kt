@@ -9,6 +9,7 @@ import com.purride.pixelui.MediaQuery
 import com.purride.pixelui.MediaQueryData
 import com.purride.pixelui.Widget
 import com.purride.pixelui.testing.PixelTester
+import com.purride.pixelui.testing.find
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -198,6 +199,67 @@ class LockscreenUiStateTest {
                 logicalHeight = LOCKSCREEN_PORTRAIT_HEIGHT,
             )
             assertEquals(PixelColor.Transparent, tester.pixelAt(0, 0))
+        } finally {
+            tester.dispose()
+        }
+    }
+
+    /** 运行时监听器必须把媒体和通知卡点击转换为最小原生事件。 */
+    @Test
+    fun contentCardsForwardOnlyTheirBoundActions() {
+        /** 测试期间收到的通知脱敏键。 */
+        val notifications = mutableListOf<String>()
+        /** 测试期间收到的媒体点击次数。 */
+        var mediaClicks = 0
+        /** 不允许发生的交互异常。 */
+        var failure: Throwable? = null
+        /** 只记录最小事件的内容监听器。 */
+        val listener = object : LockscreenContentListener {
+            /** 记录通知键。 */
+            override fun onNotificationRequested(notificationKey: String) {
+                notifications += notificationKey
+            }
+
+            /** 记录媒体切换。 */
+            override fun onMediaPlayPauseRequested() {
+                mediaClicks++
+            }
+
+            /** 记录意外交互异常。 */
+            override fun onInteractionFailure(throwable: Throwable) {
+                failure = throwable
+            }
+        }
+        /** 包含一个媒体和一个通知操作的离屏宿主。 */
+        val tester = PixelTester()
+        try {
+            tester.pumpWidget(
+                mediaRoot(
+                    child = buildLockscreenScene(
+                        LockscreenSceneRequest(
+                            state = state().copy(
+                                notifications = listOf(
+                                    LockscreenNotificationUiState("ONE", "MESSAGES", "HELLO"),
+                                ),
+                                media = LockscreenMediaUiState(true, "SONG", "ARTIST", true),
+                            ),
+                            family = ProductThemeFamily.ARCADE,
+                            brightness = ProductThemeBrightness.DARK,
+                            isLandscape = false,
+                            contentListener = listener,
+                        ),
+                    ),
+                    width = LOCKSCREEN_PORTRAIT_WIDTH,
+                    height = LOCKSCREEN_PORTRAIT_HEIGHT,
+                ),
+                logicalWidth = LOCKSCREEN_PORTRAIT_WIDTH,
+                logicalHeight = LOCKSCREEN_PORTRAIT_HEIGHT,
+            )
+            tester.tap(find.byKey("lockscreen-media-action"))
+            tester.tap(find.byKey("lockscreen-notification-action-ONE"))
+            assertEquals(1, mediaClicks)
+            assertEquals(listOf("ONE"), notifications)
+            assertEquals(null, failure)
         } finally {
             tester.dispose()
         }

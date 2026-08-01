@@ -12,6 +12,7 @@ import com.purride.pixelui.CrossAxisAlignment
 import com.purride.pixelui.CustomPaint
 import com.purride.pixelui.EdgeInsets
 import com.purride.pixelui.Expanded
+import com.purride.pixelui.GestureDetector
 import com.purride.pixelui.MainAxisAlignment
 import com.purride.pixelui.MainAxisSize
 import com.purride.pixelui.Padding
@@ -59,6 +60,8 @@ internal data class LockscreenSceneRequest(
     val brightness: ProductThemeBrightness,
     /** 当前宿主是否采用横向布局。 */
     val isLandscape: Boolean,
+    /** 可选的原生通知和媒体操作转发器。 */
+    val contentListener: LockscreenContentListener? = null,
 )
 
 /** 判断下一帧是否包含需要重新提交给像素引擎的实际变化。 */
@@ -79,7 +82,13 @@ internal fun buildLockscreenScene(request: LockscreenSceneRequest): Widget {
     val sceneContent = if (request.state.ambient.isAmbient) {
         ambientLockscreenContent(request.state, palette, timeScale, dateScale)
     } else {
-        interactiveLockscreenContent(request.state, palette, timeScale, dateScale)
+        interactiveLockscreenContent(
+            request.state,
+            palette,
+            timeScale,
+            dateScale,
+            request.contentListener,
+        )
     }
     return SafeArea(
         minimum = com.purride.pixelui.PixelWindowInsets(
@@ -105,6 +114,7 @@ private fun interactiveLockscreenContent(
     palette: ProductPalette,
     timeScale: Int,
     dateScale: Int,
+    contentListener: LockscreenContentListener?,
 ): Widget = Column(
             mainAxisSize = MainAxisSize.MAX,
             crossAxisAlignment = CrossAxisAlignment.STRETCH,
@@ -142,7 +152,7 @@ private fun interactiveLockscreenContent(
                         ),
                     ),
                 ),
-                lockscreenContentCards(state, palette),
+                lockscreenContentCards(state, palette, contentListener),
                 outlinedLockscreenText(
                     text = state.unlockHint,
                     foreground = palette.muted,
@@ -198,14 +208,18 @@ private fun ambientLockscreenContent(
 )
 
 /** 只在存在媒体或通知摘要时绘制底部紧凑内容区。 */
-private fun lockscreenContentCards(state: LockscreenUiState, palette: ProductPalette): Widget {
+private fun lockscreenContentCards(
+    state: LockscreenUiState,
+    palette: ProductPalette,
+    contentListener: LockscreenContentListener?,
+): Widget {
     /** 当前需要展示的媒体卡和通知卡。 */
     val cards = buildList {
         if (state.media.isVisible) {
-            add(mediaCard(state.media, palette))
+            add(interactiveMediaCard(state.media, palette, contentListener))
         }
         state.notifications.take(MAXIMUM_RENDERED_NOTIFICATIONS).forEach { notification ->
-            add(notificationCard(notification, palette))
+            add(interactiveNotificationCard(notification, palette, contentListener))
         }
         if (state.notifications.size > MAXIMUM_RENDERED_NOTIFICATIONS) {
             add(
@@ -232,6 +246,50 @@ private fun lockscreenContentCards(state: LockscreenUiState, palette: ProductPal
             key = "lockscreen-content-cards",
         ),
     )
+}
+
+/** 仅在运行时监听器存在时把媒体卡变为播放/暂停点击目标。 */
+private fun interactiveMediaCard(
+    state: LockscreenMediaUiState,
+    palette: ProductPalette,
+    contentListener: LockscreenContentListener?,
+): Widget {
+    /** 当前媒体卡的纯视觉内容。 */
+    val card = mediaCard(state, palette)
+    return if (contentListener == null) {
+        card
+    } else {
+        GestureDetector(
+            child = card,
+            onTap = {
+                runCatching(contentListener::onMediaPlayPauseRequested)
+                    .onFailure(contentListener::onInteractionFailure)
+            },
+            key = "lockscreen-media-action",
+        )
+    }
+}
+
+/** 仅在运行时监听器存在时把通知卡映射到对应脱敏键。 */
+private fun interactiveNotificationCard(
+    state: LockscreenNotificationUiState,
+    palette: ProductPalette,
+    contentListener: LockscreenContentListener?,
+): Widget {
+    /** 当前通知卡的纯视觉内容。 */
+    val card = notificationCard(state, palette)
+    return if (contentListener == null) {
+        card
+    } else {
+        GestureDetector(
+            child = card,
+            onTap = {
+                runCatching { contentListener.onNotificationRequested(state.key) }
+                    .onFailure(contentListener::onInteractionFailure)
+            },
+            key = "lockscreen-notification-action-${state.key}",
+        )
+    }
 }
 
 /** 绘制一条经过 SystemUI 隐私裁剪的紧凑通知卡。 */
