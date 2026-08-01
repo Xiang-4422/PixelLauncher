@@ -28,6 +28,9 @@ internal class PixelKeyguardSession(
     /** 只读解析生物识别、StrongAuth、信任代理和 Extend Unlock 的 Titan 2 适配器。 */
     private val biometricAdapter = Titan2BiometricStateAdapter.bind(binding.indicationController)
 
+    /** 只读解析原生通知隐私结果和当前媒体播放器的 Titan 2 适配器。 */
+    private val contentAdapter = Titan2LockscreenContentAdapter.bind(binding.shadeWindow)
+
     /** 系统广播驱动的时间、电量与明暗状态适配器。 */
     private val stateAdapter = AndroidKeyguardStateAdapter(binding.keyguardRoot.context) { state, brightness ->
         runCatching {
@@ -102,6 +105,7 @@ internal class PixelKeyguardSession(
         if (disposed) return true
         runCatching {
             stateAdapter.updateSecurity(biometricAdapter.snapshot())
+            stateAdapter.updateContent(contentAdapter.snapshot())
             if (disposed) return true
             /** 宿主只有在首帧、继承可见性和物理尺寸都就绪时才允许接管。 */
             val shouldTakeOver = credentialTakeoverActive ||

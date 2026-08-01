@@ -68,6 +68,10 @@ internal class AndroidKeyguardStateAdapter(
     private var securityNoticeSnapshot: LockscreenSecurityNoticeUiState =
         LockscreenSecurityNoticeUiState()
 
+    /** 最近一次原生通知栈与媒体播放器的隐私受控摘要。 */
+    private var contentSnapshot: Titan2LockscreenContentSnapshot =
+        Titan2LockscreenContentSnapshot()
+
     /** 广播接收器是否已注册，用于保证启停幂等。 */
     private var started: Boolean = false
 
@@ -130,6 +134,16 @@ internal class AndroidKeyguardStateAdapter(
         emitState()
     }
 
+    /** 更新通知和媒体摘要；完全相同的内容不触发像素重绘。 */
+    fun updateContent(snapshot: Titan2LockscreenContentSnapshot) {
+        checkMainThread()
+        if (contentSnapshot == snapshot) {
+            return
+        }
+        contentSnapshot = snapshot
+        emitState()
+    }
+
     /** 格式化当前时间、日期和明暗模式并与电池快照一起提交。 */
     private fun emitState() {
         if (!started) return
@@ -159,6 +173,8 @@ internal class AndroidKeyguardStateAdapter(
                 unlockHint = "SWIPE UP TO UNLOCK",
                 biometric = biometricSnapshot,
                 securityNotice = securityNoticeSnapshot,
+                notifications = contentSnapshot.notifications,
+                media = contentSnapshot.media,
             ),
             brightness,
         )
