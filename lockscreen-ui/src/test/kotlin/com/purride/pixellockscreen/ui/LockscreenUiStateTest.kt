@@ -33,6 +33,43 @@ class LockscreenUiStateTest {
         assertFails { state(unlockHint = "\t") }
     }
 
+    /** 生物识别状态必须拒绝缺失传感器、超长消息和多行系统提示。 */
+    @Test
+    fun biometricStateRejectsContradictoryInputs() {
+        assertFails {
+            LockscreenBiometricUiState(
+                modality = LockscreenBiometricModality.NONE,
+                phase = LockscreenBiometricPhase.SCANNING,
+            )
+        }
+        assertFails {
+            LockscreenBiometricUiState(
+                modality = LockscreenBiometricModality.FINGERPRINT,
+                phase = LockscreenBiometricPhase.ERROR,
+                messageText = "A\nB",
+            )
+        }
+        assertFails {
+            LockscreenBiometricUiState(
+                modality = LockscreenBiometricModality.FINGERPRINT,
+                phase = LockscreenBiometricPhase.ERROR,
+                messageText = "X".repeat(161),
+            )
+        }
+    }
+
+    /** StrongAuth 即使没有可用传感器也必须具有独立可见状态。 */
+    @Test
+    fun strongAuthStateRemainsVisibleWithoutBiometricEnrollment() {
+        /** 当前系统要求强凭据解锁的状态。 */
+        val biometric = LockscreenBiometricUiState(
+            modality = LockscreenBiometricModality.NONE,
+            phase = LockscreenBiometricPhase.STRONG_AUTH_REQUIRED,
+            messageText = "DEVICE RESTARTED",
+        )
+        assertTrue(biometric.isVisible)
+    }
+
     /** 大时钟在纵屏使用四倍像素，横屏固定降低为三倍。 */
     @Test
     fun timeScaleFollowsOrientation() {
@@ -97,6 +134,49 @@ class LockscreenUiStateTest {
         } finally {
             tester.dispose()
         }
+    }
+
+    /** 所有可见生物识别阶段都应完成透明像素布局。 */
+    @Test
+    fun biometricPhasesRenderWithoutReplacingTransparentCanvas() {
+        LockscreenBiometricPhase.entries
+            .filterNot { phase -> phase == LockscreenBiometricPhase.UNAVAILABLE }
+            .forEach { phase ->
+                /** 当前阶段使用的合法传感器组合。 */
+                val modality = if (phase == LockscreenBiometricPhase.STRONG_AUTH_REQUIRED) {
+                    LockscreenBiometricModality.NONE
+                } else {
+                    LockscreenBiometricModality.FINGERPRINT
+                }
+                /** 当前阶段的离屏像素宿主。 */
+                val tester = PixelTester()
+                try {
+                    tester.pumpWidget(
+                        mediaRoot(
+                            child = buildLockscreenScene(
+                                LockscreenSceneRequest(
+                                    state = state().copy(
+                                        biometric = LockscreenBiometricUiState(
+                                            modality = modality,
+                                            phase = phase,
+                                        ),
+                                    ),
+                                    family = ProductThemeFamily.CRT,
+                                    brightness = ProductThemeBrightness.DARK,
+                                    isLandscape = false,
+                                ),
+                            ),
+                            width = LOCKSCREEN_PORTRAIT_WIDTH,
+                            height = LOCKSCREEN_PORTRAIT_HEIGHT,
+                        ),
+                        logicalWidth = LOCKSCREEN_PORTRAIT_WIDTH,
+                        logicalHeight = LOCKSCREEN_PORTRAIT_HEIGHT,
+                    )
+                    assertEquals(PixelColor.Transparent, tester.pixelAt(0, 0))
+                } finally {
+                    tester.dispose()
+                }
+            }
     }
 
     /** 横屏、长日期以及关键电量状态都必须完成布局而不生成交互语义。 */

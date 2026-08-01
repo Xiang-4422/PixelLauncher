@@ -12,6 +12,8 @@ public data class LockscreenUiState(
     public val isCharging: Boolean,
     /** 底部交给系统解锁手势解释的只读提示文字。 */
     public val unlockHint: String,
+    /** 完全由 Android 安全后端驱动的非敏感生物识别展示状态。 */
+    public val biometric: LockscreenBiometricUiState = LockscreenBiometricUiState(),
 ) {
     /** 在状态进入渲染树之前拒绝不可展示或越界的数据。 */
     init {

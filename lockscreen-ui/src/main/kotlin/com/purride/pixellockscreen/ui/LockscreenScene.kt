@@ -106,6 +106,7 @@ internal fun buildLockscreenScene(request: LockscreenSceneRequest): Widget {
                                     key = "lockscreen-date",
                                 ),
                                 batteryStatus(request.state, palette),
+                                biometricStatus(request.state.biometric, palette),
                             ),
                         ),
                     ),
@@ -120,6 +121,87 @@ internal fun buildLockscreenScene(request: LockscreenSceneRequest): Widget {
             ),
         ),
     )
+}
+
+/** 在普通锁屏中绘制系统生物识别阶段；不可用状态保持零尺寸。 */
+private fun biometricStatus(state: LockscreenBiometricUiState, palette: ProductPalette): Widget {
+    if (!state.isVisible) {
+        return SizedBox(width = 0, height = 0, key = "lockscreen-biometric-hidden")
+    }
+    /** 当前阶段使用的可读主题颜色。 */
+    val color = when (state.phase) {
+        LockscreenBiometricPhase.SUCCESS -> palette.primary
+        LockscreenBiometricPhase.ERROR,
+        LockscreenBiometricPhase.LOCKED_OUT,
+        -> palette.alert
+        LockscreenBiometricPhase.STRONG_AUTH_REQUIRED -> palette.secondary
+        LockscreenBiometricPhase.READY,
+        LockscreenBiometricPhase.SCANNING,
+        -> palette.outline
+        LockscreenBiometricPhase.UNAVAILABLE -> palette.muted
+    }
+    /** 系统未提供临时消息时使用的稳定阶段说明。 */
+    val label = state.messageText.ifBlank {
+        when (state.phase) {
+            LockscreenBiometricPhase.READY -> "BIOMETRIC READY"
+            LockscreenBiometricPhase.SCANNING -> "SCANNING"
+            LockscreenBiometricPhase.SUCCESS -> "UNLOCKED"
+            LockscreenBiometricPhase.ERROR -> "TRY AGAIN"
+            LockscreenBiometricPhase.LOCKED_OUT -> "BIOMETRIC LOCKED"
+            LockscreenBiometricPhase.STRONG_AUTH_REQUIRED -> "USE PASSWORD"
+            LockscreenBiometricPhase.UNAVAILABLE -> ""
+        }
+    }
+    return Row(
+        mainAxisSize = MainAxisSize.MIN,
+        mainAxisAlignment = MainAxisAlignment.CENTER,
+        crossAxisAlignment = CrossAxisAlignment.CENTER,
+        spacing = 3,
+        children = listOf(
+            biometricGlyph(state.modality, state.phase, color),
+            outlinedLockscreenText(
+                text = label,
+                foreground = color,
+                backing = palette.background,
+                fontScale = 1,
+                key = "lockscreen-biometric-text",
+            ),
+        ),
+        key = "lockscreen-biometric-status",
+    )
+}
+
+/** 按传感器种类和 StrongAuth 状态绘制紧凑的像素安全图形。 */
+private fun biometricGlyph(
+    modality: LockscreenBiometricModality,
+    phase: LockscreenBiometricPhase,
+    color: PixelColor,
+): Widget = CustomPaint(width = 9, height = 9, key = "lockscreen-biometric-glyph") {
+    if (phase == LockscreenBiometricPhase.STRONG_AUTH_REQUIRED) {
+        drawRect(left = 2, top = 4, width = 5, height = 4, color = color)
+        fillRect(left = 3, top = 2, width = 3, height = 2, color = color)
+        return@CustomPaint
+    }
+    when (modality) {
+        LockscreenBiometricModality.FACE -> {
+            drawRect(left = 1, top = 1, width = 7, height = 7, color = color)
+            fillRect(left = 3, top = 3, width = 1, height = 1, color = color)
+            fillRect(left = 5, top = 3, width = 1, height = 1, color = color)
+            fillRect(left = 3, top = 6, width = 3, height = 1, color = color)
+        }
+        LockscreenBiometricModality.FINGERPRINT,
+        LockscreenBiometricModality.FACE_AND_FINGERPRINT,
+        -> {
+            fillRect(left = 3, top = 1, width = 3, height = 1, color = color)
+            fillRect(left = 1, top = 3, width = 1, height = 3, color = color)
+            fillRect(left = 7, top = 3, width = 1, height = 3, color = color)
+            drawRect(left = 3, top = 3, width = 3, height = 5, color = color)
+            fillRect(left = 4, top = 5, width = 1, height = 4, color = color)
+        }
+        LockscreenBiometricModality.NONE -> {
+            drawRect(left = 2, top = 2, width = 5, height = 5, color = color)
+        }
+    }
 }
 
 /** 返回当前方向下的大时钟整数像素倍率。 */
