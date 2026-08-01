@@ -60,6 +60,8 @@ internal class PendingCredentialCheck(
 internal class CredentialCheckCompletion(
     /** 接收脱敏结果的上层回调。 */
     private val callback: (CredentialCheckResult) -> Unit,
+    /** 上层回调自身失败时触发原生回退的错误出口。 */
+    private val onCallbackFailure: (Throwable) -> Unit,
 ) {
     /** 是否已经发送终态结果。 */
     private val completed: AtomicBoolean = AtomicBoolean(false)
@@ -70,6 +72,7 @@ internal class CredentialCheckCompletion(
             return false
         }
         runCatching { callback(result) }
+            .onFailure { throwable -> runCatching { onCallbackFailure(throwable) } }
         return true
     }
 }
@@ -115,6 +118,7 @@ internal class SystemCredentialBridge(
         lockPatternUtils: Any,
         userId: Int,
         credential: EphemeralCredentialLease,
+        onCallbackFailure: (Throwable) -> Unit,
         callback: (CredentialCheckResult) -> Unit,
     ): PendingCredentialCheck {
         /** 解析成功后用于清零系统凭据的反射合同。 */
@@ -129,7 +133,7 @@ internal class SystemCredentialBridge(
                 "lock_pattern_utils_instance"
             }
             /** 对多个系统回调和主动取消进行仲裁的单次完成门禁。 */
-            val completion = CredentialCheckCompletion(callback)
+            val completion = CredentialCheckCompletion(callback, onCallbackFailure)
             /** 接收 Android 校验结果的动态代理。 */
             val callbackProxy = createCallbackProxy(contract.callbackClass, completion)
             systemCredential = createSystemCredential(contract, credential)

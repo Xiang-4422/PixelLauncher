@@ -3,7 +3,25 @@ package com.android.internal.widget
 import java.util.Arrays
 
 /** 测试中模拟 Android 内部锁屏配置对象。 */
-class LockPatternUtils
+class LockPatternUtils {
+    /** 最近一次写入截止时间的用户。 */
+    var deadlineUserId: Int? = null
+
+    /** 最近一次写入截止时间的限流毫秒数。 */
+    var deadlineTimeoutMillis: Int? = null
+
+    /** 模拟系统写入并返回单调时钟锁定截止时间。 */
+    fun setLockoutAttemptDeadline(userId: Int, timeoutMillis: Int): Long {
+        deadlineUserId = userId
+        deadlineTimeoutMillis = timeoutMillis
+        return TEST_ELAPSED_REALTIME + timeoutMillis
+    }
+
+    private companion object {
+        /** 测试使用的固定当前单调时钟。 */
+        const val TEST_ELAPSED_REALTIME: Long = 1_000_000L
+    }
+}
 
 /** 测试中模拟 Android 内部图案视图类型。 */
 class LockPatternView {
