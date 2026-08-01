@@ -76,6 +76,7 @@ public class PatternCredentialHost(
         pixelHostView.isClickable = false
         pixelHostView.isFocusable = false
         pixelHostView.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        pixelHostView.setOnTouchListener { _, event -> dispatchPatternTouchEvent(event) }
         pixelHostView.setContent { SizedBox(width = 0, height = 0) }
         addView(pixelHostView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
         emergencyAccessibilityView.setBackgroundColor(Color.TRANSPARENT)
@@ -178,7 +179,15 @@ public class PatternCredentialHost(
     }
 
     /** 消费完整图案指针序列，禁止事件穿透到仍作为回退保留的原生 Bouncer。 */
-    override fun onTouchEvent(event: MotionEvent): Boolean {
+    override fun onTouchEvent(event: MotionEvent): Boolean = dispatchPatternTouchEvent(event)
+
+    /**
+     * 统一处理父宿主和内部全屏绘制层收到的事件。
+     *
+     * [PixelHostView] 自身的通用手势路由会消费无目标的 ACTION_DOWN，因此必须在它进入引擎
+     * 路由前把完整序列交给图案跟踪器；SOS 独立子节点仍位于绘制层上方并保留原生点击语义。
+     */
+    private fun dispatchPatternTouchEvent(event: MotionEvent): Boolean {
         if (disposed || interactionFailed) {
             return true
         }
