@@ -17,12 +17,11 @@ internal class PixelKeyguardSession(
     private val binding: Titan2SystemUiBinding,
     /** 会话完全释放后的上层清理回调。 */
     private val onDisposed: (PixelKeyguardSession) -> Unit,
+    /** 只包含固定状态码的运行诊断回调，不得传递用户数据。 */
+    private val onDiagnostic: (String) -> Unit = {},
 ) : ViewTreeObserver.OnPreDrawListener,
     ViewTreeObserver.OnDrawListener,
     View.OnAttachStateChangeListener {
-    /** 普通原生锁屏节点的可恢复显隐事务。 */
-    private val nativeVisibility = NativeKeyguardVisibilityTransaction(binding.shadeWindow)
-
     /** 只读解析生物识别、StrongAuth、信任代理和 Extend Unlock 的 Titan 2 适配器。 */
     private val biometricAdapter = Titan2BiometricStateAdapter.bind(binding.indicationController)
 
@@ -61,6 +60,13 @@ internal class PixelKeyguardSession(
         id = View.generateViewId()
     }
 
+    /** 普通原生锁屏节点的可恢复显隐事务。 */
+    private val nativeVisibility = NativeKeyguardVisibilityTransaction(
+        keyguardRoot = binding.keyguardRoot,
+        shadeWindow = binding.shadeWindow,
+        pixelHost = host,
+    )
+
     /** 系统广播驱动的时间、电量与明暗状态适配器。 */
     private val stateAdapter = AndroidKeyguardStateAdapter(binding.keyguardRoot.context) { state, brightness ->
         runCatching {
@@ -84,6 +90,9 @@ internal class PixelKeyguardSession(
 
     /** 完整像素凭据页是否正在上层接管可见 UI。 */
     private var credentialTakeoverActive: Boolean = false
+
+    /** 普通原生锁屏的可恢复隐藏事务当前是否已经生效。 */
+    private var visualTakeoverActive: Boolean = false
 
     /** 判断现有会话是否仍绑定同一 Keyguard 根视图。 */
     fun isBoundTo(keyguardRoot: ViewGroup): Boolean = !disposed && binding.keyguardRoot === keyguardRoot
@@ -111,7 +120,7 @@ internal class PixelKeyguardSession(
             host.addOnAttachStateChangeListener(this)
             binding.keyguardRoot.addView(
                 host,
-                0,
+                pixelHostInsertionIndex(binding.keyguardRoot.childCount),
                 ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -134,6 +143,7 @@ internal class PixelKeyguardSession(
     override fun onPreDraw(): Boolean {
         if (disposed) return true
         runCatching {
+            ensurePixelHostOnTop()
             stateAdapter.updateSecurity(biometricAdapter.snapshot())
             stateAdapter.updateContent(contentAdapter.snapshot())
             if (disposed) return true
@@ -142,8 +152,16 @@ internal class PixelKeyguardSession(
                 (firstFrameDrawn && isHostEffectivelyVisible())
             if (shouldTakeOver) {
                 nativeVisibility.hide()
+                if (!visualTakeoverActive) {
+                    visualTakeoverActive = true
+                    onDiagnostic("visual_takeover_active")
+                }
             } else {
                 nativeVisibility.restore()
+                if (visualTakeoverActive) {
+                    visualTakeoverActive = false
+                    onDiagnostic("visual_takeover_restored")
+                }
             }
         }.onFailure {
             dispose()
@@ -155,6 +173,7 @@ internal class PixelKeyguardSession(
     override fun onDraw() {
         if (firstFrameDrawn || disposed) return
         firstFrameDrawn = true
+        onDiagnostic("visual_first_frame_drawn")
         host.post {
             if (host.viewTreeObserver.isAlive) {
                 host.viewTreeObserver.removeOnDrawListener(this)
@@ -171,6 +190,20 @@ internal class PixelKeyguardSession(
     /** 宿主因 SystemUI 重建或锁屏根节点替换而脱离时立即回退。 */
     override fun onViewDetachedFromWindow(view: View) {
         if (!disposing) dispose()
+    }
+
+    /**
+     * 保证像素宿主始终位于普通 Keyguard 根容器的最上层。
+     *
+     * SystemUI 运行期可能为用户切换等功能追加普通锁屏子节点；Bouncer 是窗口级同级节点，
+     * 因此根容器内重排不会覆盖认证页面。
+     */
+    private fun ensurePixelHostOnTop() {
+        check(host.parent === binding.keyguardRoot) { "pixel_host_parent_changed" }
+        if (binding.keyguardRoot.indexOfChild(host) != binding.keyguardRoot.childCount - 1) {
+            binding.keyguardRoot.bringChildToFront(host)
+            onDiagnostic("visual_host_reordered")
+        }
     }
 
     /** 检查宿主到 SystemUI 窗口的整条父链可见性和 alpha，避免解锁后覆盖通知遮罩。 */
@@ -195,6 +228,7 @@ internal class PixelKeyguardSession(
         if (disposed || disposing) return
         disposing = true
         runCatching { nativeVisibility.restore() }
+        visualTakeoverActive = false
         if (binding.shadeWindow.viewTreeObserver.isAlive) {
             binding.shadeWindow.viewTreeObserver.removeOnPreDrawListener(this)
         }
@@ -217,4 +251,14 @@ internal class PixelKeyguardSession(
         /** 父链 alpha 低于该阈值时视为 SystemUI 已隐藏 Keyguard。 */
         const val MIN_VISIBLE_ALPHA: Float = 0.01f
     }
+}
+
+/**
+ * 返回像素宿主在普通 Keyguard 根容器中的插入位置。
+ *
+ * 使用当前子节点数量意味着宿主位于全部原生普通锁屏内容之上；窗口级 Bouncer 不受影响。
+ */
+internal fun pixelHostInsertionIndex(existingChildCount: Int): Int {
+    require(existingChildCount >= 0) { "existingChildCount must not be negative" }
+    return existingChildCount
 }

@@ -16,6 +16,7 @@ class NativeKeyguardVisibilityContractTest {
                 "keyguard_bottom_area",
                 "shared_notification_container",
                 "device_entry_icon_view",
+                "lock_icon_view",
             ),
             NativeKeyguardVisibilityTransaction.NATIVE_VIEW_RESOURCE_NAMES.toSet(),
         )
@@ -29,7 +30,7 @@ class NativeKeyguardVisibilityContractTest {
             NativeKeyguardVisibilityTransaction.REQUIRED_NATIVE_VIEW_RESOURCE_NAMES.toSet(),
         )
         assertEquals(
-            setOf("device_entry_icon_view"),
+            setOf("device_entry_icon_view", "lock_icon_view"),
             NativeKeyguardVisibilityTransaction.OPTIONAL_NATIVE_VIEW_RESOURCE_NAMES.toSet(),
         )
     }
@@ -44,5 +45,12 @@ class NativeKeyguardVisibilityContractTest {
                 forbiddenTokens.any(resourceName::contains)
             },
         )
+    }
+
+    /** 像素宿主必须追加到普通 Keyguard 根容器末尾，禁止再次落到原生内容后方。 */
+    @Test
+    fun pixelHostUsesTopmostKeyguardChildIndex() {
+        assertEquals(0, pixelHostInsertionIndex(0))
+        assertEquals(4, pixelHostInsertionIndex(4))
     }
 }

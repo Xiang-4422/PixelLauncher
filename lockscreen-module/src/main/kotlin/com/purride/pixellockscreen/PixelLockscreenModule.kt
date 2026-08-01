@@ -150,11 +150,15 @@ public class PixelLockscreenModule : XposedModule() {
         }
         previousSession?.dispose()
         /** 已通过完整视图合同的新像素 Keyguard 会话。 */
-        val newSession = PixelKeyguardSession(binding) { disposedSession ->
-            if (activeSession === disposedSession) {
-                activeSession = null
-            }
-        }
+        val newSession = PixelKeyguardSession(
+            binding = binding,
+            onDisposed = { disposedSession ->
+                if (activeSession === disposedSession) {
+                    activeSession = null
+                }
+            },
+            onDiagnostic = { statusCode -> log(Log.INFO, LOG_TAG, statusCode) },
+        )
         activeSession = newSession
         try {
             newSession.start()
