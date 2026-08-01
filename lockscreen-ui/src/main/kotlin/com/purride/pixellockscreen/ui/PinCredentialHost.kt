@@ -7,6 +7,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
 import com.purride.pixeldesign.ProductThemeCatalog
+import com.purride.pixeldesign.font.fitProductTextWithin
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelGridGeometryResolver
 import com.purride.pixelcore.ScreenProfile
@@ -385,6 +386,9 @@ public class PinCredentialHost(
         } else {
             PixelColor.Transparent
         }
+        pixelHostView.textRasterizer = appearance.defaultTextRasterizer.fitProductTextWithin(
+            maxHeight = CREDENTIAL_FONT_HEIGHT,
+        )
         updateLogicalLayout(width, height, submitScene = false)
     }
 
@@ -498,3 +502,6 @@ public class PinCredentialHost(
         const val EMERGENCY_KEY_ID: Int = 12
     }
 }
+
+/** PIN 按键和提示区允许的最大单行逻辑字高。 */
+private const val CREDENTIAL_FONT_HEIGHT: Int = 7

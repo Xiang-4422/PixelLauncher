@@ -1,11 +1,22 @@
 package com.purride.pixellockscreen
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.purride.pixeldesign.ProductAppearance
+import com.purride.pixeldesign.font.PreparedProductFont
+import com.purride.pixeldesign.font.ProductFontRepository
+import com.purride.pixeldesign.font.ProductFontSelection
+import com.purride.pixeldesign.font.ProductTextRole
+import com.purride.pixellockscreen.ui.LockscreenAppearance
+import com.purride.pixellockscreen.ui.resolveLockscreenAppearance
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 /**
  * 像素锁屏的 Modern Xposed API 102 入口。
@@ -41,6 +52,18 @@ public class PixelLockscreenModule : XposedModule() {
 
     /** 当前 SystemUI 进程唯一的 Launcher 外观观察器。 */
     private var appearanceAdapter: LauncherAppearanceAdapter? = null
+
+    /** 模块 APK 资源中的共享字体异步仓库。 */
+    private var fontRepository: ProductFontRepository? = null
+
+    /** 字形包解析与 mmap 使用的双线程执行器。 */
+    private var fontExecutor: ExecutorService? = null
+
+    /** 当前已准备完整且可原子切换的产品字体。 */
+    private var preparedFont: PreparedProductFont? = null
+
+    /** 正在异步准备的字体选择，用于合并重复请求。 */
+    private var pendingFontSelection: ProductFontSelection? = null
 
     /** 记录当前进程并立即脱离非 SystemUI 主进程。 */
     override fun onModuleLoaded(param: XposedModuleInterface.ModuleLoadedParam) {
@@ -161,7 +184,7 @@ public class PixelLockscreenModule : XposedModule() {
         /** 已通过完整视图合同的新像素 Keyguard 会话。 */
         val newSession = PixelKeyguardSession(
             binding = binding,
-            appearanceProvider = { sharedAppearance },
+            appearanceProvider = ::resolveCurrentLockscreenAppearance,
             onDisposed = { disposedSession ->
                 if (activeSession === disposedSession) {
                     activeSession = null
@@ -663,7 +686,7 @@ public class PixelLockscreenModule : XposedModule() {
             securityController = securityController,
             patternController = patternController,
             classLoader = classLoader,
-            appearanceProvider = { sharedAppearance },
+            appearanceProvider = ::resolveCurrentLockscreenAppearance,
             onTakeoverChanged = {
                 refreshCredentialTakeoverState()
             },
@@ -729,7 +752,7 @@ public class PixelLockscreenModule : XposedModule() {
             securityController = securityController,
             pinController = pinController,
             classLoader = classLoader,
-            appearanceProvider = { sharedAppearance },
+            appearanceProvider = ::resolveCurrentLockscreenAppearance,
             onTakeoverChanged = {
                 refreshCredentialTakeoverState()
             },
@@ -795,7 +818,7 @@ public class PixelLockscreenModule : XposedModule() {
             securityController = securityController,
             passwordController = passwordController,
             classLoader = classLoader,
-            appearanceProvider = { sharedAppearance },
+            appearanceProvider = ::resolveCurrentLockscreenAppearance,
             onTakeoverChanged = {
                 refreshCredentialTakeoverState()
             },
@@ -861,7 +884,7 @@ public class PixelLockscreenModule : XposedModule() {
             securityController = securityController,
             specialController = specialController,
             classLoader = classLoader,
-            appearanceProvider = { sharedAppearance },
+            appearanceProvider = ::resolveCurrentLockscreenAppearance,
             onTakeoverChanged = { refreshCredentialTakeoverState() },
             onFailure = { failedSession, throwable ->
                 if (activeSpecialPinSession === failedSession) {
@@ -953,17 +976,80 @@ public class PixelLockscreenModule : XposedModule() {
     }
 
     /** 首次获得 SystemUI Context 后启动共享外观观察，后续会话沿用同一实例。 */
-    private fun ensureAppearanceAdapter(context: android.content.Context) {
+    private fun ensureAppearanceAdapter(context: Context) {
         if (appearanceAdapter != null) return
+        ensureFontRepository(context)
         /** 新观察器会在 start 内同步读取一次当前 Launcher 配置。 */
         val adapter = LauncherAppearanceAdapter(context) { appearance ->
             sharedAppearance = appearance
+            prepareSharedFont(appearance.fontSelection)
             refreshAllAppearances()
         }
         appearanceAdapter = adapter
         adapter.start()
         sharedAppearance = adapter.currentAppearance
+        prepareSharedFont(sharedAppearance.fontSelection)
         log(Log.INFO, LOG_TAG, "appearance_observer_started")
+    }
+
+    /** 使用 Xposed 报告的模块包创建专用资源 Context 和字体仓库。 */
+    private fun ensureFontRepository(systemUiContext: Context) {
+        if (fontRepository != null) return
+        runCatching {
+            /** 只指向当前安装模块 APK 的资源 Context。 */
+            val moduleContext = systemUiContext.createPackageContext(
+                moduleApplicationInfo.packageName,
+                Context.CONTEXT_IGNORE_SECURITY,
+            )
+            /** 线程名固定且不携带任何用户数据。 */
+            val executor = Executors.newFixedThreadPool(2) { runnable ->
+                Thread(runnable, "PixelLockscreenFont").apply { isDaemon = true }
+            }
+            fontExecutor = executor
+            fontRepository = ProductFontRepository(
+                context = moduleContext,
+                executor = executor,
+                mainHandler = Handler(Looper.getMainLooper()),
+            )
+        }.onFailure { throwable ->
+            log(Log.ERROR, LOG_TAG, "font_repository_unavailable", throwable)
+        }
+    }
+
+    /** 在后台准备完整字形后原子替换锁屏字体，失败时保留旧字体。 */
+    private fun prepareSharedFont(selection: ProductFontSelection) {
+        if (preparedFont?.selection == selection || pendingFontSelection == selection) return
+        /** 已成功初始化的模块字体仓库。 */
+        val repository = fontRepository ?: return
+        pendingFontSelection = selection
+        repository.prepare(selection) { result ->
+            if (sharedAppearance.fontSelection != selection) return@prepare
+            pendingFontSelection = null
+            result.onSuccess { font ->
+                preparedFont = font
+                repository.trimToActive(font.selection)
+                refreshAllAppearances()
+                log(Log.INFO, LOG_TAG, "font_ready")
+            }.onFailure { throwable ->
+                log(Log.ERROR, LOG_TAG, "font_prepare_failed", throwable)
+            }
+        }
+    }
+
+    /** 把共享主题和已准备字体解析为当前 SystemUI 可直接绘制的外观。 */
+    private fun resolveCurrentLockscreenAppearance(systemInDarkMode: Boolean): LockscreenAppearance {
+        /** 当前已完整准备的字体；冷启动期间可为 null。 */
+        val font = preparedFont
+        /** 紧凑文本与主字体始终保持家族和宽度模式一致。 */
+        val chromeRasterizer = font?.typography?.rasterizer(ProductTextRole.CHROME)
+        return sharedAppearance.resolveLockscreenAppearance(
+            systemInDarkMode = systemInDarkMode,
+            defaultTextRasterizer = font?.defaultRasterizer
+                ?: com.purride.pixelcore.PixelBitmapFont.Default,
+            chromeTextRasterizer = chromeRasterizer
+                ?: font?.defaultRasterizer
+                ?: com.purride.pixelcore.PixelBitmapFont.Default,
+        )
     }
 
     /** 使用各会话最近一次非敏感状态刷新普通页和全部凭据页。 */

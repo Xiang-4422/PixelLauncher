@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.FrameLayout
 import com.purride.pixelcore.PixelColor
 import com.purride.pixeldesign.ProductThemeCatalog
+import com.purride.pixeldesign.font.fitProductTextWithin
 import com.purride.pixelui.PixelHostProfilePolicy
 import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.SizedBox
@@ -107,6 +108,7 @@ public class LockscreenRootHost @JvmOverloads constructor(
         val appearance = currentAppearance ?: return
         /** 与 AdaptivePixels 策略相同的逻辑宽度。 */
         val logicalWidth = lockscreenLogicalSize(width, height, appearance.dotSizePx).first
+        updateTextRasterizer(appearance, logicalWidth)
         if (previous.logicalWidth != logicalWidth) {
             submitRequest(previous.copy(logicalWidth = logicalWidth))
         }
@@ -143,8 +145,31 @@ public class LockscreenRootHost @JvmOverloads constructor(
         } else {
             PixelColor.Transparent
         }
+        /** 当前宿主尺寸可用时立即应用共享字体。 */
+        val logicalWidth = lockscreenLogicalSize(width, height, appearance.dotSizePx).first
+        updateTextRasterizer(appearance, logicalWidth)
+    }
+
+    /** 按时钟的最大整数倍率缩小用户字体，保证方屏宽度内不裁切。 */
+    private fun updateTextRasterizer(appearance: LockscreenAppearance, logicalWidth: Int) {
+        /** 与场景大时钟选择一致的最大整数倍率。 */
+        val timeScale = when {
+            logicalWidth >= 132 -> 4
+            logicalWidth >= 100 -> 3
+            else -> 2
+        }
+        /** 单倍时钟可使用的安全逻辑宽度。 */
+        val baseTimeWidth = ((logicalWidth - 12) / timeScale).coerceAtLeast(1)
+        pixelHostView.textRasterizer = appearance.defaultTextRasterizer.fitProductTextWithin(
+            sampleText = "88:88",
+            maxWidth = baseTimeWidth,
+            maxHeight = LOCKSCREEN_BASE_FONT_HEIGHT,
+        )
     }
 }
 
 /** 返回普通锁屏是否把完整触摸序列交给下层 SystemUI；基础解锁链必须始终优先。 */
 internal fun ordinaryLockscreenTouchPassesThrough(): Boolean = true
+
+/** 锁屏布局的标准单倍字高，大时钟在此基础上整数放大。 */
+private const val LOCKSCREEN_BASE_FONT_HEIGHT: Int = 7

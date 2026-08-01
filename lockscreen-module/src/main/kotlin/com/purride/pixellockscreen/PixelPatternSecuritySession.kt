@@ -6,7 +6,6 @@ import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
-import com.purride.pixeldesign.ProductAppearance
 import com.purride.pixellockscreen.credential.CredentialBridgeContractResult
 import com.purride.pixellockscreen.credential.CredentialCheckResult
 import com.purride.pixellockscreen.credential.EphemeralCredentialLease
@@ -21,7 +20,7 @@ import com.purride.pixellockscreen.credential.Titan2PatternControllerBinding
 import com.purride.pixellockscreen.credential.Titan2SecurityContainerViewBinding
 import com.purride.pixellockscreen.ui.PatternCredentialHost
 import com.purride.pixellockscreen.ui.PatternCredentialUiState
-import com.purride.pixellockscreen.ui.resolveLockscreenAppearance
+import com.purride.pixellockscreen.ui.LockscreenAppearance
 import kotlin.math.min
 
 /**
@@ -37,8 +36,8 @@ internal class PixelPatternSecuritySession(
     private val patternController: Any,
     /** SystemUI 最终应用类加载器。 */
     private val classLoader: ClassLoader,
-    /** 每次渲染时提供 Launcher 最新共享外观。 */
-    private val appearanceProvider: () -> ProductAppearance,
+    /** 按 SystemUI 明暗状态提供已准备主题与字体的最新外观。 */
+    private val appearanceProvider: (Boolean) -> LockscreenAppearance,
     /** 图案页接管或恢复时暂停、恢复普通像素锁屏的动作。 */
     private val onTakeoverChanged: (Boolean) -> Unit,
     /** 会话异步失败时记录脱敏原因的动作。 */
@@ -257,7 +256,7 @@ internal class PixelPatternSecuritySession(
             Configuration.UI_MODE_NIGHT_YES -> true
             else -> false
         }
-        host.update(state, appearanceProvider().resolveLockscreenAppearance(systemInDarkMode))
+        host.update(state, appearanceProvider(systemInDarkMode))
     }
 
     /** 启动一次唯一系统图案校验，并处理同步回调竞态。 */

@@ -18,8 +18,8 @@ public class PixelIndexedGlyphPackAssetLoader @JvmOverloads public constructor(
     /** 与其他资源共享或由 Launcher 专用配置的有界缓存。 */
     private val cache: PixelResourceCache = PixelResourceCache(),
 ) {
-    /** 不持有 Activity 的 application AssetManager。 */
-    private val assets = context.applicationContext.assets
+    /** 只持有调用方精确资源包的 AssetManager，不保留 Context。 */
+    private val assets = context.assets
 
     /** 不启用 checksum 时加载一个 indexed pack。 */
     public fun load(assetDirectory: String): PixelIndexedGlyphPack = load(

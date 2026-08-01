@@ -7,6 +7,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
 import com.purride.pixeldesign.ProductThemeCatalog
+import com.purride.pixeldesign.font.fitProductTextWithin
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelGridGeometryResolver
 import com.purride.pixelcore.ScreenProfile
@@ -325,6 +326,9 @@ public class PatternCredentialHost(
         } else {
             PixelColor.Transparent
         }
+        pixelHostView.textRasterizer = appearance.defaultTextRasterizer.fitProductTextWithin(
+            maxHeight = CREDENTIAL_FONT_HEIGHT,
+        )
         updateLogicalLayout(width, height, submitScene = false)
     }
 
@@ -408,3 +412,6 @@ public class PatternCredentialHost(
         }
     }
 }
+
+/** 图案提示与紧急入口允许的最大单行逻辑字高。 */
+private const val CREDENTIAL_FONT_HEIGHT: Int = 7

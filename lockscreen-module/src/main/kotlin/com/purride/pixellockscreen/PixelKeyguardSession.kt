@@ -3,12 +3,11 @@ package com.purride.pixellockscreen
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
-import com.purride.pixeldesign.ProductAppearance
 import com.purride.pixeldesign.ProductThemeBrightness
+import com.purride.pixellockscreen.ui.LockscreenAppearance
 import com.purride.pixellockscreen.ui.LockscreenRootHost
 import com.purride.pixellockscreen.ui.LockscreenContentListener
 import com.purride.pixellockscreen.ui.LockscreenUiState
-import com.purride.pixellockscreen.ui.resolveLockscreenAppearance
 
 /**
  * 一次 SystemUI 进程生命周期内的普通像素 Keyguard 挂载与回退会话。
@@ -19,8 +18,8 @@ import com.purride.pixellockscreen.ui.resolveLockscreenAppearance
 internal class PixelKeyguardSession(
     /** 已通过 Titan 2 签名探测的 SystemUI 视图绑定。 */
     private val binding: Titan2SystemUiBinding,
-    /** 每次渲染时提供 Launcher 最新共享外观。 */
-    private val appearanceProvider: () -> ProductAppearance,
+    /** 按 SystemUI 明暗状态提供已准备主题与字体的最新外观。 */
+    private val appearanceProvider: (Boolean) -> LockscreenAppearance,
     /** 会话完全释放后的上层清理回调。 */
     private val onDisposed: (PixelKeyguardSession) -> Unit,
     /** 只包含固定状态码的运行诊断回调，不得传递用户数据。 */
@@ -85,9 +84,7 @@ internal class PixelKeyguardSession(
             lastSystemBrightness = brightness
             host.update(
                 state,
-                appearanceProvider().resolveLockscreenAppearance(
-                    systemInDarkMode = brightness == ProductThemeBrightness.DARK,
-                ),
+                appearanceProvider(brightness == ProductThemeBrightness.DARK),
             )
         }.onFailure {
             dispose()
@@ -129,9 +126,7 @@ internal class PixelKeyguardSession(
         runCatching {
             host.update(
                 state,
-                appearanceProvider().resolveLockscreenAppearance(
-                    systemInDarkMode = lastSystemBrightness == ProductThemeBrightness.DARK,
-                ),
+                appearanceProvider(lastSystemBrightness == ProductThemeBrightness.DARK),
             )
         }.onFailure { dispose() }
     }

@@ -5,14 +5,13 @@ import android.os.Looper
 import android.view.View
 import android.view.ViewTreeObserver
 import android.view.ViewGroup
-import com.purride.pixeldesign.ProductAppearance
 import com.purride.pixellockscreen.credential.SpecialPinCredentialCoordinator
 import com.purride.pixellockscreen.credential.Titan2EmergencyActionBridge
 import com.purride.pixellockscreen.credential.Titan2SecurityContainerViewBinding
 import com.purride.pixellockscreen.credential.Titan2SpecialPinControllerBinding
 import com.purride.pixellockscreen.ui.PinCredentialHost
 import com.purride.pixellockscreen.ui.PinCredentialUiState
-import com.purride.pixellockscreen.ui.resolveLockscreenAppearance
+import com.purride.pixellockscreen.ui.LockscreenAppearance
 
 /**
  * Titan 2 一次 SIM PIN/PUK/ME 或 AntiTheft 展示周期的像素接管会话。
@@ -27,8 +26,8 @@ internal class PixelSpecialPinSecuritySession(
     private val specialController: Any,
     /** SystemUI 最终应用类加载器。 */
     private val classLoader: ClassLoader,
-    /** 每次渲染时提供 Launcher 最新共享外观。 */
-    private val appearanceProvider: () -> ProductAppearance,
+    /** 按 SystemUI 明暗状态提供已准备主题与字体的最新外观。 */
+    private val appearanceProvider: (Boolean) -> LockscreenAppearance,
     /** 特殊页接管状态变化时同步普通像素锁屏的动作。 */
     private val onTakeoverChanged: (Boolean) -> Unit,
     /** 会话失败时记录脱敏原因的动作。 */
@@ -203,7 +202,7 @@ internal class PixelSpecialPinSecuritySession(
             Configuration.UI_MODE_NIGHT_YES -> true
             else -> false
         }
-        host.update(state, appearanceProvider().resolveLockscreenAppearance(systemInDarkMode))
+        host.update(state, appearanceProvider(systemInDarkMode))
     }
 
     /** 检查像素宿主到主安全容器之间的整条可见父链。 */

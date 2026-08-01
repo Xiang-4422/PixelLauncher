@@ -1,6 +1,8 @@
 package com.purride.pixellockscreen.ui
 
 import com.purride.pixelcore.PixelShape
+import com.purride.pixelcore.PixelBitmapFont
+import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixeldesign.ProductAppearance
 import com.purride.pixeldesign.ProductThemeBrightness
 import com.purride.pixeldesign.ProductThemeFamily
@@ -17,18 +19,28 @@ public data class LockscreenAppearance(
     public val themeFamily: ProductThemeFamily,
     /** 已由宿主系统配置解析的实际主题亮度。 */
     public val brightness: ProductThemeBrightness,
+    /** 用户当前选择的完整产品字体栅格器。 */
+    public val defaultTextRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
+    /** 同家族紧凑信息和认证控件使用的产品字体栅格器。 */
+    public val chromeTextRasterizer: PixelTextRasterizer = defaultTextRasterizer,
 )
 
 /** 按当前 SystemUI 明暗配置把共享产品设置解析成可直接绘制的锁屏外观。 */
 public fun ProductAppearance.resolveLockscreenAppearance(
     /** 当前 SystemUI 是否处于夜间模式。 */
     systemInDarkMode: Boolean,
+    /** 已由宿主异步准备的用户字体。 */
+    defaultTextRasterizer: PixelTextRasterizer = PixelBitmapFont.Default,
+    /** 已由宿主异步准备的紧凑文本字体。 */
+    chromeTextRasterizer: PixelTextRasterizer = defaultTextRasterizer,
 ): LockscreenAppearance = LockscreenAppearance(
     pixelShape = pixelShape,
     dotSizePx = dotSizePx,
     pixelGapEnabled = pixelGapEnabled,
     themeFamily = themeFamily,
     brightness = themeMode.resolve(systemInDarkMode),
+    defaultTextRasterizer = defaultTextRasterizer,
+    chromeTextRasterizer = chromeTextRasterizer,
 )
 
 /** 根据物理宿主尺寸和共享点大小返回当前可绘制的逻辑网格尺寸。 */
