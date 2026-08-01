@@ -6,6 +6,8 @@ import com.purride.pixellockscreen.ui.LockscreenUiState
 import com.purride.pixellockscreen.ui.LockscreenBiometricModality
 import com.purride.pixellockscreen.ui.LockscreenBiometricPhase
 import com.purride.pixellockscreen.ui.LockscreenBiometricUiState
+import com.purride.pixellockscreen.ui.LockscreenSecurityNoticePhase
+import com.purride.pixellockscreen.ui.LockscreenSecurityNoticeUiState
 import com.purride.pixellockscreen.ui.PatternCredentialFeedback
 import com.purride.pixellockscreen.ui.PatternCredentialUiState
 import com.purride.pixellockscreen.ui.PasswordCredentialFeedback
@@ -77,6 +79,8 @@ internal data class LockscreenPreviewConfiguration(
     val biometricModality: LockscreenBiometricModality = LockscreenBiometricModality.NONE,
     /** 普通锁屏预览使用的系统生物识别阶段。 */
     val biometricPhase: LockscreenBiometricPhase = LockscreenBiometricPhase.UNAVAILABLE,
+    /** 普通锁屏预览使用的信任代理或 Extend Unlock 阶段。 */
+    val securityNoticePhase: LockscreenSecurityNoticePhase = LockscreenSecurityNoticePhase.NONE,
     /** 当前预览框方向。 */
     val orientation: LockscreenPreviewOrientation = LockscreenPreviewOrientation.PORTRAIT,
     /** 当前透明宿主下方的测试背景。 */
@@ -107,6 +111,10 @@ internal data class LockscreenPreviewConfiguration(
             modality = biometricModality,
             phase = biometricPhase,
             messageText = previewBiometricMessage(biometricPhase),
+        ),
+        securityNotice = LockscreenSecurityNoticeUiState(
+            phase = securityNoticePhase,
+            messageText = previewSecurityNoticeMessage(securityNoticePhase),
         ),
     )
 
@@ -192,6 +200,15 @@ private fun previewBiometricMessage(phase: LockscreenBiometricPhase): String = w
     LockscreenBiometricPhase.LOCKED_OUT -> "TOO MANY ATTEMPTS"
     LockscreenBiometricPhase.STRONG_AUTH_REQUIRED -> "USE PIN AFTER RESTART"
 }
+
+/** 为离线截图提供稳定且不依赖设备信任代理的安全提示。 */
+private fun previewSecurityNoticeMessage(phase: LockscreenSecurityNoticePhase): String =
+    when (phase) {
+        LockscreenSecurityNoticePhase.NONE -> ""
+        LockscreenSecurityNoticePhase.TRUSTED -> "TRUSTED"
+        LockscreenSecurityNoticePhase.TRUST_ERROR -> "TRUST AGENT ERROR"
+        LockscreenSecurityNoticePhase.EXTENDED_UNLOCK -> "EXTEND UNLOCK ACTIVE"
+    }
 
 /** 按枚举声明顺序循环选择前一个或后一个主题家族。 */
 internal fun cyclePreviewFamily(current: ProductThemeFamily, step: Int): ProductThemeFamily {

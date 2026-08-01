@@ -21,6 +21,7 @@ import com.purride.pixeldesign.ProductThemeBrightness
 import com.purride.pixellockscreen.ui.LockscreenRootHost
 import com.purride.pixellockscreen.ui.LockscreenBiometricModality
 import com.purride.pixellockscreen.ui.LockscreenBiometricPhase
+import com.purride.pixellockscreen.ui.LockscreenSecurityNoticePhase
 import com.purride.pixellockscreen.ui.PatternCredentialFeedback
 import com.purride.pixellockscreen.ui.PatternCredentialHost
 import com.purride.pixellockscreen.ui.PatternCredentialListener
@@ -236,6 +237,22 @@ class LockscreenPreviewActivity : AppCompatActivity() {
                             onClick = {
                                 updateConfiguration {
                                     withBiometricPhase(phase)
+                                }
+                            },
+                        )
+                    },
+                ),
+            )
+            controlsContainer.addView(
+                optionRow(
+                    label = "TRUST",
+                    options = LockscreenSecurityNoticePhase.entries.map { phase ->
+                        ControlOption(
+                            label = phase.name,
+                            selected = phase == configuration.securityNoticePhase,
+                            onClick = {
+                                updateConfiguration {
+                                    copy(securityNoticePhase = phase)
                                 }
                             },
                         )

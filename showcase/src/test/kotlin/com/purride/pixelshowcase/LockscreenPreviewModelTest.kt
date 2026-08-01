@@ -5,6 +5,7 @@ import com.purride.pixeldesign.ProductThemeFamily
 import com.purride.pixellockscreen.ui.PatternCredentialFeedback
 import com.purride.pixellockscreen.ui.LockscreenBiometricModality
 import com.purride.pixellockscreen.ui.LockscreenBiometricPhase
+import com.purride.pixellockscreen.ui.LockscreenSecurityNoticePhase
 import com.purride.pixellockscreen.ui.PasswordCredentialFeedback
 import com.purride.pixellockscreen.ui.PinCredentialFeedback
 import org.junit.Assert.assertEquals
@@ -56,6 +57,24 @@ class LockscreenPreviewModelTest {
         assertEquals(4, PasswordCredentialFeedback.entries.size)
         assertEquals(4, LockscreenBiometricModality.entries.size)
         assertEquals(7, LockscreenBiometricPhase.entries.size)
+        assertEquals(4, LockscreenSecurityNoticePhase.entries.size)
+    }
+
+    /** 信任状态预览必须为每个活跃阶段提供稳定且可见的离线文字。 */
+    @Test
+    fun securityNoticePreviewCoversAllVisiblePhases() {
+        LockscreenSecurityNoticePhase.entries.forEach { phase ->
+            /** 当前信任阶段转换出的普通锁屏状态。 */
+            val state = LockscreenPreviewConfiguration(
+                securityNoticePhase = phase,
+            ).toUiState()
+
+            assertEquals(phase, state.securityNotice.phase)
+            assertEquals(
+                phase != LockscreenSecurityNoticePhase.NONE,
+                state.securityNotice.isVisible,
+            )
+        }
     }
 
     /** 生物识别预览必须自动维护传感器与认证阶段的合法组合。 */
