@@ -13,6 +13,23 @@ internal data class Titan2SystemUiProbeResult(
     val bouncerContainerClassName: String,
 )
 
+/** M5 挂载和回退所需的已验证 SystemUI 视图引用。 */
+internal data class Titan2SystemUiBinding(
+    /** 自动跟随 Keyguard 可见性的像素宿主父视图。 */
+    val keyguardRoot: ViewGroup,
+    /** 用于定位普通原生锁屏元素和监听每帧的 SystemUI 窗口。 */
+    val shadeWindow: ViewGroup,
+    /** 必须始终保留在像素宿主上方的原生凭据容器。 */
+    val bouncerContainer: ViewGroup,
+) {
+    /** 转换为不持有 View 的只读诊断结果。 */
+    fun toProbeResult(): Titan2SystemUiProbeResult = Titan2SystemUiProbeResult(
+        keyguardRootClassName = keyguardRoot.javaClass.name,
+        shadeWindowClassName = shadeWindow.javaClass.name,
+        bouncerContainerClassName = bouncerContainer.javaClass.name,
+    )
+}
+
 /**
  * 只读验证 Titan 2 的 Keyguard 根视图、窗口宿主和原生 Bouncer 容器。
  *
@@ -39,6 +56,17 @@ internal object Titan2SystemUiProbe {
      */
     @SuppressLint("DiscouragedApi")
     fun inspect(configurator: Any): Titan2SystemUiProbeResult {
+        return bind(configurator).toProbeResult()
+    }
+
+    /**
+     * 读取并验证 M5 运行时所需的视图引用。
+     *
+     * @param configurator 已完成原生 `start()` 的 KeyguardViewConfigurator 实例。
+     * @return 通过类型、资源和父子关系检查的挂载绑定。
+     */
+    @SuppressLint("DiscouragedApi")
+    fun bind(configurator: Any): Titan2SystemUiBinding {
         /** 反射获取的 Keyguard 根视图。 */
         val keyguardRoot = readField(configurator, KEYGUARD_ROOT_FIELD) as? ViewGroup
             ?: error("keyguard_root_type")
@@ -58,11 +86,15 @@ internal object Titan2SystemUiProbe {
         /** 必须在同一遮罩窗口内保留的原生 Bouncer 容器。 */
         val bouncerContainer = shadeWindow.findViewById<ViewGroup>(bouncerContainerId)
             ?: error("bouncer_view_missing")
+        check(bouncerContainer.parent === shadeWindow) { "bouncer_parent" }
+        check(shadeWindow.indexOfChild(bouncerContainer) > shadeWindow.indexOfChild(keyguardRoot)) {
+            "bouncer_z_order"
+        }
 
-        return Titan2SystemUiProbeResult(
-            keyguardRootClassName = keyguardRoot.javaClass.name,
-            shadeWindowClassName = shadeWindow.javaClass.name,
-            bouncerContainerClassName = bouncerContainer.javaClass.name,
+        return Titan2SystemUiBinding(
+            keyguardRoot = keyguardRoot,
+            shadeWindow = shadeWindow,
+            bouncerContainer = bouncerContainer,
         )
     }
 

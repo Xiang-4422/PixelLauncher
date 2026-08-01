@@ -10,11 +10,15 @@ import io.github.libxposed.api.XposedModuleInterface
  * 像素锁屏的 Modern Xposed API 102 入口。
  *
  * 入口只在 Titan 2 精确设备合同命中后 Hook Keyguard 启动点。M4 拦截器先执行
- * 原生 `start()`，之后只读探测必需视图，不改变任何 Keyguard 行为。
+ * 原生 `start()`，之后只读探测必需视图。M5 只有在全部签名和恢复事务就绪后
+ * 挂载普通像素 Keyguard，原生凭据 Bouncer 始终保留。
  */
 public class PixelLockscreenModule : XposedModule() {
     /** 模块加载阶段记录的进程名，只用于后续兼容性判定。 */
     private var loadedProcessName: String? = null
+
+    /** 当前 SystemUI 进程中唯一活跃的像素 Keyguard 会话。 */
+    private var activeSession: PixelKeyguardSession? = null
 
     /** 记录当前进程并立即脱离非 SystemUI 主进程。 */
     override fun onModuleLoaded(param: XposedModuleInterface.ModuleLoadedParam) {
@@ -84,14 +88,16 @@ public class PixelLockscreenModule : XposedModule() {
         }
     }
 
-    /** 探测完成启动的 configurator；所有模块异常在这里截止，不影响 SystemUI。 */
+    /** 探测完成启动的 configurator，并在 M5 合同就绪后启动可回退锁屏会话。 */
     private fun inspectStartedConfigurator(configurator: Any?) {
         if (configurator == null) {
             log(Log.ERROR, LOG_TAG, "probe_missing_instance")
             return
         }
-        runCatching { Titan2SystemUiProbe.inspect(configurator) }
-            .onSuccess { result ->
+        runCatching { Titan2SystemUiProbe.bind(configurator) }
+            .onSuccess { binding ->
+                /** 不持有 View 的日志摘要。 */
+                val result = binding.toProbeResult()
                 /** 仅包含类名的探测摘要，不记录视图内容或用户数据。 */
                 val classSummary = listOf(
                     result.keyguardRootClassName,
@@ -99,10 +105,40 @@ public class PixelLockscreenModule : XposedModule() {
                     result.bouncerContainerClassName,
                 ).joinToString(separator = ",")
                 log(Log.INFO, LOG_TAG, "probe_ready:$classSummary")
+                if (LockscreenModuleContract.VISUAL_TAKEOVER_ENABLED) {
+                    startVisualSession(binding)
+                }
             }
             .onFailure { throwable ->
                 log(Log.ERROR, LOG_TAG, "probe_failed", throwable)
             }
+    }
+
+    /** 幂等替换旧根视图会话，同一根视图的重复 `start()` 不会创建二次宿主。 */
+    private fun startVisualSession(binding: Titan2SystemUiBinding) {
+        /** 可能由同一 configurator 重复启动的现有会话。 */
+        val previousSession = activeSession
+        if (previousSession?.isBoundTo(binding.keyguardRoot) == true) {
+            log(Log.INFO, LOG_TAG, "visual_session_reused")
+            return
+        }
+        previousSession?.dispose()
+        /** 已通过完整视图合同的新像素 Keyguard 会话。 */
+        val newSession = PixelKeyguardSession(binding) { disposedSession ->
+            if (activeSession === disposedSession) {
+                activeSession = null
+            }
+        }
+        activeSession = newSession
+        try {
+            newSession.start()
+            log(Log.INFO, LOG_TAG, "visual_session_started")
+        } catch (throwable: Throwable) {
+            if (activeSession === newSession) {
+                activeSession = null
+            }
+            log(Log.ERROR, LOG_TAG, "visual_session_failed", throwable)
+        }
     }
 
     private companion object {

@@ -3,8 +3,8 @@ package com.purride.pixellockscreen
 /**
  * 锁定像素锁屏模块的作用域和当前里程碑能力边界。
  *
- * M4 允许在已识别 Titan 2 SystemUI 中安装只读探测 Hook，但严禁隐藏或覆盖
- * 原生 Keyguard；完整视觉接管必须在 M5 完成首帧回退机制后单独启用。
+ * M5 允许在已识别 Titan 2 SystemUI 中挂载普通像素 Keyguard，但图案、PIN、
+ * 密码、SIM 和其他安全模式继续使用原生 Bouncer，直到各自适配完成。
  */
 internal object LockscreenModuleContract {
     /** Modern Xposed 模块唯一允许声明的目标包。 */
@@ -16,6 +16,9 @@ internal object LockscreenModuleContract {
     /** M4 允许在精确命中目标合同后安装只读签名探测。 */
     const val READ_ONLY_HOOK_ENABLED: Boolean = true
 
-    /** M4 明确保持关闭的视觉接管开关。 */
-    const val VISUAL_TAKEOVER_ENABLED: Boolean = false
+    /** M5 在像素首帧和恢复事务就绪后启用普通锁屏接管。 */
+    const val VISUAL_TAKEOVER_ENABLED: Boolean = true
+
+    /** M6 之前禁止隐藏原生 Bouncer 或接收原始凭据。 */
+    const val CREDENTIAL_TAKEOVER_ENABLED: Boolean = false
 }
