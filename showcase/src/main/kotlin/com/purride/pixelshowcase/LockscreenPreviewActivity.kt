@@ -22,8 +22,11 @@ import com.purride.pixellockscreen.ui.LockscreenRootHost
 import com.purride.pixellockscreen.ui.PatternCredentialFeedback
 import com.purride.pixellockscreen.ui.PatternCredentialHost
 import com.purride.pixellockscreen.ui.PatternCredentialListener
+import com.purride.pixellockscreen.ui.PinCredentialFeedback
+import com.purride.pixellockscreen.ui.PinCredentialHost
+import com.purride.pixellockscreen.ui.PinCredentialListener
 
-/** 使用真实普通锁屏和图案宿主提供确定输入与测试背景的离线预览页。 */
+/** 使用真实普通锁屏、图案和 PIN 宿主提供确定输入与测试背景的离线预览页。 */
 class LockscreenPreviewActivity : AppCompatActivity() {
     /** 当前全部预览选项；每次交互通过 copy 原子替换。 */
     private var configuration: LockscreenPreviewConfiguration = LockscreenPreviewConfiguration()
@@ -119,6 +122,11 @@ class LockscreenPreviewActivity : AppCompatActivity() {
             family = configuration.family,
             brightness = configuration.brightness,
         )
+        previewStage.pinHost.update(
+            state = configuration.toPinUiState(),
+            family = configuration.family,
+            brightness = configuration.brightness,
+        )
         rebuildControls()
     }
 
@@ -192,7 +200,7 @@ class LockscreenPreviewActivity : AppCompatActivity() {
                     ),
                 ),
             )
-        } else {
+        } else if (configuration.scene == LockscreenPreviewScene.PATTERN) {
             controlsContainer.addView(
                 optionRow(
                     label = "STATE",
@@ -201,6 +209,19 @@ class LockscreenPreviewActivity : AppCompatActivity() {
                             label = feedback.name,
                             selected = feedback == configuration.patternFeedback,
                             onClick = { updateConfiguration { copy(patternFeedback = feedback) } },
+                        )
+                    },
+                ),
+            )
+        } else {
+            controlsContainer.addView(
+                optionRow(
+                    label = "STATE",
+                    options = PinCredentialFeedback.entries.map { feedback ->
+                        ControlOption(
+                            label = feedback.name,
+                            selected = feedback == configuration.pinFeedback,
+                            onClick = { updateConfiguration { copy(pinFeedback = feedback) } },
                         )
                     },
                 ),
@@ -361,7 +382,10 @@ private class LockscreenPreviewStage(context: Context) : ViewGroup(context) {
     /** Showcase 与 SystemUI 共用的真实图案交互宿主。 */
     val patternHost: PatternCredentialHost = PatternCredentialHost(context, PreviewPatternListener)
 
-    /** 当前展示的宿主场景，只改变两个真实宿主的可见性。 */
+    /** Showcase 与未来 SystemUI 会话共用的真实 PIN 交互宿主。 */
+    val pinHost: PinCredentialHost = PinCredentialHost(context, PreviewPinListener)
+
+    /** 当前展示的宿主场景，只改变三个真实宿主的可见性。 */
     var scene: LockscreenPreviewScene = LockscreenPreviewScene.CLOCK
         set(value) {
             if (field == value) return
@@ -391,6 +415,7 @@ private class LockscreenPreviewStage(context: Context) : ViewGroup(context) {
         addView(backgroundView)
         addView(lockscreenHost)
         addView(patternHost)
+        addView(pinHost)
         updateHostVisibility()
     }
 
@@ -424,6 +449,7 @@ private class LockscreenPreviewStage(context: Context) : ViewGroup(context) {
         backgroundView.measure(childWidthSpec, childHeightSpec)
         lockscreenHost.measure(childWidthSpec, childHeightSpec)
         patternHost.measure(childWidthSpec, childHeightSpec)
+        pinHost.measure(childWidthSpec, childHeightSpec)
         setMeasuredDimension(availableWidth, availableHeight)
     }
 
@@ -440,18 +466,21 @@ private class LockscreenPreviewStage(context: Context) : ViewGroup(context) {
         backgroundView.layout(childLeft, childTop, childRight, childBottom)
         lockscreenHost.layout(childLeft, childTop, childRight, childBottom)
         patternHost.layout(childLeft, childTop, childRight, childBottom)
+        pinHost.layout(childLeft, childTop, childRight, childBottom)
     }
 
     /** 释放真实静态宿主持有的 Pixel Engine 运行时。 */
     fun dispose() {
         lockscreenHost.dispose()
         patternHost.dispose()
+        pinHost.dispose()
     }
 
     /** 保证任一时刻只有一个真实宿主可见并接收输入。 */
     private fun updateHostVisibility() {
         lockscreenHost.visibility = if (scene == LockscreenPreviewScene.CLOCK) View.VISIBLE else View.GONE
         patternHost.visibility = if (scene == LockscreenPreviewScene.PATTERN) View.VISIBLE else View.GONE
+        pinHost.visibility = if (scene == LockscreenPreviewScene.PIN) View.VISIBLE else View.GONE
     }
 
     private companion object {
@@ -480,6 +509,26 @@ private data object PreviewPatternListener : PatternCredentialListener {
     /** 预览监听器自身没有外部依赖，异常仅转换为稳定失败。 */
     override fun onInteractionFailure(throwable: Throwable) {
         throw IllegalStateException("pattern_preview_interaction", throwable)
+    }
+}
+
+/** 离线预览只验证 PIN 键盘绘制和按压反馈，不保存任何数字序列。 */
+private data object PreviewPinListener : PinCredentialListener {
+    /** 预览故意丢弃逐个数字输入。 */
+    override fun onDigitEntered(digit: Char) = Unit
+
+    /** 预览删除键不维护真实输入缓冲。 */
+    override fun onDeleteRequested() = Unit
+
+    /** 预览确认键不执行系统凭据校验。 */
+    override fun onConfirmRequested() = Unit
+
+    /** 离线预览不启动真实紧急呼叫流程。 */
+    override fun onEmergencyRequested() = Unit
+
+    /** 预览监听器自身没有外部依赖，异常仅转换为稳定失败。 */
+    override fun onInteractionFailure(throwable: Throwable) {
+        throw IllegalStateException("pin_preview_interaction", throwable)
     }
 }
 

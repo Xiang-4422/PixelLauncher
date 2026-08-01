@@ -3,6 +3,7 @@ package com.purride.pixelshowcase
 import com.purride.pixeldesign.ProductThemeBrightness
 import com.purride.pixeldesign.ProductThemeFamily
 import com.purride.pixellockscreen.ui.PatternCredentialFeedback
+import com.purride.pixellockscreen.ui.PinCredentialFeedback
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Test
@@ -46,8 +47,9 @@ class LockscreenPreviewModelTest {
         assertEquals(2, ProductThemeBrightness.entries.size)
         assertEquals(2, LockscreenPreviewOrientation.entries.size)
         assertEquals(4, LockscreenPreviewBackground.entries.size)
-        assertEquals(2, LockscreenPreviewScene.entries.size)
+        assertEquals(3, LockscreenPreviewScene.entries.size)
         assertEquals(4, PatternCredentialFeedback.entries.size)
+        assertEquals(4, PinCredentialFeedback.entries.size)
     }
 
     /** 图案预览反馈必须保持固定文字且不包含任何路径数据。 */
@@ -57,6 +59,18 @@ class LockscreenPreviewModelTest {
             /** 当前反馈转换出的图案 UI 状态。 */
             val state = LockscreenPreviewConfiguration(patternFeedback = feedback).toPatternUiState()
             assertEquals("DRAW PATTERN", state.promptText)
+            assertEquals(feedback, state.feedback)
+        }
+    }
+
+    /** PIN 预览反馈必须保持固定文字且只携带非敏感输入长度。 */
+    @Test
+    fun pinPreviewBuildsControllableLengthOnlyState() {
+        PinCredentialFeedback.entries.forEach { feedback ->
+            /** 当前反馈转换出的 PIN UI 状态。 */
+            val state = LockscreenPreviewConfiguration(pinFeedback = feedback).toPinUiState()
+            assertEquals("ENTER PIN", state.promptText)
+            assertEquals(4, state.inputLength)
             assertEquals(feedback, state.feedback)
         }
     }

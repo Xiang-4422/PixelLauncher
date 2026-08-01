@@ -5,6 +5,8 @@ import com.purride.pixeldesign.ProductThemeFamily
 import com.purride.pixellockscreen.ui.LockscreenUiState
 import com.purride.pixellockscreen.ui.PatternCredentialFeedback
 import com.purride.pixellockscreen.ui.PatternCredentialUiState
+import com.purride.pixellockscreen.ui.PinCredentialFeedback
+import com.purride.pixellockscreen.ui.PinCredentialUiState
 
 /** 离线预览可切换的真实锁屏宿主场景。 */
 internal enum class LockscreenPreviewScene(
@@ -16,6 +18,9 @@ internal enum class LockscreenPreviewScene(
 
     /** 可交互图案认证。 */
     PATTERN("PATTERN"),
+
+    /** 可交互 PIN 键盘认证。 */
+    PIN("PIN"),
 }
 
 /** 离线预览支持的画布方向；它只改变预览框比例，不旋转设备。 */
@@ -66,6 +71,10 @@ internal data class LockscreenPreviewConfiguration(
     val background: LockscreenPreviewBackground = LockscreenPreviewBackground.HIGH_CONTRAST,
     /** 图案场景使用的可控系统反馈。 */
     val patternFeedback: PatternCredentialFeedback = PatternCredentialFeedback.READY,
+    /** PIN 场景使用的可控系统反馈。 */
+    val pinFeedback: PinCredentialFeedback = PinCredentialFeedback.READY,
+    /** PIN 场景用于检查圆点布局的非敏感输入长度。 */
+    val pinInputLength: Int = PREVIEW_PIN_INPUT_LENGTH,
 ) {
     /** 把预览配置转换为固定时间、固定日期的锁屏展示状态。 */
     fun toUiState(): LockscreenUiState = LockscreenUiState(
@@ -86,6 +95,19 @@ internal data class LockscreenPreviewConfiguration(
             PatternCredentialFeedback.LOCKED_OUT -> "WAIT 30S"
         },
         feedback = patternFeedback,
+    )
+
+    /** 把可控反馈转换为只包含输入长度的 PIN 认证状态。 */
+    fun toPinUiState(): PinCredentialUiState = PinCredentialUiState(
+        promptText = PREVIEW_PIN_PROMPT,
+        inputLength = pinInputLength,
+        feedbackText = when (pinFeedback) {
+            PinCredentialFeedback.READY -> ""
+            PinCredentialFeedback.CHECKING -> "CHECKING"
+            PinCredentialFeedback.ERROR -> "TRY AGAIN"
+            PinCredentialFeedback.LOCKED_OUT -> "WAIT 30S"
+        },
+        feedback = pinFeedback,
     )
 }
 
@@ -121,3 +143,9 @@ private const val PREVIEW_UNLOCK_HINT = "SWIPE UP TO UNLOCK"
 
 /** 图案预览使用的固定主提示。 */
 private const val PREVIEW_PATTERN_PROMPT = "DRAW PATTERN"
+
+/** PIN 预览使用的固定主提示。 */
+private const val PREVIEW_PIN_PROMPT = "ENTER PIN"
+
+/** PIN 预览默认展示的非敏感输入圆点数量。 */
+private const val PREVIEW_PIN_INPUT_LENGTH = 4
