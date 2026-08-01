@@ -10,6 +10,8 @@ import com.purride.pixellockscreen.ui.PinCredentialUiState
  * 协调器只在 [CredentialInputSession] 的字符数组中保存尚未提交的数字，UI 状态只接收长度。
  */
 internal class PinCredentialCoordinator(
+    /** Android 设置启用自动确认时要求的精确 PIN 长度。 */
+    private val autoConfirmLength: Int? = null,
     /** 每次有效键盘动作通知原生 Keyguard 用户活动的出口。 */
     private val onUserInput: () -> Unit,
     /** 接收一次独占 PIN lease 并立即交给系统校验桥的出口。 */
@@ -27,10 +29,21 @@ internal class PinCredentialCoordinator(
     /** 协调器是否已经永久关闭。 */
     private var closed: Boolean = false
 
+    /** 当前是否允许修改或提交 PIN 缓冲。 */
+    private var inputEnabled: Boolean = false
+
+    /** 拒绝系统不会接受的自动确认长度。 */
+    init {
+        require(autoConfirmLength == null || autoConfirmLength in MINIMUM_PIN_LENGTH..MAXIMUM_PIN_LENGTH) {
+            "pin_auto_confirm_length"
+        }
+    }
+
     /** 清空输入并显示初始可输入状态。 */
     fun showReady() {
         ensureOpen()
         inputSession.clear()
+        inputEnabled = true
         emitState(PinCredentialFeedback.READY, "")
     }
 
@@ -38,6 +51,7 @@ internal class PinCredentialCoordinator(
     fun showRejected() {
         ensureOpen()
         inputSession.clear()
+        inputEnabled = true
         emitState(PinCredentialFeedback.ERROR, REJECTED_TEXT)
     }
 
@@ -46,6 +60,7 @@ internal class PinCredentialCoordinator(
         ensureOpen()
         require(remainingSeconds > 0) { "pin_lockout_seconds" }
         inputSession.clear()
+        inputEnabled = false
         emitState(PinCredentialFeedback.LOCKED_OUT, "WAIT ${remainingSeconds}S")
     }
 
@@ -53,17 +68,27 @@ internal class PinCredentialCoordinator(
     override fun onDigitEntered(digit: Char) {
         ensureOpen()
         require(digit in '0'..'9') { "pin_digit" }
+        if (!inputEnabled) {
+            return
+        }
         if (!inputSession.appendCharacter(digit)) {
             emitState(PinCredentialFeedback.ERROR, LIMIT_TEXT)
             return
         }
         onUserInput()
-        emitState(PinCredentialFeedback.READY, "")
+        if (inputSession.inputLength == autoConfirmLength) {
+            submitCredential()
+        } else {
+            emitState(PinCredentialFeedback.READY, "")
+        }
     }
 
     /** 删除最后一个数字并立即覆写原数组位置。 */
     override fun onDeleteRequested() {
         ensureOpen()
+        if (!inputEnabled) {
+            return
+        }
         if (inputSession.deleteLastCharacter()) {
             onUserInput()
         }
@@ -73,12 +98,21 @@ internal class PinCredentialCoordinator(
     /** 校验最短长度并把合格 PIN 的唯一所有权移交给系统桥。 */
     override fun onConfirmRequested() {
         ensureOpen()
+        if (!inputEnabled) {
+            return
+        }
         onUserInput()
         if (inputSession.inputLength < MINIMUM_PIN_LENGTH) {
             inputSession.clear()
             emitState(PinCredentialFeedback.ERROR, MINIMUM_PIN_TEXT)
             return
         }
+        submitCredential()
+    }
+
+    /** 禁止后续键盘输入，并把当前合格 PIN 的唯一所有权移交给系统桥。 */
+    private fun submitCredential() {
+        inputEnabled = false
         emitState(PinCredentialFeedback.CHECKING, CHECKING_TEXT)
         // 本次系统校验独占的可清零字符 lease。
         val lease = inputSession.submit() as? EphemeralCredentialLease.Characters
@@ -131,6 +165,9 @@ internal class PinCredentialCoordinator(
     private companion object {
         /** 与 Android 原生 PIN 最短校验边界一致的数字数量。 */
         const val MINIMUM_PIN_LENGTH: Int = 4
+
+        /** 与可清零字符缓冲一致的防御性 PIN 长度上限。 */
+        const val MAXIMUM_PIN_LENGTH: Int = 64
 
         /** PIN 页面主提示。 */
         const val PROMPT_TEXT: String = "ENTER PIN"

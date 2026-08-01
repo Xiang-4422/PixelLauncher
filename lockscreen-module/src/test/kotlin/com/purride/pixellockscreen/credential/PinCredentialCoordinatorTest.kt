@@ -58,6 +58,54 @@ class PinCredentialCoordinatorTest {
         lease.close()
     }
 
+    /** Android 启用自动确认时应在精确长度到达后直接提交一次。 */
+    @Test
+    fun autoConfirmSubmitsAtConfiguredLength() {
+        /** 使用六位自动确认设置的测试夹具。 */
+        val fixture = Fixture(autoConfirmLength = 6)
+
+        listOf('1', '3', '5', '7', '9', '0').forEach(fixture.coordinator::onDigitEntered)
+        fixture.coordinator.onDigitEntered('8')
+        fixture.coordinator.onConfirmRequested()
+
+        assertEquals(1, fixture.submittedCredentials.size)
+        assertEquals(PinCredentialFeedback.CHECKING, fixture.states.last().feedback)
+        /** 自动确认提交的唯一 PIN lease。 */
+        val lease = fixture.submittedCredentials.single()
+        lease.withCharacters { characters ->
+            assertEquals(
+                listOf('1', '3', '5', '7', '9', '0'),
+                List(characters.length) { index -> characters[index] },
+            )
+        }
+        lease.close()
+    }
+
+    /** 系统校验或限流期间的迟到键盘事件必须被忽略。 */
+    @Test
+    fun disabledStateIgnoresLateKeyboardEvents() {
+        /** 记录协调器输出的测试夹具。 */
+        val fixture = Fixture()
+        fixture.coordinator.showLockedOut(30)
+        /** 限流前最后一次稳定状态数量。 */
+        val stateCount = fixture.states.size
+
+        fixture.coordinator.onDigitEntered('1')
+        fixture.coordinator.onDeleteRequested()
+        fixture.coordinator.onConfirmRequested()
+
+        assertEquals(stateCount, fixture.states.size)
+        assertEquals(0, fixture.userInputCount)
+        assertEquals(0, fixture.submittedCredentials.size)
+    }
+
+    /** 自动确认长度必须位于系统和安全缓冲共同支持的范围。 */
+    @Test
+    fun invalidAutoConfirmLengthIsRejected() {
+        assertThrows(IllegalArgumentException::class.java) { Fixture(autoConfirmLength = 3) }
+        assertThrows(IllegalArgumentException::class.java) { Fixture(autoConfirmLength = 65) }
+    }
+
     /** 非数字输入必须在进入安全缓冲前被拒绝。 */
     @Test
     fun nonDigitIsRejected() {
@@ -84,7 +132,10 @@ class PinCredentialCoordinatorTest {
     }
 
     /** 为每个测试记录非敏感状态与临时 lease。 */
-    private class Fixture {
+    private class Fixture(
+        /** 当前测试模拟的 Android 自动确认长度。 */
+        autoConfirmLength: Int? = null,
+    ) {
         /** 原生用户活动通知次数。 */
         var userInputCount: Int = 0
 
@@ -96,11 +147,18 @@ class PinCredentialCoordinatorTest {
 
         /** 当前测试使用的 PIN 协调器。 */
         val coordinator: PinCredentialCoordinator = PinCredentialCoordinator(
+            autoConfirmLength = autoConfirmLength,
             onUserInput = { userInputCount += 1 },
             onCredentialReady = { credential -> submittedCredentials += credential },
             onEmergencyAction = {},
             onStateChanged = states::add,
             onInteractionFailed = { throwable -> throw throwable },
         )
+
+        /** 模拟运行时会话完成绑定后的首次可输入状态。 */
+        init {
+            coordinator.showReady()
+            states.clear()
+        }
     }
 }
