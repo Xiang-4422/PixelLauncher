@@ -70,7 +70,7 @@ class SettingsMenuModelTest {
             SettingsMenuModel.nextThemeFamily(LauncherThemeFamily.MIDNIGHT, 1),
         )
         assertEquals(
-            LauncherThemeFamily.PAPER,
+            LauncherThemeFamily.ARCADE,
             SettingsMenuModel.nextThemeFamily(LauncherThemeFamily.MIDNIGHT, -1),
         )
     }

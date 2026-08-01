@@ -40,11 +40,20 @@ class LauncherThemeModeTest {
         )
     }
 
-    /** 主题家族必须保持 Showcase 的稳定顺序和名称。 */
+    /** 主题家族必须保持机器复古在前、高活力配色在后的稳定顺序。 */
     @Test
     fun familiesMatchShowcaseMachineMoods() {
         assertEquals(
-            listOf("MIDNIGHT", "CRT", "AMBER", "GAMEBOY", "PAPER"),
+            listOf(
+                "MIDNIGHT",
+                "CRT",
+                "AMBER",
+                "GAMEBOY",
+                "PAPER",
+                "BUBBLEGUM",
+                "CITRUS",
+                "ARCADE",
+            ),
             LauncherThemeFamily.entries.map { family -> family.displayLabel },
         )
     }

@@ -12,6 +12,9 @@ enum class LauncherThemeFamily(
     AMBER("amber", "AMBER"),
     GAMEBOY("gameboy", "GAMEBOY"),
     PAPER("paper", "PAPER"),
+    BUBBLEGUM("bubblegum", "BUBBLEGUM"),
+    CITRUS("citrus", "CITRUS"),
+    ARCADE("arcade", "ARCADE"),
     ;
 
 }

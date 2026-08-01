@@ -10,9 +10,9 @@ private const val MINIMUM_TEXT_CONTRAST = 4.5
 /** 在基础色与主色之间寻找可读颜色时使用的插值精度。 */
 private const val ACCESSIBLE_COLOR_SEARCH_STEPS = 100
 
-/** Launcher 内置的 Showcase 风格主题目录。 */
+/** Launcher 内置主题目录，统一管理机器复古与高活力配色家族。 */
 internal object LauncherThemeCatalog {
-    /** 与 Showcase 六色主题语言一致的单个原始色板。 */
+    /** 使用六个核心语义色描述的单个原始色板。 */
     private data class Palette(
         /** 整机背景色。 */
         val background: PixelColor,
@@ -128,6 +128,66 @@ internal object LauncherThemeCatalog {
         alert = rgb(0xE05A4F),
     )
 
+    /** Bubblegum 日间变体，以浅粉背景承托葡萄紫、玫红和电光蓝。 */
+    private val bubblegumLight = Palette(
+        background = rgb(0xFFF0F7),
+        title = rgb(0x4B0B7A),
+        dim = rgb(0xB00068),
+        faint = rgb(0x9A7087),
+        border = rgb(0x005FE5),
+        alert = rgb(0xC23B00),
+    )
+
+    /** Bubblegum 夜间变体，以深葡萄背景突出亮粉、冰蓝和柠檬黄。 */
+    private val bubblegumDark = Palette(
+        background = rgb(0x170022),
+        title = rgb(0xFF65C3),
+        dim = rgb(0x57E8FF),
+        faint = rgb(0x8A4F9A),
+        border = rgb(0xFFD23F),
+        alert = rgb(0xFF7A3D),
+    )
+
+    /** Citrus 日间变体，以奶油黄、紫色和焦橙形成高能量冷暖对比。 */
+    private val citrusLight = Palette(
+        background = rgb(0xFFF7C2),
+        title = rgb(0x2A165F),
+        dim = rgb(0x7A3E00),
+        faint = rgb(0xA18A3B),
+        border = rgb(0x6A2FD1),
+        alert = rgb(0xC43A00),
+    )
+
+    /** Citrus 夜间变体，以茄紫背景搭配青柠、橙色和薄荷绿。 */
+    private val citrusDark = Palette(
+        background = rgb(0x160D2B),
+        title = rgb(0xD7FF45),
+        dim = rgb(0xFF9F1C),
+        faint = rgb(0x73604E),
+        border = rgb(0x34D1BF),
+        alert = rgb(0xFF5A5F),
+    )
+
+    /** Arcade 日间变体，以冰蓝背景组织深蓝、洋红和街机蓝。 */
+    private val arcadeLight = Palette(
+        background = rgb(0xE9FBFF),
+        title = rgb(0x061B6B),
+        dim = rgb(0xA0006D),
+        faint = rgb(0x6E8490),
+        border = rgb(0x0057D9),
+        alert = rgb(0xD12D00),
+    )
+
+    /** Arcade 夜间变体，以墨蓝背景突出青色、粉色和酸性绿。 */
+    private val arcadeDark = Palette(
+        background = rgb(0x07051F),
+        title = rgb(0x00F0FF),
+        dim = rgb(0xFF4FD8),
+        faint = rgb(0x604D80),
+        border = rgb(0x7CFF4F),
+        alert = rgb(0xFFB000),
+    )
+
     /** 主题家族与亮度到完整运行时主题的映射。 */
     val byVariant: Map<LauncherThemeVariant, LauncherTheme> = buildMap {
         putVariant(LauncherThemeFamily.MIDNIGHT, LauncherThemeBrightness.LIGHT, midnightLight)
@@ -140,6 +200,12 @@ internal object LauncherThemeCatalog {
         putVariant(LauncherThemeFamily.GAMEBOY, LauncherThemeBrightness.DARK, gameboyDark)
         putVariant(LauncherThemeFamily.PAPER, LauncherThemeBrightness.LIGHT, paperLight)
         putVariant(LauncherThemeFamily.PAPER, LauncherThemeBrightness.DARK, paperDark)
+        putVariant(LauncherThemeFamily.BUBBLEGUM, LauncherThemeBrightness.LIGHT, bubblegumLight)
+        putVariant(LauncherThemeFamily.BUBBLEGUM, LauncherThemeBrightness.DARK, bubblegumDark)
+        putVariant(LauncherThemeFamily.CITRUS, LauncherThemeBrightness.LIGHT, citrusLight)
+        putVariant(LauncherThemeFamily.CITRUS, LauncherThemeBrightness.DARK, citrusDark)
+        putVariant(LauncherThemeFamily.ARCADE, LauncherThemeBrightness.LIGHT, arcadeLight)
+        putVariant(LauncherThemeFamily.ARCADE, LauncherThemeBrightness.DARK, arcadeDark)
     }
 
     /** 把一个 Showcase 风格色板转换并加入完整主题变体映射。 */

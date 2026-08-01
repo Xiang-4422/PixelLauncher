@@ -8,7 +8,7 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 锁定全部 Showcase 风格主题家族的日间与夜间变体。 */
+/** 锁定全部内置主题家族的日间与夜间变体及可读性。 */
 class LauncherThemeCatalogTest {
     /** 家族与实际亮度的笛卡尔积必须全部可用且元数据匹配。 */
     @Test
@@ -84,6 +84,71 @@ class LauncherThemeCatalogTest {
             faint = 0x989288,
             border = 0x7A756C,
             alert = 0xB22A20,
+        )
+    }
+
+    /** 高活力主题必须保留各自经过评审的冷暖核心色，不被可读性派生洗成同一色板。 */
+    @Test
+    fun dopamineVariantsPreserveReviewedCoreColors() {
+        assertCoreColors(
+            family = LauncherThemeFamily.BUBBLEGUM,
+            brightness = LauncherThemeBrightness.LIGHT,
+            background = 0xFFF0F7,
+            title = 0x4B0B7A,
+            dim = 0xB00068,
+            faint = 0x9A7087,
+            border = 0x005FE5,
+            alert = 0xC23B00,
+        )
+        assertCoreColors(
+            family = LauncherThemeFamily.BUBBLEGUM,
+            brightness = LauncherThemeBrightness.DARK,
+            background = 0x170022,
+            title = 0xFF65C3,
+            dim = 0x57E8FF,
+            faint = 0x8A4F9A,
+            border = 0xFFD23F,
+            alert = 0xFF7A3D,
+        )
+        assertCoreColors(
+            family = LauncherThemeFamily.CITRUS,
+            brightness = LauncherThemeBrightness.LIGHT,
+            background = 0xFFF7C2,
+            title = 0x2A165F,
+            dim = 0x7A3E00,
+            faint = 0xA18A3B,
+            border = 0x6A2FD1,
+            alert = 0xC43A00,
+        )
+        assertCoreColors(
+            family = LauncherThemeFamily.CITRUS,
+            brightness = LauncherThemeBrightness.DARK,
+            background = 0x160D2B,
+            title = 0xD7FF45,
+            dim = 0xFF9F1C,
+            faint = 0x73604E,
+            border = 0x34D1BF,
+            alert = 0xFF5A5F,
+        )
+        assertCoreColors(
+            family = LauncherThemeFamily.ARCADE,
+            brightness = LauncherThemeBrightness.LIGHT,
+            background = 0xE9FBFF,
+            title = 0x061B6B,
+            dim = 0xA0006D,
+            faint = 0x6E8490,
+            border = 0x0057D9,
+            alert = 0xD12D00,
+        )
+        assertCoreColors(
+            family = LauncherThemeFamily.ARCADE,
+            brightness = LauncherThemeBrightness.DARK,
+            background = 0x07051F,
+            title = 0x00F0FF,
+            dim = 0xFF4FD8,
+            faint = 0x604D80,
+            border = 0x7CFF4F,
+            alert = 0xFFB000,
         )
     }
 
