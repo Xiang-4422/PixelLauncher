@@ -29,6 +29,15 @@ internal object ProductAppearanceExchange {
     /** 设备保护区中的主题模式键。 */
     private const val KEY_THEME_MODE: String = "theme_mode"
 
+    /** 设备保护区中的字体家族键。 */
+    private const val KEY_FONT_FAMILY: String = "font_family"
+
+    /** 设备保护区中的字体宽度模式键。 */
+    private const val KEY_FONT_WIDTH_MODE: String = "font_width_mode"
+
+    /** 设备保护区中的字体字号键。 */
+    private const val KEY_FONT_SIZE_PX: String = "font_size_px"
+
     /** 返回当前安装变体对应的外观 URI。 */
     fun contentUri(context: Context): Uri = Uri.parse(
         ProductAppearanceContract.contentUri("${context.packageName}.appearance"),
@@ -46,6 +55,9 @@ internal object ProductAppearanceExchange {
             .putBoolean(KEY_PIXEL_GAP_ENABLED, appearance.pixelGapEnabled)
             .putString(KEY_THEME_FAMILY, appearance.themeFamily.idPrefix)
             .putString(KEY_THEME_MODE, appearance.themeMode.name)
+            .putString(KEY_FONT_FAMILY, appearance.fontSelection.family.id)
+            .putString(KEY_FONT_WIDTH_MODE, appearance.fontSelection.widthMode.name)
+            .putInt(KEY_FONT_SIZE_PX, appearance.fontSelection.size.px)
             .apply()
         context.contentResolver.notifyChange(contentUri(context), null)
     }
@@ -75,6 +87,11 @@ internal object ProductAppearanceExchange {
             themeMode = ProductAppearanceContract.parseThemeMode(
                 preferences.getString(KEY_THEME_MODE, null),
             ),
+            fontSelection = ProductAppearanceContract.parseFontSelection(
+                familyId = preferences.getString(KEY_FONT_FAMILY, null),
+                widthModeName = preferences.getString(KEY_FONT_WIDTH_MODE, null),
+                sizePx = preferences.getInt(KEY_FONT_SIZE_PX, -1),
+            ),
         )
     }
 
@@ -85,5 +102,6 @@ internal object ProductAppearanceExchange {
         pixelGapEnabled = settings.pixelGapEnabled,
         themeFamily = settings.themeFamily,
         themeMode = settings.themeMode,
+        fontSelection = settings.fontSelection,
     )
 }

@@ -110,6 +110,15 @@ internal class LauncherAppearanceAdapter(
                     themeMode = cursor.getString(
                         cursor.getColumnIndexOrThrow(ProductAppearanceContract.columnThemeMode),
                     ),
+                    fontFamily = cursor.getString(
+                        cursor.getColumnIndexOrThrow(ProductAppearanceContract.columnFontFamily),
+                    ),
+                    fontWidthMode = cursor.getString(
+                        cursor.getColumnIndexOrThrow(ProductAppearanceContract.columnFontWidthMode),
+                    ),
+                    fontSizePx = cursor.getInt(
+                        cursor.getColumnIndexOrThrow(ProductAppearanceContract.columnFontSizePx),
+                    ),
                 ),
             )
         }
@@ -124,6 +133,9 @@ internal class LauncherAppearanceAdapter(
             ProductAppearanceContract.columnPixelGapEnabled,
             ProductAppearanceContract.columnThemeFamily,
             ProductAppearanceContract.columnThemeMode,
+            ProductAppearanceContract.columnFontFamily,
+            ProductAppearanceContract.columnFontWidthMode,
+            ProductAppearanceContract.columnFontSizePx,
         )
     }
 }
@@ -142,6 +154,12 @@ internal data class ProductAppearanceRecord(
     val themeFamily: String?,
     /** 外部主题模式名称。 */
     val themeMode: String?,
+    /** 外部字体家族稳定 ID。 */
+    val fontFamily: String?,
+    /** 外部字体宽度模式名称。 */
+    val fontWidthMode: String?,
+    /** 外部字体原生字号。 */
+    val fontSizePx: Int?,
 )
 
 /** 把 Provider 行解码为受共享目录约束的安全外观；不兼容协议整体拒绝。 */
@@ -157,5 +175,10 @@ internal fun decodeProductAppearanceRecord(record: ProductAppearanceRecord): Pro
         },
         themeFamily = ProductAppearanceContract.parseThemeFamily(record.themeFamily),
         themeMode = ProductAppearanceContract.parseThemeMode(record.themeMode),
+        fontSelection = ProductAppearanceContract.parseFontSelection(
+            record.fontFamily,
+            record.fontWidthMode,
+            record.fontSizePx,
+        ),
     )
 }

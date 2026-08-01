@@ -5,6 +5,10 @@ import com.purride.pixeldesign.ProductAppearance
 import com.purride.pixeldesign.ProductAppearanceContract
 import com.purride.pixeldesign.ProductThemeFamily
 import com.purride.pixeldesign.ProductThemeMode
+import com.purride.pixeldesign.font.ProductFontFamily
+import com.purride.pixeldesign.font.ProductFontSelection
+import com.purride.pixeldesign.font.ProductFontSize
+import com.purride.pixeldesign.font.ProductFontWidthMode
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -22,6 +26,11 @@ class ProductAppearanceProviderContractTest {
             pixelGapEnabled = true,
             themeFamily = ProductThemeFamily.ARCADE,
             themeMode = ProductThemeMode.AUTO,
+            fontSelection = ProductFontSelection(
+                ProductFontFamily.ARK,
+                ProductFontWidthMode.MONOSPACED,
+                ProductFontSize.PX_16,
+            ),
         )
 
         assertArrayEquals(
@@ -32,6 +41,9 @@ class ProductAppearanceProviderContractTest {
                 1,
                 "arcade",
                 "AUTO",
+                "ark",
+                "MONOSPACED",
+                16,
             ),
             ProductAppearanceProvider.appearanceRow(appearance),
         )

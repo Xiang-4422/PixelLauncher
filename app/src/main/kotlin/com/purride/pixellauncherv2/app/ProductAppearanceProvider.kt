@@ -80,6 +80,9 @@ class ProductAppearanceProvider : ContentProvider() {
             ProductAppearanceContract.columnPixelGapEnabled,
             ProductAppearanceContract.columnThemeFamily,
             ProductAppearanceContract.columnThemeMode,
+            ProductAppearanceContract.columnFontFamily,
+            ProductAppearanceContract.columnFontWidthMode,
+            ProductAppearanceContract.columnFontSizePx,
         )
 
         /** 把共享外观快照编码成固定 Cursor 行。 */
@@ -90,6 +93,9 @@ class ProductAppearanceProvider : ContentProvider() {
             if (appearance.pixelGapEnabled) 1 else 0,
             appearance.themeFamily.idPrefix,
             appearance.themeMode.name,
+            appearance.fontSelection.family.id,
+            appearance.fontSelection.widthMode.name,
+            appearance.fontSelection.size.px,
         )
     }
 }

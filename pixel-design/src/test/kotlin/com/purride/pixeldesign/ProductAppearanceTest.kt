@@ -1,6 +1,10 @@
 package com.purride.pixeldesign
 
 import com.purride.pixelcore.PixelShape
+import com.purride.pixeldesign.font.ProductFontCatalog
+import com.purride.pixeldesign.font.ProductFontFamily
+import com.purride.pixeldesign.font.ProductFontSize
+import com.purride.pixeldesign.font.ProductFontWidthMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -18,6 +22,7 @@ class ProductAppearanceTest {
         assertEquals(false, appearance.pixelGapEnabled)
         assertEquals(ProductThemeFamily.MIDNIGHT, appearance.themeFamily)
         assertEquals(ProductThemeMode.NIGHT, appearance.themeMode)
+        assertEquals(ProductFontCatalog.defaultUiFontSelection, appearance.fontSelection)
     }
 
     /** 尺寸目录必须保持唯一、有序且覆盖 Launcher 设置页现有选项。 */
@@ -38,6 +43,26 @@ class ProductAppearanceTest {
         assertEquals(PixelShape.SQUARE, ProductPixelCatalog.parsePixelShape("TRIANGLE"))
         assertEquals(ProductThemeFamily.MIDNIGHT, ProductAppearanceContract.parseThemeFamily("missing"))
         assertEquals(ProductThemeMode.NIGHT, ProductAppearanceContract.parseThemeMode("missing"))
+        assertEquals(
+            ProductFontCatalog.defaultUiFontSelection,
+            ProductAppearanceContract.parseFontSelection("missing", "missing", -1),
+        )
+        assertEquals(
+            ProductFontCatalog.defaultUiFontSelection,
+            ProductAppearanceContract.parseFontSelection("ark", "missing", 16),
+        )
+        assertEquals(
+            ProductFontFamily.ARK,
+            ProductAppearanceContract.parseFontSelection("ark", "MONOSPACED", 16).family,
+        )
+        assertEquals(
+            ProductFontWidthMode.MONOSPACED,
+            ProductAppearanceContract.parseFontSelection("ark", "MONOSPACED", 16).widthMode,
+        )
+        assertEquals(
+            ProductFontSize.PX_16,
+            ProductAppearanceContract.parseFontSelection("ark", "MONOSPACED", 16).size,
+        )
         assertEquals(
             "content://${ProductAppearanceContract.releaseAuthority}/current",
             ProductAppearanceContract.contentUri(ProductAppearanceContract.releaseAuthority),

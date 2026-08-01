@@ -1,6 +1,10 @@
 package com.purride.pixeldesign
 
 import com.purride.pixelcore.PixelShape
+import com.purride.pixeldesign.font.ProductFontCatalog
+import com.purride.pixeldesign.font.ProductFontSelection
+import com.purride.pixeldesign.font.ProductFontSize
+import com.purride.pixeldesign.font.ProductFontWidthMode
 
 /** Launcher 与锁屏跨进程共享的非敏感产品外观快照。 */
 public data class ProductAppearance(
@@ -14,10 +18,15 @@ public data class ProductAppearance(
     public val themeFamily: ProductThemeFamily = ProductThemeFamily.MIDNIGHT,
     /** 当前主题日夜选择；AUTO 由各宿主按本进程系统配置解析。 */
     public val themeMode: ProductThemeMode = ProductThemeMode.NIGHT,
+    /** Launcher 与锁屏共同使用的精确字体家族、宽度模式和原生字号。 */
+    public val fontSelection: ProductFontSelection = ProductFontCatalog.defaultUiFontSelection,
 ) {
     init {
         require(dotSizePx in ProductPixelCatalog.supportedDotSizePxOptions) {
             "dotSizePx 必须属于共享产品像素尺寸目录"
+        }
+        require(ProductFontCatalog.supports(fontSelection)) {
+            "fontSelection 必须属于共享产品字体目录"
         }
     }
 }
@@ -48,7 +57,7 @@ public object ProductPixelCatalog {
 /** Launcher 外观 Provider 与 SystemUI 读取端共享的稳定跨进程协议。 */
 public object ProductAppearanceContract {
     /** 当前协议版本；不兼容字段变化时必须递增。 */
-    public const val schemaVersion: Int = 1
+    public const val schemaVersion: Int = 2
 
     /** 正式 Launcher 的外观 Provider authority。 */
     public const val releaseAuthority: String = "com.purride.pixellauncherv2.appearance"
@@ -77,6 +86,15 @@ public object ProductAppearanceContract {
     /** 主题模式列。 */
     public const val columnThemeMode: String = "theme_mode"
 
+    /** 字体家族稳定 ID 列。 */
+    public const val columnFontFamily: String = "font_family"
+
+    /** 字体宽度模式列。 */
+    public const val columnFontWidthMode: String = "font_width_mode"
+
+    /** 字体原生字号列。 */
+    public const val columnFontSizePx: String = "font_size_px"
+
     /** 返回给定 authority 的完整只读 URI 字符串。 */
     public fun contentUri(authority: String): String = "content://$authority/$appearancePath"
 
@@ -89,4 +107,28 @@ public object ProductAppearanceContract {
     public fun parseThemeMode(value: String?): ProductThemeMode =
         ProductThemeMode.entries.firstOrNull { mode -> mode.name == value }
             ?: ProductThemeMode.NIGHT
+
+    /** 从跨进程字段解析完整字体选择，任一非法组合都回退共享目录默认值。 */
+    public fun parseFontSelection(
+        familyId: String?,
+        widthModeName: String?,
+        sizePx: Int?,
+    ): ProductFontSelection {
+        /** 任一字段无效时使用的原子默认选择。 */
+        val fallback = ProductFontCatalog.defaultUiFontSelection
+        /** 共享目录中匹配稳定 ID 的字体家族。 */
+        val family = ProductFontCatalog.fontFamilyOptions()
+            .firstOrNull { candidate -> candidate.id == familyId }
+            ?: return fallback
+        /** 匹配协议名称的字体宽度模式。 */
+        val widthMode = ProductFontWidthMode.entries
+            .firstOrNull { candidate -> candidate.name == widthModeName }
+            ?: return fallback
+        /** 外部正整数字号。 */
+        val size = sizePx?.takeIf { value -> value > 0 }?.let(::ProductFontSize)
+            ?: return fallback
+        /** 只接受共享目录明确声明的完整组合。 */
+        val selection = ProductFontSelection(family, widthMode, size)
+        return selection.takeIf(ProductFontCatalog::supports) ?: fallback
+    }
 }
