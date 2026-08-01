@@ -3,9 +3,12 @@ package com.purride.pixellockscreen
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
-import com.purride.pixeldesign.ProductThemeFamily
+import com.purride.pixeldesign.ProductAppearance
+import com.purride.pixeldesign.ProductThemeBrightness
 import com.purride.pixellockscreen.ui.LockscreenRootHost
 import com.purride.pixellockscreen.ui.LockscreenContentListener
+import com.purride.pixellockscreen.ui.LockscreenUiState
+import com.purride.pixellockscreen.ui.resolveLockscreenAppearance
 
 /**
  * 一次 SystemUI 进程生命周期内的普通像素 Keyguard 挂载与回退会话。
@@ -16,6 +19,8 @@ import com.purride.pixellockscreen.ui.LockscreenContentListener
 internal class PixelKeyguardSession(
     /** 已通过 Titan 2 签名探测的 SystemUI 视图绑定。 */
     private val binding: Titan2SystemUiBinding,
+    /** 每次渲染时提供 Launcher 最新共享外观。 */
+    private val appearanceProvider: () -> ProductAppearance,
     /** 会话完全释放后的上层清理回调。 */
     private val onDisposed: (PixelKeyguardSession) -> Unit,
     /** 只包含固定状态码的运行诊断回调，不得传递用户数据。 */
@@ -76,11 +81,24 @@ internal class PixelKeyguardSession(
     /** 系统广播驱动的时间、电量与明暗状态适配器。 */
     private val stateAdapter = AndroidKeyguardStateAdapter(binding.keyguardRoot.context) { state, brightness ->
         runCatching {
-            host.update(state, ProductThemeFamily.MIDNIGHT, brightness)
+            lastRenderedState = state
+            lastSystemBrightness = brightness
+            host.update(
+                state,
+                appearanceProvider().resolveLockscreenAppearance(
+                    systemInDarkMode = brightness == ProductThemeBrightness.DARK,
+                ),
+            )
         }.onFailure {
             dispose()
         }
     }
+
+    /** 最近一次普通锁屏状态，用于 Launcher 设置变化后立即重绘。 */
+    private var lastRenderedState: LockscreenUiState? = null
+
+    /** 最近一次 SystemUI 实际亮度，用于正确解析共享 AUTO 模式。 */
+    private var lastSystemBrightness: ProductThemeBrightness = ProductThemeBrightness.LIGHT
 
     /** 宿主是否已加入 SystemUI 视图树。 */
     private var started: Boolean = false
@@ -102,6 +120,21 @@ internal class PixelKeyguardSession(
 
     /** 判断现有会话是否仍绑定同一 Keyguard 根视图。 */
     fun isBoundTo(keyguardRoot: ViewGroup): Boolean = !disposed && binding.keyguardRoot === keyguardRoot
+
+    /** Launcher 外观变化时使用最近状态立即重绘，不等待下一次系统广播。 */
+    fun refreshAppearance() {
+        if (disposed) return
+        /** 最近一次已格式化的锁屏状态。 */
+        val state = lastRenderedState ?: return
+        runCatching {
+            host.update(
+                state,
+                appearanceProvider().resolveLockscreenAppearance(
+                    systemInDarkMode = lastSystemBrightness == ProductThemeBrightness.DARK,
+                ),
+            )
+        }.onFailure { dispose() }
+    }
 
     /** 在完整像素凭据页展示期间暂停普通时钟页，但继续隐藏普通原生锁屏内容。 */
     fun setCredentialTakeoverActive(active: Boolean) {

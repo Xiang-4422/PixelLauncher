@@ -57,6 +57,8 @@ internal data class LockscreenSceneRequest(
     val brightness: ProductThemeBrightness,
     /** 可选的原生通知和媒体操作转发器。 */
     val contentListener: LockscreenContentListener? = null,
+    /** 当前真实像素配置解析出的逻辑宽度。 */
+    val logicalWidth: Int = LOCKSCREEN_LOGICAL_WIDTH,
 )
 
 /** 判断下一帧是否包含需要重新提交给像素引擎的实际变化。 */
@@ -69,8 +71,12 @@ internal fun shouldSubmitLockscreenRequest(
 internal fun buildLockscreenScene(request: LockscreenSceneRequest): Widget {
     /** 当前请求解析出的共享产品色板。 */
     val palette = ProductThemeCatalog.resolve(request.family, request.brightness)
-    /** 方屏使用四倍像素大时钟。 */
-    val timeScale = 4
+    /** 小点尺寸保留四倍大时钟，大点尺寸自动降级以避免左右裁切。 */
+    val timeScale = when {
+        request.logicalWidth >= 132 -> 4
+        request.logicalWidth >= 100 -> 3
+        else -> 2
+    }
     /** 方屏日期保持单倍字体，避免完整日期裁切。 */
     val dateScale = 1
     /** 交互锁屏或 AOD 对应的完整场景内容。 */

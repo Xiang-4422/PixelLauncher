@@ -21,14 +21,16 @@ internal data class PasswordCredentialSceneRequest(
     val brightness: ProductThemeBrightness,
     /** 当前手指按下的公开动作。 */
     val pressedAction: PasswordCredentialAction?,
+    /** 当前真实逻辑网格对应的交互布局。 */
+    val layout: PasswordCredentialLayout = passwordCredentialLayout(),
 )
 
 /** 构建密码认证的唯一可见 Widget 树。 */
 internal fun buildPasswordCredentialScene(request: PasswordCredentialSceneRequest): Widget {
     /** 当前请求解析出的共享产品色板。 */
     val palette = ProductThemeCatalog.resolve(request.family, request.brightness)
-    /** Titan 2 方屏的固定逻辑布局。 */
-    val layout = passwordCredentialLayout()
+    /** 与宿主触摸映射完全相同的动态逻辑布局。 */
+    val layout = request.layout
     /** 系统反馈使用的状态颜色。 */
     val feedbackColor = when (request.state.feedback) {
         PasswordCredentialFeedback.ERROR,

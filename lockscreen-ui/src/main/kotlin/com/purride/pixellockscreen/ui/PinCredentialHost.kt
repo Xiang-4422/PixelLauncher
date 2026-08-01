@@ -6,8 +6,7 @@ import android.graphics.Rect
 import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
-import com.purride.pixeldesign.ProductThemeBrightness
-import com.purride.pixeldesign.ProductThemeFamily
+import com.purride.pixeldesign.ProductThemeCatalog
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelGridGeometryResolver
 import com.purride.pixelcore.ScreenProfile
@@ -36,8 +35,11 @@ public class PinCredentialHost(
     /** 独立于输入禁用状态的透明紧急操作语义节点。 */
     private val emergencyAccessibilityView: View = View(context)
 
-    /** Titan 2 方屏使用的固定逻辑布局。 */
-    private val currentLayout: PinCredentialLayout = pinCredentialLayout()
+    /** 当前点大小和宿主尺寸解析出的逻辑布局。 */
+    private var currentLayout: PinCredentialLayout = pinCredentialLayout()
+
+    /** 最近一次外部提交的完整产品外观。 */
+    private var currentAppearance: LockscreenAppearance? = null
 
     /** 最近一次非敏感渲染请求。 */
     private var lastRequest: PinCredentialSceneRequest? = null
@@ -94,25 +96,25 @@ public class PinCredentialHost(
             action = { safelyNotify(listener::onEmergencyRequested) },
         )
         addView(emergencyAccessibilityView, LayoutParams(0, 0))
-        configureProfile(currentLayout)
     }
 
     /** 提交非敏感 PIN 长度、反馈和主题。 */
     public fun update(
         state: PinCredentialUiState,
-        family: ProductThemeFamily,
-        brightness: ProductThemeBrightness,
+        appearance: LockscreenAppearance,
     ) {
         check(!disposed) { "PinCredentialHost 已释放" }
+        applyAppearance(appearance)
         if (!state.isInputEnabled) {
             clearPointerState()
         }
         /** 本次完整非敏感请求。 */
         val request = PinCredentialSceneRequest(
             state = state,
-            family = family,
-            brightness = brightness,
+            family = appearance.themeFamily,
+            brightness = appearance.brightness,
             pressedKeyId = pressedKeyId,
+            layout = currentLayout,
         )
         if (!shouldSubmitPinCredentialRequest(lastRequest, request)) {
             return
@@ -177,6 +179,12 @@ public class PinCredentialHost(
             emergencyBounds.right,
             emergencyBounds.bottom,
         )
+    }
+
+    /** 物理尺寸变化时同步渲染、触摸和无障碍共用的动态方屏布局。 */
+    override fun onSizeChanged(width: Int, height: Int, oldWidth: Int, oldHeight: Int) {
+        super.onSizeChanged(width, height, oldWidth, oldHeight)
+        updateLogicalLayout(width, height, submitScene = true)
     }
 
     /** 消费透明子节点未命中的回退触摸序列，禁止事件落到原生 PIN 页面。 */
@@ -358,15 +366,45 @@ public class PinCredentialHost(
             viewHeight = height,
             profile = pixelHostView.screenProfile,
             viewportPolicy = pixelHostView.viewportPolicy,
-            pixelGapEnabled = false,
+            pixelGapEnabled = currentAppearance?.pixelGapEnabled == true,
         )
 
-    /** 配置 Titan 2 固定方屏逻辑网格。 */
-    private fun configureProfile(layout: PinCredentialLayout) {
-        pixelHostView.profilePolicy = PixelHostProfilePolicy.AdaptiveLogicalSize(
-            logicalWidth = layout.logicalWidth,
-            logicalHeight = layout.logicalHeight,
+    /** 把共享点大小、形状、间隙和主题背景应用到 PIN 宿主。 */
+    private fun applyAppearance(appearance: LockscreenAppearance) {
+        if (currentAppearance == appearance) return
+        currentAppearance = appearance
+        /** 当前主题用作开启 GAP 后的熄灭像素底色。 */
+        val palette = ProductThemeCatalog.resolve(appearance.themeFamily, appearance.brightness)
+        pixelHostView.profilePolicy = PixelHostProfilePolicy.AdaptivePixels(
+            dotSizePx = appearance.dotSizePx,
+            pixelShape = appearance.pixelShape,
         )
+        pixelHostView.setPixelGapEnabled(appearance.pixelGapEnabled)
+        pixelHostView.offPixelColor = if (appearance.pixelGapEnabled) {
+            palette.background
+        } else {
+            PixelColor.Transparent
+        }
+        updateLogicalLayout(width, height, submitScene = false)
+    }
+
+    /** 根据当前物理尺寸重算 PIN 几何，并原子更新场景与透明语义节点。 */
+    private fun updateLogicalLayout(widthPx: Int, heightPx: Int, submitScene: Boolean) {
+        if (widthPx <= 0 || heightPx <= 0) return
+        /** 当前有效外观。 */
+        val appearance = currentAppearance ?: return
+        /** AdaptivePixels 将生成的真实逻辑尺寸。 */
+        val logicalSize = lockscreenLogicalSize(widthPx, heightPx, appearance.dotSizePx)
+        /** 新物理尺寸对应的 PIN 布局。 */
+        val nextLayout = pinCredentialLayout(logicalSize.first, logicalSize.second)
+        if (nextLayout == currentLayout) return
+        clearPointerState()
+        currentLayout = nextLayout
+        if (submitScene) {
+            lastRequest = lastRequest?.copy(layout = nextLayout)
+            submitCurrentScene()
+            requestLayout()
+        }
     }
 
     /** 解析一个 PIN 按键的真实物理边界。 */
@@ -410,15 +448,21 @@ public class PinCredentialHost(
         logicalWidth: Int,
         logicalHeight: Int,
     ): Rect? {
-        /** 与当前场景逻辑尺寸一致的临时屏幕配置。 */
-        val profile = ScreenProfile(layout.logicalWidth, layout.logicalHeight, dotSizePx = 1)
+        /** 与当前 AdaptivePixels 场景一致的临时屏幕配置。 */
+        val appearance = currentAppearance ?: return null
+        val profile = ScreenProfile(
+            layout.logicalWidth,
+            layout.logicalHeight,
+            dotSizePx = appearance.dotSizePx,
+            pixelShape = appearance.pixelShape,
+        )
         /** 与 Pixel Engine 绘制共用的物理网格几何。 */
         val geometry = PixelGridGeometryResolver.resolve(
             viewWidth,
             viewHeight,
             profile,
             pixelHostView.viewportPolicy,
-            pixelGapEnabled = false,
+            pixelGapEnabled = appearance.pixelGapEnabled,
         ) ?: return null
         return Rect(
             (geometry.originX + logicalLeft * geometry.cellSize).toInt(),

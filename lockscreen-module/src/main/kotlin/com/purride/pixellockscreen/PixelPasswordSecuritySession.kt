@@ -8,8 +8,7 @@ import android.text.TextWatcher
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
-import com.purride.pixeldesign.ProductThemeBrightness
-import com.purride.pixeldesign.ProductThemeFamily
+import com.purride.pixeldesign.ProductAppearance
 import com.purride.pixellockscreen.credential.PasswordCredentialCoordinator
 import com.purride.pixellockscreen.credential.Titan2CredentialMode
 import com.purride.pixellockscreen.credential.Titan2EmergencyActionBridge
@@ -18,6 +17,7 @@ import com.purride.pixellockscreen.credential.Titan2PasswordControllerBinding
 import com.purride.pixellockscreen.credential.Titan2SecurityContainerViewBinding
 import com.purride.pixellockscreen.ui.PasswordCredentialHost
 import com.purride.pixellockscreen.ui.PasswordCredentialUiState
+import com.purride.pixellockscreen.ui.resolveLockscreenAppearance
 
 /**
  * Titan 2 当前一次密码 Bouncer 展示周期的像素 UI 接管会话。
@@ -33,6 +33,8 @@ internal class PixelPasswordSecuritySession(
     private val passwordController: Any,
     /** SystemUI 最终应用类加载器。 */
     private val classLoader: ClassLoader,
+    /** 每次渲染时提供 Launcher 最新共享外观。 */
+    private val appearanceProvider: () -> ProductAppearance,
     /** 密码页接管或恢复时暂停、恢复普通像素锁屏的动作。 */
     private val onTakeoverChanged: (Boolean) -> Unit,
     /** 会话异步失败时记录脱敏原因的动作。 */
@@ -83,6 +85,9 @@ internal class PixelPasswordSecuritySession(
     /** 当前是否已经透明化原生密码内容并暂停普通像素锁屏。 */
     private var takeoverActive: Boolean = false
 
+    /** 最近一次非敏感界面状态，用于外观变化后立即重绘。 */
+    private var lastRenderedState: PasswordCredentialUiState? = null
+
     /** 按系统截止时间刷新剩余秒数的单一主线程任务。 */
     private val lockoutTick: Runnable = Runnable(::updateLockoutCountdown)
 
@@ -91,6 +96,12 @@ internal class PixelPasswordSecuritySession(
 
     /** 返回像素首帧是否已经正式替代原生密码绘制。 */
     fun isTakeoverActive(): Boolean = !disposed && takeoverActive
+
+    /** Launcher 外观变化时使用最近状态立即刷新密码页。 */
+    fun refreshAppearance() {
+        if (disposed || !::host.isInitialized) return
+        lastRenderedState?.let(::renderState)
+    }
 
     /**
      * 在原生密码页和 IME 合同完全可用时挂载像素宿主并等待首帧。
@@ -316,15 +327,16 @@ internal class PixelPasswordSecuritySession(
     /** 使用当前 SystemUI 明暗配置提交非敏感认证状态。 */
     private fun renderState(state: PasswordCredentialUiState) {
         check(!disposed) { "password_session_disposed" }
-        /** 当前 SystemUI 日间或夜间配置。 */
-        val brightness = when (
+        lastRenderedState = state
+        /** 当前 SystemUI 是否处于夜间配置。 */
+        val systemInDarkMode = when (
             passwordBinding.passwordView.resources.configuration.uiMode and
                 Configuration.UI_MODE_NIGHT_MASK
         ) {
-            Configuration.UI_MODE_NIGHT_YES -> ProductThemeBrightness.DARK
-            else -> ProductThemeBrightness.LIGHT
+            Configuration.UI_MODE_NIGHT_YES -> true
+            else -> false
         }
-        host.update(state, ProductThemeFamily.MIDNIGHT, brightness)
+        host.update(state, appearanceProvider().resolveLockscreenAppearance(systemInDarkMode))
     }
 
     /** 使用系统给出的单调时钟截止时间进入限流反馈。 */

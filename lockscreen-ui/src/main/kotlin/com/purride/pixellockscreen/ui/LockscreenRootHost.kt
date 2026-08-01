@@ -7,8 +7,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
 import com.purride.pixelcore.PixelColor
-import com.purride.pixeldesign.ProductThemeBrightness
-import com.purride.pixeldesign.ProductThemeFamily
+import com.purride.pixeldesign.ProductThemeCatalog
 import com.purride.pixelui.PixelHostProfilePolicy
 import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.SizedBox
@@ -35,6 +34,9 @@ public class LockscreenRootHost @JvmOverloads constructor(
     /** 标记宿主资源是否已经释放，释放后拒绝继续更新。 */
     private var disposed: Boolean = false
 
+    /** 最近一次外部提交的完整产品外观。 */
+    private var currentAppearance: LockscreenAppearance? = null
+
     /** 初始化透明、无焦点、无输入消费的静态宿主边界。 */
     init {
         setBackgroundColor(Color.TRANSPARENT)
@@ -56,26 +58,32 @@ public class LockscreenRootHost @JvmOverloads constructor(
             pixelHostView,
             LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT),
         )
-        configureProfile()
     }
 
     /**
      * 原子提交一帧格式化状态和具体主题变体。
      *
-     * 完全相同的请求不会重设 Widget 树；AUTO 必须由外部先解析为 [ProductThemeBrightness]。
+     * 完全相同的请求不会重设 Widget 树；AUTO 必须由外部先解析进 [LockscreenAppearance]。
      */
     public fun update(
         state: LockscreenUiState,
-        family: ProductThemeFamily,
-        brightness: ProductThemeBrightness,
+        appearance: LockscreenAppearance,
     ) {
         check(!disposed) { "LockscreenRootHost 已释放" }
+        applyAppearance(appearance)
+        /** 当前物理尺寸对应的逻辑宽度，测量前沿用安全基准值。 */
+        val logicalWidth = if (width > 0) {
+            lockscreenLogicalSize(width, height, appearance.dotSizePx).first
+        } else {
+            LOCKSCREEN_LOGICAL_WIDTH
+        }
         /** 本次待提交的完整不可变渲染请求。 */
         val request = LockscreenSceneRequest(
             state = state,
-            family = family,
-            brightness = brightness,
+            family = appearance.themeFamily,
+            brightness = appearance.brightness,
             contentListener = contentListener,
+            logicalWidth = logicalWidth,
         )
         if (!shouldSubmitLockscreenRequest(lastRequest, request)) return
         submitRequest(request)
@@ -89,6 +97,20 @@ public class LockscreenRootHost @JvmOverloads constructor(
      */
     override fun dispatchTouchEvent(event: MotionEvent): Boolean =
         if (ordinaryLockscreenTouchPassesThrough()) false else super.dispatchTouchEvent(event)
+
+    /** 宿主尺寸变化后按真实逻辑宽度重建场景，确保大像素尺寸不会裁切时钟。 */
+    override fun onSizeChanged(width: Int, height: Int, oldWidth: Int, oldHeight: Int) {
+        super.onSizeChanged(width, height, oldWidth, oldHeight)
+        /** 尚未接收状态时无需创建空场景。 */
+        val previous = lastRequest ?: return
+        /** 当前外观在新物理尺寸下解析出的逻辑宽度。 */
+        val appearance = currentAppearance ?: return
+        /** 与 AdaptivePixels 策略相同的逻辑宽度。 */
+        val logicalWidth = lockscreenLogicalSize(width, height, appearance.dotSizePx).first
+        if (previous.logicalWidth != logicalWidth) {
+            submitRequest(previous.copy(logicalWidth = logicalWidth))
+        }
+    }
 
     /** 幂等释放 Pixel Engine 运行时和子 View，释放后宿主不可再次使用。 */
     public fun dispose() {
@@ -105,12 +127,22 @@ public class LockscreenRootHost @JvmOverloads constructor(
         pixelHostView.setContent { buildLockscreenScene(request) }
     }
 
-    /** 固定使用 Titan 2 方屏逻辑网格，物理尺寸变化仅影响统一视口缩放。 */
-    private fun configureProfile() {
-        pixelHostView.profilePolicy = PixelHostProfilePolicy.AdaptiveLogicalSize(
-            logicalWidth = LOCKSCREEN_LOGICAL_WIDTH,
-            logicalHeight = LOCKSCREEN_LOGICAL_HEIGHT,
+    /** 把共享点大小、形状、间隙和主题背景原子应用到 PixelHostView。 */
+    private fun applyAppearance(appearance: LockscreenAppearance) {
+        if (currentAppearance == appearance) return
+        currentAppearance = appearance
+        /** 当前主题用作开启 GAP 后的熄灭像素底色。 */
+        val palette = ProductThemeCatalog.resolve(appearance.themeFamily, appearance.brightness)
+        pixelHostView.profilePolicy = PixelHostProfilePolicy.AdaptivePixels(
+            dotSizePx = appearance.dotSizePx,
+            pixelShape = appearance.pixelShape,
         )
+        pixelHostView.setPixelGapEnabled(appearance.pixelGapEnabled)
+        pixelHostView.offPixelColor = if (appearance.pixelGapEnabled) {
+            palette.background
+        } else {
+            PixelColor.Transparent
+        }
     }
 }
 

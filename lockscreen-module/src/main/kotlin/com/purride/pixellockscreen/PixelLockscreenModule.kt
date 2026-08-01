@@ -2,6 +2,7 @@ package com.purride.pixellockscreen
 
 import android.annotation.SuppressLint
 import android.util.Log
+import com.purride.pixeldesign.ProductAppearance
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface
@@ -34,6 +35,12 @@ public class PixelLockscreenModule : XposedModule() {
 
     /** 当前 SystemUI 进程中唯一活跃的 SIM 或 AntiTheft 像素会话。 */
     private var activeSpecialPinSession: PixelSpecialPinSecuritySession? = null
+
+    /** 从 Launcher Provider 读取的最近一次有效共享外观。 */
+    private var sharedAppearance: ProductAppearance = ProductAppearance()
+
+    /** 当前 SystemUI 进程唯一的 Launcher 外观观察器。 */
+    private var appearanceAdapter: LauncherAppearanceAdapter? = null
 
     /** 记录当前进程并立即脱离非 SystemUI 主进程。 */
     override fun onModuleLoaded(param: XposedModuleInterface.ModuleLoadedParam) {
@@ -143,6 +150,7 @@ public class PixelLockscreenModule : XposedModule() {
 
     /** 幂等替换旧根视图会话，同一根视图的重复 `start()` 不会创建二次宿主。 */
     private fun startVisualSession(binding: Titan2SystemUiBinding) {
+        ensureAppearanceAdapter(binding.keyguardRoot.context)
         /** 可能由同一 configurator 重复启动的现有会话。 */
         val previousSession = activeSession
         if (previousSession?.isBoundTo(binding.keyguardRoot) == true) {
@@ -153,6 +161,7 @@ public class PixelLockscreenModule : XposedModule() {
         /** 已通过完整视图合同的新像素 Keyguard 会话。 */
         val newSession = PixelKeyguardSession(
             binding = binding,
+            appearanceProvider = { sharedAppearance },
             onDisposed = { disposedSession ->
                 if (activeSession === disposedSession) {
                     activeSession = null
@@ -654,6 +663,7 @@ public class PixelLockscreenModule : XposedModule() {
             securityController = securityController,
             patternController = patternController,
             classLoader = classLoader,
+            appearanceProvider = { sharedAppearance },
             onTakeoverChanged = {
                 refreshCredentialTakeoverState()
             },
@@ -719,6 +729,7 @@ public class PixelLockscreenModule : XposedModule() {
             securityController = securityController,
             pinController = pinController,
             classLoader = classLoader,
+            appearanceProvider = { sharedAppearance },
             onTakeoverChanged = {
                 refreshCredentialTakeoverState()
             },
@@ -784,6 +795,7 @@ public class PixelLockscreenModule : XposedModule() {
             securityController = securityController,
             passwordController = passwordController,
             classLoader = classLoader,
+            appearanceProvider = { sharedAppearance },
             onTakeoverChanged = {
                 refreshCredentialTakeoverState()
             },
@@ -849,6 +861,7 @@ public class PixelLockscreenModule : XposedModule() {
             securityController = securityController,
             specialController = specialController,
             classLoader = classLoader,
+            appearanceProvider = { sharedAppearance },
             onTakeoverChanged = { refreshCredentialTakeoverState() },
             onFailure = { failedSession, throwable ->
                 if (activeSpecialPinSession === failedSession) {
@@ -937,6 +950,29 @@ public class PixelLockscreenModule : XposedModule() {
             activePasswordSession?.isTakeoverActive() == true ||
             activeSpecialPinSession?.isTakeoverActive() == true
         activeSession?.setCredentialTakeoverActive(active)
+    }
+
+    /** 首次获得 SystemUI Context 后启动共享外观观察，后续会话沿用同一实例。 */
+    private fun ensureAppearanceAdapter(context: android.content.Context) {
+        if (appearanceAdapter != null) return
+        /** 新观察器会在 start 内同步读取一次当前 Launcher 配置。 */
+        val adapter = LauncherAppearanceAdapter(context) { appearance ->
+            sharedAppearance = appearance
+            refreshAllAppearances()
+        }
+        appearanceAdapter = adapter
+        adapter.start()
+        sharedAppearance = adapter.currentAppearance
+        log(Log.INFO, LOG_TAG, "appearance_observer_started")
+    }
+
+    /** 使用各会话最近一次非敏感状态刷新普通页和全部凭据页。 */
+    private fun refreshAllAppearances() {
+        activeSession?.refreshAppearance()
+        activePatternSession?.refreshAppearance()
+        activePinSession?.refreshAppearance()
+        activePasswordSession?.refreshAppearance()
+        activeSpecialPinSession?.refreshAppearance()
     }
 
     /** 解析并验证一个控制器声明的无参 void 方法。 */

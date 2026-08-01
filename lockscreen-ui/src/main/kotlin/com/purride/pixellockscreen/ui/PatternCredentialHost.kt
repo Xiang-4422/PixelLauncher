@@ -6,8 +6,7 @@ import android.graphics.Rect
 import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
-import com.purride.pixeldesign.ProductThemeBrightness
-import com.purride.pixeldesign.ProductThemeFamily
+import com.purride.pixeldesign.ProductThemeCatalog
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelGridGeometryResolver
 import com.purride.pixelcore.ScreenProfile
@@ -33,8 +32,11 @@ public class PatternCredentialHost(
     /** 不绘制内容、只为 TalkBack 暴露独立紧急操作的透明 Android 节点。 */
     private val emergencyAccessibilityView: View = View(context)
 
-    /** Titan 2 方屏使用的固定逻辑布局。 */
-    private val currentLayout: PatternCredentialLayout = patternCredentialLayout()
+    /** 当前点大小和宿主尺寸解析出的逻辑布局。 */
+    private var currentLayout: PatternCredentialLayout = patternCredentialLayout()
+
+    /** 最近一次外部提交的完整产品外观。 */
+    private var currentAppearance: LockscreenAppearance? = null
 
     /** 最近一次非敏感渲染请求。 */
     private var lastRequest: PatternCredentialSceneRequest? = null
@@ -87,18 +89,22 @@ public class PatternCredentialHost(
             safelyNotify(listener::onEmergencyRequested)
         }
         addView(emergencyAccessibilityView, LayoutParams(0, 0))
-        configureProfile(currentLayout)
     }
 
     /** 提交非敏感反馈与主题；完整相同请求不会重建 Widget 树。 */
     public fun update(
         state: PatternCredentialUiState,
-        family: ProductThemeFamily,
-        brightness: ProductThemeBrightness,
+        appearance: LockscreenAppearance,
     ) {
         check(!disposed) { "PatternCredentialHost 已释放" }
+        applyAppearance(appearance)
         /** 本次完整非敏感请求。 */
-        val request = PatternCredentialSceneRequest(state, family, brightness)
+        val request = PatternCredentialSceneRequest(
+            state = state,
+            family = appearance.themeFamily,
+            brightness = appearance.brightness,
+            layout = currentLayout,
+        )
         if (!state.isInputEnabled) {
             gestureTracker.cancel()
             activePointerId = MotionEvent.INVALID_POINTER_ID
@@ -153,6 +159,12 @@ public class PatternCredentialHost(
             emergencyBounds.right,
             emergencyBounds.bottom,
         )
+    }
+
+    /** 物理尺寸变化时同步渲染、触摸和无障碍共用的动态方屏布局。 */
+    override fun onSizeChanged(width: Int, height: Int, oldWidth: Int, oldHeight: Int) {
+        super.onSizeChanged(width, height, oldWidth, oldHeight)
+        updateLogicalLayout(width, height, submitScene = true)
     }
 
     /** 消费完整图案指针序列，禁止事件穿透到仍作为回退保留的原生 Bouncer。 */
@@ -294,15 +306,46 @@ public class PatternCredentialHost(
             viewHeight = height,
             profile = pixelHostView.screenProfile,
             viewportPolicy = pixelHostView.viewportPolicy,
-            pixelGapEnabled = false,
+            pixelGapEnabled = currentAppearance?.pixelGapEnabled == true,
         )
 
-    /** 配置 Titan 2 固定方屏逻辑网格。 */
-    private fun configureProfile(layout: PatternCredentialLayout) {
-        pixelHostView.profilePolicy = PixelHostProfilePolicy.AdaptiveLogicalSize(
-            logicalWidth = layout.logicalWidth,
-            logicalHeight = layout.logicalHeight,
+    /** 把共享点大小、形状、间隙和主题背景应用到图案宿主。 */
+    private fun applyAppearance(appearance: LockscreenAppearance) {
+        if (currentAppearance == appearance) return
+        currentAppearance = appearance
+        /** 当前主题用作开启 GAP 后的熄灭像素底色。 */
+        val palette = ProductThemeCatalog.resolve(appearance.themeFamily, appearance.brightness)
+        pixelHostView.profilePolicy = PixelHostProfilePolicy.AdaptivePixels(
+            dotSizePx = appearance.dotSizePx,
+            pixelShape = appearance.pixelShape,
         )
+        pixelHostView.setPixelGapEnabled(appearance.pixelGapEnabled)
+        pixelHostView.offPixelColor = if (appearance.pixelGapEnabled) {
+            palette.background
+        } else {
+            PixelColor.Transparent
+        }
+        updateLogicalLayout(width, height, submitScene = false)
+    }
+
+    /** 根据当前物理尺寸重算布局，并让手势跟踪器与场景原子切换到相同几何。 */
+    private fun updateLogicalLayout(widthPx: Int, heightPx: Int, submitScene: Boolean) {
+        if (widthPx <= 0 || heightPx <= 0) return
+        /** 当前有效外观。 */
+        val appearance = currentAppearance ?: return
+        /** AdaptivePixels 将生成的真实逻辑尺寸。 */
+        val logicalSize = lockscreenLogicalSize(widthPx, heightPx, appearance.dotSizePx)
+        /** 新物理尺寸对应的图案布局。 */
+        val nextLayout = patternCredentialLayout(logicalSize.first, logicalSize.second)
+        if (nextLayout == currentLayout) return
+        cancelGesture()
+        currentLayout = nextLayout
+        gestureTracker.updateLayout(nextLayout)
+        if (submitScene) {
+            lastRequest = lastRequest?.copy(layout = nextLayout)
+            submitCurrentScene()
+            requestLayout()
+        }
     }
 
     /** 使用固定逻辑尺寸解析紧急按钮的真实物理边界。 */
@@ -314,11 +357,13 @@ public class PatternCredentialHost(
         /** 当前方屏逻辑布局。 */
         layout: PatternCredentialLayout,
     ): Rect? {
-        /** 与当前场景逻辑尺寸一致的临时屏幕配置。 */
+        /** 与当前 AdaptivePixels 场景一致的临时屏幕配置。 */
+        val appearance = currentAppearance ?: return null
         val profile = ScreenProfile(
             logicalWidth = layout.logicalWidth,
             logicalHeight = layout.logicalHeight,
-            dotSizePx = 1,
+            dotSizePx = appearance.dotSizePx,
+            pixelShape = appearance.pixelShape,
         )
         /** 与 Pixel Engine 绘制共用的物理网格几何。 */
         val geometry = PixelGridGeometryResolver.resolve(
@@ -326,7 +371,7 @@ public class PatternCredentialHost(
             viewHeight = viewHeight,
             profile = profile,
             viewportPolicy = pixelHostView.viewportPolicy,
-            pixelGapEnabled = false,
+            pixelGapEnabled = appearance.pixelGapEnabled,
         ) ?: return null
         return Rect(
             (geometry.originX + layout.emergencyLeft * geometry.cellSize).toInt(),

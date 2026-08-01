@@ -39,12 +39,24 @@ internal data class PatternCredentialLayout(
     val emergencyWidth: Int,
     /** 紧急按钮高度。 */
     val emergencyHeight: Int,
+    /** 图案画布逻辑边长。 */
+    val patternSize: Int,
+    /** 图案画布边缘到第一排圆心的距离。 */
+    val gridMargin: Int,
+    /** 相邻圆心的逻辑像素间距。 */
+    val gridStep: Int,
+    /** 每个节点的逻辑命中半径。 */
+    val hitRadius: Int,
 ) {
     /** 返回指定格子的全局逻辑横坐标。 */
-    fun centerX(cellId: Int): Int = patternLeft + GRID_MARGIN + (cellId % GRID_SIDE) * GRID_STEP
+    fun centerX(cellId: Int): Int = patternLeft + gridMargin + (cellId % GRID_SIDE) * gridStep
 
     /** 返回指定格子的全局逻辑纵坐标。 */
-    fun centerY(cellId: Int): Int = patternTop + GRID_MARGIN + (cellId / GRID_SIDE) * GRID_STEP
+    fun centerY(cellId: Int): Int = patternTop + gridMargin + (cellId / GRID_SIDE) * gridStep
+
+    /** 根据布局密度返回节点外圈半径。 */
+    val nodeOuterRadius: Int
+        get() = (gridStep / 4).coerceIn(4, 6)
 
     /** 判断逻辑坐标是否位于紧急入口内。 */
     fun containsEmergency(logicalX: Int, logicalY: Int): Boolean =
@@ -55,39 +67,60 @@ internal data class PatternCredentialLayout(
         /** 九宫格单边数量。 */
         const val GRID_SIDE: Int = 3
 
-        /** 图案画布边缘到第一排圆心的距离。 */
-        const val GRID_MARGIN: Int = 13
-
-        /** 相邻圆心的逻辑像素间距。 */
-        const val GRID_STEP: Int = 26
-
         /** 图案画布逻辑边长。 */
         const val PATTERN_SIZE: Int = 78
-
-        /** 圆心命中的逻辑半径。 */
-        const val HIT_RADIUS: Int = 10
     }
 }
 
-/** 返回 Titan 2 方屏中不会裁切的图案认证布局。 */
-internal fun patternCredentialLayout(): PatternCredentialLayout = PatternCredentialLayout(
-    logicalWidth = LOCKSCREEN_LOGICAL_WIDTH,
-    logicalHeight = LOCKSCREEN_LOGICAL_HEIGHT,
-    patternLeft = 33,
-    patternTop = 27,
-    promptLeft = 4,
-    promptTop = 3,
-    promptWidth = 136,
-    promptHeight = 18,
-    feedbackLeft = 4,
-    feedbackTop = 108,
-    feedbackWidth = 136,
-    feedbackHeight = 14,
-    emergencyLeft = 37,
-    emergencyTop = 128,
-    emergencyWidth = 70,
-    emergencyHeight = 14,
-)
+/** 返回指定逻辑方屏中不会裁切的图案认证布局。 */
+internal fun patternCredentialLayout(
+    logicalWidth: Int = LOCKSCREEN_LOGICAL_WIDTH,
+    logicalHeight: Int = LOCKSCREEN_LOGICAL_HEIGHT,
+): PatternCredentialLayout {
+    require(logicalWidth >= 48 && logicalHeight >= 72) { "pattern_logical_viewport_too_small" }
+    /** 底部紧急入口高度，在大网格保持原设计尺寸。 */
+    val emergencyHeight = (logicalHeight / 9).coerceIn(10, 14)
+    /** 底部紧急入口上边界。 */
+    val emergencyTop = logicalHeight - emergencyHeight - 2
+    /** 反馈区域高度。 */
+    val feedbackHeight = (logicalHeight / 12).coerceIn(8, 12)
+    /** 反馈区域上边界。 */
+    val feedbackTop = emergencyTop - feedbackHeight - 2
+    /** 图案上方提示占用的固定紧凑区域。 */
+    val patternTop = 14
+    /** 同时受横向和纵向空间限制的最大图案边长。 */
+    val availablePatternSize = minOf(logicalWidth - 8, feedbackTop - patternTop - 2)
+    /** 三格中心间距决定完整图案边长，最大值保留原 144 网格比例。 */
+    val gridStep = (availablePatternSize / 3).coerceIn(12, 26)
+    /** 图案边长严格为三倍格距，保证中心和边距都为整数。 */
+    val patternSize = gridStep * 3
+    /** 图案横向居中。 */
+    val patternLeft = (logicalWidth - patternSize) / 2
+    /** 紧急入口宽度随网格收缩但保留可点击面积。 */
+    val emergencyWidth = (logicalWidth - 16).coerceAtMost(70)
+    return PatternCredentialLayout(
+        logicalWidth = logicalWidth,
+        logicalHeight = logicalHeight,
+        patternLeft = patternLeft,
+        patternTop = patternTop,
+        promptLeft = 4,
+        promptTop = 2,
+        promptWidth = logicalWidth - 8,
+        promptHeight = 10,
+        feedbackLeft = 4,
+        feedbackTop = feedbackTop,
+        feedbackWidth = logicalWidth - 8,
+        feedbackHeight = feedbackHeight,
+        emergencyLeft = (logicalWidth - emergencyWidth) / 2,
+        emergencyTop = emergencyTop,
+        emergencyWidth = emergencyWidth,
+        emergencyHeight = emergencyHeight,
+        patternSize = patternSize,
+        gridMargin = gridStep / 2,
+        gridStep = gridStep,
+        hitRadius = (gridStep * 10 / 26).coerceAtLeast(6),
+    )
+}
 
 /** 只允许渲染器按索引读取当前手势路径的内部接口。 */
 internal interface PatternVisualPath {
@@ -105,7 +138,7 @@ internal interface PatternVisualPath {
  */
 internal class PatternGestureTracker(
     /** 当前方屏逻辑布局。 */
-    private val layout: PatternCredentialLayout,
+    private var layout: PatternCredentialLayout,
     /** 首枚格子命中回调。 */
     private val onStarted: () -> Unit,
     /** 新格子命中回调。 */
@@ -135,6 +168,13 @@ internal class PatternGestureTracker(
     /** 当前路径长度。 */
     override val size: Int
         get() = currentSize
+
+    /** 视口或点大小变化时取消当前路径并替换后续输入使用的逻辑布局。 */
+    fun updateLayout(newLayout: PatternCredentialLayout) {
+        if (layout == newLayout) return
+        cancel()
+        layout = newLayout
+    }
 
     /** 开始新的指针序列；落点不在格子内时仍允许后续移动进入。 */
     fun start(logicalX: Int, logicalY: Int) {
@@ -241,7 +281,7 @@ internal class PatternGestureTracker(
             val deltaX = logicalX - layout.centerX(cellId)
             /** 相对当前圆心的纵向距离。 */
             val deltaY = logicalY - layout.centerY(cellId)
-            if (deltaX * deltaX + deltaY * deltaY <= HIT_RADIUS_SQUARED) {
+            if (deltaX * deltaX + deltaY * deltaY <= layout.hitRadius * layout.hitRadius) {
                 return cellId
             }
         }
@@ -308,10 +348,6 @@ internal class PatternGestureTracker(
 
         /** 清零后的非格子哨兵。 */
         const val EMPTY_CELL: Int = -1
-
-        /** 命中半径平方，避免每个移动采样执行开方。 */
-        const val HIT_RADIUS_SQUARED: Int =
-            PatternCredentialLayout.HIT_RADIUS * PatternCredentialLayout.HIT_RADIUS
 
         /** 九宫格单边数量。 */
         const val GRID_SIDE: Int = PatternCredentialLayout.GRID_SIDE

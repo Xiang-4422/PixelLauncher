@@ -19,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import com.purride.pixeldesign.ProductThemeBrightness
 import com.purride.pixellockscreen.ui.LockscreenRootHost
+import com.purride.pixellockscreen.ui.LockscreenAppearance
 import com.purride.pixellockscreen.ui.LockscreenBiometricModality
 import com.purride.pixellockscreen.ui.LockscreenBiometricPhase
 import com.purride.pixellockscreen.ui.LockscreenSecurityNoticePhase
@@ -30,6 +31,7 @@ import com.purride.pixellockscreen.ui.PasswordCredentialHost
 import com.purride.pixellockscreen.ui.PasswordCredentialListener
 import com.purride.pixellockscreen.ui.PinCredentialFeedback
 import com.purride.pixellockscreen.ui.PinCredentialHost
+import com.purride.pixeldesign.ProductPixelCatalog
 import com.purride.pixellockscreen.ui.PinCredentialListener
 
 /** 使用真实普通锁屏、图案、PIN 和密码宿主提供确定输入与测试背景的离线预览页。 */
@@ -117,25 +119,29 @@ class LockscreenPreviewActivity : AppCompatActivity() {
     private fun renderConfiguration() {
         previewStage.backgroundKind = configuration.background
         previewStage.scene = configuration.scene
+        /** Showcase 使用共享默认像素规格和当前可控主题构造真实宿主外观。 */
+        val appearance = LockscreenAppearance(
+            pixelShape = ProductPixelCatalog.defaultPixelShape,
+            dotSizePx = ProductPixelCatalog.defaultDotSizePx,
+            pixelGapEnabled = ProductPixelCatalog.defaultPixelGapEnabled,
+            themeFamily = configuration.family,
+            brightness = configuration.brightness,
+        )
         previewStage.lockscreenHost.update(
             state = configuration.toUiState(),
-            family = configuration.family,
-            brightness = configuration.brightness,
+            appearance = appearance,
         )
         previewStage.patternHost.update(
             state = configuration.toPatternUiState(),
-            family = configuration.family,
-            brightness = configuration.brightness,
+            appearance = appearance,
         )
         previewStage.pinHost.update(
             state = configuration.toPinUiState(),
-            family = configuration.family,
-            brightness = configuration.brightness,
+            appearance = appearance,
         )
         previewStage.passwordHost.update(
             state = configuration.toPasswordUiState(),
-            family = configuration.family,
-            brightness = configuration.brightness,
+            appearance = appearance,
         )
         rebuildControls()
     }

@@ -71,28 +71,63 @@ internal data class PinCredentialLayout(
             logicalY in emergencyTop until emergencyTop + emergencyHeight
 }
 
-/** 返回 Titan 2 方屏中不会裁切的 PIN 页面布局。 */
-internal fun pinCredentialLayout(): PinCredentialLayout = PinCredentialLayout(
-    logicalWidth = LOCKSCREEN_LOGICAL_WIDTH,
-    logicalHeight = LOCKSCREEN_LOGICAL_HEIGHT,
-    promptLeft = 4,
-    promptTop = 2,
-    promptWidth = 136,
-    promptHeight = 12,
-    feedbackLeft = 4,
-    feedbackTop = 15,
-    feedbackWidth = 136,
-    feedbackHeight = 10,
-    indicatorLeft = 10,
-    indicatorTop = 26,
-    indicatorWidth = 124,
-    indicatorHeight = 8,
-    keys = buildPinKeys(left = 11, top = 36, width = 38, height = 20, gapX = 4, gapY = 3),
-    emergencyLeft = 37,
-    emergencyTop = 128,
-    emergencyWidth = 70,
-    emergencyHeight = 14,
-)
+/** 返回指定逻辑方屏中不会裁切的 PIN 页面布局。 */
+internal fun pinCredentialLayout(
+    logicalWidth: Int = LOCKSCREEN_LOGICAL_WIDTH,
+    logicalHeight: Int = LOCKSCREEN_LOGICAL_HEIGHT,
+): PinCredentialLayout {
+    require(logicalWidth >= 48 && logicalHeight >= 72) { "pin_logical_viewport_too_small" }
+    /** 紧急入口按逻辑高度缩放后的高度。 */
+    val emergencyHeight = (logicalHeight / 9).coerceIn(10, 14)
+    /** 紧急入口上边界。 */
+    val emergencyTop = logicalHeight - emergencyHeight - 2
+    /** 数字键盘顶部保持提示、反馈和 PIN 指示器空间。 */
+    val keyboardTop = 28
+    /** 数字键之间的纵向间距。 */
+    val gapY = if (logicalHeight >= 120) 3 else 1
+    /** 四行按键在紧急入口上方可用空间内的最大高度。 */
+    val keyHeight = ((emergencyTop - 3 - keyboardTop - gapY * 3) / 4).coerceIn(8, 20)
+    /** 数字键之间的横向间距。 */
+    val gapX = if (logicalWidth >= 120) 4 else 2
+    /** 页面左右安全边距。 */
+    val horizontalInset = if (logicalWidth >= 120) 11 else 5
+    /** 三列按键按当前逻辑宽度均分。 */
+    val keyWidth = ((logicalWidth - horizontalInset * 2 - gapX * 2) / 3).coerceAtMost(38)
+    /** 键盘整体宽度。 */
+    val keyboardWidth = keyWidth * 3 + gapX * 2
+    /** 键盘整体横向居中。 */
+    val keyboardLeft = (logicalWidth - keyboardWidth) / 2
+    /** 紧急入口宽度。 */
+    val emergencyWidth = (logicalWidth - 16).coerceAtMost(70)
+    return PinCredentialLayout(
+        logicalWidth = logicalWidth,
+        logicalHeight = logicalHeight,
+        promptLeft = 4,
+        promptTop = 1,
+        promptWidth = logicalWidth - 8,
+        promptHeight = 9,
+        feedbackLeft = 4,
+        feedbackTop = 10,
+        feedbackWidth = logicalWidth - 8,
+        feedbackHeight = 8,
+        indicatorLeft = 6,
+        indicatorTop = 19,
+        indicatorWidth = logicalWidth - 12,
+        indicatorHeight = 6,
+        keys = buildPinKeys(
+            left = keyboardLeft,
+            top = keyboardTop,
+            width = keyWidth,
+            height = keyHeight,
+            gapX = gapX,
+            gapY = gapY,
+        ),
+        emergencyLeft = (logicalWidth - emergencyWidth) / 2,
+        emergencyTop = emergencyTop,
+        emergencyWidth = emergencyWidth,
+        emergencyHeight = emergencyHeight,
+    )
+}
 
 /** 按电话键盘顺序生成 1–9、删除、0、确认四行按键。 */
 private fun buildPinKeys(

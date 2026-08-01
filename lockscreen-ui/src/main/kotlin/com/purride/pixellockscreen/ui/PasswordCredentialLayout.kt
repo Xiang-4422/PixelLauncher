@@ -71,37 +71,57 @@ internal data class PasswordCredentialLayout(
     }
 }
 
-/** 返回 Titan 2 方屏中不会裁切且为系统 IME 预留空间的密码布局。 */
-internal fun passwordCredentialLayout(): PasswordCredentialLayout = PasswordCredentialLayout(
-    logicalWidth = LOCKSCREEN_LOGICAL_WIDTH,
-    logicalHeight = LOCKSCREEN_LOGICAL_HEIGHT,
-    promptLeft = 4,
-    promptTop = 8,
-    promptWidth = 136,
-    promptHeight = 14,
-    feedbackLeft = 4,
-    feedbackTop = 26,
-    feedbackWidth = 136,
-    feedbackHeight = 12,
-    inputAction = PasswordActionSpec(
-        PasswordCredentialAction.INPUT,
-        left = 8,
-        top = 48,
-        width = 128,
-        height = 24,
-    ),
-    imeSwitcherAction = PasswordActionSpec(
-        PasswordCredentialAction.IME_SWITCHER,
-        left = 8,
-        top = 84,
-        width = 60,
-        height = 20,
-    ),
-    emergencyAction = PasswordActionSpec(
-        PasswordCredentialAction.EMERGENCY,
-        left = 76,
-        top = 84,
-        width = 60,
-        height = 20,
-    ),
-)
+/** 返回指定逻辑方屏中不会裁切且为系统 IME 预留空间的密码布局。 */
+internal fun passwordCredentialLayout(
+    logicalWidth: Int = LOCKSCREEN_LOGICAL_WIDTH,
+    logicalHeight: Int = LOCKSCREEN_LOGICAL_HEIGHT,
+): PasswordCredentialLayout {
+    require(logicalWidth >= 48 && logicalHeight >= 64) { "password_logical_viewport_too_small" }
+    /** 页面公共横向安全边距。 */
+    val horizontalInset = if (logicalWidth >= 120) 8 else 5
+    /** 输入区域高度。 */
+    val inputHeight = (logicalHeight / 6).coerceIn(16, 24)
+    /** 输入区域上边界。 */
+    val inputTop = (logicalHeight / 3).coerceIn(28, 48)
+    /** 底部动作高度。 */
+    val actionHeight = (logicalHeight / 7).coerceIn(12, 20)
+    /** 底部动作上边界，始终位于输入区域下方。 */
+    val actionTop = (inputTop + inputHeight + 6).coerceAtMost(logicalHeight - actionHeight - 4)
+    /** 两个底部动作之间的逻辑间距。 */
+    val actionGap = if (logicalWidth >= 100) 8 else 4
+    /** 两个底部动作平分安全宽度。 */
+    val actionWidth = (logicalWidth - horizontalInset * 2 - actionGap) / 2
+    return PasswordCredentialLayout(
+        logicalWidth = logicalWidth,
+        logicalHeight = logicalHeight,
+        promptLeft = 4,
+        promptTop = 4,
+        promptWidth = logicalWidth - 8,
+        promptHeight = 10,
+        feedbackLeft = 4,
+        feedbackTop = 16,
+        feedbackWidth = logicalWidth - 8,
+        feedbackHeight = 9,
+        inputAction = PasswordActionSpec(
+            PasswordCredentialAction.INPUT,
+            left = horizontalInset,
+            top = inputTop,
+            width = logicalWidth - horizontalInset * 2,
+            height = inputHeight,
+        ),
+        imeSwitcherAction = PasswordActionSpec(
+            PasswordCredentialAction.IME_SWITCHER,
+            left = horizontalInset,
+            top = actionTop,
+            width = actionWidth,
+            height = actionHeight,
+        ),
+        emergencyAction = PasswordActionSpec(
+            PasswordCredentialAction.EMERGENCY,
+            left = horizontalInset + actionWidth + actionGap,
+            top = actionTop,
+            width = actionWidth,
+            height = actionHeight,
+        ),
+    )
+}

@@ -20,6 +20,8 @@ internal data class PatternCredentialSceneRequest(
     val family: ProductThemeFamily,
     /** 当前主题实际明暗。 */
     val brightness: ProductThemeBrightness,
+    /** 当前真实逻辑网格对应的交互布局。 */
+    val layout: PatternCredentialLayout = patternCredentialLayout(),
 )
 
 /** 构建图案认证的唯一可见 Widget 树。 */
@@ -29,8 +31,8 @@ internal fun buildPatternCredentialScene(
 ): Widget {
     /** 当前请求解析出的共享产品色板。 */
     val palette = ProductThemeCatalog.resolve(request.family, request.brightness)
-    /** Titan 2 方屏的固定逻辑布局。 */
-    val layout = patternCredentialLayout()
+    /** 与宿主触摸映射完全相同的动态逻辑布局。 */
+    val layout = request.layout
     /** 反馈文字使用的状态颜色。 */
     val feedbackColor = when (request.state.feedback) {
         PatternCredentialFeedback.ERROR,
@@ -163,17 +165,25 @@ private fun com.purride.pixelui.PixelCanvas.drawPatternNodes(
         val centerX = layout.centerX(cellId)
         /** 当前圆心纵坐标。 */
         val centerY = layout.centerY(cellId)
-        drawCircle(centerX, centerY, radius = 6, color = palette.background, filled = true)
+        /** 当前网格密度对应的节点外圈半径。 */
+        val outerRadius = layout.nodeOuterRadius
+        drawCircle(centerX, centerY, radius = outerRadius, color = palette.background, filled = true)
         drawCircle(
             centerX,
             centerY,
-            radius = 5,
+            radius = outerRadius - 1,
             color = palette.primary,
             filled = false,
             strokeWidth = 1,
         )
         if (selected[cellId]) {
-            drawCircle(centerX, centerY, radius = 3, color = palette.primary, filled = true)
+            drawCircle(
+                centerX,
+                centerY,
+                radius = (outerRadius - 3).coerceAtLeast(2),
+                color = palette.primary,
+                filled = true,
+            )
         } else {
             drawCircle(centerX, centerY, radius = 1, color = palette.muted, filled = true)
         }

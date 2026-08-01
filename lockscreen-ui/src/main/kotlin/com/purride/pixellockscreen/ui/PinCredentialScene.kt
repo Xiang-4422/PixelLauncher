@@ -20,14 +20,16 @@ internal data class PinCredentialSceneRequest(
     val brightness: ProductThemeBrightness,
     /** 当前手指按下的公开按键编号。 */
     val pressedKeyId: Int?,
+    /** 当前真实逻辑网格对应的交互布局。 */
+    val layout: PinCredentialLayout = pinCredentialLayout(),
 )
 
 /** 构建 PIN 认证的唯一可见 Widget 树。 */
 internal fun buildPinCredentialScene(request: PinCredentialSceneRequest): Widget {
     /** 当前请求解析出的共享产品色板。 */
     val palette = ProductThemeCatalog.resolve(request.family, request.brightness)
-    /** Titan 2 方屏的固定逻辑布局。 */
-    val layout = pinCredentialLayout()
+    /** 与宿主触摸映射完全相同的动态逻辑布局。 */
+    val layout = request.layout
     /** 系统反馈使用的状态颜色。 */
     val feedbackColor = when (request.state.feedback) {
         PinCredentialFeedback.ERROR,

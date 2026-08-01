@@ -5,14 +5,14 @@ import android.os.Looper
 import android.view.View
 import android.view.ViewTreeObserver
 import android.view.ViewGroup
-import com.purride.pixeldesign.ProductThemeBrightness
-import com.purride.pixeldesign.ProductThemeFamily
+import com.purride.pixeldesign.ProductAppearance
 import com.purride.pixellockscreen.credential.SpecialPinCredentialCoordinator
 import com.purride.pixellockscreen.credential.Titan2EmergencyActionBridge
 import com.purride.pixellockscreen.credential.Titan2SecurityContainerViewBinding
 import com.purride.pixellockscreen.credential.Titan2SpecialPinControllerBinding
 import com.purride.pixellockscreen.ui.PinCredentialHost
 import com.purride.pixellockscreen.ui.PinCredentialUiState
+import com.purride.pixellockscreen.ui.resolveLockscreenAppearance
 
 /**
  * Titan 2 一次 SIM PIN/PUK/ME 或 AntiTheft 展示周期的像素接管会话。
@@ -27,6 +27,8 @@ internal class PixelSpecialPinSecuritySession(
     private val specialController: Any,
     /** SystemUI 最终应用类加载器。 */
     private val classLoader: ClassLoader,
+    /** 每次渲染时提供 Launcher 最新共享外观。 */
+    private val appearanceProvider: () -> ProductAppearance,
     /** 特殊页接管状态变化时同步普通像素锁屏的动作。 */
     private val onTakeoverChanged: (Boolean) -> Unit,
     /** 会话失败时记录脱敏原因的动作。 */
@@ -69,11 +71,20 @@ internal class PixelSpecialPinSecuritySession(
     /** 当前是否已经隐藏原生特殊安全页。 */
     private var takeoverActive: Boolean = false
 
+    /** 最近一次非敏感界面状态，用于外观变化后立即重绘。 */
+    private var lastRenderedState: PinCredentialUiState? = null
+
     /** 判断现有会话是否仍绑定同一原生特殊控制器。 */
     fun isBoundTo(controller: Any): Boolean = !disposed && specialController === controller
 
     /** 返回像素首帧是否已经正式替代原生特殊安全页。 */
     fun isTakeoverActive(): Boolean = !disposed && takeoverActive
+
+    /** Launcher 外观变化时使用最近状态立即刷新特殊数字页。 */
+    fun refreshAppearance() {
+        if (disposed || !::host.isInitialized) return
+        lastRenderedState?.let(::renderState)
+    }
 
     /** 完成全部 fail-closed 绑定、挂载像素宿主并等待首帧。 */
     fun start() {
@@ -183,15 +194,16 @@ internal class PixelSpecialPinSecuritySession(
     /** 使用 SystemUI 当前日夜配置渲染非敏感数字页状态。 */
     private fun renderState(state: PinCredentialUiState) {
         check(!disposed) { "special_pin_session_disposed" }
-        /** 当前 SystemUI 日间或夜间配置。 */
-        val brightness = when (
+        lastRenderedState = state
+        /** 当前 SystemUI 是否处于夜间配置。 */
+        val systemInDarkMode = when (
             specialBinding.credentialView.resources.configuration.uiMode and
                 Configuration.UI_MODE_NIGHT_MASK
         ) {
-            Configuration.UI_MODE_NIGHT_YES -> ProductThemeBrightness.DARK
-            else -> ProductThemeBrightness.LIGHT
+            Configuration.UI_MODE_NIGHT_YES -> true
+            else -> false
         }
-        host.update(state, ProductThemeFamily.MIDNIGHT, brightness)
+        host.update(state, appearanceProvider().resolveLockscreenAppearance(systemInDarkMode))
     }
 
     /** 检查像素宿主到主安全容器之间的整条可见父链。 */
