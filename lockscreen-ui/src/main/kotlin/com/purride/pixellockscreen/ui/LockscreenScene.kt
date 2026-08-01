@@ -91,14 +91,14 @@ internal fun buildLockscreenScene(request: LockscreenSceneRequest): Widget {
                             crossAxisAlignment = CrossAxisAlignment.CENTER,
                             spacing = LOCKSCREEN_INFO_SPACING,
                             children = listOf(
-                                outlinedText(
+                                outlinedLockscreenText(
                                     text = request.state.timeText,
                                     foreground = palette.primary,
                                     backing = palette.background,
                                     fontScale = timeScale,
                                     key = "lockscreen-time",
                                 ),
-                                outlinedText(
+                                outlinedLockscreenText(
                                     text = request.state.dateText,
                                     foreground = palette.secondary,
                                     backing = palette.background,
@@ -110,7 +110,7 @@ internal fun buildLockscreenScene(request: LockscreenSceneRequest): Widget {
                         ),
                     ),
                 ),
-                outlinedText(
+                outlinedLockscreenText(
                     text = request.state.unlockHint,
                     foreground = palette.muted,
                     backing = palette.background,
@@ -142,7 +142,7 @@ private fun batteryStatus(state: LockscreenUiState, palette: ProductPalette): Wi
         spacing = 3,
         children = listOf(
             batteryGlyph(state.batteryPercent, statusColor, palette.background),
-            outlinedText(
+            outlinedLockscreenText(
                 text = statusText,
                 foreground = statusColor,
                 backing = palette.background,
@@ -168,7 +168,7 @@ private fun batteryGlyph(level: Int, color: PixelColor, backing: PixelColor): Wi
 }
 
 /** 通过四向单像素底色副本给透明壁纸上的文本提供硬边反差。 */
-private fun outlinedText(
+internal fun outlinedLockscreenText(
     text: String,
     foreground: PixelColor,
     backing: PixelColor,
