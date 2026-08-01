@@ -306,6 +306,32 @@ class LockscreenUiStateTest {
             }
     }
 
+    /** StrongAuth 必须在渲染层压过任何矛盾的信任提示。 */
+    @Test
+    fun strongAuthTakesPriorityOverSecurityNotice() {
+        /** 系统要求强凭据的安全状态。 */
+        val biometric = LockscreenBiometricUiState(
+            modality = LockscreenBiometricModality.NONE,
+            phase = LockscreenBiometricPhase.STRONG_AUTH_REQUIRED,
+            messageText = "USE PIN AFTER RESTART",
+        )
+        /** 模拟异常同时到达的信任成功提示。 */
+        val notice = LockscreenSecurityNoticeUiState(
+            phase = LockscreenSecurityNoticePhase.TRUSTED,
+            messageText = "TRUSTED",
+        )
+        assertFalse(shouldShowSecurityNotice(biometric, notice))
+        assertTrue(
+            shouldShowSecurityNotice(
+                biometric.copy(
+                    modality = LockscreenBiometricModality.FINGERPRINT,
+                    phase = LockscreenBiometricPhase.SCANNING,
+                ),
+                notice,
+            ),
+        )
+    }
+
     /** 大时钟在纵屏使用四倍像素，横屏固定降低为三倍。 */
     @Test
     fun timeScaleFollowsOrientation() {

@@ -383,16 +383,22 @@ private fun compactContentCard(
     key = key,
 )
 
-/** 信任提示存在时优先于生物识别阶段，确保单个安全区域只表达一个系统决策。 */
+/** StrongAuth 始终优先；其余阶段由活跃信任提示占用单一安全区域。 */
 private fun visibleSecurityStatus(
     biometric: LockscreenBiometricUiState,
     notice: LockscreenSecurityNoticeUiState,
     palette: ProductPalette,
-): Widget = if (notice.isVisible) {
+): Widget = if (shouldShowSecurityNotice(biometric, notice)) {
     securityNoticeStatus(notice, palette)
 } else {
     biometricStatus(biometric, palette)
 }
+
+/** 防御性保证必须使用强凭据的系统决策不会被信任提示遮盖。 */
+internal fun shouldShowSecurityNotice(
+    biometric: LockscreenBiometricUiState,
+    notice: LockscreenSecurityNoticeUiState,
+): Boolean = notice.isVisible && biometric.phase != LockscreenBiometricPhase.STRONG_AUTH_REQUIRED
 
 /** 绘制信任代理或 Extend Unlock 的单行像素安全提示。 */
 private fun securityNoticeStatus(
