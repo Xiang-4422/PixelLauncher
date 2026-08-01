@@ -1,6 +1,7 @@
 package com.purride.pixellockscreen
 
 import android.annotation.SuppressLint
+import android.view.View
 import android.view.ViewGroup
 
 /** Titan 2 SystemUI 视图合同的只读探测结果。 */
@@ -19,10 +20,12 @@ internal data class Titan2SystemUiProbeResult(
 
 /** M5 挂载和回退所需的已验证 SystemUI 视图引用。 */
 internal data class Titan2SystemUiBinding(
-    /** 自动跟随 Keyguard 可见性的像素宿主父视图。 */
+    /** 承载原生普通锁屏内容、但不再直接承载像素宿主的根视图。 */
     val keyguardRoot: ViewGroup,
-    /** 用于定位普通原生锁屏元素和监听每帧的 SystemUI 窗口。 */
+    /** 直接承载稳定像素宿主并用于监听每帧的 SystemUI 窗口。 */
     val shadeWindow: ViewGroup,
+    /** 必须位于像素宿主上方、用于保留系统前景明暗转场的遮罩锚点。 */
+    val foregroundScrim: View,
     /** 必须始终保留在像素宿主上方的原生凭据容器。 */
     val bouncerContainer: ViewGroup,
     /** 提供生物识别、StrongAuth 和信任状态的原生提示控制器。 */
@@ -72,6 +75,9 @@ internal object Titan2SystemUiProbe {
     /** SystemUI 资源中原生认证容器的稳定 entry 名。 */
     private const val BOUNCER_CONTAINER_RESOURCE: String = "keyguard_bouncer_container"
 
+    /** SystemUI 资源中位于普通锁屏内容上方的前景遮罩稳定 entry 名。 */
+    private const val FOREGROUND_SCRIM_RESOURCE: String = "scrim_in_front"
+
     /**
      * 验证实例字段、视图类型、资源 ID 和父子关系。
      *
@@ -100,6 +106,21 @@ internal object Titan2SystemUiProbe {
         check(keyguardRoot.parent === shadeWindow) { "keyguard_root_parent" }
         check(resourceEntryName(keyguardRoot) == KEYGUARD_ROOT_RESOURCE) { "keyguard_root_resource" }
 
+        /** 像素宿主的稳定窗口级上界资源 ID。 */
+        val foregroundScrimId = shadeWindow.resources.getIdentifier(
+            FOREGROUND_SCRIM_RESOURCE,
+            "id",
+            LockscreenModuleContract.SYSTEM_UI_PACKAGE,
+        )
+        check(foregroundScrimId != 0) { "foreground_scrim_resource_missing" }
+        /** 保留 SystemUI 熄屏、亮屏和解锁明暗效果的前景遮罩。 */
+        val foregroundScrim = shadeWindow.findViewById<View>(foregroundScrimId)
+            ?: error("foreground_scrim_missing")
+        check(foregroundScrim.parent === shadeWindow) { "foreground_scrim_parent" }
+        check(shadeWindow.indexOfChild(foregroundScrim) > shadeWindow.indexOfChild(keyguardRoot)) {
+            "foreground_scrim_z_order"
+        }
+
         /** 原生 Bouncer 容器的 SystemUI 资源 ID。 */
         val bouncerContainerId = shadeWindow.resources.getIdentifier(
             BOUNCER_CONTAINER_RESOURCE,
@@ -113,6 +134,9 @@ internal object Titan2SystemUiProbe {
         check(bouncerContainer.parent === shadeWindow) { "bouncer_parent" }
         check(shadeWindow.indexOfChild(bouncerContainer) > shadeWindow.indexOfChild(keyguardRoot)) {
             "bouncer_z_order"
+        }
+        check(shadeWindow.indexOfChild(bouncerContainer) > shadeWindow.indexOfChild(foregroundScrim)) {
+            "bouncer_foreground_z_order"
         }
         /** 反射获取且用于原生提示区域的安全状态控制器。 */
         val indicationController = requireNotNull(
@@ -132,6 +156,7 @@ internal object Titan2SystemUiProbe {
         return Titan2SystemUiBinding(
             keyguardRoot = keyguardRoot,
             shadeWindow = shadeWindow,
+            foregroundScrim = foregroundScrim,
             bouncerContainer = bouncerContainer,
             indicationController = indicationController,
             keyguardViewMediator = keyguardViewMediator,

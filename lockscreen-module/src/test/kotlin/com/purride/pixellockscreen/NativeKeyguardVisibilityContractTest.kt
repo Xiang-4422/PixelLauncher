@@ -47,10 +47,10 @@ class NativeKeyguardVisibilityContractTest {
         )
     }
 
-    /** 像素宿主必须追加到普通 Keyguard 根容器末尾，禁止再次落到原生内容后方。 */
+    /** 像素宿主必须占用前景遮罩的原位置，从而保持在普通内容之上、系统遮罩之下。 */
     @Test
-    fun pixelHostUsesTopmostKeyguardChildIndex() {
-        assertEquals(0, pixelHostInsertionIndex(0))
-        assertEquals(4, pixelHostInsertionIndex(4))
+    fun pixelHostUsesForegroundScrimIndex() {
+        assertEquals(1, pixelHostInsertionIndex(anchorIndex = 1, childCount = 2))
+        assertEquals(8, pixelHostInsertionIndex(anchorIndex = 8, childCount = 13))
     }
 }

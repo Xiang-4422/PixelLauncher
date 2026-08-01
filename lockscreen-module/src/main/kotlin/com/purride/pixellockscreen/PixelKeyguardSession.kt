@@ -10,7 +10,8 @@ import com.purride.pixellockscreen.ui.LockscreenContentListener
 /**
  * 一次 SystemUI 进程生命周期内的普通像素 Keyguard 挂载与回退会话。
  *
- * 宿主作为 `KeyguardRootView` 子视图自动跟随锁屏可见性；原生 Bouncer 保留在窗口更高层级。
+ * 宿主作为窗口级稳定子视图避开原生 Keyguard 的位移与透明度转场；前景遮罩和原生 Bouncer
+ * 仍保留在更高层级，宿主显隐由真实 Keyguard 状态显式驱动。
  */
 internal class PixelKeyguardSession(
     /** 已通过 Titan 2 签名探测的 SystemUI 视图绑定。 */
@@ -59,8 +60,10 @@ internal class PixelKeyguardSession(
         context = binding.keyguardRoot.context,
         contentListener = contentListener,
     ).apply {
-        /** ConstraintSet 克隆要求 KeyguardRootView 的每个动态子节点都具有非零 ID。 */
+        /** SystemUI 动态节点统一使用非零 ID，便于运行时层级诊断。 */
         id = View.generateViewId()
+        /** SystemUI 启动时通常仍处于桌面，等待真实 Keyguard 状态后再允许首帧绘制。 */
+        visibility = View.INVISIBLE
     }
 
     /** 普通原生锁屏节点的可恢复显隐事务。 */
@@ -106,7 +109,10 @@ internal class PixelKeyguardSession(
             return
         }
         credentialTakeoverActive = active
-        host.visibility = if (active) View.INVISIBLE else View.VISIBLE
+        if (active) {
+            /** 凭据接管开始必须立即隐藏普通页，避免与安全页首帧重叠。 */
+            host.visibility = View.INVISIBLE
+        }
         binding.shadeWindow.invalidate()
     }
 
@@ -121,9 +127,13 @@ internal class PixelKeyguardSession(
             nativeVisibility.prepare()
             stateAdapter.start()
             host.addOnAttachStateChangeListener(this)
-            binding.keyguardRoot.addView(
+            /** 前景遮罩继续位于宿主上方，从而保留熄屏、亮屏和解锁的系统明暗动画。 */
+            binding.shadeWindow.addView(
                 host,
-                pixelHostInsertionIndex(binding.keyguardRoot.childCount),
+                pixelHostInsertionIndex(
+                    anchorIndex = binding.shadeWindow.indexOfChild(binding.foregroundScrim),
+                    childCount = binding.shadeWindow.childCount,
+                ),
                 ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -146,15 +156,23 @@ internal class PixelKeyguardSession(
     override fun onPreDraw(): Boolean {
         if (disposed) return true
         runCatching {
-            ensurePixelHostOnTop()
+            ensurePixelHostLayer()
             stateAdapter.updateSecurity(biometricAdapter.snapshot())
             stateAdapter.updateContent(contentAdapter.snapshot())
             if (disposed) return true
             /** 瞬时 View alpha 不参与判断，避免 DOZING 到 LOCKSCREEN 转场误恢复原生页面。 */
+            val ordinaryKeyguardVisible = visibilityAdapter.isOrdinaryKeyguardVisible()
+            /** 窗口级宿主不再继承 KeyguardRootView 状态，必须显式限制在普通锁屏阶段。 */
+            host.visibility = if (ordinaryKeyguardVisible && !credentialTakeoverActive) {
+                View.VISIBLE
+            } else {
+                View.INVISIBLE
+            }
+            /** 凭据页接管时普通宿主隐藏，但仍需继续隐藏其后的原生普通锁屏分支。 */
             val shouldTakeOver = credentialTakeoverActive ||
                 (
                     firstFrameDrawn &&
-                        visibilityAdapter.isOrdinaryKeyguardVisible() &&
+                        ordinaryKeyguardVisible &&
                         isHostStructurallyReady()
                     )
             if (shouldTakeOver) {
@@ -200,17 +218,19 @@ internal class PixelKeyguardSession(
     }
 
     /**
-     * 保证像素宿主始终位于普通 Keyguard 根容器的最上层。
+     * 验证像素宿主仍紧邻在前景遮罩下方的稳定窗口层。
      *
-     * SystemUI 运行期可能为用户切换等功能追加普通锁屏子节点；Bouncer 是窗口级同级节点，
-     * 因此根容器内重排不会覆盖认证页面。
+     * 不在运行期自动重排，避免一次临时层级异常把宿主移动到 Bouncer 上方；合同变化时直接走
+     * fail-closed 回退，由下一次已验证的 SystemUI 会话重新挂载。
      */
-    private fun ensurePixelHostOnTop() {
-        check(host.parent === binding.keyguardRoot) { "pixel_host_parent_changed" }
-        if (binding.keyguardRoot.indexOfChild(host) != binding.keyguardRoot.childCount - 1) {
-            binding.keyguardRoot.bringChildToFront(host)
-            onDiagnostic("visual_host_reordered")
-        }
+    private fun ensurePixelHostLayer() {
+        check(host.parent === binding.shadeWindow) { "pixel_host_parent_changed" }
+        check(binding.foregroundScrim.parent === binding.shadeWindow) { "foreground_scrim_parent_changed" }
+        /** 宿主必须恰好位于前景遮罩前一层，禁止覆盖系统认证容器。 */
+        val hostIndex = binding.shadeWindow.indexOfChild(host)
+        /** 前景遮罩的当前窗口层级。 */
+        val foregroundScrimIndex = binding.shadeWindow.indexOfChild(binding.foregroundScrim)
+        check(hostIndex >= 0 && foregroundScrimIndex == hostIndex + 1) { "pixel_host_z_order_changed" }
     }
 
     /** 检查像素宿主仍附着、保持完整尺寸且没有被 SystemUI 替换父容器。 */
@@ -218,7 +238,7 @@ internal class PixelKeyguardSession(
         host.isAttachedToWindow &&
             host.width > 0 &&
             host.height > 0 &&
-            host.parent === binding.keyguardRoot
+            host.parent === binding.shadeWindow
 
     /** 幂等恢复原生节点、注销广播、移除监听并释放 Pixel Engine 宿主。 */
     fun dispose() {
@@ -234,8 +254,8 @@ internal class PixelKeyguardSession(
         }
         host.removeOnAttachStateChangeListener(this)
         runCatching { stateAdapter.stop() }
-        if (host.parent === binding.keyguardRoot) {
-            binding.keyguardRoot.removeView(host)
+        if (host.parent === binding.shadeWindow) {
+            binding.shadeWindow.removeView(host)
         }
         runCatching { host.dispose() }
         started = false
@@ -247,11 +267,13 @@ internal class PixelKeyguardSession(
 }
 
 /**
- * 返回像素宿主在普通 Keyguard 根容器中的插入位置。
+ * 返回像素宿主在窗口中的插入位置。
  *
- * 使用当前子节点数量意味着宿主位于全部原生普通锁屏内容之上；窗口级 Bouncer 不受影响。
+ * 宿主插在 `scrim_in_front` 的现有位置，使其位于普通锁屏和通知之上，同时严格保留前景遮罩、
+ * 提示区与 Bouncer 的更高绘制层级。
  */
-internal fun pixelHostInsertionIndex(existingChildCount: Int): Int {
-    require(existingChildCount >= 0) { "existingChildCount must not be negative" }
-    return existingChildCount
+internal fun pixelHostInsertionIndex(anchorIndex: Int, childCount: Int): Int {
+    require(childCount > 0) { "childCount must be positive" }
+    require(anchorIndex in 0 until childCount) { "anchorIndex must reference an existing child" }
+    return anchorIndex
 }
