@@ -153,16 +153,78 @@ private fun interactiveLockscreenContent(
                     ),
                 ),
                 lockscreenContentCards(state, palette, contentListener),
-                outlinedLockscreenText(
-                    text = state.unlockHint,
-                    foreground = palette.muted,
-                    backing = palette.background,
-                    fontScale = 1,
-                    key = "lockscreen-unlock-hint",
-                ),
+                lockscreenBottomArea(state, palette, contentListener),
             ),
             key = "lockscreen-interactive-content",
         )
+
+/** 绘制系统当前实际配置的快捷槽位和解锁提示。 */
+private fun lockscreenBottomArea(
+    state: LockscreenUiState,
+    palette: ProductPalette,
+    contentListener: LockscreenContentListener?,
+): Widget = Column(
+    mainAxisSize = MainAxisSize.MIN,
+    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+    spacing = 2,
+    children = listOfNotNull(
+        if (state.quickActions.isEmpty()) {
+            null
+        } else {
+            Row(
+                mainAxisSize = MainAxisSize.MAX,
+                mainAxisAlignment = MainAxisAlignment.SPACE_BETWEEN,
+                crossAxisAlignment = CrossAxisAlignment.CENTER,
+                children = state.quickActions.map { action ->
+                    interactiveQuickActionCard(action, palette, contentListener)
+                },
+                key = "lockscreen-quick-actions",
+            )
+        },
+        outlinedLockscreenText(
+            text = state.unlockHint,
+            foreground = palette.muted,
+            backing = palette.background,
+            fontScale = 1,
+            key = "lockscreen-unlock-hint",
+        ),
+    ),
+    key = "lockscreen-bottom-area",
+)
+
+/** 绘制一个紧凑快捷操作卡，并在运行时转发到对应原生槽位。 */
+private fun interactiveQuickActionCard(
+    state: LockscreenQuickActionUiState,
+    palette: ProductPalette,
+    contentListener: LockscreenContentListener?,
+): Widget {
+    /** 当前槽位使用的像素边框与文字。 */
+    val card = Container(
+        width = 38,
+        height = 12,
+        alignment = Alignment.CENTER,
+        child = outlinedLockscreenText(
+            text = state.labelText,
+            foreground = palette.secondary,
+            backing = palette.background,
+            fontScale = 1,
+            key = "lockscreen-quick-action-${state.key}-text",
+        ),
+        key = "lockscreen-quick-action-${state.key}",
+    )
+    return if (contentListener == null) {
+        card
+    } else {
+        GestureDetector(
+            child = card,
+            onTap = {
+                runCatching { contentListener.onQuickActionRequested(state.key) }
+                    .onFailure(contentListener::onInteractionFailure)
+            },
+            key = "lockscreen-quick-action-action-${state.key}",
+        )
+    }
+}
 
 /** AOD 只绘制时间、日期和电量，不暴露通知、安全提示或解锁操作。 */
 private fun ambientLockscreenContent(

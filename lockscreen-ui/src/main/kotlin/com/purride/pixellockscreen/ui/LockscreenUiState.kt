@@ -22,6 +22,8 @@ public data class LockscreenUiState(
     public val media: LockscreenMediaUiState = LockscreenMediaUiState(),
     /** 系统交互状态驱动的 AOD 展示与防烧屏偏移。 */
     public val ambient: LockscreenAmbientUiState = LockscreenAmbientUiState(),
+    /** SystemUI 当前实际配置且可点击的左右锁屏快捷操作。 */
+    public val quickActions: List<LockscreenQuickActionUiState> = emptyList(),
 ) {
     /** 在状态进入渲染树之前拒绝不可展示或越界的数据。 */
     init {
@@ -35,10 +37,19 @@ public data class LockscreenUiState(
         require(notifications.map { notification -> notification.key }.distinct().size == notifications.size) {
             "lockscreen_notification_key_duplicate"
         }
+        require(quickActions.size <= MAXIMUM_QUICK_ACTION_COUNT) {
+            "lockscreen_quick_action_count"
+        }
+        require(quickActions.map { action -> action.key }.distinct().size == quickActions.size) {
+            "lockscreen_quick_action_duplicate"
+        }
     }
 
     private companion object {
         /** 首版像素锁屏为避免裁切允许接收的最大通知摘要数量。 */
         const val MAXIMUM_VISIBLE_NOTIFICATION_COUNT: Int = 3
+
+        /** Android 锁屏固定提供的左右快捷槽位数量。 */
+        const val MAXIMUM_QUICK_ACTION_COUNT: Int = 2
     }
 }

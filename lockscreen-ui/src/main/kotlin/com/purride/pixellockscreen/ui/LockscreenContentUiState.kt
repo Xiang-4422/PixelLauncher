@@ -8,8 +8,41 @@ public interface LockscreenContentListener {
     /** 请求 SystemUI 执行当前媒体会话已有的播放或暂停按钮。 */
     public fun onMediaPlayPauseRequested()
 
+    /** 请求 SystemUI 执行当前槽位已经配置的锁屏快捷操作。 */
+    public fun onQuickActionRequested(actionKey: String)
+
     /** 事件接收方异常时要求模块立即恢复原生锁屏。 */
     public fun onInteractionFailure(throwable: Throwable)
+}
+
+/** SystemUI 当前锁屏快捷槽位允许公开展示的一项操作。 */
+public data class LockscreenQuickActionUiState(
+    /** 当前会话内稳定的 START 或 END 槽位标识。 */
+    public val key: String,
+    /** SystemUI 当前 View 提供的无障碍操作名称。 */
+    public val labelText: String,
+) {
+    /** 拒绝未知槽位、多行或异常无界的操作名称。 */
+    init {
+        require(key == START_KEY || key == END_KEY) { "lockscreen_quick_action_key" }
+        require(labelText.isNotBlank() && labelText.length <= MAXIMUM_LABEL_LENGTH) {
+            "lockscreen_quick_action_label"
+        }
+        require('\n' !in labelText && '\r' !in labelText) {
+            "lockscreen_quick_action_label_multiline"
+        }
+    }
+
+    public companion object {
+        /** 左侧快捷槽位稳定标识。 */
+        public const val START_KEY: String = "START"
+
+        /** 右侧快捷槽位稳定标识。 */
+        public const val END_KEY: String = "END"
+
+        /** 单行快捷操作名称的防御性长度上限。 */
+        private const val MAXIMUM_LABEL_LENGTH: Int = 80
+    }
 }
 
 /** 锁屏允许公开展示的一条通知摘要。 */

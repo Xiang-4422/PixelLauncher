@@ -211,6 +211,8 @@ class LockscreenUiStateTest {
         val notifications = mutableListOf<String>()
         /** 测试期间收到的媒体点击次数。 */
         var mediaClicks = 0
+        /** 测试期间收到的快捷槽位键。 */
+        val quickActions = mutableListOf<String>()
         /** 不允许发生的交互异常。 */
         var failure: Throwable? = null
         /** 只记录最小事件的内容监听器。 */
@@ -223,6 +225,11 @@ class LockscreenUiStateTest {
             /** 记录媒体切换。 */
             override fun onMediaPlayPauseRequested() {
                 mediaClicks++
+            }
+
+            /** 记录快捷槽位键。 */
+            override fun onQuickActionRequested(actionKey: String) {
+                quickActions += actionKey
             }
 
             /** 记录意外交互异常。 */
@@ -242,6 +249,12 @@ class LockscreenUiStateTest {
                                     LockscreenNotificationUiState("ONE", "MESSAGES", "HELLO"),
                                 ),
                                 media = LockscreenMediaUiState(true, "SONG", "ARTIST", true),
+                                quickActions = listOf(
+                                    LockscreenQuickActionUiState(
+                                        LockscreenQuickActionUiState.START_KEY,
+                                        "FLASHLIGHT",
+                                    ),
+                                ),
                             ),
                             family = ProductThemeFamily.ARCADE,
                             brightness = ProductThemeBrightness.DARK,
@@ -257,12 +270,29 @@ class LockscreenUiStateTest {
             )
             tester.tap(find.byKey("lockscreen-media-action"))
             tester.tap(find.byKey("lockscreen-notification-action-ONE"))
+            tester.tap(find.byKey("lockscreen-quick-action-action-START"))
             assertEquals(1, mediaClicks)
             assertEquals(listOf("ONE"), notifications)
+            assertEquals(listOf("START"), quickActions)
             assertEquals(null, failure)
         } finally {
             tester.dispose()
         }
+    }
+
+    /** 快捷槽位必须只接受唯一 START/END 键和有界单行名称。 */
+    @Test
+    fun quickActionsRejectUnknownOrDuplicateSlots() {
+        assertFails { LockscreenQuickActionUiState("LEFT", "CAMERA") }
+        assertFails {
+            state().copy(
+                quickActions = listOf(
+                    LockscreenQuickActionUiState("START", "FLASHLIGHT"),
+                    LockscreenQuickActionUiState("START", "CAMERA"),
+                ),
+            )
+        }
+        assertFails { LockscreenQuickActionUiState("END", "A\nB") }
     }
 
     /** 信任提示应优先占用安全区域并覆盖所有可见阶段。 */
