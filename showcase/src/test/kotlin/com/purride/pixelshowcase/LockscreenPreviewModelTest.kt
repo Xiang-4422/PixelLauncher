@@ -2,6 +2,7 @@ package com.purride.pixelshowcase
 
 import com.purride.pixeldesign.ProductThemeBrightness
 import com.purride.pixeldesign.ProductThemeFamily
+import com.purride.pixellockscreen.ui.PatternCredentialFeedback
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Test
@@ -45,6 +46,19 @@ class LockscreenPreviewModelTest {
         assertEquals(2, ProductThemeBrightness.entries.size)
         assertEquals(2, LockscreenPreviewOrientation.entries.size)
         assertEquals(4, LockscreenPreviewBackground.entries.size)
+        assertEquals(2, LockscreenPreviewScene.entries.size)
+        assertEquals(4, PatternCredentialFeedback.entries.size)
+    }
+
+    /** 图案预览反馈必须保持固定文字且不包含任何路径数据。 */
+    @Test
+    fun patternPreviewBuildsControllableSafeState() {
+        PatternCredentialFeedback.entries.forEach { feedback ->
+            /** 当前反馈转换出的图案 UI 状态。 */
+            val state = LockscreenPreviewConfiguration(patternFeedback = feedback).toPatternUiState()
+            assertEquals("DRAW PATTERN", state.promptText)
+            assertEquals(feedback, state.feedback)
+        }
     }
 
     /** 背景循环必须支持向前和向后闭环，便于单手快速比较。 */

@@ -3,6 +3,20 @@ package com.purride.pixelshowcase
 import com.purride.pixeldesign.ProductThemeBrightness
 import com.purride.pixeldesign.ProductThemeFamily
 import com.purride.pixellockscreen.ui.LockscreenUiState
+import com.purride.pixellockscreen.ui.PatternCredentialFeedback
+import com.purride.pixellockscreen.ui.PatternCredentialUiState
+
+/** 离线预览可切换的真实锁屏宿主场景。 */
+internal enum class LockscreenPreviewScene(
+    /** 控制面板显示名称。 */
+    val label: String,
+) {
+    /** 普通时钟锁屏。 */
+    CLOCK("CLOCK"),
+
+    /** 可交互图案认证。 */
+    PATTERN("PATTERN"),
+}
 
 /** 离线预览支持的画布方向；它只改变预览框比例，不旋转设备。 */
 internal enum class LockscreenPreviewOrientation(
@@ -36,6 +50,8 @@ internal enum class LockscreenPreviewBattery(
 
 /** Showcase 锁屏页的一次完整、可重复离线预览配置。 */
 internal data class LockscreenPreviewConfiguration(
+    /** 当前预览的真实锁屏场景。 */
+    val scene: LockscreenPreviewScene = LockscreenPreviewScene.CLOCK,
     /** 当前主题家族。 */
     val family: ProductThemeFamily = ProductThemeFamily.MIDNIGHT,
     /** 当前实际日夜亮度；离线预览不提供 AUTO。 */
@@ -48,6 +64,8 @@ internal data class LockscreenPreviewConfiguration(
     val orientation: LockscreenPreviewOrientation = LockscreenPreviewOrientation.PORTRAIT,
     /** 当前透明宿主下方的测试背景。 */
     val background: LockscreenPreviewBackground = LockscreenPreviewBackground.HIGH_CONTRAST,
+    /** 图案场景使用的可控系统反馈。 */
+    val patternFeedback: PatternCredentialFeedback = PatternCredentialFeedback.READY,
 ) {
     /** 把预览配置转换为固定时间、固定日期的锁屏展示状态。 */
     fun toUiState(): LockscreenUiState = LockscreenUiState(
@@ -56,6 +74,18 @@ internal data class LockscreenPreviewConfiguration(
         batteryPercent = battery.percent,
         isCharging = isCharging,
         unlockHint = PREVIEW_UNLOCK_HINT,
+    )
+
+    /** 把可控反馈转换为不包含路径的图案认证状态。 */
+    fun toPatternUiState(): PatternCredentialUiState = PatternCredentialUiState(
+        promptText = PREVIEW_PATTERN_PROMPT,
+        feedbackText = when (patternFeedback) {
+            PatternCredentialFeedback.READY -> ""
+            PatternCredentialFeedback.CHECKING -> "CHECKING"
+            PatternCredentialFeedback.ERROR -> "TRY AGAIN"
+            PatternCredentialFeedback.LOCKED_OUT -> "WAIT 30S"
+        },
+        feedback = patternFeedback,
     )
 }
 
@@ -88,3 +118,6 @@ private const val PREVIEW_DATE_TEXT = "SATURDAY, AUGUST 1"
 
 /** 首版静态锁屏使用的固定解锁提示。 */
 private const val PREVIEW_UNLOCK_HINT = "SWIPE UP TO UNLOCK"
+
+/** 图案预览使用的固定主提示。 */
+private const val PREVIEW_PATTERN_PROMPT = "DRAW PATTERN"

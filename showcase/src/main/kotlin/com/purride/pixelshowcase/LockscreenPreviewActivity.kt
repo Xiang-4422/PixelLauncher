@@ -19,8 +19,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import com.purride.pixeldesign.ProductThemeBrightness
 import com.purride.pixellockscreen.ui.LockscreenRootHost
+import com.purride.pixellockscreen.ui.PatternCredentialFeedback
+import com.purride.pixellockscreen.ui.PatternCredentialHost
+import com.purride.pixellockscreen.ui.PatternCredentialListener
 
-/** 使用真实 [LockscreenRootHost] 提供确定输入和测试背景的离线预览页。 */
+/** 使用真实普通锁屏和图案宿主提供确定输入与测试背景的离线预览页。 */
 class LockscreenPreviewActivity : AppCompatActivity() {
     /** 当前全部预览选项；每次交互通过 copy 原子替换。 */
     private var configuration: LockscreenPreviewConfiguration = LockscreenPreviewConfiguration()
@@ -105,8 +108,14 @@ class LockscreenPreviewActivity : AppCompatActivity() {
     private fun renderConfiguration() {
         previewStage.orientation = configuration.orientation
         previewStage.backgroundKind = configuration.background
+        previewStage.scene = configuration.scene
         previewStage.lockscreenHost.update(
             state = configuration.toUiState(),
+            family = configuration.family,
+            brightness = configuration.brightness,
+        )
+        previewStage.patternHost.update(
+            state = configuration.toPatternUiState(),
             family = configuration.family,
             brightness = configuration.brightness,
         )
@@ -116,6 +125,18 @@ class LockscreenPreviewActivity : AppCompatActivity() {
     /** 重建控制行，使所有选中态文字和底色始终与当前配置一致。 */
     private fun rebuildControls() {
         controlsContainer.removeAllViews()
+        controlsContainer.addView(
+            optionRow(
+                label = "SCENE",
+                options = LockscreenPreviewScene.entries.map { scene ->
+                    ControlOption(
+                        label = scene.label,
+                        selected = scene == configuration.scene,
+                        onClick = { updateConfiguration { copy(scene = scene) } },
+                    )
+                },
+            ),
+        )
         controlsContainer.addView(
             navigationRow(
                 label = "THEME",
@@ -145,31 +166,46 @@ class LockscreenPreviewActivity : AppCompatActivity() {
                 ),
             ),
         )
-        controlsContainer.addView(
-            optionRow(
-                label = "BATTERY",
-                options = LockscreenPreviewBattery.entries.map { battery ->
-                    ControlOption(
-                        label = "${battery.percent}%",
-                        selected = battery == configuration.battery,
-                        onClick = { updateConfiguration { copy(battery = battery) } },
-                    )
-                },
-            ),
-        )
-        controlsContainer.addView(
-            optionRow(
-                label = "POWER",
-                options = listOf(
-                    ControlOption("NORMAL", !configuration.isCharging) {
-                        updateConfiguration { copy(isCharging = false) }
-                    },
-                    ControlOption("CHARGING", configuration.isCharging) {
-                        updateConfiguration { copy(isCharging = true) }
+        if (configuration.scene == LockscreenPreviewScene.CLOCK) {
+            controlsContainer.addView(
+                optionRow(
+                    label = "BATTERY",
+                    options = LockscreenPreviewBattery.entries.map { battery ->
+                        ControlOption(
+                            label = "${battery.percent}%",
+                            selected = battery == configuration.battery,
+                            onClick = { updateConfiguration { copy(battery = battery) } },
+                        )
                     },
                 ),
-            ),
-        )
+            )
+            controlsContainer.addView(
+                optionRow(
+                    label = "POWER",
+                    options = listOf(
+                        ControlOption("NORMAL", !configuration.isCharging) {
+                            updateConfiguration { copy(isCharging = false) }
+                        },
+                        ControlOption("CHARGING", configuration.isCharging) {
+                            updateConfiguration { copy(isCharging = true) }
+                        },
+                    ),
+                ),
+            )
+        } else {
+            controlsContainer.addView(
+                optionRow(
+                    label = "STATE",
+                    options = PatternCredentialFeedback.entries.map { feedback ->
+                        ControlOption(
+                            label = feedback.name,
+                            selected = feedback == configuration.patternFeedback,
+                            onClick = { updateConfiguration { copy(patternFeedback = feedback) } },
+                        )
+                    },
+                ),
+            )
+        }
         controlsContainer.addView(
             optionRow(
                 label = "FRAME",
@@ -286,7 +322,7 @@ class LockscreenPreviewActivity : AppCompatActivity() {
 
     private companion object {
         /** 控制面板预留的固定高度。 */
-        const val CONTROL_PANEL_HEIGHT_DP = 228
+        const val CONTROL_PANEL_HEIGHT_DP = 266
 
         /** 控制类别标签的固定宽度。 */
         const val CONTROL_LABEL_WIDTH_DP = 82
@@ -322,6 +358,17 @@ private class LockscreenPreviewStage(context: Context) : ViewGroup(context) {
     /** Showcase 和未来系统适配器共同使用的真实静态锁屏宿主。 */
     val lockscreenHost: LockscreenRootHost = LockscreenRootHost(context)
 
+    /** Showcase 与 SystemUI 共用的真实图案交互宿主。 */
+    val patternHost: PatternCredentialHost = PatternCredentialHost(context, PreviewPatternListener)
+
+    /** 当前展示的宿主场景，只改变两个真实宿主的可见性。 */
+    var scene: LockscreenPreviewScene = LockscreenPreviewScene.CLOCK
+        set(value) {
+            if (field == value) return
+            field = value
+            updateHostVisibility()
+        }
+
     /** 当前预览比例方向，变化后重新测量两个重合子 View。 */
     var orientation: LockscreenPreviewOrientation = LockscreenPreviewOrientation.PORTRAIT
         set(value) {
@@ -343,6 +390,8 @@ private class LockscreenPreviewStage(context: Context) : ViewGroup(context) {
         setBackgroundColor(STAGE_BACKGROUND_COLOR)
         addView(backgroundView)
         addView(lockscreenHost)
+        addView(patternHost)
+        updateHostVisibility()
     }
 
     /** 根据可用区域内切当前横屏或竖屏比例，并精确测量两个重合子 View。 */
@@ -374,6 +423,7 @@ private class LockscreenPreviewStage(context: Context) : ViewGroup(context) {
         val childHeightSpec = MeasureSpec.makeMeasureSpec(contentHeight, MeasureSpec.EXACTLY)
         backgroundView.measure(childWidthSpec, childHeightSpec)
         lockscreenHost.measure(childWidthSpec, childHeightSpec)
+        patternHost.measure(childWidthSpec, childHeightSpec)
         setMeasuredDimension(availableWidth, availableHeight)
     }
 
@@ -389,16 +439,44 @@ private class LockscreenPreviewStage(context: Context) : ViewGroup(context) {
         val childBottom = childTop + backgroundView.measuredHeight
         backgroundView.layout(childLeft, childTop, childRight, childBottom)
         lockscreenHost.layout(childLeft, childTop, childRight, childBottom)
+        patternHost.layout(childLeft, childTop, childRight, childBottom)
     }
 
     /** 释放真实静态宿主持有的 Pixel Engine 运行时。 */
     fun dispose() {
         lockscreenHost.dispose()
+        patternHost.dispose()
+    }
+
+    /** 保证任一时刻只有一个真实宿主可见并接收输入。 */
+    private fun updateHostVisibility() {
+        lockscreenHost.visibility = if (scene == LockscreenPreviewScene.CLOCK) View.VISIBLE else View.GONE
+        patternHost.visibility = if (scene == LockscreenPreviewScene.PATTERN) View.VISIBLE else View.GONE
     }
 
     private companion object {
         /** 预览框以外的中性深色。 */
         const val STAGE_BACKGROUND_COLOR = 0xFF080A0F.toInt()
+    }
+}
+
+/** 离线预览只验证交互绘制，不保存或校验任何图案格子。 */
+private data object PreviewPatternListener : PatternCredentialListener {
+    /** 预览不需要转发系统用户活动。 */
+    override fun onPatternStarted() = Unit
+
+    /** 预览故意丢弃逐格输入。 */
+    override fun onPatternCellAdded(cellId: Int) = Unit
+
+    /** 预览只完成路径动画，不执行系统校验。 */
+    override fun onPatternCompleted(cellCount: Int) = Unit
+
+    /** 预览取消不需要额外状态。 */
+    override fun onPatternCancelled() = Unit
+
+    /** 预览监听器自身没有外部依赖，异常仅转换为稳定失败。 */
+    override fun onInteractionFailure(throwable: Throwable) {
+        throw IllegalStateException("pattern_preview_interaction", throwable)
     }
 }
 
