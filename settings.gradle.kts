@@ -26,4 +26,5 @@ include(":showcase")
 include(":showcase-desktop")
 include(":lockscreen-module")
 include(":pixel-design")
+include(":lockscreen-ui")
  

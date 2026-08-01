@@ -23,8 +23,8 @@ android {
 }
 
 dependencies {
-    // 锁屏宿主只复用像素引擎；SystemUI 适配和产品视觉层将在独立里程碑中接入。
-    implementation(project(":pixel-engine")) {
+    // 惰性 APK 只装配设备无关的静态锁屏 UI；SystemUI 适配仍未接入。
+    implementation(project(":lockscreen-ui")) {
         // 注入宿主不需要应用启动基线安装器，避免传递依赖向惰性 APK 合并运行组件。
         exclude(group = "androidx.profileinstaller", module = "profileinstaller")
     }

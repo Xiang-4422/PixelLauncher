@@ -1,6 +1,6 @@
 # PixelLauncher
 
-PixelLauncher 是一个 Android 启动器应用，同时内置可复用的像素 UI 引擎。主工程维护六个 Gradle 模块：
+PixelLauncher 是一个 Android 启动器应用，同时内置可复用的像素 UI 引擎。主工程维护七个 Gradle 模块：
 
 <!-- architecture-contract:modules:start -->
 - `:app`：Launcher 产品、页面状态和 Android 应用入口。
@@ -9,12 +9,13 @@ PixelLauncher 是一个 Android 启动器应用，同时内置可复用的像素
 - `:showcase-desktop`：复用展示场景的 JVM/AWT 桌面宿主。
 - `:lockscreen-module`：独立构建、默认惰性的像素锁屏 SystemUI 注入模块。
 - `:pixel-design`：Launcher 与锁屏共享的产品主题目录。
+- `:lockscreen-ui`：锁屏 APK 与离线预览共享的静态像素界面。
 <!-- architecture-contract:modules:end -->
 
 <!-- architecture-contract:dependencies:start -->
 ```text
 :app -> :pixel-engine
-:lockscreen-module -> :pixel-engine
+:lockscreen-module -> :lockscreen-ui -> :pixel-design -> :pixel-engine
 :app -> :pixel-design -> :pixel-engine
 :showcase -> :pixel-engine
 :showcase-desktop --debug classes.jar--> :pixel-engine
@@ -46,7 +47,7 @@ PixelLauncher 是一个 Android 启动器应用，同时内置可复用的像素
 ```
 
 `./gradlew projects` 应只列出 `:app`、`:pixel-engine`、`:showcase`、`:showcase-desktop` 和
-`:lockscreen-module` 和 `:pixel-design`。
+`:lockscreen-module`、`:pixel-design` 和 `:lockscreen-ui`。
 
 ## 运行
 

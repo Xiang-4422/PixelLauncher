@@ -46,6 +46,7 @@ EXPECTED_GRADLE_MODULES = (
     ":showcase-desktop",
     ":lockscreen-module",
     ":pixel-design",
+    ":lockscreen-ui",
 )
 # 模块清单受控区段必须出现在所有关键架构入口中。
 MODULE_CONTRACT_DOCUMENTS = (
@@ -69,7 +70,7 @@ DEPENDENCY_CONTRACT_END = "<!-- architecture-contract:dependencies:end -->"
 # 当前依赖图同时表达 Android project 依赖与桌面宿主的特殊二进制/源码消费方式。
 EXPECTED_DEPENDENCY_CONTRACT_LINES = (
     ":app -> :pixel-engine",
-    ":lockscreen-module -> :pixel-engine",
+    ":lockscreen-module -> :lockscreen-ui -> :pixel-design -> :pixel-engine",
     ":app -> :pixel-design -> :pixel-engine",
     ":showcase -> :pixel-engine",
     ":showcase-desktop --debug classes.jar--> :pixel-engine",

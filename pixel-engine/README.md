@@ -49,6 +49,7 @@ bash tools/pixel-publication-validation.sh
 - `:showcase-desktop`
 - `:lockscreen-module`
 - `:pixel-design`
+- `:lockscreen-ui`
 <!-- architecture-contract:modules:end -->
 
 性能 benchmark、真实远程发布和 Compose wrapper 不属于当前 Engine 工程边界。
