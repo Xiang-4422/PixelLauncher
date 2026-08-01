@@ -27,6 +27,8 @@ internal data class Titan2BiometricSnapshotInput(
     val faceAllowed: Boolean,
     /** 当前用户是否已由任一系统生物识别方式认证。 */
     val authenticated: Boolean,
+    /** Android 当前用户的 StrongAuth 原始位标志。 */
+    val strongAuthFlags: Int,
     /** SystemUI 当前可见的生物识别提示。 */
     val messageText: String,
 )
@@ -66,6 +68,10 @@ internal class Titan2BiometricStateAdapter private constructor(
     private val isBiometricAllowedMethod: Method,
     /** 读取当前用户是否已由生物识别认证的方法。 */
     private val isAuthenticatedMethod: Method,
+    /** 原生状态监视器持有的 StrongAuth 追踪器字段。 */
+    private val strongAuthTrackerField: Field,
+    /** 读取当前用户 StrongAuth 位标志的方法。 */
+    private val getStrongAuthFlagsMethod: Method,
     /** Android 隐藏枚举中的指纹来源对象。 */
     private val fingerprintSource: Any,
     /** Android 隐藏枚举中的人脸来源对象。 */
@@ -78,6 +84,10 @@ internal class Titan2BiometricStateAdapter private constructor(
         }
         /** 当前原生 Keyguard 用户 ID。 */
         val userId = readInt(getCurrentUserMethod, indicationController, "biometric_user")
+        /** 当前原生 StrongAuth 追踪器。 */
+        val strongAuthTracker = requireNotNull(strongAuthTrackerField.get(updateMonitor)) {
+            "biometric_strong_auth_tracker"
+        }
         /** 当前用户是否具有可用指纹。 */
         val fingerprintEnrolled = readBoolean(
             isFingerprintPossibleMethod,
@@ -133,6 +143,12 @@ internal class Titan2BiometricStateAdapter private constructor(
                     "biometric_authenticated",
                     userId,
                 ),
+                strongAuthFlags = readInt(
+                    getStrongAuthFlagsMethod,
+                    strongAuthTracker,
+                    "biometric_strong_auth_flags",
+                    userId,
+                ),
                 messageText = sanitizeBiometricMessage(primaryMessage, followUpMessage),
             ),
         )
@@ -143,8 +159,8 @@ internal class Titan2BiometricStateAdapter private constructor(
         method.invoke(receiver, *args) as? Boolean ?: error(error)
 
     /** 调用精确方法并要求原始整数返回值。 */
-    private fun readInt(method: Method, receiver: Any, error: String): Int =
-        method.invoke(receiver) as? Int ?: error(error)
+    private fun readInt(method: Method, receiver: Any, error: String, vararg args: Any): Int =
+        method.invoke(receiver, *args) as? Int ?: error(error)
 
     internal companion object {
         /** 按精确类、字段和方法签名绑定已启动的 Titan 2 提示控制器。 */
@@ -160,6 +176,12 @@ internal class Titan2BiometricStateAdapter private constructor(
             }
             /** Titan 2 Keyguard 状态监视器类。 */
             val monitorClass = Class.forName(UPDATE_MONITOR_CLASS, false, classLoader)
+            /** Titan 2 StrongAuth 追踪器字段类型。 */
+            val strongAuthTrackerClass = Class.forName(
+                STRONG_AUTH_TRACKER_CLASS,
+                false,
+                classLoader,
+            )
             /** Android 框架隐藏的生物识别来源枚举类。 */
             val biometricSourceClass = Class.forName(
                 BIOMETRIC_SOURCE_CLASS,
@@ -242,6 +264,17 @@ internal class Titan2BiometricStateAdapter private constructor(
                     Boolean::class.javaPrimitiveType!!,
                     Int::class.javaPrimitiveType!!,
                 ),
+                strongAuthTrackerField = typedField(
+                    monitorClass,
+                    STRONG_AUTH_TRACKER_FIELD,
+                    strongAuthTrackerClass,
+                ),
+                getStrongAuthFlagsMethod = exactPublicMethod(
+                    strongAuthTrackerClass,
+                    GET_STRONG_AUTH_FLAGS_METHOD,
+                    Int::class.javaPrimitiveType!!,
+                    Int::class.javaPrimitiveType!!,
+                ),
                 fingerprintSource = fingerprintSource,
                 faceSource = faceSource,
             )
@@ -273,12 +306,26 @@ internal class Titan2BiometricStateAdapter private constructor(
             isAccessible = true
         }
 
+        /** 解析允许由父类声明的公开方法，并要求返回值精确匹配。 */
+        private fun exactPublicMethod(
+            owner: Class<*>,
+            name: String,
+            returnType: Class<*>,
+            vararg parameterTypes: Class<*>,
+        ): Method = owner.getMethod(name, *parameterTypes).apply {
+            check(this.returnType == returnType) { "biometric_public_method_type:$name" }
+        }
+
         /** Titan 2 锁屏提示控制器类名。 */
         private const val INDICATION_CONTROLLER_CLASS: String =
             "com.android.systemui.statusbar.KeyguardIndicationController"
 
         /** Titan 2 Keyguard 状态监视器类名。 */
         private const val UPDATE_MONITOR_CLASS: String = "com.android.keyguard.KeyguardUpdateMonitor"
+
+        /** Titan 2 StrongAuth 追踪器类名。 */
+        private const val STRONG_AUTH_TRACKER_CLASS: String =
+            "com.android.keyguard.KeyguardUpdateMonitor\$StrongAuthTracker"
 
         /** Android 框架隐藏的生物识别来源枚举类名。 */
         private const val BIOMETRIC_SOURCE_CLASS: String =
@@ -292,6 +339,9 @@ internal class Titan2BiometricStateAdapter private constructor(
 
         /** 原生状态监视器字段名。 */
         private const val UPDATE_MONITOR_FIELD: String = "mKeyguardUpdateMonitor"
+
+        /** 原生 StrongAuth 追踪器字段名。 */
+        private const val STRONG_AUTH_TRACKER_FIELD: String = "mStrongAuthTracker"
 
         /** 原生主生物识别消息字段名。 */
         private const val BIOMETRIC_MESSAGE_FIELD: String = "mBiometricMessage"
@@ -327,6 +377,9 @@ internal class Titan2BiometricStateAdapter private constructor(
 
         /** 当前用户生物识别成功状态方法名。 */
         private const val IS_AUTHENTICATED_METHOD: String = "getUserUnlockedWithBiometric"
+
+        /** 当前用户 StrongAuth 位标志读取方法名。 */
+        private const val GET_STRONG_AUTH_FLAGS_METHOD: String = "getStrongAuthForUser"
     }
 }
 
@@ -343,7 +396,15 @@ internal fun resolveTitan2BiometricState(
         else -> LockscreenBiometricModality.NONE
     }
     if (modality == LockscreenBiometricModality.NONE) {
-        return LockscreenBiometricUiState()
+        return if (input.strongAuthFlags != STRONG_AUTH_NOT_REQUIRED) {
+            LockscreenBiometricUiState(
+                modality = LockscreenBiometricModality.NONE,
+                phase = LockscreenBiometricPhase.STRONG_AUTH_REQUIRED,
+                messageText = strongAuthMessage(input.strongAuthFlags),
+            )
+        } else {
+            LockscreenBiometricUiState()
+        }
     }
     /** 至少一种已注册方式当前是否被 StrongAuth 允许。 */
     val anyAllowed = (input.fingerprintEnrolled && input.fingerprintAllowed) ||
@@ -367,8 +428,24 @@ internal fun resolveTitan2BiometricState(
     return LockscreenBiometricUiState(
         modality = modality,
         phase = phase,
-        messageText = if (phase == LockscreenBiometricPhase.ERROR) input.messageText else "",
+        messageText = when (phase) {
+            LockscreenBiometricPhase.ERROR -> input.messageText
+            LockscreenBiometricPhase.STRONG_AUTH_REQUIRED ->
+                strongAuthMessage(input.strongAuthFlags)
+            else -> ""
+        },
     )
+}
+
+/** 按 Android StrongAuth 位标志输出不推断安全决策的固定提示。 */
+internal fun strongAuthMessage(flags: Int): String = when {
+    flags and STRONG_AUTH_AFTER_USER_LOCKDOWN != 0 -> "LOCKDOWN - USE CREDENTIAL"
+    flags and STRONG_AUTH_AFTER_BOOT != 0 -> "DEVICE RESTARTED - USE CREDENTIAL"
+    flags and STRONG_AUTH_AFTER_DPM_LOCK_NOW != 0 -> "ADMIN LOCK - USE CREDENTIAL"
+    flags and STRONG_AUTH_AFTER_LOCKOUT != 0 -> "TOO MANY ATTEMPTS - USE CREDENTIAL"
+    flags and STRONG_AUTH_AFTER_TIMEOUT != 0 -> "TIMEOUT - USE CREDENTIAL"
+    flags != STRONG_AUTH_NOT_REQUIRED -> "USE DEVICE CREDENTIAL"
+    else -> ""
 }
 
 /** 合并并清理 SystemUI 两段非敏感生物识别消息，使其适合单行像素布局。 */
@@ -385,3 +462,21 @@ private const val MAXIMUM_BIOMETRIC_MESSAGE_LENGTH: Int = 160
 
 /** 复用的系统消息空白折叠表达式，避免每帧创建正则对象。 */
 private val BIOMETRIC_WHITESPACE_REGEX: Regex = Regex("\\s+")
+
+/** Android 表示当前无需强认证的位值。 */
+private const val STRONG_AUTH_NOT_REQUIRED: Int = 0x0
+
+/** Android 表示设备重启后必须强认证的位值。 */
+private const val STRONG_AUTH_AFTER_BOOT: Int = 0x1
+
+/** Android 表示设备管理员锁定后必须强认证的位值。 */
+private const val STRONG_AUTH_AFTER_DPM_LOCK_NOW: Int = 0x2
+
+/** Android 表示凭据失败锁定后必须强认证的位值。 */
+private const val STRONG_AUTH_AFTER_LOCKOUT: Int = 0x8
+
+/** Android 表示认证超时后必须强认证的位值。 */
+private const val STRONG_AUTH_AFTER_TIMEOUT: Int = 0x10
+
+/** Android 表示用户主动 Lockdown 后必须强认证的位值。 */
+private const val STRONG_AUTH_AFTER_USER_LOCKDOWN: Int = 0x20

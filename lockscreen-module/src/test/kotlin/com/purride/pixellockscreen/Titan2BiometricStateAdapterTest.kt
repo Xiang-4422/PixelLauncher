@@ -16,6 +16,16 @@ class Titan2BiometricStateAdapterTest {
         assertEquals(LockscreenBiometricPhase.UNAVAILABLE, state.phase)
     }
 
+    /** 即使没有注册传感器，系统 StrongAuth 也必须保持可见。 */
+    @Test
+    fun strongAuthRemainsVisibleWithoutEnrollment() {
+        /** 当前用户主动 Lockdown 后的状态。 */
+        val state = resolveTitan2BiometricState(input(strongAuthFlags = 0x20))
+        assertEquals(LockscreenBiometricModality.NONE, state.modality)
+        assertEquals(LockscreenBiometricPhase.STRONG_AUTH_REQUIRED, state.phase)
+        assertEquals("LOCKDOWN - USE CREDENTIAL", state.messageText)
+    }
+
     /** StrongAuth 禁止所有已注册方式时必须优先要求设备凭据。 */
     @Test
     fun strongAuthOverridesRunningAndMessages() {
@@ -25,11 +35,12 @@ class Titan2BiometricStateAdapterTest {
                 fingerprintEnrolled = true,
                 fingerprintRunning = true,
                 fingerprintAllowed = false,
+                strongAuthFlags = 0x1,
                 messageText = "NOT RECOGNIZED",
             ),
         )
         assertEquals(LockscreenBiometricPhase.STRONG_AUTH_REQUIRED, state.phase)
-        assertEquals("", state.messageText)
+        assertEquals("DEVICE RESTARTED - USE CREDENTIAL", state.messageText)
     }
 
     /** 可用传感器监听应优先于另一种方式的局部锁定。 */
@@ -113,6 +124,7 @@ class Titan2BiometricStateAdapterTest {
         fingerprintAllowed: Boolean = true,
         faceAllowed: Boolean = true,
         authenticated: Boolean = false,
+        strongAuthFlags: Int = 0,
         messageText: String = "",
     ): Titan2BiometricSnapshotInput = Titan2BiometricSnapshotInput(
         fingerprintEnrolled = fingerprintEnrolled,
@@ -124,6 +136,7 @@ class Titan2BiometricStateAdapterTest {
         fingerprintAllowed = fingerprintAllowed,
         faceAllowed = faceAllowed,
         authenticated = authenticated,
+        strongAuthFlags = strongAuthFlags,
         messageText = messageText,
     )
 }
