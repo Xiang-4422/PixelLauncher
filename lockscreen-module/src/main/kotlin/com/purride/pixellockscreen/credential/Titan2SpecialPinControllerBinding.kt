@@ -51,6 +51,21 @@ internal data class Titan2SpecialPinSnapshot(
     val checking: Boolean,
 )
 
+/** 特殊数字页协调器只允许调用的原生动作边界。 */
+internal interface Titan2SpecialPinActions {
+    /** 读取一次不含输入内容的可见状态。 */
+    fun snapshot(): Titan2SpecialPinSnapshot
+
+    /** 交给原生数字按键处理一个 ASCII 数字。 */
+    fun enterDigit(digit: Char)
+
+    /** 请求原生页面删除最后一个数字。 */
+    fun delete()
+
+    /** 请求原生页面确认并进入其自身安全状态机。 */
+    fun confirm()
+}
+
 /**
  * 精确绑定 Titan 2 的 SIM PIN/PUK/ME 与 MediaTek AntiTheft 数字页面。
  *
@@ -92,9 +107,9 @@ internal class Titan2SpecialPinControllerBinding private constructor(
     private val hasClickListenerMethod: Method,
     /** Android View 执行原生点击链的方法。 */
     private val performClickMethod: Method,
-) {
+) : Titan2SpecialPinActions {
     /** 检查控制器仍属于绑定模式并读取一帧脱敏可见状态。 */
-    fun snapshot(): Titan2SpecialPinSnapshot {
+    override fun snapshot(): Titan2SpecialPinSnapshot {
         check(securityModeField.get(controller) === nativeSecurityMode) {
             "special_pin_security_mode_stale"
         }
@@ -109,18 +124,18 @@ internal class Titan2SpecialPinControllerBinding private constructor(
     }
 
     /** 把一个数字交给原生 `NumPadKey` 点击链。 */
-    fun enterDigit(digit: Char) {
+    override fun enterDigit(digit: Char) {
         require(digit in '0'..'9') { "special_pin_digit" }
         click(digitButtons[digit - '0'], "special_pin_digit_click")
     }
 
     /** 把删除动作交给原生数字页。 */
-    fun delete() {
+    override fun delete() {
         click(deleteButton, "special_pin_delete_click")
     }
 
     /** 把确认动作交给原生控制器已经安装的校验入口。 */
-    fun confirm() {
+    override fun confirm() {
         click(confirmButton, "special_pin_confirm_click")
     }
 
