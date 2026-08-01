@@ -22,11 +22,14 @@ import com.purride.pixellockscreen.ui.LockscreenRootHost
 import com.purride.pixellockscreen.ui.PatternCredentialFeedback
 import com.purride.pixellockscreen.ui.PatternCredentialHost
 import com.purride.pixellockscreen.ui.PatternCredentialListener
+import com.purride.pixellockscreen.ui.PasswordCredentialFeedback
+import com.purride.pixellockscreen.ui.PasswordCredentialHost
+import com.purride.pixellockscreen.ui.PasswordCredentialListener
 import com.purride.pixellockscreen.ui.PinCredentialFeedback
 import com.purride.pixellockscreen.ui.PinCredentialHost
 import com.purride.pixellockscreen.ui.PinCredentialListener
 
-/** 使用真实普通锁屏、图案和 PIN 宿主提供确定输入与测试背景的离线预览页。 */
+/** 使用真实普通锁屏、图案、PIN 和密码宿主提供确定输入与测试背景的离线预览页。 */
 class LockscreenPreviewActivity : AppCompatActivity() {
     /** 当前全部预览选项；每次交互通过 copy 原子替换。 */
     private var configuration: LockscreenPreviewConfiguration = LockscreenPreviewConfiguration()
@@ -127,6 +130,11 @@ class LockscreenPreviewActivity : AppCompatActivity() {
             family = configuration.family,
             brightness = configuration.brightness,
         )
+        previewStage.passwordHost.update(
+            state = configuration.toPasswordUiState(),
+            family = configuration.family,
+            brightness = configuration.brightness,
+        )
         rebuildControls()
     }
 
@@ -213,7 +221,7 @@ class LockscreenPreviewActivity : AppCompatActivity() {
                     },
                 ),
             )
-        } else {
+        } else if (configuration.scene == LockscreenPreviewScene.PIN) {
             controlsContainer.addView(
                 optionRow(
                     label = "STATE",
@@ -224,6 +232,47 @@ class LockscreenPreviewActivity : AppCompatActivity() {
                             onClick = { updateConfiguration { copy(pinFeedback = feedback) } },
                         )
                     },
+                ),
+            )
+        } else {
+            controlsContainer.addView(
+                optionRow(
+                    label = "STATE",
+                    options = PasswordCredentialFeedback.entries.map { feedback ->
+                        ControlOption(
+                            label = feedback.name,
+                            selected = feedback == configuration.passwordFeedback,
+                            onClick = {
+                                updateConfiguration { copy(passwordFeedback = feedback) }
+                            },
+                        )
+                    },
+                ),
+            )
+            controlsContainer.addView(
+                optionRow(
+                    label = "FOCUS",
+                    options = listOf(
+                        ControlOption("OFF", !configuration.passwordHasInputFocus) {
+                            updateConfiguration { copy(passwordHasInputFocus = false) }
+                        },
+                        ControlOption("ON", configuration.passwordHasInputFocus) {
+                            updateConfiguration { copy(passwordHasInputFocus = true) }
+                        },
+                    ),
+                ),
+            )
+            controlsContainer.addView(
+                optionRow(
+                    label = "IME SWITCH",
+                    options = listOf(
+                        ControlOption("HIDE", !configuration.passwordImeSwitcherVisible) {
+                            updateConfiguration { copy(passwordImeSwitcherVisible = false) }
+                        },
+                        ControlOption("SHOW", configuration.passwordImeSwitcherVisible) {
+                            updateConfiguration { copy(passwordImeSwitcherVisible = true) }
+                        },
+                    ),
                 ),
             )
         }
@@ -385,7 +434,13 @@ private class LockscreenPreviewStage(context: Context) : ViewGroup(context) {
     /** Showcase 与未来 SystemUI 会话共用的真实 PIN 交互宿主。 */
     val pinHost: PinCredentialHost = PinCredentialHost(context, PreviewPinListener)
 
-    /** 当前展示的宿主场景，只改变三个真实宿主的可见性。 */
+    /** Showcase 与未来 SystemUI 输入连接桥共用的真实密码交互宿主。 */
+    val passwordHost: PasswordCredentialHost = PasswordCredentialHost(
+        context,
+        PreviewPasswordListener,
+    )
+
+    /** 当前展示的宿主场景，只改变四个真实宿主的可见性。 */
     var scene: LockscreenPreviewScene = LockscreenPreviewScene.CLOCK
         set(value) {
             if (field == value) return
@@ -416,6 +471,7 @@ private class LockscreenPreviewStage(context: Context) : ViewGroup(context) {
         addView(lockscreenHost)
         addView(patternHost)
         addView(pinHost)
+        addView(passwordHost)
         updateHostVisibility()
     }
 
@@ -450,6 +506,7 @@ private class LockscreenPreviewStage(context: Context) : ViewGroup(context) {
         lockscreenHost.measure(childWidthSpec, childHeightSpec)
         patternHost.measure(childWidthSpec, childHeightSpec)
         pinHost.measure(childWidthSpec, childHeightSpec)
+        passwordHost.measure(childWidthSpec, childHeightSpec)
         setMeasuredDimension(availableWidth, availableHeight)
     }
 
@@ -467,13 +524,15 @@ private class LockscreenPreviewStage(context: Context) : ViewGroup(context) {
         lockscreenHost.layout(childLeft, childTop, childRight, childBottom)
         patternHost.layout(childLeft, childTop, childRight, childBottom)
         pinHost.layout(childLeft, childTop, childRight, childBottom)
+        passwordHost.layout(childLeft, childTop, childRight, childBottom)
     }
 
-    /** 释放真实静态宿主持有的 Pixel Engine 运行时。 */
+    /** 释放全部真实宿主持有的 Pixel Engine 运行时。 */
     fun dispose() {
         lockscreenHost.dispose()
         patternHost.dispose()
         pinHost.dispose()
+        passwordHost.dispose()
     }
 
     /** 保证任一时刻只有一个真实宿主可见并接收输入。 */
@@ -481,6 +540,7 @@ private class LockscreenPreviewStage(context: Context) : ViewGroup(context) {
         lockscreenHost.visibility = if (scene == LockscreenPreviewScene.CLOCK) View.VISIBLE else View.GONE
         patternHost.visibility = if (scene == LockscreenPreviewScene.PATTERN) View.VISIBLE else View.GONE
         pinHost.visibility = if (scene == LockscreenPreviewScene.PIN) View.VISIBLE else View.GONE
+        passwordHost.visibility = if (scene == LockscreenPreviewScene.PASSWORD) View.VISIBLE else View.GONE
     }
 
     private companion object {
@@ -529,6 +589,23 @@ private data object PreviewPinListener : PinCredentialListener {
     /** 预览监听器自身没有外部依赖，异常仅转换为稳定失败。 */
     override fun onInteractionFailure(throwable: Throwable) {
         throw IllegalStateException("pin_preview_interaction", throwable)
+    }
+}
+
+/** 离线预览只验证密码掩码和公开动作，不创建或连接任何文本输入。 */
+private data object PreviewPasswordListener : PasswordCredentialListener {
+    /** 离线预览不请求真实密码输入焦点或系统键盘。 */
+    override fun onInputRequested() = Unit
+
+    /** 离线预览不打开设备输入法选择器。 */
+    override fun onImeSwitcherRequested() = Unit
+
+    /** 离线预览不启动真实紧急呼叫流程。 */
+    override fun onEmergencyRequested() = Unit
+
+    /** 预览监听器自身没有外部依赖，异常仅转换为稳定失败。 */
+    override fun onInteractionFailure(throwable: Throwable) {
+        throw IllegalStateException("password_preview_interaction", throwable)
     }
 }
 

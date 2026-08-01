@@ -3,6 +3,7 @@ package com.purride.pixelshowcase
 import com.purride.pixeldesign.ProductThemeBrightness
 import com.purride.pixeldesign.ProductThemeFamily
 import com.purride.pixellockscreen.ui.PatternCredentialFeedback
+import com.purride.pixellockscreen.ui.PasswordCredentialFeedback
 import com.purride.pixellockscreen.ui.PinCredentialFeedback
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -47,9 +48,10 @@ class LockscreenPreviewModelTest {
         assertEquals(2, ProductThemeBrightness.entries.size)
         assertEquals(2, LockscreenPreviewOrientation.entries.size)
         assertEquals(4, LockscreenPreviewBackground.entries.size)
-        assertEquals(3, LockscreenPreviewScene.entries.size)
+        assertEquals(4, LockscreenPreviewScene.entries.size)
         assertEquals(4, PatternCredentialFeedback.entries.size)
         assertEquals(4, PinCredentialFeedback.entries.size)
+        assertEquals(4, PasswordCredentialFeedback.entries.size)
     }
 
     /** 图案预览反馈必须保持固定文字且不包含任何路径数据。 */
@@ -72,6 +74,22 @@ class LockscreenPreviewModelTest {
             assertEquals("ENTER PIN", state.promptText)
             assertEquals(4, state.inputLength)
             assertEquals(feedback, state.feedback)
+        }
+    }
+
+    /** 密码预览必须只携带长度、焦点、入口和可控反馈。 */
+    @Test
+    fun passwordPreviewBuildsControllableLengthOnlyState() {
+        PasswordCredentialFeedback.entries.forEach { feedback ->
+            /** 当前反馈转换出的密码 UI 状态。 */
+            val state = LockscreenPreviewConfiguration(
+                passwordFeedback = feedback,
+            ).toPasswordUiState()
+            assertEquals("ENTER PASSWORD", state.promptText)
+            assertEquals(8, state.inputLength)
+            assertEquals(feedback, state.feedback)
+            assertEquals(true, state.hasInputFocus)
+            assertEquals(true, state.isImeSwitcherVisible)
         }
     }
 

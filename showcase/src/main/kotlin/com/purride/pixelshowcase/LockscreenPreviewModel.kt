@@ -5,6 +5,8 @@ import com.purride.pixeldesign.ProductThemeFamily
 import com.purride.pixellockscreen.ui.LockscreenUiState
 import com.purride.pixellockscreen.ui.PatternCredentialFeedback
 import com.purride.pixellockscreen.ui.PatternCredentialUiState
+import com.purride.pixellockscreen.ui.PasswordCredentialFeedback
+import com.purride.pixellockscreen.ui.PasswordCredentialUiState
 import com.purride.pixellockscreen.ui.PinCredentialFeedback
 import com.purride.pixellockscreen.ui.PinCredentialUiState
 
@@ -21,6 +23,9 @@ internal enum class LockscreenPreviewScene(
 
     /** 可交互 PIN 键盘认证。 */
     PIN("PIN"),
+
+    /** 复用系统 IME 语义的密码认证。 */
+    PASSWORD("PASSWORD"),
 }
 
 /** 离线预览支持的画布方向；它只改变预览框比例，不旋转设备。 */
@@ -75,6 +80,14 @@ internal data class LockscreenPreviewConfiguration(
     val pinFeedback: PinCredentialFeedback = PinCredentialFeedback.READY,
     /** PIN 场景用于检查圆点布局的非敏感输入长度。 */
     val pinInputLength: Int = PREVIEW_PIN_INPUT_LENGTH,
+    /** 密码场景使用的可控系统反馈。 */
+    val passwordFeedback: PasswordCredentialFeedback = PasswordCredentialFeedback.READY,
+    /** 密码场景用于检查掩码布局的非敏感输入长度。 */
+    val passwordInputLength: Int = PREVIEW_PASSWORD_INPUT_LENGTH,
+    /** 密码场景是否展示原生输入连接已聚焦状态。 */
+    val passwordHasInputFocus: Boolean = true,
+    /** 密码场景是否展示系统输入法切换入口。 */
+    val passwordImeSwitcherVisible: Boolean = true,
 ) {
     /** 把预览配置转换为固定时间、固定日期的锁屏展示状态。 */
     fun toUiState(): LockscreenUiState = LockscreenUiState(
@@ -108,6 +121,21 @@ internal data class LockscreenPreviewConfiguration(
             PinCredentialFeedback.LOCKED_OUT -> "WAIT 30S"
         },
         feedback = pinFeedback,
+    )
+
+    /** 把可控反馈转换为只包含长度、焦点和入口状态的密码认证状态。 */
+    fun toPasswordUiState(): PasswordCredentialUiState = PasswordCredentialUiState(
+        promptText = PREVIEW_PASSWORD_PROMPT,
+        inputLength = passwordInputLength,
+        feedbackText = when (passwordFeedback) {
+            PasswordCredentialFeedback.READY -> ""
+            PasswordCredentialFeedback.CHECKING -> "CHECKING"
+            PasswordCredentialFeedback.ERROR -> "TRY AGAIN"
+            PasswordCredentialFeedback.LOCKED_OUT -> "WAIT 30S"
+        },
+        feedback = passwordFeedback,
+        hasInputFocus = passwordHasInputFocus,
+        isImeSwitcherVisible = passwordImeSwitcherVisible,
     )
 }
 
@@ -149,3 +177,9 @@ private const val PREVIEW_PIN_PROMPT = "ENTER PIN"
 
 /** PIN 预览默认展示的非敏感输入圆点数量。 */
 private const val PREVIEW_PIN_INPUT_LENGTH = 4
+
+/** 密码预览使用的固定主提示。 */
+private const val PREVIEW_PASSWORD_PROMPT = "ENTER PASSWORD"
+
+/** 密码预览默认展示的非敏感输入圆点数量。 */
+private const val PREVIEW_PASSWORD_INPUT_LENGTH = 8
