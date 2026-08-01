@@ -3,6 +3,7 @@ package com.purride.pixelshowcase
 import com.purride.pixeldesign.ProductThemeBrightness
 import com.purride.pixeldesign.ProductThemeFamily
 import com.purride.pixellockscreen.ui.LockscreenUiState
+import com.purride.pixellockscreen.ui.LockscreenAmbientUiState
 import com.purride.pixellockscreen.ui.LockscreenBiometricModality
 import com.purride.pixellockscreen.ui.LockscreenBiometricPhase
 import com.purride.pixellockscreen.ui.LockscreenBiometricUiState
@@ -65,6 +66,18 @@ internal enum class LockscreenPreviewBattery(
     HIGH(92),
 }
 
+/** 普通锁屏预览支持的交互显示与低功耗 AOD 阶段。 */
+internal enum class LockscreenPreviewDisplayMode(
+    /** 控制面板使用的稳定名称。 */
+    val label: String,
+) {
+    /** 屏幕点亮且允许交互。 */
+    ACTIVE("ACTIVE"),
+
+    /** 屏幕非交互但系统仍允许 AOD 绘制。 */
+    AOD("AOD"),
+}
+
 /** 普通锁屏通知与媒体区域的稳定离线样本。 */
 internal enum class LockscreenPreviewContent {
     /** 不展示通知或媒体。 */
@@ -95,6 +108,8 @@ internal data class LockscreenPreviewConfiguration(
     val battery: LockscreenPreviewBattery = LockscreenPreviewBattery.MEDIUM,
     /** 当前是否展示充电状态。 */
     val isCharging: Boolean = false,
+    /** 普通锁屏当前展示阶段。 */
+    val displayMode: LockscreenPreviewDisplayMode = LockscreenPreviewDisplayMode.ACTIVE,
     /** 普通锁屏预览使用的生物识别传感器组合。 */
     val biometricModality: LockscreenBiometricModality = LockscreenBiometricModality.NONE,
     /** 普通锁屏预览使用的系统生物识别阶段。 */
@@ -140,6 +155,15 @@ internal data class LockscreenPreviewConfiguration(
         ),
         notifications = previewNotifications(content),
         media = previewMedia(content),
+        ambient = if (displayMode == LockscreenPreviewDisplayMode.AOD) {
+            LockscreenAmbientUiState(
+                isAmbient = true,
+                burnInOffsetX = PREVIEW_AOD_OFFSET_X,
+                burnInOffsetY = PREVIEW_AOD_OFFSET_Y,
+            )
+        } else {
+            LockscreenAmbientUiState()
+        },
     )
 
     /** 选择传感器组合，并自动修复无传感器与活跃采集阶段的矛盾。 */
@@ -311,3 +335,9 @@ private const val PREVIEW_PASSWORD_PROMPT = "ENTER PASSWORD"
 
 /** 密码预览默认展示的非敏感输入圆点数量。 */
 private const val PREVIEW_PASSWORD_INPUT_LENGTH = 8
+
+/** AOD 离线预览固定使用的水平防烧屏偏移。 */
+private const val PREVIEW_AOD_OFFSET_X = 2
+
+/** AOD 离线预览固定使用的垂直防烧屏偏移。 */
+private const val PREVIEW_AOD_OFFSET_Y = -1

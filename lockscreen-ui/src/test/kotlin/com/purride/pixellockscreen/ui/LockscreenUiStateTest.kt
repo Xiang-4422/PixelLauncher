@@ -115,6 +115,52 @@ class LockscreenUiStateTest {
         assertFails { LockscreenMediaUiState(isVisible = true, titleText = "") }
     }
 
+    /** AOD 偏移必须有界，交互锁屏不得携带防烧屏位移。 */
+    @Test
+    fun ambientStateAcceptsOnlySafeBurnInOffsets() {
+        assertEquals(
+            2,
+            LockscreenAmbientUiState(isAmbient = true, burnInOffsetX = 2).burnInOffsetX,
+        )
+        assertFails { LockscreenAmbientUiState(isAmbient = true, burnInOffsetY = 3) }
+        assertFails { LockscreenAmbientUiState(isAmbient = false, burnInOffsetX = 1) }
+    }
+
+    /** AOD 必须保持透明画布，并忽略普通锁屏通知与解锁提示的绘制。 */
+    @Test
+    fun ambientSceneRendersReducedTransparentContent() {
+        /** 带有普通锁屏内容但切入 AOD 的合法状态。 */
+        val ambientState = state().copy(
+            notifications = listOf(LockscreenNotificationUiState("ONE", "MESSAGES", "HELLO")),
+            media = LockscreenMediaUiState(true, "PIXEL SONG", "ARTIST", true),
+            ambient = LockscreenAmbientUiState(true, burnInOffsetX = 2, burnInOffsetY = -1),
+        )
+        /** 离屏像素宿主。 */
+        val tester = PixelTester()
+        try {
+            tester.pumpWidget(
+                mediaRoot(
+                    child = buildLockscreenScene(
+                        LockscreenSceneRequest(
+                            state = ambientState,
+                            family = ProductThemeFamily.CRT,
+                            brightness = ProductThemeBrightness.DARK,
+                            isLandscape = false,
+                        ),
+                    ),
+                    width = LOCKSCREEN_PORTRAIT_WIDTH,
+                    height = LOCKSCREEN_PORTRAIT_HEIGHT,
+                ),
+                logicalWidth = LOCKSCREEN_PORTRAIT_WIDTH,
+                logicalHeight = LOCKSCREEN_PORTRAIT_HEIGHT,
+            )
+            assertEquals(PixelColor.Transparent, tester.pixelAt(0, 0))
+            assertTrue(tester.semanticsNodes().all { node -> node.actions.isEmpty() })
+        } finally {
+            tester.dispose()
+        }
+    }
+
     /** 媒体、公开通知与隐私替代通知应共同完成透明布局。 */
     @Test
     fun contentCardsRenderOnTransparentCanvas() {

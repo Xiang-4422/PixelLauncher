@@ -59,6 +59,25 @@ class LockscreenPreviewModelTest {
         assertEquals(7, LockscreenBiometricPhase.entries.size)
         assertEquals(4, LockscreenSecurityNoticePhase.entries.size)
         assertEquals(5, LockscreenPreviewContent.entries.size)
+        assertEquals(2, LockscreenPreviewDisplayMode.entries.size)
+    }
+
+    /** AOD 预览必须启用固定防烧屏偏移，交互预览保持原点。 */
+    @Test
+    fun displayModeBuildsStableAmbientState() {
+        /** 固定 AOD 配置转换出的低功耗状态。 */
+        val ambient = LockscreenPreviewConfiguration(
+            displayMode = LockscreenPreviewDisplayMode.AOD,
+        ).toUiState().ambient
+        assertEquals(true, ambient.isAmbient)
+        assertEquals(2, ambient.burnInOffsetX)
+        assertEquals(-1, ambient.burnInOffsetY)
+
+        /** 默认交互锁屏不允许携带 AOD 偏移。 */
+        val active = LockscreenPreviewConfiguration().toUiState().ambient
+        assertFalse(active.isAmbient)
+        assertEquals(0, active.burnInOffsetX)
+        assertEquals(0, active.burnInOffsetY)
     }
 
     /** 内容预览必须覆盖空、公开、隐私替代、媒体和混合最大状态。 */

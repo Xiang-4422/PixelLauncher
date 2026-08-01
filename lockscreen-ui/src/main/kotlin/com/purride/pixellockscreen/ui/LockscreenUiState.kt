@@ -20,6 +20,8 @@ public data class LockscreenUiState(
     public val notifications: List<LockscreenNotificationUiState> = emptyList(),
     /** SystemUI 当前选中的锁屏媒体摘要。 */
     public val media: LockscreenMediaUiState = LockscreenMediaUiState(),
+    /** 系统交互状态驱动的 AOD 展示与防烧屏偏移。 */
+    public val ambient: LockscreenAmbientUiState = LockscreenAmbientUiState(),
 ) {
     /** 在状态进入渲染树之前拒绝不可展示或越界的数据。 */
     init {

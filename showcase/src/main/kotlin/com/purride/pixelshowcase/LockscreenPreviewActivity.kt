@@ -213,6 +213,20 @@ class LockscreenPreviewActivity : AppCompatActivity() {
             )
             controlsContainer.addView(
                 optionRow(
+                    label = "DISPLAY",
+                    options = LockscreenPreviewDisplayMode.entries.map { displayMode ->
+                        ControlOption(
+                            label = displayMode.label,
+                            selected = displayMode == configuration.displayMode,
+                            onClick = {
+                                updateConfiguration { copy(displayMode = displayMode) }
+                            },
+                        )
+                    },
+                ),
+            )
+            controlsContainer.addView(
+                optionRow(
                     label = "BIO TYPE",
                     options = LockscreenBiometricModality.entries.map { modality ->
                         ControlOption(

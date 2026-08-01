@@ -75,6 +75,12 @@ internal fun buildLockscreenScene(request: LockscreenSceneRequest): Widget {
     val timeScale = lockscreenTimeScale(request.isLandscape)
     /** 横屏将辅助信息保持为单倍字体，纵屏日期使用双倍字体强化层级。 */
     val dateScale = if (request.isLandscape) 1 else 2
+    /** 交互锁屏或 AOD 对应的完整场景内容。 */
+    val sceneContent = if (request.state.ambient.isAmbient) {
+        ambientLockscreenContent(request.state, palette, timeScale, dateScale)
+    } else {
+        interactiveLockscreenContent(request.state, palette, timeScale, dateScale)
+    }
     return SafeArea(
         minimum = com.purride.pixelui.PixelWindowInsets(
             left = LOCKSCREEN_CONTENT_INSET,
@@ -82,7 +88,24 @@ internal fun buildLockscreenScene(request: LockscreenSceneRequest): Widget {
             right = LOCKSCREEN_CONTENT_INSET,
             bottom = LOCKSCREEN_CONTENT_INSET,
         ),
-        child = Column(
+        child = Transform.translate(
+            offset = IntOffset(
+                x = request.state.ambient.burnInOffsetX,
+                y = request.state.ambient.burnInOffsetY,
+            ),
+            child = sceneContent,
+            key = "lockscreen-ambient-offset",
+        ),
+    )
+}
+
+/** 绘制可交互锁屏中的时间、安全状态、内容摘要和解锁提示。 */
+private fun interactiveLockscreenContent(
+    state: LockscreenUiState,
+    palette: ProductPalette,
+    timeScale: Int,
+    dateScale: Int,
+): Widget = Column(
             mainAxisSize = MainAxisSize.MAX,
             crossAxisAlignment = CrossAxisAlignment.STRETCH,
             children = listOf(
@@ -96,41 +119,83 @@ internal fun buildLockscreenScene(request: LockscreenSceneRequest): Widget {
                             spacing = LOCKSCREEN_INFO_SPACING,
                             children = listOf(
                                 outlinedLockscreenText(
-                                    text = request.state.timeText,
+                                    text = state.timeText,
                                     foreground = palette.primary,
                                     backing = palette.background,
                                     fontScale = timeScale,
                                     key = "lockscreen-time",
                                 ),
                                 outlinedLockscreenText(
-                                    text = request.state.dateText,
+                                    text = state.dateText,
                                     foreground = palette.secondary,
                                     backing = palette.background,
                                     fontScale = dateScale,
                                     key = "lockscreen-date",
                                 ),
-                                batteryStatus(request.state, palette),
+                                batteryStatus(state, palette),
                                 visibleSecurityStatus(
-                                    biometric = request.state.biometric,
-                                    notice = request.state.securityNotice,
+                                    biometric = state.biometric,
+                                    notice = state.securityNotice,
                                     palette = palette,
                                 ),
                             ),
                         ),
                     ),
                 ),
-                lockscreenContentCards(request.state, palette),
+                lockscreenContentCards(state, palette),
                 outlinedLockscreenText(
-                    text = request.state.unlockHint,
+                    text = state.unlockHint,
                     foreground = palette.muted,
                     backing = palette.background,
                     fontScale = 1,
                     key = "lockscreen-unlock-hint",
                 ),
             ),
+            key = "lockscreen-interactive-content",
+        )
+
+/** AOD 只绘制时间、日期和电量，不暴露通知、安全提示或解锁操作。 */
+private fun ambientLockscreenContent(
+    state: LockscreenUiState,
+    palette: ProductPalette,
+    timeScale: Int,
+    dateScale: Int,
+): Widget = Column(
+    mainAxisSize = MainAxisSize.MAX,
+    crossAxisAlignment = CrossAxisAlignment.STRETCH,
+    children = listOf(
+        Expanded(
+            child = Container(
+                alignment = Alignment.CENTER,
+                child = Column(
+                    mainAxisSize = MainAxisSize.MIN,
+                    mainAxisAlignment = MainAxisAlignment.CENTER,
+                    crossAxisAlignment = CrossAxisAlignment.CENTER,
+                    spacing = LOCKSCREEN_INFO_SPACING,
+                    children = listOf(
+                        outlinedLockscreenText(
+                            text = state.timeText,
+                            foreground = palette.primary,
+                            backing = palette.background,
+                            fontScale = timeScale,
+                            key = "lockscreen-ambient-time",
+                        ),
+                        outlinedLockscreenText(
+                            text = state.dateText,
+                            foreground = palette.secondary,
+                            backing = palette.background,
+                            fontScale = dateScale,
+                            key = "lockscreen-ambient-date",
+                        ),
+                        batteryStatus(state, palette),
+                    ),
+                    key = "lockscreen-ambient-info",
+                ),
+            ),
         ),
-    )
-}
+    ),
+    key = "lockscreen-ambient-content",
+)
 
 /** 只在存在媒体或通知摘要时绘制底部紧凑内容区。 */
 private fun lockscreenContentCards(state: LockscreenUiState, palette: ProductPalette): Widget {
