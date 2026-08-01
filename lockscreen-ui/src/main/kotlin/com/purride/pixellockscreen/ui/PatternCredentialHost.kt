@@ -2,6 +2,7 @@ package com.purride.pixellockscreen.ui
 
 import android.content.Context
 import android.graphics.Color
+import android.graphics.Rect
 import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
@@ -9,6 +10,7 @@ import com.purride.pixeldesign.ProductThemeBrightness
 import com.purride.pixeldesign.ProductThemeFamily
 import com.purride.pixelcore.PixelColor
 import com.purride.pixelcore.PixelGridGeometryResolver
+import com.purride.pixelcore.ScreenProfile
 import com.purride.pixelui.PixelHostProfilePolicy
 import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.SizedBox
@@ -28,6 +30,9 @@ public class PatternCredentialHost(
     /** 实际执行全部可见绘制的 Pixel Engine 宿主。 */
     private val pixelHostView: PixelHostView = PixelHostView(context)
 
+    /** 不绘制内容、只为 TalkBack 暴露独立紧急操作的透明 Android 节点。 */
+    private val emergencyAccessibilityView: View = View(context)
+
     /** 当前方向的逻辑布局。 */
     private var currentLayout: PatternCredentialLayout = patternCredentialLayout(isLandscape = false)
 
@@ -36,6 +41,9 @@ public class PatternCredentialHost(
 
     /** 当前触摸序列使用的主指针 ID。 */
     private var activePointerId: Int = MotionEvent.INVALID_POINTER_ID
+
+    /** 当前主指针是否由紧急按钮而非图案区域持有。 */
+    private var emergencyPointerActive: Boolean = false
 
     /** 事件接收失败后永久禁止当前宿主继续采集。 */
     private var interactionFailed: Boolean = false
@@ -70,6 +78,14 @@ public class PatternCredentialHost(
         pixelHostView.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
         pixelHostView.setContent { SizedBox(width = 0, height = 0) }
         addView(pixelHostView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        emergencyAccessibilityView.setBackgroundColor(Color.TRANSPARENT)
+        emergencyAccessibilityView.isClickable = true
+        emergencyAccessibilityView.isFocusable = true
+        emergencyAccessibilityView.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
+        emergencyAccessibilityView.setOnClickListener {
+            safelyNotify(listener::onEmergencyRequested)
+        }
+        addView(emergencyAccessibilityView, LayoutParams(0, 0))
         configureProfile(currentLayout)
     }
 
@@ -95,6 +111,7 @@ public class PatternCredentialHost(
         contentDescription = listOf(state.promptText, state.feedbackText)
             .filter(String::isNotBlank)
             .joinToString(separator = ". ")
+        emergencyAccessibilityView.contentDescription = state.emergencyAccessibilityLabel
         submitCurrentScene()
     }
 
@@ -115,6 +132,42 @@ public class PatternCredentialHost(
             lastRequest = previous.copy(isLandscape = width > height)
             submitCurrentScene()
         }
+    }
+
+    /** 按当前测量方向为透明紧急无障碍节点提供真实物理尺寸。 */
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        /** 当前测量尺寸对应的逻辑布局。 */
+        val measuredLayout = patternCredentialLayout(isLandscape = measuredWidth > measuredHeight)
+        /** 与像素按钮一致的物理边界。 */
+        val emergencyBounds = resolveEmergencyBounds(
+            viewWidth = measuredWidth,
+            viewHeight = measuredHeight,
+            layout = measuredLayout,
+        )
+        if (emergencyBounds != null) {
+            emergencyAccessibilityView.measure(
+                MeasureSpec.makeMeasureSpec(emergencyBounds.width(), MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(emergencyBounds.height(), MeasureSpec.EXACTLY),
+            )
+        }
+    }
+
+    /** 按 Pixel Engine 的真实物理几何定位透明紧急无障碍节点。 */
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+        /** 当前绘制使用的紧急按钮物理边界。 */
+        val emergencyBounds = resolveEmergencyBounds(
+            viewWidth = width,
+            viewHeight = height,
+            layout = currentLayout,
+        ) ?: return
+        emergencyAccessibilityView.layout(
+            emergencyBounds.left,
+            emergencyBounds.top,
+            emergencyBounds.right,
+            emergencyBounds.bottom,
+        )
     }
 
     /** 消费完整图案指针序列，禁止事件穿透到仍作为回退保留的原生 Bouncer。 */
@@ -173,6 +226,10 @@ public class PatternCredentialHost(
         parent?.requestDisallowInterceptTouchEvent(true)
         /** 当前落点对应的逻辑坐标。 */
         val point = mapToLogical(event.x, event.y) ?: return
+        if (currentLayout.containsEmergency(point.first, point.second)) {
+            emergencyPointerActive = true
+            return
+        }
         gestureTracker.start(point.first, point.second)
     }
 
@@ -182,6 +239,9 @@ public class PatternCredentialHost(
         val pointerIndex = event.findPointerIndex(activePointerId)
         if (pointerIndex < 0) {
             cancelGesture()
+            return
+        }
+        if (emergencyPointerActive) {
             return
         }
         repeat(event.historySize) { historyIndex ->
@@ -202,7 +262,16 @@ public class PatternCredentialHost(
         if (event.getPointerId(event.actionIndex) != activePointerId) {
             return
         }
-        gestureTracker.end()
+        if (emergencyPointerActive) {
+            /** 抬起点对应的逻辑坐标。 */
+            val point = mapToLogical(event.getX(event.actionIndex), event.getY(event.actionIndex))
+            if (point != null && currentLayout.containsEmergency(point.first, point.second)) {
+                safelyNotify(listener::onEmergencyRequested)
+            }
+            emergencyPointerActive = false
+        } else {
+            gestureTracker.end()
+        }
         activePointerId = MotionEvent.INVALID_POINTER_ID
         parent?.requestDisallowInterceptTouchEvent(false)
         performClick()
@@ -211,6 +280,7 @@ public class PatternCredentialHost(
     /** 取消当前路径并释放父级拦截限制。 */
     private fun cancelGesture() {
         gestureTracker.cancel()
+        emergencyPointerActive = false
         activePointerId = MotionEvent.INVALID_POINTER_ID
         parent?.requestDisallowInterceptTouchEvent(false)
     }
@@ -232,6 +302,43 @@ public class PatternCredentialHost(
         pixelHostView.profilePolicy = PixelHostProfilePolicy.AdaptiveLogicalSize(
             logicalWidth = layout.logicalWidth,
             logicalHeight = layout.logicalHeight,
+        )
+    }
+
+    /** 使用固定逻辑尺寸解析紧急按钮的真实物理边界。 */
+    private fun resolveEmergencyBounds(
+        /** Android 宿主物理宽度。 */
+        viewWidth: Int,
+        /** Android 宿主物理高度。 */
+        viewHeight: Int,
+        /** 当前方向的逻辑布局。 */
+        layout: PatternCredentialLayout,
+    ): Rect? {
+        /** 与当前场景逻辑尺寸一致的临时屏幕配置。 */
+        val profile = ScreenProfile(
+            logicalWidth = layout.logicalWidth,
+            logicalHeight = layout.logicalHeight,
+            dotSizePx = 1,
+        )
+        /** 与 Pixel Engine 绘制共用的物理网格几何。 */
+        val geometry = PixelGridGeometryResolver.resolve(
+            viewWidth = viewWidth,
+            viewHeight = viewHeight,
+            profile = profile,
+            viewportPolicy = pixelHostView.viewportPolicy,
+            pixelGapEnabled = false,
+        ) ?: return null
+        return Rect(
+            (geometry.originX + layout.emergencyLeft * geometry.cellSize).toInt(),
+            (geometry.originY + layout.emergencyTop * geometry.cellSize).toInt(),
+            (
+                geometry.originX +
+                    (layout.emergencyLeft + layout.emergencyWidth) * geometry.cellSize
+                ).toInt(),
+            (
+                geometry.originY +
+                    (layout.emergencyTop + layout.emergencyHeight) * geometry.cellSize
+                ).toInt(),
         )
     }
 

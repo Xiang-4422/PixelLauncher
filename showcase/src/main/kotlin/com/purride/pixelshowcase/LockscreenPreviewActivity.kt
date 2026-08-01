@@ -474,6 +474,9 @@ private data object PreviewPatternListener : PatternCredentialListener {
     /** 预览取消不需要额外状态。 */
     override fun onPatternCancelled() = Unit
 
+    /** 离线预览不启动真实紧急呼叫流程。 */
+    override fun onEmergencyRequested() = Unit
+
     /** 预览监听器自身没有外部依赖，异常仅转换为稳定失败。 */
     override fun onInteractionFailure(throwable: Throwable) {
         throw IllegalStateException("pattern_preview_interaction", throwable)

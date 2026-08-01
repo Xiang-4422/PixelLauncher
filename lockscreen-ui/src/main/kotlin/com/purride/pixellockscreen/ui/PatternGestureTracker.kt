@@ -31,12 +31,25 @@ internal data class PatternCredentialLayout(
     val feedbackWidth: Int,
     /** 反馈文字高度。 */
     val feedbackHeight: Int,
+    /** 紧急按钮左边界。 */
+    val emergencyLeft: Int,
+    /** 紧急按钮上边界。 */
+    val emergencyTop: Int,
+    /** 紧急按钮宽度。 */
+    val emergencyWidth: Int,
+    /** 紧急按钮高度。 */
+    val emergencyHeight: Int,
 ) {
     /** 返回指定格子的全局逻辑横坐标。 */
     fun centerX(cellId: Int): Int = patternLeft + GRID_MARGIN + (cellId % GRID_SIDE) * GRID_STEP
 
     /** 返回指定格子的全局逻辑纵坐标。 */
     fun centerY(cellId: Int): Int = patternTop + GRID_MARGIN + (cellId / GRID_SIDE) * GRID_STEP
+
+    /** 判断逻辑坐标是否位于紧急入口内。 */
+    fun containsEmergency(logicalX: Int, logicalY: Int): Boolean =
+        logicalX in emergencyLeft until emergencyLeft + emergencyWidth &&
+            logicalY in emergencyTop until emergencyTop + emergencyHeight
 
     internal companion object {
         /** 九宫格单边数量。 */
@@ -72,6 +85,10 @@ internal fun patternCredentialLayout(isLandscape: Boolean): PatternCredentialLay
             feedbackTop = 52,
             feedbackWidth = 74,
             feedbackHeight = 24,
+            emergencyLeft = 158,
+            emergencyTop = 32,
+            emergencyWidth = 32,
+            emergencyHeight = 32,
         )
     } else {
         PatternCredentialLayout(
@@ -87,6 +104,10 @@ internal fun patternCredentialLayout(isLandscape: Boolean): PatternCredentialLay
             feedbackTop = 143,
             feedbackWidth = 88,
             feedbackHeight = 24,
+            emergencyLeft = 13,
+            emergencyTop = 172,
+            emergencyWidth = 70,
+            emergencyHeight = 15,
         )
     }
 

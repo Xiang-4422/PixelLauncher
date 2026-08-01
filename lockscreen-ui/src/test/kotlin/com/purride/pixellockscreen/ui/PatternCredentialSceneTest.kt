@@ -27,6 +27,14 @@ class PatternCredentialSceneTest {
             runCatching { PatternCredentialUiState(promptText = " ") }.exceptionOrNull()
                 is IllegalArgumentException,
         )
+        assertTrue(
+            runCatching {
+                PatternCredentialUiState(
+                    promptText = "DRAW PATTERN",
+                    emergencyAccessibilityLabel = " ",
+                )
+            }.exceptionOrNull() is IllegalArgumentException,
+        )
     }
 
     /** 纵屏场景保留透明四角，同时绘制九个节点和有序连接线。 */

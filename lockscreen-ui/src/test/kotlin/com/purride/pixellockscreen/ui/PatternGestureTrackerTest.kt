@@ -101,6 +101,15 @@ class PatternGestureTrackerTest {
                 layout.patternTop + PatternCredentialLayout.PATTERN_SIZE <= layout.logicalHeight,
             )
             assertFalse(layout.promptWidth <= 0 || layout.feedbackWidth <= 0)
+            assertTrue(layout.emergencyLeft >= 0 && layout.emergencyTop >= 0)
+            assertTrue(layout.emergencyLeft + layout.emergencyWidth <= layout.logicalWidth)
+            assertTrue(layout.emergencyTop + layout.emergencyHeight <= layout.logicalHeight)
+            assertTrue(
+                layout.containsEmergency(
+                    layout.emergencyLeft + layout.emergencyWidth / 2,
+                    layout.emergencyTop + layout.emergencyHeight / 2,
+                ),
+            )
         }
     }
 

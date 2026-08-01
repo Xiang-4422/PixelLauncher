@@ -51,6 +51,14 @@ internal fun buildPatternCredentialScene(
             ) {
                 drawPatternPath(layout, path, palette)
                 drawPatternNodes(layout, path, palette)
+                drawRect(
+                    left = layout.emergencyLeft,
+                    top = layout.emergencyTop,
+                    width = layout.emergencyWidth,
+                    height = layout.emergencyHeight,
+                    color = palette.alert,
+                    strokeWidth = 1,
+                )
             },
             Positioned(
                 left = layout.promptLeft,
@@ -89,6 +97,27 @@ internal fun buildPatternCredentialScene(
                     },
                 ),
                 key = "pattern-credential-feedback-position",
+            ),
+            Positioned(
+                left = layout.emergencyLeft + 1,
+                top = layout.emergencyTop + 1,
+                width = layout.emergencyWidth - 2,
+                height = layout.emergencyHeight - 2,
+                child = Container(
+                    alignment = Alignment.CENTER,
+                    child = outlinedLockscreenText(
+                        text = if (request.isLandscape) {
+                            request.state.compactEmergencyText
+                        } else {
+                            request.state.emergencyText
+                        },
+                        foreground = palette.alert,
+                        backing = palette.background,
+                        fontScale = 1,
+                        key = "pattern-credential-emergency",
+                    ),
+                ),
+                key = "pattern-credential-emergency-position",
             ),
         ),
         key = "pattern-credential-scene",

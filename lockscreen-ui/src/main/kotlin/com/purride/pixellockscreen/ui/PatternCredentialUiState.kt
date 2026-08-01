@@ -27,10 +27,19 @@ public data class PatternCredentialUiState(
     public val feedbackText: String = "",
     /** 当前系统校验或限流阶段。 */
     public val feedback: PatternCredentialFeedback = PatternCredentialFeedback.READY,
+    /** 纵屏像素按钮显示的紧急入口文字。 */
+    public val emergencyText: String = "EMERGENCY",
+    /** 横屏紧凑像素按钮显示的紧急入口文字。 */
+    public val compactEmergencyText: String = "SOS",
+    /** Android 无障碍节点朗读的完整紧急入口说明。 */
+    public val emergencyAccessibilityLabel: String = emergencyText,
 ) {
     /** 拒绝无法展示的主提示。 */
     init {
         require(promptText.isNotBlank()) { "pattern_prompt_blank" }
+        require(emergencyText.isNotBlank()) { "pattern_emergency_text_blank" }
+        require(compactEmergencyText.isNotBlank()) { "pattern_compact_emergency_text_blank" }
+        require(emergencyAccessibilityLabel.isNotBlank()) { "pattern_emergency_accessibility_blank" }
     }
 
     /** 当前是否允许开始一条新图案路径。 */
@@ -52,6 +61,9 @@ public interface PatternCredentialListener {
 
     /** 手势取消时要求认证会话清零当前路径。 */
     public fun onPatternCancelled()
+
+    /** 请求 SystemUI 执行现有紧急呼叫入口。 */
+    public fun onEmergencyRequested()
 
     /** 事件接收方异常时要求模块立即恢复原生 Bouncer。 */
     public fun onInteractionFailure(throwable: Throwable)
