@@ -11,7 +11,7 @@ import io.github.libxposed.api.XposedModuleInterface
  *
  * 入口只在 Titan 2 精确设备合同命中后 Hook Keyguard 启动点。M4 拦截器先执行
  * 原生 `start()`，之后只读探测必需视图。M5 只有在全部签名和恢复事务就绪后
- * 挂载普通像素 Keyguard，原生凭据 Bouncer 始终保留。
+ * 挂载普通像素 Keyguard；认证接管只隐藏原生凭据页面，控制器与系统安全链始终保留。
  */
 public class PixelLockscreenModule : XposedModule() {
     /** 模块加载阶段记录的进程名，只用于后续兼容性判定。 */
@@ -25,6 +25,9 @@ public class PixelLockscreenModule : XposedModule() {
 
     /** 当前 SystemUI 进程中唯一活跃的像素图案认证会话。 */
     private var activePatternSession: PixelPatternSecuritySession? = null
+
+    /** 当前 SystemUI 进程中唯一活跃的像素 PIN 认证会话。 */
+    private var activePinSession: PixelPinSecuritySession? = null
 
     /** 记录当前进程并立即脱离非 SystemUI 主进程。 */
     override fun onModuleLoaded(param: XposedModuleInterface.ModuleLoadedParam) {
@@ -87,10 +90,13 @@ public class PixelLockscreenModule : XposedModule() {
                     inspectStartedConfigurator(chain.thisObject)
                     result
                 })
-            if (LockscreenModuleContract.PATTERN_TAKEOVER_ENABLED) {
-                installPatternSecurityHooks(classLoader)
+            if (
+                LockscreenModuleContract.PATTERN_TAKEOVER_ENABLED ||
+                LockscreenModuleContract.PIN_TAKEOVER_ENABLED
+            ) {
+                installCredentialSecurityHooks(classLoader)
             } else {
-                log(Log.INFO, LOG_TAG, "pattern_hooks_disabled")
+                log(Log.INFO, LOG_TAG, "credential_hooks_disabled")
             }
             log(Log.INFO, LOG_TAG, "probe_hook_installed")
         } catch (throwable: Throwable) {
@@ -143,9 +149,7 @@ public class PixelLockscreenModule : XposedModule() {
         activeSession = newSession
         try {
             newSession.start()
-            newSession.setCredentialTakeoverActive(
-                activePatternSession?.isTakeoverActive() == true,
-            )
+            refreshCredentialTakeoverState()
             log(Log.INFO, LOG_TAG, "visual_session_started")
         } catch (throwable: Throwable) {
             if (activeSession === newSession) {
@@ -155,18 +159,12 @@ public class PixelLockscreenModule : XposedModule() {
         }
     }
 
-    /** 安装主安全容器和图案控制器的精确生命周期 Hook。 */
+    /** 安装主安全容器以及当前已启用凭据控制器的精确生命周期 Hook。 */
     @SuppressLint("PrivateApi")
-    private fun installPatternSecurityHooks(classLoader: ClassLoader) {
+    private fun installCredentialSecurityHooks(classLoader: ClassLoader) {
         /** Titan 2 主安全容器控制器类。 */
         val securityControllerClass = Class.forName(
             SECURITY_CONTAINER_CONTROLLER_CLASS,
-            false,
-            classLoader,
-        )
-        /** Titan 2 图案认证控制器类。 */
-        val patternControllerClass = Class.forName(
-            PATTERN_CONTROLLER_CLASS,
             false,
             classLoader,
         )
@@ -180,20 +178,6 @@ public class PixelLockscreenModule : XposedModule() {
             securityControllerClass,
             CONTROLLER_VIEW_DETACHED_METHOD,
         )
-        /** 图案认证页面恢复的方法。 */
-        val patternResumeMethod = patternControllerClass.getDeclaredMethod(
-            PATTERN_RESUME_METHOD,
-            Int::class.javaPrimitiveType,
-        )
-        check(patternResumeMethod.returnType == Void.TYPE) { "pattern_resume_signature" }
-        /** 图案认证页面暂停的方法。 */
-        val patternPauseMethod = exactVoidMethod(patternControllerClass, PATTERN_PAUSE_METHOD)
-        /** 图案认证页面即将脱离的方法。 */
-        val patternDetachedMethod = exactVoidMethod(
-            patternControllerClass,
-            CONTROLLER_VIEW_DETACHED_METHOD,
-        )
-
         hook(securityAttachedMethod)
             .setId(SECURITY_ATTACHED_HOOK_ID)
             .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
@@ -211,6 +195,39 @@ public class PixelLockscreenModule : XposedModule() {
                 detachSecurityController(chain.thisObject)
                 chain.proceed()
             })
+        if (LockscreenModuleContract.PATTERN_TAKEOVER_ENABLED) {
+            installPatternSecurityHooks(classLoader)
+        }
+        if (LockscreenModuleContract.PIN_TAKEOVER_ENABLED) {
+            installPinSecurityHooks(classLoader)
+        } else {
+            log(Log.INFO, LOG_TAG, "pin_hooks_disabled")
+        }
+        log(Log.INFO, LOG_TAG, "credential_container_hooks_installed")
+    }
+
+    /** 安装 Titan 2 图案控制器声明的精确恢复、暂停与脱离 Hook。 */
+    @SuppressLint("PrivateApi")
+    private fun installPatternSecurityHooks(classLoader: ClassLoader) {
+        /** Titan 2 图案认证控制器类。 */
+        val patternControllerClass = Class.forName(
+            PATTERN_CONTROLLER_CLASS,
+            false,
+            classLoader,
+        )
+        /** 图案认证页面恢复的方法。 */
+        val patternResumeMethod = patternControllerClass.getDeclaredMethod(
+            CREDENTIAL_RESUME_METHOD,
+            Int::class.javaPrimitiveType,
+        )
+        check(patternResumeMethod.returnType == Void.TYPE) { "pattern_resume_signature" }
+        /** 图案认证页面暂停的方法。 */
+        val patternPauseMethod = exactVoidMethod(patternControllerClass, CREDENTIAL_PAUSE_METHOD)
+        /** 图案认证页面即将脱离的方法。 */
+        val patternDetachedMethod = exactVoidMethod(
+            patternControllerClass,
+            CONTROLLER_VIEW_DETACHED_METHOD,
+        )
         hook(patternResumeMethod)
             .setId(PATTERN_RESUME_HOOK_ID)
             .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
@@ -239,7 +256,79 @@ public class PixelLockscreenModule : XposedModule() {
         log(Log.INFO, LOG_TAG, "pattern_hooks_installed")
     }
 
-    /** 保存当前主安全容器；对象替换时先结束旧图案会话。 */
+    /** 安装 Titan 2 PIN 控制器继承链中经过 APK 验证的精确生命周期 Hook。 */
+    @SuppressLint("PrivateApi")
+    private fun installPinSecurityHooks(classLoader: ClassLoader) {
+        /** Titan 2 最终 PIN 控制器类。 */
+        val pinControllerClass = Class.forName(PIN_CONTROLLER_CLASS, false, classLoader)
+        /** 声明 PIN 恢复方法的数字凭据控制器父类。 */
+        val pinBasedControllerClass = Class.forName(
+            PIN_BASED_CONTROLLER_CLASS,
+            false,
+            classLoader,
+        )
+        /** 声明 PIN 暂停方法的字符凭据控制器父类。 */
+        val absKeyInputControllerClass = Class.forName(
+            ABS_KEY_INPUT_CONTROLLER_CLASS,
+            false,
+            classLoader,
+        )
+        check(pinBasedControllerClass.isAssignableFrom(pinControllerClass)) {
+            "pin_controller_parent"
+        }
+        check(absKeyInputControllerClass.isAssignableFrom(pinControllerClass)) {
+            "pin_abs_controller_parent"
+        }
+        /** PIN 页面恢复时实际分派到的父类方法。 */
+        val pinResumeMethod = pinBasedControllerClass.getDeclaredMethod(
+            CREDENTIAL_RESUME_METHOD,
+            Int::class.javaPrimitiveType,
+        )
+        check(pinResumeMethod.returnType == Void.TYPE) { "pin_resume_signature" }
+        /** PIN 页面暂停时实际分派到的父类方法。 */
+        val pinPauseMethod = exactVoidMethod(
+            absKeyInputControllerClass,
+            CREDENTIAL_PAUSE_METHOD,
+        )
+        /** 最终 PIN 控制器自己声明的脱离方法。 */
+        val pinDetachedMethod = exactVoidMethod(
+            pinControllerClass,
+            CONTROLLER_VIEW_DETACHED_METHOD,
+        )
+
+        hook(pinResumeMethod)
+            .setId(PIN_RESUME_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                /** 先完成所有原生恢复逻辑，再只处理最终 PIN 控制器实例。 */
+                val result = chain.proceed()
+                if (pinControllerClass.isInstance(chain.thisObject)) {
+                    startPinSession(chain.thisObject, classLoader)
+                }
+                result
+            })
+        hook(pinPauseMethod)
+            .setId(PIN_PAUSE_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                /** 父类方法也服务密码页，必须先按最终 PIN 类型过滤。 */
+                if (pinControllerClass.isInstance(chain.thisObject)) {
+                    stopPinSession(chain.thisObject)
+                }
+                chain.proceed()
+            })
+        hook(pinDetachedMethod)
+            .setId(PIN_DETACHED_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                /** 最终 PIN 页面重建前再次执行幂等回退。 */
+                stopPinSession(chain.thisObject)
+                chain.proceed()
+            })
+        log(Log.INFO, LOG_TAG, "pin_hooks_installed")
+    }
+
+    /** 保存当前主安全容器；对象替换时先结束全部旧凭据会话。 */
     private fun attachSecurityController(controller: Any?) {
         if (controller == null) {
             log(Log.ERROR, LOG_TAG, "security_controller_missing")
@@ -249,16 +338,18 @@ public class PixelLockscreenModule : XposedModule() {
             return
         }
         activePatternSession?.dispose()
+        activePinSession?.dispose()
         activeSecurityController = controller
         log(Log.INFO, LOG_TAG, "security_controller_attached")
     }
 
-    /** 主安全容器脱离前结束其图案会话并清除对象引用。 */
+    /** 主安全容器脱离前结束其全部凭据会话并清除对象引用。 */
     private fun detachSecurityController(controller: Any?) {
         if (controller == null || activeSecurityController !== controller) {
             return
         }
         activePatternSession?.dispose()
+        activePinSession?.dispose()
         activeSecurityController = null
         log(Log.INFO, LOG_TAG, "security_controller_detached")
     }
@@ -280,14 +371,15 @@ public class PixelLockscreenModule : XposedModule() {
             log(Log.INFO, LOG_TAG, "pattern_session_reused")
             return
         }
+        activePinSession?.dispose()
         previousSession?.dispose()
         /** 只有通过全部运行时合同才会进入首帧等待的新会话。 */
         val newSession = PixelPatternSecuritySession(
             securityController = securityController,
             patternController = patternController,
             classLoader = classLoader,
-            onTakeoverChanged = { active ->
-                activeSession?.setCredentialTakeoverActive(active)
+            onTakeoverChanged = {
+                refreshCredentialTakeoverState()
             },
             onFailure = { failedSession, throwable ->
                 if (activePatternSession === failedSession) {
@@ -325,6 +417,77 @@ public class PixelLockscreenModule : XposedModule() {
         }
     }
 
+    /** 在原生 PIN 页完成恢复后幂等创建像素认证会话。 */
+    private fun startPinSession(pinController: Any?, classLoader: ClassLoader) {
+        if (pinController == null) {
+            log(Log.ERROR, LOG_TAG, "pin_controller_missing")
+            return
+        }
+        /** 当前已挂载的主安全容器。 */
+        val securityController = activeSecurityController ?: run {
+            log(Log.WARN, LOG_TAG, "pin_security_controller_unavailable")
+            return
+        }
+        /** 同一原生 PIN 控制器的重复恢复沿用现有会话。 */
+        val previousSession = activePinSession
+        if (previousSession?.isBoundTo(pinController) == true) {
+            log(Log.INFO, LOG_TAG, "pin_session_reused")
+            return
+        }
+        activePatternSession?.dispose()
+        previousSession?.dispose()
+        /** 只有通过全部运行时合同才会进入首帧等待的新会话。 */
+        val newSession = PixelPinSecuritySession(
+            securityController = securityController,
+            pinController = pinController,
+            classLoader = classLoader,
+            onTakeoverChanged = {
+                refreshCredentialTakeoverState()
+            },
+            onFailure = { failedSession, throwable ->
+                if (activePinSession === failedSession) {
+                    log(Log.ERROR, LOG_TAG, "pin_session_runtime_failed", throwable)
+                }
+            },
+            onDisposed = { disposedSession ->
+                if (activePinSession === disposedSession) {
+                    activePinSession = null
+                }
+            },
+        )
+        activePinSession = newSession
+        try {
+            newSession.start()
+            log(Log.INFO, LOG_TAG, "pin_session_started")
+        } catch (throwable: Throwable) {
+            if (activePinSession === newSession) {
+                activePinSession = null
+            }
+            log(Log.ERROR, LOG_TAG, "pin_session_start_failed", throwable)
+        }
+    }
+
+    /** 只结束绑定指定原生控制器的 PIN 会话。 */
+    private fun stopPinSession(pinController: Any?) {
+        if (pinController == null) {
+            return
+        }
+        /** 当前可能属于其他新控制器的 PIN 会话。 */
+        val session = activePinSession ?: return
+        if (session.isBoundTo(pinController)) {
+            session.dispose()
+            log(Log.INFO, LOG_TAG, "pin_session_stopped")
+        }
+    }
+
+    /** 按所有凭据会话的真实首帧状态统一暂停或恢复普通像素锁屏。 */
+    private fun refreshCredentialTakeoverState() {
+        /** 当前是否有任一设备凭据页面已经完成像素首帧接管。 */
+        val active = activePatternSession?.isTakeoverActive() == true ||
+            activePinSession?.isTakeoverActive() == true
+        activeSession?.setCredentialTakeoverActive(active)
+    }
+
     /** 解析并验证一个控制器声明的无参 void 方法。 */
     private fun exactVoidMethod(owner: Class<*>, name: String): java.lang.reflect.Method {
         /** 当前目标控制器方法。 */
@@ -357,17 +520,29 @@ public class PixelLockscreenModule : XposedModule() {
         const val PATTERN_CONTROLLER_CLASS: String =
             "com.android.keyguard.KeyguardPatternViewController"
 
+        /** Titan 2 最终 PIN 认证控制器类名。 */
+        const val PIN_CONTROLLER_CLASS: String =
+            "com.android.keyguard.KeyguardPinViewController"
+
+        /** Titan 2 声明 PIN 恢复逻辑的父控制器类名。 */
+        const val PIN_BASED_CONTROLLER_CLASS: String =
+            "com.android.keyguard.KeyguardPinBasedInputViewController"
+
+        /** Titan 2 声明字符凭据暂停逻辑的父控制器类名。 */
+        const val ABS_KEY_INPUT_CONTROLLER_CLASS: String =
+            "com.android.keyguard.KeyguardAbsKeyInputViewController"
+
         /** 控制器视图挂载方法名。 */
         const val CONTROLLER_VIEW_ATTACHED_METHOD: String = "onViewAttached"
 
         /** 控制器视图脱离方法名。 */
         const val CONTROLLER_VIEW_DETACHED_METHOD: String = "onViewDetached"
 
-        /** 图案页面恢复方法名。 */
-        const val PATTERN_RESUME_METHOD: String = "onResume"
+        /** 设备凭据页面恢复方法名。 */
+        const val CREDENTIAL_RESUME_METHOD: String = "onResume"
 
-        /** 图案页面暂停方法名。 */
-        const val PATTERN_PAUSE_METHOD: String = "onPause"
+        /** 设备凭据页面暂停方法名。 */
+        const val CREDENTIAL_PAUSE_METHOD: String = "onPause"
 
         /** 主安全容器挂载 Hook ID。 */
         const val SECURITY_ATTACHED_HOOK_ID: String =
@@ -385,5 +560,14 @@ public class PixelLockscreenModule : XposedModule() {
 
         /** 图案页面脱离 Hook ID。 */
         const val PATTERN_DETACHED_HOOK_ID: String = "pixel_lockscreen:pattern_detached"
+
+        /** PIN 页面恢复 Hook ID。 */
+        const val PIN_RESUME_HOOK_ID: String = "pixel_lockscreen:pin_resume"
+
+        /** PIN 页面暂停 Hook ID。 */
+        const val PIN_PAUSE_HOOK_ID: String = "pixel_lockscreen:pin_pause"
+
+        /** PIN 页面脱离 Hook ID。 */
+        const val PIN_DETACHED_HOOK_ID: String = "pixel_lockscreen:pin_detached"
     }
 }

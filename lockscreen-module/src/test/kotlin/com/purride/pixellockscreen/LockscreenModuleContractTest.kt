@@ -1,10 +1,11 @@
 package com.purride.pixellockscreen
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 锁定当前唯一作用域、普通锁屏接管与图案认证边界。 */
+/** 锁定当前唯一作用域、普通锁屏接管与设备凭据认证边界。 */
 class LockscreenModuleContractTest {
     /** 模块只能注入 SystemUI 主进程，禁止扩大到系统框架或普通应用。 */
     @Test
@@ -13,11 +14,12 @@ class LockscreenModuleContractTest {
         assertEquals("com.android.systemui", LockscreenModuleContract.SYSTEM_UI_PROCESS)
     }
 
-    /** 当前只启用已完成全链路回退的图案认证接管。 */
+    /** 图案接管保持启用，PIN 在生命周期代码完成后仍须等待设备门禁。 */
     @Test
-    fun verifiedPatternTakeoverIsEnabled() {
+    fun onlyRuntimeVerifiedCredentialTakeoverIsEnabled() {
         assertTrue(LockscreenModuleContract.READ_ONLY_HOOK_ENABLED)
         assertTrue(LockscreenModuleContract.VISUAL_TAKEOVER_ENABLED)
         assertTrue(LockscreenModuleContract.PATTERN_TAKEOVER_ENABLED)
+        assertFalse(LockscreenModuleContract.PIN_TAKEOVER_ENABLED)
     }
 }
