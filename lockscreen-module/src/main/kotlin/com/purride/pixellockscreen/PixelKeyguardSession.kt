@@ -25,6 +25,9 @@ internal class PixelKeyguardSession(
     /** 只读解析生物识别、StrongAuth、信任代理和 Extend Unlock 的 Titan 2 适配器。 */
     private val biometricAdapter = Titan2BiometricStateAdapter.bind(binding.indicationController)
 
+    /** 跨熄屏、亮屏和遮挡转场读取真实 Keyguard 显示状态的适配器。 */
+    private val visibilityAdapter = Titan2KeyguardVisibilityAdapter.bind(binding.keyguardViewMediator)
+
     /** 只读解析原生通知隐私结果和当前媒体播放器的 Titan 2 适配器。 */
     private val contentAdapter = Titan2LockscreenContentAdapter.bind(binding.shadeWindow)
 
@@ -147,9 +150,13 @@ internal class PixelKeyguardSession(
             stateAdapter.updateSecurity(biometricAdapter.snapshot())
             stateAdapter.updateContent(contentAdapter.snapshot())
             if (disposed) return true
-            /** 宿主只有在首帧、继承可见性和物理尺寸都就绪时才允许接管。 */
+            /** 瞬时 View alpha 不参与判断，避免 DOZING 到 LOCKSCREEN 转场误恢复原生页面。 */
             val shouldTakeOver = credentialTakeoverActive ||
-                (firstFrameDrawn && isHostEffectivelyVisible())
+                (
+                    firstFrameDrawn &&
+                        visibilityAdapter.isOrdinaryKeyguardVisible() &&
+                        isHostStructurallyReady()
+                    )
             if (shouldTakeOver) {
                 nativeVisibility.hide()
                 if (!visualTakeoverActive) {
@@ -206,22 +213,12 @@ internal class PixelKeyguardSession(
         }
     }
 
-    /** 检查宿主到 SystemUI 窗口的整条父链可见性和 alpha，避免解锁后覆盖通知遮罩。 */
-    private fun isHostEffectivelyVisible(): Boolean {
-        if (!host.isAttachedToWindow || host.width <= 0 || host.height <= 0) return false
-        /** 当前待检查的宿主或父视图。 */
-        var currentView: View? = host
-        while (currentView != null) {
-            if (currentView.visibility != View.VISIBLE || currentView.alpha <= MIN_VISIBLE_ALPHA) {
-                return false
-            }
-            if (currentView === binding.shadeWindow) {
-                return currentView.windowVisibility == View.VISIBLE
-            }
-            currentView = currentView.parent as? View
-        }
-        return false
-    }
+    /** 检查像素宿主仍附着、保持完整尺寸且没有被 SystemUI 替换父容器。 */
+    private fun isHostStructurallyReady(): Boolean =
+        host.isAttachedToWindow &&
+            host.width > 0 &&
+            host.height > 0 &&
+            host.parent === binding.keyguardRoot
 
     /** 幂等恢复原生节点、注销广播、移除监听并释放 Pixel Engine 宿主。 */
     fun dispose() {
@@ -247,10 +244,6 @@ internal class PixelKeyguardSession(
         onDisposed(this)
     }
 
-    private companion object {
-        /** 父链 alpha 低于该阈值时视为 SystemUI 已隐藏 Keyguard。 */
-        const val MIN_VISIBLE_ALPHA: Float = 0.01f
-    }
 }
 
 /**

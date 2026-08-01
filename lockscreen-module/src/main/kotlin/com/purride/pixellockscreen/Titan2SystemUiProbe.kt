@@ -13,6 +13,8 @@ internal data class Titan2SystemUiProbeResult(
     val bouncerContainerClassName: String,
     /** 原生锁屏安全提示控制器的实际类名。 */
     val indicationControllerClassName: String,
+    /** 原生 Keyguard 显示状态协调器的实际类名。 */
+    val keyguardViewMediatorClassName: String,
 )
 
 /** M5 挂载和回退所需的已验证 SystemUI 视图引用。 */
@@ -25,6 +27,8 @@ internal data class Titan2SystemUiBinding(
     val bouncerContainer: ViewGroup,
     /** 提供生物识别、StrongAuth 和信任状态的原生提示控制器。 */
     val indicationController: Any,
+    /** 提供跨熄屏、亮屏和遮挡转场真实显示状态的原生协调器。 */
+    val keyguardViewMediator: Any,
 ) {
     /** 转换为不持有 View 的只读诊断结果。 */
     fun toProbeResult(): Titan2SystemUiProbeResult = Titan2SystemUiProbeResult(
@@ -32,6 +36,7 @@ internal data class Titan2SystemUiBinding(
         shadeWindowClassName = shadeWindow.javaClass.name,
         bouncerContainerClassName = bouncerContainer.javaClass.name,
         indicationControllerClassName = indicationController.javaClass.name,
+        keyguardViewMediatorClassName = keyguardViewMediator.javaClass.name,
     )
 }
 
@@ -50,9 +55,16 @@ internal object Titan2SystemUiProbe {
     /** `KeyguardViewConfigurator` 中用于绑定原生提示区域的控制器字段名。 */
     private const val INDICATION_CONTROLLER_FIELD: String = "keyguardIndicationController"
 
+    /** `KeyguardViewConfigurator` 中持有真实锁屏显示状态协调器的字段名。 */
+    private const val KEYGUARD_VIEW_MEDIATOR_FIELD: String = "keyguardViewMediator"
+
     /** Titan 2 原生锁屏提示控制器的精确类名。 */
     private const val INDICATION_CONTROLLER_CLASS: String =
         "com.android.systemui.statusbar.KeyguardIndicationController"
+
+    /** Titan 2 原生 Keyguard 显示状态协调器的精确类名。 */
+    private const val KEYGUARD_VIEW_MEDIATOR_CLASS: String =
+        "com.android.systemui.keyguard.KeyguardViewMediator"
 
     /** SystemUI 资源中原生 Keyguard 根视图的稳定 entry 名。 */
     private const val KEYGUARD_ROOT_RESOURCE: String = "keyguard_root_view"
@@ -109,12 +121,20 @@ internal object Titan2SystemUiProbe {
         check(indicationController.javaClass.name == INDICATION_CONTROLLER_CLASS) {
             "indication_controller_type"
         }
+        /** 反射获取且用于区分真实 Keyguard 与瞬时 View 转场的状态协调器。 */
+        val keyguardViewMediator = requireNotNull(
+            readField(configurator, KEYGUARD_VIEW_MEDIATOR_FIELD),
+        ) { "keyguard_mediator_missing" }
+        check(keyguardViewMediator.javaClass.name == KEYGUARD_VIEW_MEDIATOR_CLASS) {
+            "keyguard_mediator_type"
+        }
 
         return Titan2SystemUiBinding(
             keyguardRoot = keyguardRoot,
             shadeWindow = shadeWindow,
             bouncerContainer = bouncerContainer,
             indicationController = indicationController,
+            keyguardViewMediator = keyguardViewMediator,
         )
     }
 

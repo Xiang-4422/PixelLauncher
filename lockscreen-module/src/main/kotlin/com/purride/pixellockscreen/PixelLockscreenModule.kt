@@ -129,6 +129,7 @@ public class PixelLockscreenModule : XposedModule() {
                     result.shadeWindowClassName,
                     result.bouncerContainerClassName,
                     result.indicationControllerClassName,
+                    result.keyguardViewMediatorClassName,
                 ).joinToString(separator = ",")
                 log(Log.INFO, LOG_TAG, "probe_ready:$classSummary")
                 if (LockscreenModuleContract.VISUAL_TAKEOVER_ENABLED) {
