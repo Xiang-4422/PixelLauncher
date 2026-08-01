@@ -11,6 +11,8 @@ internal data class Titan2SystemUiProbeResult(
     val shadeWindowClassName: String,
     /** 原生 Bouncer 容器的实际类名。 */
     val bouncerContainerClassName: String,
+    /** 原生锁屏安全提示控制器的实际类名。 */
+    val indicationControllerClassName: String,
 )
 
 /** M5 挂载和回退所需的已验证 SystemUI 视图引用。 */
@@ -21,12 +23,15 @@ internal data class Titan2SystemUiBinding(
     val shadeWindow: ViewGroup,
     /** 必须始终保留在像素宿主上方的原生凭据容器。 */
     val bouncerContainer: ViewGroup,
+    /** 提供生物识别、StrongAuth 和信任状态的原生提示控制器。 */
+    val indicationController: Any,
 ) {
     /** 转换为不持有 View 的只读诊断结果。 */
     fun toProbeResult(): Titan2SystemUiProbeResult = Titan2SystemUiProbeResult(
         keyguardRootClassName = keyguardRoot.javaClass.name,
         shadeWindowClassName = shadeWindow.javaClass.name,
         bouncerContainerClassName = bouncerContainer.javaClass.name,
+        indicationControllerClassName = indicationController.javaClass.name,
     )
 }
 
@@ -41,6 +46,13 @@ internal object Titan2SystemUiProbe {
 
     /** `KeyguardViewConfigurator` 中持有整个遮罩窗口的字段名。 */
     private const val SHADE_WINDOW_FIELD: String = "notificationShadeWindowView"
+
+    /** `KeyguardViewConfigurator` 中用于绑定原生提示区域的控制器字段名。 */
+    private const val INDICATION_CONTROLLER_FIELD: String = "keyguardIndicationController"
+
+    /** Titan 2 原生锁屏提示控制器的精确类名。 */
+    private const val INDICATION_CONTROLLER_CLASS: String =
+        "com.android.systemui.statusbar.KeyguardIndicationController"
 
     /** SystemUI 资源中原生 Keyguard 根视图的稳定 entry 名。 */
     private const val KEYGUARD_ROOT_RESOURCE: String = "keyguard_root_view"
@@ -90,11 +102,19 @@ internal object Titan2SystemUiProbe {
         check(shadeWindow.indexOfChild(bouncerContainer) > shadeWindow.indexOfChild(keyguardRoot)) {
             "bouncer_z_order"
         }
+        /** 反射获取且用于原生提示区域的安全状态控制器。 */
+        val indicationController = requireNotNull(
+            readField(configurator, INDICATION_CONTROLLER_FIELD),
+        ) { "indication_controller_missing" }
+        check(indicationController.javaClass.name == INDICATION_CONTROLLER_CLASS) {
+            "indication_controller_type"
+        }
 
         return Titan2SystemUiBinding(
             keyguardRoot = keyguardRoot,
             shadeWindow = shadeWindow,
             bouncerContainer = bouncerContainer,
+            indicationController = indicationController,
         )
     }
 

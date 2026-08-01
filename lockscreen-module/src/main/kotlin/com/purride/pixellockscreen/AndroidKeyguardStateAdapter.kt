@@ -10,6 +10,7 @@ import android.os.Looper
 import android.text.format.DateFormat
 import com.purride.pixeldesign.ProductThemeBrightness
 import com.purride.pixellockscreen.ui.LockscreenUiState
+import com.purride.pixellockscreen.ui.LockscreenBiometricUiState
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -59,6 +60,9 @@ internal class AndroidKeyguardStateAdapter(
     /** 最近一次系统电池广播解析结果。 */
     private var batterySnapshot: KeyguardBatterySnapshot = KeyguardBatterySnapshot(0, false)
 
+    /** 最近一次原生 Keyguard 解析出的非敏感生物识别状态。 */
+    private var biometricSnapshot: LockscreenBiometricUiState = LockscreenBiometricUiState()
+
     /** 广播接收器是否已注册，用于保证启停幂等。 */
     private var started: Boolean = false
 
@@ -107,6 +111,16 @@ internal class AndroidKeyguardStateAdapter(
         context.unregisterReceiver(receiver)
     }
 
+    /** 更新只读生物识别快照；完全相同的状态不触发像素重绘。 */
+    fun updateBiometric(snapshot: LockscreenBiometricUiState) {
+        checkMainThread()
+        if (biometricSnapshot == snapshot) {
+            return
+        }
+        biometricSnapshot = snapshot
+        emitState()
+    }
+
     /** 格式化当前时间、日期和明暗模式并与电池快照一起提交。 */
     private fun emitState() {
         if (!started) return
@@ -134,6 +148,7 @@ internal class AndroidKeyguardStateAdapter(
                 batteryPercent = batterySnapshot.percent,
                 isCharging = batterySnapshot.isCharging,
                 unlockHint = "SWIPE UP TO UNLOCK",
+                biometric = biometricSnapshot,
             ),
             brightness,
         )
