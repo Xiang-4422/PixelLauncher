@@ -1,15 +1,13 @@
-package com.purride.pixellauncherv2.ui.text
+package com.purride.pixeldesign.font
 
 import com.purride.pixelcore.PixelGlyphPackParser
-import com.purride.pixellauncherv2.launcher.LauncherFontFamily
-import com.purride.pixellauncherv2.launcher.PixelFontCatalog
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
 /** 验证设置和组件使用的每个字体组合都具备可加载且不跨家族回退的资源。 */
-class LauncherFontAssetsTest {
+class ProductFontAssetsTest {
 
     /** 罕见高字形和负 bearing 必须保留原始 placement，证明资源没有被统一行框裁切。 */
     @Test
@@ -37,19 +35,19 @@ class LauncherFontAssetsTest {
     /** 所有可渲染组合都必须能由生产解析器读取，并且目录只属于所选家族。 */
     @Test
     fun renderableCombinations_haveStrictSingleFamilyAssets() {
-        /** 应用模块内实际参与 APK 打包的字形包根目录。 */
+        /** 共享设计模块内实际参与所有 APK 打包的字形包根目录。 */
         val glyphPackRoot = resolveModuleRoot().resolve("src/main/assets/glyphpacks")
 
-        PixelFontCatalog.renderableSelections().forEach { selection ->
+        ProductFontCatalog.renderableSelections().forEach { selection ->
             /** 当前资源组合所属的字体家族。 */
             val family = selection.family
             /** 所选家族允许查询的资源目录前缀。 */
             val expectedPrefix = when (family) {
-                LauncherFontFamily.FUSION -> "fusion_pixel_"
-                LauncherFontFamily.ARK -> "ark_pixel_"
+                ProductFontFamily.FUSION -> "fusion_pixel_"
+                ProductFontFamily.ARK -> "ark_pixel_"
                 else -> "${family.assetFamilyId}_"
             }
-            PixelFontCatalog.assetDirectories(selection).forEach { assetDirectory ->
+            ProductFontCatalog.assetDirectories(selection).forEach { assetDirectory ->
                 assertTrue(
                     "cross-family fallback is forbidden: $assetDirectory",
                     assetDirectory.substringAfterLast('/').startsWith(expectedPrefix),
@@ -67,10 +65,10 @@ class LauncherFontAssetsTest {
                 /** 通过生产解析器校验的字形包元数据。 */
                 val manifest = PixelGlyphPackParser.parseManifest(manifestFile.readText())
                 /** 当前选择声明的真实排版度量。 */
-                val metrics = PixelFontCatalog.metrics(selection)
+                val metrics = ProductFontCatalog.metrics(selection)
                 assertEquals(metrics.cellHeight, manifest.cellHeight)
                 assertEquals(metrics.baseline, manifest.baseline)
-                val packDescriptor = PixelFontCatalog.requireFace(selection).packs.single { pack ->
+                val packDescriptor = ProductFontCatalog.requireFace(selection).packs.single { pack ->
                     pack.assetDirectory == assetDirectory
                 }
                 assertEquals(packDescriptor.defaultAdvance, manifest.defaultAdvance)
@@ -81,11 +79,15 @@ class LauncherFontAssetsTest {
         }
     }
 
-    /** 兼容从仓库根目录或 app 模块目录启动的 JVM 测试。 */
+    /** 兼容从仓库根目录或 pixel-design 模块目录启动的 JVM 测试。 */
     private fun resolveModuleRoot(): File {
         /** 当前测试进程的规范工作目录。 */
         val currentDirectory = File(".").canonicalFile
-        return if (currentDirectory.name == "app") currentDirectory else currentDirectory.resolve("app")
+        return if (currentDirectory.name == "pixel-design") {
+            currentDirectory
+        } else {
+            currentDirectory.resolve("pixel-design")
+        }
     }
 
     /** 通过生产解析器读取指定 pack 的完整 V2 字形记录。 */

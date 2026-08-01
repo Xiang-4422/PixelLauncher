@@ -15,15 +15,15 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 CATALOG_PATH = ROOT_DIR / "fonts" / "font_catalog.json"
 OUTPUT_PATH = (
     ROOT_DIR
-    / "app"
+    / "pixel-design"
     / "src"
     / "main"
     / "kotlin"
     / "com"
     / "purride"
-    / "pixellauncherv2"
-    / "launcher"
-    / "GeneratedPixelFontCatalog.kt"
+    / "pixeldesign"
+    / "font"
+    / "GeneratedProductFontCatalog.kt"
 )
 ID_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 
@@ -41,7 +41,7 @@ def main() -> None:
     if args.check:
         current = args.output.read_text(encoding="utf-8") if args.output.is_file() else ""
         if current != rendered:
-            raise SystemExit("GeneratedPixelFontCatalog.kt 已过期，请运行 generatePixelFontCatalog")
+            raise SystemExit("GeneratedProductFontCatalog.kt 已过期，请运行 generateProductFontCatalog")
         return
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(rendered, encoding="utf-8")
@@ -156,46 +156,46 @@ def render_kotlin(root: dict[str, Any]) -> str:
 
     lines = [
         "// 由 tools/generate_pixel_font_catalog.py 生成；禁止手工修改。",
-        "package com.purride.pixellauncherv2.launcher",
+        "package com.purride.pixeldesign.font",
         "",
         "/** 由 fonts/font_catalog.json 生成的只读字体目录。 */",
-        "internal object GeneratedPixelFontCatalog {",
+        "internal object GeneratedProductFontCatalog {",
         "    /** 按设置页展示顺序排列的全部字体家族。 */",
-        "    val families: List<FontFamilyDescriptor> = listOf(",
+        "    val families: List<ProductFontFamilyDescriptor> = listOf(",
     ]
     for family in root["families"]:
         family_id = family["id"]
         lines.extend(
             [
-                "        FontFamilyDescriptor(",
-                f'            id = LauncherFontFamily("{family_id}"),',
+                "        ProductFontFamilyDescriptor(",
+                f'            id = ProductFontFamily("{family_id}"),',
                 f'            constantName = "{family["constant"]}",',
                 f'            displayLabel = {quote(family["label"])},',
                 f'            assetFamilyId = "{family["assetFamilyId"]}",',
                 f'            sourceVersion = "{family["sourceVersion"]}",',
                 f'            licenseId = "{family["licenseId"]}",',
-                "            defaultKey = FontFaceKey(",
-                f'                family = LauncherFontFamily("{family_id}"),',
+                "            defaultKey = ProductFontFaceKey(",
+                f'                family = ProductFontFamily("{family_id}"),',
                 f'                widthMode = {width_constant(family["defaultWidth"])},',
-                f'                size = PixelFontSize({family["defaultSize"]}),',
+                f'                size = ProductFontSize({family["defaultSize"]}),',
                 "            ),",
                 "            faces = listOf(",
             ],
         )
         for face in family["faces"]:
-            roles = ", ".join("LauncherTextRole.CHROME" for role in face.get("roles", []) if role == "chrome")
+            roles = ", ".join("ProductTextRole.CHROME" for role in face.get("roles", []) if role == "chrome")
             lines.extend(
                 [
-                    "                FontFaceDescriptor(",
-                    "                    key = FontFaceKey(",
-                    f'                        family = LauncherFontFamily("{family_id}"),',
+                    "                ProductFontFaceDescriptor(",
+                    "                    key = ProductFontFaceKey(",
+                    f'                        family = ProductFontFamily("{family_id}"),',
                     f'                        widthMode = {width_constant(face["width"])},',
-                    f'                        size = PixelFontSize({face["size"]}),',
+                    f'                        size = ProductFontSize({face["size"]}),',
                     "                    ),",
                     f'                    settingsVisible = {str(face["settingsVisible"]).lower()},',
                     f"                    roles = setOf({roles}),",
-                    "                    metrics = PixelFontMetrics(",
-                    f'                        size = PixelFontSize({face["size"]}),',
+                    "                    metrics = ProductFontMetrics(",
+                    f'                        size = ProductFontSize({face["size"]}),',
                     f'                        cellHeight = {face["cellHeight"]},',
                     f'                        baseline = {face["baseline"]},',
                     f'                        narrowAdvanceWidth = {face["narrowAdvance"]},',
@@ -207,7 +207,7 @@ def render_kotlin(root: dict[str, Any]) -> str:
             for pack in face["packs"]:
                 lines.extend(
                     [
-                        "                        FontPackDescriptor(",
+                        "                        ProductFontPackDescriptor(",
                         f'                            id = "{pack["id"]}",',
                         f'                            assetDirectory = "glyphpacks/{pack["id"]}",',
                         f'                            sourceType = "{pack["type"]}",',
@@ -231,9 +231,9 @@ def width_constant(width: str) -> str:
     """把目录宽度 ID 映射到稳定 Kotlin 枚举。"""
 
     return (
-        "LauncherFontWidthMode.PROPORTIONAL"
+        "ProductFontWidthMode.PROPORTIONAL"
         if width == "proportional"
-        else "LauncherFontWidthMode.MONOSPACED"
+        else "ProductFontWidthMode.MONOSPACED"
     )
 
 

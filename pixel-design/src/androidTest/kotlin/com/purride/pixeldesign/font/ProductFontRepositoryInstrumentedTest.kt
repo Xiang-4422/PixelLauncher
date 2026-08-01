@@ -1,15 +1,9 @@
-package com.purride.pixellauncherv2.ui.text
+package com.purride.pixeldesign.font
 
 import android.os.Handler
 import android.os.Looper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.purride.pixellauncherv2.launcher.LauncherFontFamily
-import com.purride.pixellauncherv2.launcher.LauncherFontSelection
-import com.purride.pixellauncherv2.launcher.LauncherFontWidthMode
-import com.purride.pixellauncherv2.launcher.PixelFontCatalog
-import com.purride.pixellauncherv2.launcher.PixelFontSize
-import com.purride.pixellauncherv2.launcher.LauncherTextRole
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -20,18 +14,18 @@ import org.junit.runner.RunWith
 
 /** 验证真实 Android assets 的异步 indexed 字体准备链路。 */
 @RunWith(AndroidJUnit4::class)
-class LauncherFontRepositoryInstrumentedTest {
+class ProductFontRepositoryInstrumentedTest {
     /** catalog 中全部设置 face 都应能从真实 APK assets 异步准备并完成基础排版。 */
     @Test
     fun prepareEverySettingsFaceLoadsNativeAndChromeResources() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val executor = Executors.newFixedThreadPool(2)
-        val repository = LauncherFontRepository(context, executor, Handler(Looper.getMainLooper()))
+        val repository = ProductFontRepository(context, executor, Handler(Looper.getMainLooper()))
         try {
-            val selections = PixelFontCatalog.fontFamilyOptions().flatMap { family ->
-                PixelFontCatalog.widthModeOptions(family).flatMap { widthMode ->
-                    PixelFontCatalog.fontSizeOptions(family, widthMode).map { size ->
-                        LauncherFontSelection(family, widthMode, size)
+            val selections = ProductFontCatalog.fontFamilyOptions().flatMap { family ->
+                ProductFontCatalog.widthModeOptions(family).flatMap { widthMode ->
+                    ProductFontCatalog.fontSizeOptions(family, widthMode).map { size ->
+                        ProductFontSelection(family, widthMode, size)
                     }
                 }
             }
@@ -45,7 +39,7 @@ class LauncherFontRepositoryInstrumentedTest {
                 )
                 assertTrue(
                     "chrome face must measure text for $selection",
-                    prepared.typography.rasterizer(LauncherTextRole.CHROME).measureText("STATUS") > 0,
+                    prepared.typography.rasterizer(ProductTextRole.CHROME).measureText("STATUS") > 0,
                 )
             }
         } finally {
@@ -59,14 +53,14 @@ class LauncherFontRepositoryInstrumentedTest {
     fun preparePix32LoadsExactFacesWithoutFallback() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val executor = Executors.newFixedThreadPool(2)
-        val repository = LauncherFontRepository(context, executor, Handler(Looper.getMainLooper()))
-        val selection = LauncherFontSelection(
-            family = LauncherFontFamily.PIX32,
-            widthMode = LauncherFontWidthMode.MONOSPACED,
-            size = PixelFontSize.PX_12,
+        val repository = ProductFontRepository(context, executor, Handler(Looper.getMainLooper()))
+        val selection = ProductFontSelection(
+            family = ProductFontFamily.PIX32,
+            widthMode = ProductFontWidthMode.MONOSPACED,
+            size = ProductFontSize.PX_12,
         )
         val latch = CountDownLatch(1)
-        var result: Result<PreparedLauncherFont>? = null
+        var result: Result<PreparedProductFont>? = null
         try {
             repository.prepare(selection) { completed ->
                 result = completed
@@ -76,8 +70,8 @@ class LauncherFontRepositoryInstrumentedTest {
             val prepared = requireNotNull(result).getOrThrow()
             assertEquals(selection, prepared.selection)
             assertTrue(prepared.defaultRasterizer.measureText("ABC 中文") > 0)
-            assertTrue(prepared.typography.rasterizer(LauncherTextRole.CHROME).measureText("ABC") > 0)
-            runCatching { prepared.rasterizer(selection.copy(size = PixelFontSize.PX_11)) }
+            assertTrue(prepared.typography.rasterizer(ProductTextRole.CHROME).measureText("ABC") > 0)
+            runCatching { prepared.rasterizer(selection.copy(size = ProductFontSize.PX_11)) }
                 .onSuccess { error("unsupported exact size must not resolve") }
         } finally {
             repository.dispose()
@@ -87,11 +81,11 @@ class LauncherFontRepositoryInstrumentedTest {
 
     /** 等待一次后台字体准备完成，并把异步失败保留为当前测试失败。 */
     private fun prepareBlocking(
-        repository: LauncherFontRepository,
-        selection: LauncherFontSelection,
-    ): PreparedLauncherFont {
+        repository: ProductFontRepository,
+        selection: ProductFontSelection,
+    ): PreparedProductFont {
         val latch = CountDownLatch(1)
-        var result: Result<PreparedLauncherFont>? = null
+        var result: Result<PreparedProductFont>? = null
         repository.prepare(selection) { completed ->
             result = completed
             latch.countDown()

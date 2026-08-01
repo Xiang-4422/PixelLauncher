@@ -15,7 +15,7 @@ from typing import Any
 ROOT_DIR = Path(__file__).resolve().parents[1]
 CATALOG_PATH = ROOT_DIR / "fonts" / "font_catalog.json"
 LOCK_PATH = ROOT_DIR / "fonts" / "font_assets.lock.json"
-PACK_ROOT = ROOT_DIR / "app" / "src" / "main" / "assets" / "glyphpacks"
+PACK_ROOT = ROOT_DIR / "pixel-design" / "src" / "main" / "assets" / "glyphpacks"
 
 
 def main() -> None:

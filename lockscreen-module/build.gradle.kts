@@ -25,6 +25,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    androidResources {
+        // SystemUI 内的共享字体加载器需要通过 AssetFileDescriptor mmap 字形二进制。
+        noCompress += "bin"
+    }
 }
 
 dependencies {

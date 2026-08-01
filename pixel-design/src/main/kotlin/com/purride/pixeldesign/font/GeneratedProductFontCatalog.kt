@@ -1,40 +1,40 @@
 // 由 tools/generate_pixel_font_catalog.py 生成；禁止手工修改。
-package com.purride.pixellauncherv2.launcher
+package com.purride.pixeldesign.font
 
 /** 由 fonts/font_catalog.json 生成的只读字体目录。 */
-internal object GeneratedPixelFontCatalog {
+internal object GeneratedProductFontCatalog {
     /** 按设置页展示顺序排列的全部字体家族。 */
-    val families: List<FontFamilyDescriptor> = listOf(
-        FontFamilyDescriptor(
-            id = LauncherFontFamily("fusion"),
+    val families: List<ProductFontFamilyDescriptor> = listOf(
+        ProductFontFamilyDescriptor(
+            id = ProductFontFamily("fusion"),
             constantName = "FUSION",
             displayLabel = "FUSION",
             assetFamilyId = "fusion_pixel",
             sourceVersion = "2026.02.27",
             licenseId = "OFL-1.1",
-            defaultKey = FontFaceKey(
-                family = LauncherFontFamily("fusion"),
-                widthMode = LauncherFontWidthMode.PROPORTIONAL,
-                size = PixelFontSize(10),
+            defaultKey = ProductFontFaceKey(
+                family = ProductFontFamily("fusion"),
+                widthMode = ProductFontWidthMode.PROPORTIONAL,
+                size = ProductFontSize(10),
             ),
             faces = listOf(
-                FontFaceDescriptor(
-                    key = FontFaceKey(
-                        family = LauncherFontFamily("fusion"),
-                        widthMode = LauncherFontWidthMode.PROPORTIONAL,
-                        size = PixelFontSize(8),
+                ProductFontFaceDescriptor(
+                    key = ProductFontFaceKey(
+                        family = ProductFontFamily("fusion"),
+                        widthMode = ProductFontWidthMode.PROPORTIONAL,
+                        size = ProductFontSize(8),
                     ),
                     settingsVisible = true,
                     roles = setOf(),
-                    metrics = PixelFontMetrics(
-                        size = PixelFontSize(8),
+                    metrics = ProductFontMetrics(
+                        size = ProductFontSize(8),
                         cellHeight = 12,
                         baseline = 9,
                         narrowAdvanceWidth = 4,
                         wideAdvanceWidth = 8,
                     ),
                     packs = listOf(
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "fusion_pixel_8px_proportional_latin",
                             assetDirectory = "glyphpacks/fusion_pixel_8px_proportional_latin",
                             sourceType = "bdf",
@@ -44,7 +44,7 @@ internal object GeneratedPixelFontCatalog {
                             coverageRanges = listOf("0020-007E", "00A0-00FF", "0100-024F", "0370-03FF", "0400-04FF", "2000-206F", "2070-209F", "2100-214F", "2460-24FF", "3000-303F", "3040-309F", "30A0-30FF", "3100-312F", "3130-318F", "3200-32FF", "3300-33FF", "3400-4DBF", "4E00-9FFF", "FF00-FFEF"),
                             defaultAdvance = 4,
                         ),
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "fusion_pixel_8px_proportional_zh_hans",
                             assetDirectory = "glyphpacks/fusion_pixel_8px_proportional_zh_hans",
                             sourceType = "bdf",
@@ -56,23 +56,23 @@ internal object GeneratedPixelFontCatalog {
                         ),
                     ),
                 ),
-                FontFaceDescriptor(
-                    key = FontFaceKey(
-                        family = LauncherFontFamily("fusion"),
-                        widthMode = LauncherFontWidthMode.PROPORTIONAL,
-                        size = PixelFontSize(10),
+                ProductFontFaceDescriptor(
+                    key = ProductFontFaceKey(
+                        family = ProductFontFamily("fusion"),
+                        widthMode = ProductFontWidthMode.PROPORTIONAL,
+                        size = ProductFontSize(10),
                     ),
                     settingsVisible = true,
-                    roles = setOf(LauncherTextRole.CHROME),
-                    metrics = PixelFontMetrics(
-                        size = PixelFontSize(10),
+                    roles = setOf(ProductTextRole.CHROME),
+                    metrics = ProductFontMetrics(
+                        size = ProductFontSize(10),
                         cellHeight = 14,
                         baseline = 11,
                         narrowAdvanceWidth = 6,
                         wideAdvanceWidth = 10,
                     ),
                     packs = listOf(
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "fusion_pixel_10px_proportional_latin",
                             assetDirectory = "glyphpacks/fusion_pixel_10px_proportional_latin",
                             sourceType = "bdf",
@@ -82,7 +82,7 @@ internal object GeneratedPixelFontCatalog {
                             coverageRanges = listOf("0020-007E", "00A0-00FF", "0100-024F", "0370-03FF", "0400-04FF", "2000-206F", "2070-209F", "2100-214F", "2460-24FF", "3000-303F", "3040-309F", "30A0-30FF", "3100-312F", "3130-318F", "3200-32FF", "3300-33FF", "3400-4DBF", "4E00-9FFF", "FF00-FFEF"),
                             defaultAdvance = 6,
                         ),
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "fusion_pixel_10px_proportional_zh_hans",
                             assetDirectory = "glyphpacks/fusion_pixel_10px_proportional_zh_hans",
                             sourceType = "bdf",
@@ -94,23 +94,23 @@ internal object GeneratedPixelFontCatalog {
                         ),
                     ),
                 ),
-                FontFaceDescriptor(
-                    key = FontFaceKey(
-                        family = LauncherFontFamily("fusion"),
-                        widthMode = LauncherFontWidthMode.PROPORTIONAL,
-                        size = PixelFontSize(12),
+                ProductFontFaceDescriptor(
+                    key = ProductFontFaceKey(
+                        family = ProductFontFamily("fusion"),
+                        widthMode = ProductFontWidthMode.PROPORTIONAL,
+                        size = ProductFontSize(12),
                     ),
                     settingsVisible = true,
                     roles = setOf(),
-                    metrics = PixelFontMetrics(
-                        size = PixelFontSize(12),
+                    metrics = ProductFontMetrics(
+                        size = ProductFontSize(12),
                         cellHeight = 16,
                         baseline = 13,
                         narrowAdvanceWidth = 8,
                         wideAdvanceWidth = 12,
                     ),
                     packs = listOf(
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "fusion_pixel_12px_proportional_latin",
                             assetDirectory = "glyphpacks/fusion_pixel_12px_proportional_latin",
                             sourceType = "bdf",
@@ -120,7 +120,7 @@ internal object GeneratedPixelFontCatalog {
                             coverageRanges = listOf("0020-007E", "00A0-00FF", "0100-024F", "0370-03FF", "0400-04FF", "2000-206F", "2070-209F", "2100-214F", "2460-24FF", "3000-303F", "3040-309F", "30A0-30FF", "3100-312F", "3130-318F", "3200-32FF", "3300-33FF", "3400-4DBF", "4E00-9FFF", "FF00-FFEF"),
                             defaultAdvance = 8,
                         ),
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "fusion_pixel_12px_proportional_zh_hans",
                             assetDirectory = "glyphpacks/fusion_pixel_12px_proportional_zh_hans",
                             sourceType = "bdf",
@@ -132,23 +132,23 @@ internal object GeneratedPixelFontCatalog {
                         ),
                     ),
                 ),
-                FontFaceDescriptor(
-                    key = FontFaceKey(
-                        family = LauncherFontFamily("fusion"),
-                        widthMode = LauncherFontWidthMode.MONOSPACED,
-                        size = PixelFontSize(8),
+                ProductFontFaceDescriptor(
+                    key = ProductFontFaceKey(
+                        family = ProductFontFamily("fusion"),
+                        widthMode = ProductFontWidthMode.MONOSPACED,
+                        size = ProductFontSize(8),
                     ),
                     settingsVisible = true,
                     roles = setOf(),
-                    metrics = PixelFontMetrics(
-                        size = PixelFontSize(8),
+                    metrics = ProductFontMetrics(
+                        size = ProductFontSize(8),
                         cellHeight = 8,
                         baseline = 7,
                         narrowAdvanceWidth = 4,
                         wideAdvanceWidth = 8,
                     ),
                     packs = listOf(
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "fusion_pixel_8px_monospaced_latin",
                             assetDirectory = "glyphpacks/fusion_pixel_8px_monospaced_latin",
                             sourceType = "bdf",
@@ -158,7 +158,7 @@ internal object GeneratedPixelFontCatalog {
                             coverageRanges = listOf("0020-007E", "00A0-00FF", "0100-024F", "0370-03FF", "0400-04FF", "2000-206F", "2070-209F", "2100-214F", "2460-24FF", "3000-303F", "3040-309F", "30A0-30FF", "3100-312F", "3130-318F", "3200-32FF", "3300-33FF", "3400-4DBF", "4E00-9FFF", "FF00-FFEF"),
                             defaultAdvance = 8,
                         ),
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "fusion_pixel_8px_monospaced_zh_hans",
                             assetDirectory = "glyphpacks/fusion_pixel_8px_monospaced_zh_hans",
                             sourceType = "bdf",
@@ -170,23 +170,23 @@ internal object GeneratedPixelFontCatalog {
                         ),
                     ),
                 ),
-                FontFaceDescriptor(
-                    key = FontFaceKey(
-                        family = LauncherFontFamily("fusion"),
-                        widthMode = LauncherFontWidthMode.MONOSPACED,
-                        size = PixelFontSize(10),
+                ProductFontFaceDescriptor(
+                    key = ProductFontFaceKey(
+                        family = ProductFontFamily("fusion"),
+                        widthMode = ProductFontWidthMode.MONOSPACED,
+                        size = ProductFontSize(10),
                     ),
                     settingsVisible = true,
-                    roles = setOf(LauncherTextRole.CHROME),
-                    metrics = PixelFontMetrics(
-                        size = PixelFontSize(10),
+                    roles = setOf(ProductTextRole.CHROME),
+                    metrics = ProductFontMetrics(
+                        size = ProductFontSize(10),
                         cellHeight = 10,
                         baseline = 9,
                         narrowAdvanceWidth = 5,
                         wideAdvanceWidth = 10,
                     ),
                     packs = listOf(
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "fusion_pixel_10px_monospaced_latin",
                             assetDirectory = "glyphpacks/fusion_pixel_10px_monospaced_latin",
                             sourceType = "bdf",
@@ -196,7 +196,7 @@ internal object GeneratedPixelFontCatalog {
                             coverageRanges = listOf("0020-007E", "00A0-00FF", "0100-024F", "0370-03FF", "0400-04FF", "2000-206F", "2070-209F", "2100-214F", "2460-24FF", "3000-303F", "3040-309F", "30A0-30FF", "3100-312F", "3130-318F", "3200-32FF", "3300-33FF", "3400-4DBF", "4E00-9FFF", "FF00-FFEF"),
                             defaultAdvance = 10,
                         ),
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "fusion_pixel_10px_monospaced_zh_hans",
                             assetDirectory = "glyphpacks/fusion_pixel_10px_monospaced_zh_hans",
                             sourceType = "bdf",
@@ -208,23 +208,23 @@ internal object GeneratedPixelFontCatalog {
                         ),
                     ),
                 ),
-                FontFaceDescriptor(
-                    key = FontFaceKey(
-                        family = LauncherFontFamily("fusion"),
-                        widthMode = LauncherFontWidthMode.MONOSPACED,
-                        size = PixelFontSize(12),
+                ProductFontFaceDescriptor(
+                    key = ProductFontFaceKey(
+                        family = ProductFontFamily("fusion"),
+                        widthMode = ProductFontWidthMode.MONOSPACED,
+                        size = ProductFontSize(12),
                     ),
                     settingsVisible = true,
                     roles = setOf(),
-                    metrics = PixelFontMetrics(
-                        size = PixelFontSize(12),
+                    metrics = ProductFontMetrics(
+                        size = ProductFontSize(12),
                         cellHeight = 12,
                         baseline = 10,
                         narrowAdvanceWidth = 6,
                         wideAdvanceWidth = 12,
                     ),
                     packs = listOf(
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "fusion_pixel_12px_monospaced_latin",
                             assetDirectory = "glyphpacks/fusion_pixel_12px_monospaced_latin",
                             sourceType = "bdf",
@@ -234,7 +234,7 @@ internal object GeneratedPixelFontCatalog {
                             coverageRanges = listOf("0020-007E", "00A0-00FF", "0100-024F", "0370-03FF", "0400-04FF", "2000-206F", "2070-209F", "2100-214F", "2460-24FF", "3000-303F", "3040-309F", "30A0-30FF", "3100-312F", "3130-318F", "3200-32FF", "3300-33FF", "3400-4DBF", "4E00-9FFF", "FF00-FFEF"),
                             defaultAdvance = 12,
                         ),
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "fusion_pixel_12px_monospaced_zh_hans",
                             assetDirectory = "glyphpacks/fusion_pixel_12px_monospaced_zh_hans",
                             sourceType = "bdf",
@@ -248,36 +248,36 @@ internal object GeneratedPixelFontCatalog {
                 ),
             ),
         ),
-        FontFamilyDescriptor(
-            id = LauncherFontFamily("ark"),
+        ProductFontFamilyDescriptor(
+            id = ProductFontFamily("ark"),
             constantName = "ARK",
             displayLabel = "ARK",
             assetFamilyId = "ark_pixel",
             sourceVersion = "2026.07.20",
             licenseId = "OFL-1.1",
-            defaultKey = FontFaceKey(
-                family = LauncherFontFamily("ark"),
-                widthMode = LauncherFontWidthMode.PROPORTIONAL,
-                size = PixelFontSize(10),
+            defaultKey = ProductFontFaceKey(
+                family = ProductFontFamily("ark"),
+                widthMode = ProductFontWidthMode.PROPORTIONAL,
+                size = ProductFontSize(10),
             ),
             faces = listOf(
-                FontFaceDescriptor(
-                    key = FontFaceKey(
-                        family = LauncherFontFamily("ark"),
-                        widthMode = LauncherFontWidthMode.PROPORTIONAL,
-                        size = PixelFontSize(10),
+                ProductFontFaceDescriptor(
+                    key = ProductFontFaceKey(
+                        family = ProductFontFamily("ark"),
+                        widthMode = ProductFontWidthMode.PROPORTIONAL,
+                        size = ProductFontSize(10),
                     ),
                     settingsVisible = true,
-                    roles = setOf(LauncherTextRole.CHROME),
-                    metrics = PixelFontMetrics(
-                        size = PixelFontSize(10),
+                    roles = setOf(ProductTextRole.CHROME),
+                    metrics = ProductFontMetrics(
+                        size = ProductFontSize(10),
                         cellHeight = 14,
                         baseline = 11,
                         narrowAdvanceWidth = 5,
                         wideAdvanceWidth = 10,
                     ),
                     packs = listOf(
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "ark_pixel_10px_proportional_zh_cn",
                             assetDirectory = "glyphpacks/ark_pixel_10px_proportional_zh_cn",
                             sourceType = "bdf",
@@ -289,23 +289,23 @@ internal object GeneratedPixelFontCatalog {
                         ),
                     ),
                 ),
-                FontFaceDescriptor(
-                    key = FontFaceKey(
-                        family = LauncherFontFamily("ark"),
-                        widthMode = LauncherFontWidthMode.PROPORTIONAL,
-                        size = PixelFontSize(12),
+                ProductFontFaceDescriptor(
+                    key = ProductFontFaceKey(
+                        family = ProductFontFamily("ark"),
+                        widthMode = ProductFontWidthMode.PROPORTIONAL,
+                        size = ProductFontSize(12),
                     ),
                     settingsVisible = true,
                     roles = setOf(),
-                    metrics = PixelFontMetrics(
-                        size = PixelFontSize(12),
+                    metrics = ProductFontMetrics(
+                        size = ProductFontSize(12),
                         cellHeight = 16,
                         baseline = 13,
                         narrowAdvanceWidth = 6,
                         wideAdvanceWidth = 12,
                     ),
                     packs = listOf(
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "ark_pixel_12px_proportional_zh_cn",
                             assetDirectory = "glyphpacks/ark_pixel_12px_proportional_zh_cn",
                             sourceType = "bdf",
@@ -317,23 +317,23 @@ internal object GeneratedPixelFontCatalog {
                         ),
                     ),
                 ),
-                FontFaceDescriptor(
-                    key = FontFaceKey(
-                        family = LauncherFontFamily("ark"),
-                        widthMode = LauncherFontWidthMode.PROPORTIONAL,
-                        size = PixelFontSize(16),
+                ProductFontFaceDescriptor(
+                    key = ProductFontFaceKey(
+                        family = ProductFontFamily("ark"),
+                        widthMode = ProductFontWidthMode.PROPORTIONAL,
+                        size = ProductFontSize(16),
                     ),
                     settingsVisible = true,
                     roles = setOf(),
-                    metrics = PixelFontMetrics(
-                        size = PixelFontSize(16),
+                    metrics = ProductFontMetrics(
+                        size = ProductFontSize(16),
                         cellHeight = 22,
                         baseline = 17,
                         narrowAdvanceWidth = 7,
                         wideAdvanceWidth = 16,
                     ),
                     packs = listOf(
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "ark_pixel_16px_proportional_zh_cn",
                             assetDirectory = "glyphpacks/ark_pixel_16px_proportional_zh_cn",
                             sourceType = "bdf",
@@ -345,23 +345,23 @@ internal object GeneratedPixelFontCatalog {
                         ),
                     ),
                 ),
-                FontFaceDescriptor(
-                    key = FontFaceKey(
-                        family = LauncherFontFamily("ark"),
-                        widthMode = LauncherFontWidthMode.MONOSPACED,
-                        size = PixelFontSize(10),
+                ProductFontFaceDescriptor(
+                    key = ProductFontFaceKey(
+                        family = ProductFontFamily("ark"),
+                        widthMode = ProductFontWidthMode.MONOSPACED,
+                        size = ProductFontSize(10),
                     ),
                     settingsVisible = true,
-                    roles = setOf(LauncherTextRole.CHROME),
-                    metrics = PixelFontMetrics(
-                        size = PixelFontSize(10),
+                    roles = setOf(ProductTextRole.CHROME),
+                    metrics = ProductFontMetrics(
+                        size = ProductFontSize(10),
                         cellHeight = 10,
                         baseline = 9,
                         narrowAdvanceWidth = 5,
                         wideAdvanceWidth = 10,
                     ),
                     packs = listOf(
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "ark_pixel_10px_monospaced_zh_cn",
                             assetDirectory = "glyphpacks/ark_pixel_10px_monospaced_zh_cn",
                             sourceType = "bdf",
@@ -373,23 +373,23 @@ internal object GeneratedPixelFontCatalog {
                         ),
                     ),
                 ),
-                FontFaceDescriptor(
-                    key = FontFaceKey(
-                        family = LauncherFontFamily("ark"),
-                        widthMode = LauncherFontWidthMode.MONOSPACED,
-                        size = PixelFontSize(12),
+                ProductFontFaceDescriptor(
+                    key = ProductFontFaceKey(
+                        family = ProductFontFamily("ark"),
+                        widthMode = ProductFontWidthMode.MONOSPACED,
+                        size = ProductFontSize(12),
                     ),
                     settingsVisible = true,
                     roles = setOf(),
-                    metrics = PixelFontMetrics(
-                        size = PixelFontSize(12),
+                    metrics = ProductFontMetrics(
+                        size = ProductFontSize(12),
                         cellHeight = 12,
                         baseline = 10,
                         narrowAdvanceWidth = 6,
                         wideAdvanceWidth = 12,
                     ),
                     packs = listOf(
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "ark_pixel_12px_monospaced_zh_cn",
                             assetDirectory = "glyphpacks/ark_pixel_12px_monospaced_zh_cn",
                             sourceType = "bdf",
@@ -401,23 +401,23 @@ internal object GeneratedPixelFontCatalog {
                         ),
                     ),
                 ),
-                FontFaceDescriptor(
-                    key = FontFaceKey(
-                        family = LauncherFontFamily("ark"),
-                        widthMode = LauncherFontWidthMode.MONOSPACED,
-                        size = PixelFontSize(16),
+                ProductFontFaceDescriptor(
+                    key = ProductFontFaceKey(
+                        family = ProductFontFamily("ark"),
+                        widthMode = ProductFontWidthMode.MONOSPACED,
+                        size = ProductFontSize(16),
                     ),
                     settingsVisible = true,
                     roles = setOf(),
-                    metrics = PixelFontMetrics(
-                        size = PixelFontSize(16),
+                    metrics = ProductFontMetrics(
+                        size = ProductFontSize(16),
                         cellHeight = 16,
                         baseline = 13,
                         narrowAdvanceWidth = 8,
                         wideAdvanceWidth = 16,
                     ),
                     packs = listOf(
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "ark_pixel_16px_monospaced_zh_cn",
                             assetDirectory = "glyphpacks/ark_pixel_16px_monospaced_zh_cn",
                             sourceType = "bdf",
@@ -431,36 +431,36 @@ internal object GeneratedPixelFontCatalog {
                 ),
             ),
         ),
-        FontFamilyDescriptor(
-            id = LauncherFontFamily("cubic_11"),
+        ProductFontFamilyDescriptor(
+            id = ProductFontFamily("cubic_11"),
             constantName = "CUBIC_11",
             displayLabel = "CUBIC 11",
             assetFamilyId = "cubic_11",
             sourceVersion = "1.500",
             licenseId = "OFL-1.1",
-            defaultKey = FontFaceKey(
-                family = LauncherFontFamily("cubic_11"),
-                widthMode = LauncherFontWidthMode.PROPORTIONAL,
-                size = PixelFontSize(12),
+            defaultKey = ProductFontFaceKey(
+                family = ProductFontFamily("cubic_11"),
+                widthMode = ProductFontWidthMode.PROPORTIONAL,
+                size = ProductFontSize(12),
             ),
             faces = listOf(
-                FontFaceDescriptor(
-                    key = FontFaceKey(
-                        family = LauncherFontFamily("cubic_11"),
-                        widthMode = LauncherFontWidthMode.PROPORTIONAL,
-                        size = PixelFontSize(12),
+                ProductFontFaceDescriptor(
+                    key = ProductFontFaceKey(
+                        family = ProductFontFamily("cubic_11"),
+                        widthMode = ProductFontWidthMode.PROPORTIONAL,
+                        size = ProductFontSize(12),
                     ),
                     settingsVisible = true,
-                    roles = setOf(LauncherTextRole.CHROME),
-                    metrics = PixelFontMetrics(
-                        size = PixelFontSize(12),
+                    roles = setOf(ProductTextRole.CHROME),
+                    metrics = ProductFontMetrics(
+                        size = ProductFontSize(12),
                         cellHeight = 14,
                         baseline = 10,
                         narrowAdvanceWidth = 4,
                         wideAdvanceWidth = 13,
                     ),
                     packs = listOf(
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "cubic_11_12px_proportional",
                             assetDirectory = "glyphpacks/cubic_11_12px_proportional",
                             sourceType = "outline",
@@ -474,36 +474,36 @@ internal object GeneratedPixelFontCatalog {
                 ),
             ),
         ),
-        FontFamilyDescriptor(
-            id = LauncherFontFamily("boutique_7"),
+        ProductFontFamilyDescriptor(
+            id = ProductFontFamily("boutique_7"),
             constantName = "BOUTIQUE_7",
             displayLabel = "BOUTIQUE 7",
             assetFamilyId = "boutique_7",
             sourceVersion = "2026.03.30",
             licenseId = "OFL-1.1",
-            defaultKey = FontFaceKey(
-                family = LauncherFontFamily("boutique_7"),
-                widthMode = LauncherFontWidthMode.PROPORTIONAL,
-                size = PixelFontSize(8),
+            defaultKey = ProductFontFaceKey(
+                family = ProductFontFamily("boutique_7"),
+                widthMode = ProductFontWidthMode.PROPORTIONAL,
+                size = ProductFontSize(8),
             ),
             faces = listOf(
-                FontFaceDescriptor(
-                    key = FontFaceKey(
-                        family = LauncherFontFamily("boutique_7"),
-                        widthMode = LauncherFontWidthMode.PROPORTIONAL,
-                        size = PixelFontSize(8),
+                ProductFontFaceDescriptor(
+                    key = ProductFontFaceKey(
+                        family = ProductFontFamily("boutique_7"),
+                        widthMode = ProductFontWidthMode.PROPORTIONAL,
+                        size = ProductFontSize(8),
                     ),
                     settingsVisible = true,
-                    roles = setOf(LauncherTextRole.CHROME),
-                    metrics = PixelFontMetrics(
-                        size = PixelFontSize(8),
+                    roles = setOf(ProductTextRole.CHROME),
+                    metrics = ProductFontMetrics(
+                        size = ProductFontSize(8),
                         cellHeight = 8,
                         baseline = 6,
                         narrowAdvanceWidth = 3,
                         wideAdvanceWidth = 8,
                     ),
                     packs = listOf(
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "boutique_7_8px_proportional",
                             assetDirectory = "glyphpacks/boutique_7_8px_proportional",
                             sourceType = "outline",
@@ -517,36 +517,36 @@ internal object GeneratedPixelFontCatalog {
                 ),
             ),
         ),
-        FontFamilyDescriptor(
-            id = LauncherFontFamily("boutique_9"),
+        ProductFontFamilyDescriptor(
+            id = ProductFontFamily("boutique_9"),
             constantName = "BOUTIQUE_9",
             displayLabel = "BOUTIQUE 9",
             assetFamilyId = "boutique_9",
             sourceVersion = "1.93",
             licenseId = "OFL-1.1",
-            defaultKey = FontFaceKey(
-                family = LauncherFontFamily("boutique_9"),
-                widthMode = LauncherFontWidthMode.PROPORTIONAL,
-                size = PixelFontSize(10),
+            defaultKey = ProductFontFaceKey(
+                family = ProductFontFamily("boutique_9"),
+                widthMode = ProductFontWidthMode.PROPORTIONAL,
+                size = ProductFontSize(10),
             ),
             faces = listOf(
-                FontFaceDescriptor(
-                    key = FontFaceKey(
-                        family = LauncherFontFamily("boutique_9"),
-                        widthMode = LauncherFontWidthMode.PROPORTIONAL,
-                        size = PixelFontSize(10),
+                ProductFontFaceDescriptor(
+                    key = ProductFontFaceKey(
+                        family = ProductFontFamily("boutique_9"),
+                        widthMode = ProductFontWidthMode.PROPORTIONAL,
+                        size = ProductFontSize(10),
                     ),
                     settingsVisible = true,
-                    roles = setOf(LauncherTextRole.CHROME),
-                    metrics = PixelFontMetrics(
-                        size = PixelFontSize(10),
+                    roles = setOf(ProductTextRole.CHROME),
+                    metrics = ProductFontMetrics(
+                        size = ProductFontSize(10),
                         cellHeight = 11,
                         baseline = 8,
                         narrowAdvanceWidth = 4,
                         wideAdvanceWidth = 10,
                     ),
                     packs = listOf(
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "boutique_9_10px_proportional",
                             assetDirectory = "glyphpacks/boutique_9_10px_proportional",
                             sourceType = "outline",
@@ -560,36 +560,36 @@ internal object GeneratedPixelFontCatalog {
                 ),
             ),
         ),
-        FontFamilyDescriptor(
-            id = LauncherFontFamily("dotted"),
+        ProductFontFamilyDescriptor(
+            id = ProductFontFamily("dotted"),
             constantName = "DOTTED",
             displayLabel = "DOTTED",
             assetFamilyId = "dotted",
             sourceVersion = "0.1",
             licenseId = "GPL-2.0",
-            defaultKey = FontFaceKey(
-                family = LauncherFontFamily("dotted"),
-                widthMode = LauncherFontWidthMode.PROPORTIONAL,
-                size = PixelFontSize(13),
+            defaultKey = ProductFontFaceKey(
+                family = ProductFontFamily("dotted"),
+                widthMode = ProductFontWidthMode.PROPORTIONAL,
+                size = ProductFontSize(13),
             ),
             faces = listOf(
-                FontFaceDescriptor(
-                    key = FontFaceKey(
-                        family = LauncherFontFamily("dotted"),
-                        widthMode = LauncherFontWidthMode.PROPORTIONAL,
-                        size = PixelFontSize(13),
+                ProductFontFaceDescriptor(
+                    key = ProductFontFaceKey(
+                        family = ProductFontFamily("dotted"),
+                        widthMode = ProductFontWidthMode.PROPORTIONAL,
+                        size = ProductFontSize(13),
                     ),
                     settingsVisible = true,
-                    roles = setOf(LauncherTextRole.CHROME),
-                    metrics = PixelFontMetrics(
-                        size = PixelFontSize(13),
+                    roles = setOf(ProductTextRole.CHROME),
+                    metrics = ProductFontMetrics(
+                        size = ProductFontSize(13),
                         cellHeight = 14,
                         baseline = 10,
                         narrowAdvanceWidth = 9,
                         wideAdvanceWidth = 13,
                     ),
                     packs = listOf(
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "dotted_13px_proportional",
                             assetDirectory = "glyphpacks/dotted_13px_proportional",
                             sourceType = "dot_grid_otf",
@@ -603,36 +603,36 @@ internal object GeneratedPixelFontCatalog {
                 ),
             ),
         ),
-        FontFamilyDescriptor(
-            id = LauncherFontFamily("gnu_unifont"),
+        ProductFontFamilyDescriptor(
+            id = ProductFontFamily("gnu_unifont"),
             constantName = "GNU_UNIFONT",
             displayLabel = "UNIFONT",
             assetFamilyId = "gnu_unifont",
             sourceVersion = "17.0.04",
             licenseId = "GPL-2.0+",
-            defaultKey = FontFaceKey(
-                family = LauncherFontFamily("gnu_unifont"),
-                widthMode = LauncherFontWidthMode.MONOSPACED,
-                size = PixelFontSize(16),
+            defaultKey = ProductFontFaceKey(
+                family = ProductFontFamily("gnu_unifont"),
+                widthMode = ProductFontWidthMode.MONOSPACED,
+                size = ProductFontSize(16),
             ),
             faces = listOf(
-                FontFaceDescriptor(
-                    key = FontFaceKey(
-                        family = LauncherFontFamily("gnu_unifont"),
-                        widthMode = LauncherFontWidthMode.MONOSPACED,
-                        size = PixelFontSize(16),
+                ProductFontFaceDescriptor(
+                    key = ProductFontFaceKey(
+                        family = ProductFontFamily("gnu_unifont"),
+                        widthMode = ProductFontWidthMode.MONOSPACED,
+                        size = ProductFontSize(16),
                     ),
                     settingsVisible = true,
-                    roles = setOf(LauncherTextRole.CHROME),
-                    metrics = PixelFontMetrics(
-                        size = PixelFontSize(16),
+                    roles = setOf(ProductTextRole.CHROME),
+                    metrics = ProductFontMetrics(
+                        size = ProductFontSize(16),
                         cellHeight = 16,
                         baseline = 14,
                         narrowAdvanceWidth = 8,
                         wideAdvanceWidth = 16,
                     ),
                     packs = listOf(
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "gnu_unifont_16px_monospaced",
                             assetDirectory = "glyphpacks/gnu_unifont_16px_monospaced",
                             sourceType = "bdf",
@@ -646,36 +646,36 @@ internal object GeneratedPixelFontCatalog {
                 ),
             ),
         ),
-        FontFamilyDescriptor(
-            id = LauncherFontFamily("pix32"),
+        ProductFontFamilyDescriptor(
+            id = ProductFontFamily("pix32"),
             constantName = "PIX32",
             displayLabel = "PIX32",
             assetFamilyId = "pix32",
             sourceVersion = "1.9.7",
             licenseId = "commercial-purchased-user-declared",
-            defaultKey = FontFaceKey(
-                family = LauncherFontFamily("pix32"),
-                widthMode = LauncherFontWidthMode.MONOSPACED,
-                size = PixelFontSize(12),
+            defaultKey = ProductFontFaceKey(
+                family = ProductFontFamily("pix32"),
+                widthMode = ProductFontWidthMode.MONOSPACED,
+                size = ProductFontSize(12),
             ),
             faces = listOf(
-                FontFaceDescriptor(
-                    key = FontFaceKey(
-                        family = LauncherFontFamily("pix32"),
-                        widthMode = LauncherFontWidthMode.MONOSPACED,
-                        size = PixelFontSize(12),
+                ProductFontFaceDescriptor(
+                    key = ProductFontFaceKey(
+                        family = ProductFontFamily("pix32"),
+                        widthMode = ProductFontWidthMode.MONOSPACED,
+                        size = ProductFontSize(12),
                     ),
                     settingsVisible = true,
-                    roles = setOf(LauncherTextRole.CHROME),
-                    metrics = PixelFontMetrics(
-                        size = PixelFontSize(12),
+                    roles = setOf(ProductTextRole.CHROME),
+                    metrics = ProductFontMetrics(
+                        size = ProductFontSize(12),
                         cellHeight = 12,
                         baseline = 11,
                         narrowAdvanceWidth = 6,
                         wideAdvanceWidth = 12,
                     ),
                     packs = listOf(
-                        FontPackDescriptor(
+                        ProductFontPackDescriptor(
                             id = "pix32_12px_monospaced",
                             assetDirectory = "glyphpacks/pix32_12px_monospaced",
                             sourceType = "outline",
