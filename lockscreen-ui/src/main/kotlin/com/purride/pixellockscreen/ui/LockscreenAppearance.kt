@@ -6,6 +6,8 @@ import com.purride.pixelcore.PixelTextRasterizer
 import com.purride.pixeldesign.ProductAppearance
 import com.purride.pixeldesign.ProductThemeBrightness
 import com.purride.pixeldesign.ProductThemeFamily
+import com.purride.pixeldesign.ProductThemeCatalog
+import com.purride.pixelcore.PixelColor
 
 /** 锁屏一帧渲染使用的完整产品外观，包含已经解析完成的实际日夜亮度。 */
 public data class LockscreenAppearance(
@@ -46,3 +48,7 @@ public fun ProductAppearance.resolveLockscreenAppearance(
 /** 根据物理宿主尺寸和共享点大小返回当前可绘制的逻辑网格尺寸。 */
 internal fun lockscreenLogicalSize(widthPx: Int, heightPx: Int, dotSizePx: Int): Pair<Int, Int> =
     (widthPx / dotSizePx).coerceAtLeast(1) to (heightPx / dotSizePx).coerceAtLeast(1)
+
+/** 返回完整覆盖系统壁纸使用的不透明主题底色。 */
+internal fun LockscreenAppearance.surfaceColor(): PixelColor =
+    ProductThemeCatalog.resolve(themeFamily, brightness).background

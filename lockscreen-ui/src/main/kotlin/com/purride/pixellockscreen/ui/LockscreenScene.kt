@@ -648,7 +648,7 @@ private fun batteryGlyph(level: Int, color: PixelColor, backing: PixelColor): Wi
     }
 }
 
-/** 通过四向单像素底色副本给透明壁纸上的文本提供硬边反差。 */
+/** 通过四向单像素主题底色副本给文本提供稳定硬边反差。 */
 internal fun outlinedLockscreenText(
     text: String,
     foreground: PixelColor,

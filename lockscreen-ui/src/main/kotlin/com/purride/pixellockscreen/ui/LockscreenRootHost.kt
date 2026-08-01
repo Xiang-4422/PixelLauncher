@@ -14,7 +14,7 @@ import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.SizedBox
 
 /**
- * 可由 Showcase 和未来 SystemUI 适配器共同持有的透明像素锁屏宿主。
+ * 可由 Showcase 和 SystemUI 适配器共同持有的全屏像素锁屏宿主。
  *
  * 宿主不访问系统服务、不创建定时器、不注册输入桥；所有状态必须由调用方通过 [update] 提交。
  */
@@ -26,7 +26,7 @@ public class LockscreenRootHost @JvmOverloads constructor(
     /** 可选的 SystemUI 内容操作转发器；Showcase 和静态宿主保持为空。 */
     private val contentListener: LockscreenContentListener? = null,
 ) : FrameLayout(context, attrs) {
-    /** 实际执行透明像素渲染的唯一子 View。 */
+    /** 实际执行像素渲染的唯一子 View。 */
     private val pixelHostView: PixelHostView = PixelHostView(context)
 
     /** 最近一次已经提交渲染的不可变请求，用于跳过完全相同的更新。 */
@@ -135,6 +135,11 @@ public class LockscreenRootHost @JvmOverloads constructor(
         currentAppearance = appearance
         /** 当前主题用作开启 GAP 后的熄灭像素底色。 */
         val palette = ProductThemeCatalog.resolve(appearance.themeFamily, appearance.brightness)
+        /** 不透明主题底色同时覆盖宿主和像素 View，不露出系统锁屏壁纸。 */
+        val surfaceColor = appearance.surfaceColor()
+        setBackgroundColor(surfaceColor.argb)
+        pixelHostView.setBackgroundColor(surfaceColor.argb)
+        pixelHostView.bezelColor = surfaceColor
         pixelHostView.profilePolicy = PixelHostProfilePolicy.AdaptivePixels(
             dotSizePx = appearance.dotSizePx,
             pixelShape = appearance.pixelShape,
@@ -143,7 +148,7 @@ public class LockscreenRootHost @JvmOverloads constructor(
         pixelHostView.offPixelColor = if (appearance.pixelGapEnabled) {
             palette.background
         } else {
-            PixelColor.Transparent
+            surfaceColor
         }
         /** 当前宿主尺寸可用时立即应用共享字体。 */
         val logicalWidth = lockscreenLogicalSize(width, height, appearance.dotSizePx).first

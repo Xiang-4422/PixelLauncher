@@ -82,7 +82,7 @@ internal class NativeKeyguardVisibilityTransaction(
      * 收集普通 Keyguard 根容器的全部原有直接子分支，以及位于根容器外的已知普通锁屏节点。
      *
      * Bouncer 已由 [Titan2SystemUiProbe] 证明是 [shadeWindow] 的更高层同级节点，不会进入本集合；
-     * 像素宿主始终显式排除，从而在透明壁纸上只留下像素 UI。
+     * 像素宿主始终显式排除，从而由不透明主题表面完整替代原生锁屏 UI。
      */
     private fun resolveViews(anchoredViews: List<View>): List<View> {
         /** 位于 KeyguardRootView 外部、仍需单独隐藏的通知或设备入口节点。 */

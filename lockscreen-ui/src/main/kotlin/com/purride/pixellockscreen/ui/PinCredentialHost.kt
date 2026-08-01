@@ -16,7 +16,7 @@ import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.SizedBox
 
 /**
- * PIN 认证使用的透明像素键盘宿主。
+ * PIN 认证使用的全屏不透明像素键盘宿主。
  *
  * 所有可见内容由 [PixelHostView] 绘制；透明 Android 子节点只提供精确触摸与无障碍语义，
  * 每次按键仅向外发送一个数字或动作，不在 UI 层保存完整 PIN。
@@ -376,6 +376,11 @@ public class PinCredentialHost(
         currentAppearance = appearance
         /** 当前主题用作开启 GAP 后的熄灭像素底色。 */
         val palette = ProductThemeCatalog.resolve(appearance.themeFamily, appearance.brightness)
+        /** 认证层必须覆盖原生凭据页和锁屏壁纸。 */
+        val surfaceColor = appearance.surfaceColor()
+        setBackgroundColor(surfaceColor.argb)
+        pixelHostView.setBackgroundColor(surfaceColor.argb)
+        pixelHostView.bezelColor = surfaceColor
         pixelHostView.profilePolicy = PixelHostProfilePolicy.AdaptivePixels(
             dotSizePx = appearance.dotSizePx,
             pixelShape = appearance.pixelShape,
@@ -384,7 +389,7 @@ public class PinCredentialHost(
         pixelHostView.offPixelColor = if (appearance.pixelGapEnabled) {
             palette.background
         } else {
-            PixelColor.Transparent
+            surfaceColor
         }
         pixelHostView.textRasterizer = appearance.defaultTextRasterizer.fitProductTextWithin(
             maxHeight = CREDENTIAL_FONT_HEIGHT,

@@ -16,7 +16,7 @@ import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.SizedBox
 
 /**
- * 图案认证使用的透明交互宿主。
+ * 图案认证使用的全屏不透明交互宿主。
  *
  * 所有可见内容由内部 [PixelHostView] 绘制；本 Android 容器只负责把二维 MotionEvent 映射到
  * 相同逻辑网格，并将逐格事件交给外部可清零安全会话。
@@ -316,6 +316,11 @@ public class PatternCredentialHost(
         currentAppearance = appearance
         /** 当前主题用作开启 GAP 后的熄灭像素底色。 */
         val palette = ProductThemeCatalog.resolve(appearance.themeFamily, appearance.brightness)
+        /** 认证层必须覆盖原生凭据页和锁屏壁纸。 */
+        val surfaceColor = appearance.surfaceColor()
+        setBackgroundColor(surfaceColor.argb)
+        pixelHostView.setBackgroundColor(surfaceColor.argb)
+        pixelHostView.bezelColor = surfaceColor
         pixelHostView.profilePolicy = PixelHostProfilePolicy.AdaptivePixels(
             dotSizePx = appearance.dotSizePx,
             pixelShape = appearance.pixelShape,
@@ -324,7 +329,7 @@ public class PatternCredentialHost(
         pixelHostView.offPixelColor = if (appearance.pixelGapEnabled) {
             palette.background
         } else {
-            PixelColor.Transparent
+            surfaceColor
         }
         pixelHostView.textRasterizer = appearance.defaultTextRasterizer.fitProductTextWithin(
             maxHeight = CREDENTIAL_FONT_HEIGHT,

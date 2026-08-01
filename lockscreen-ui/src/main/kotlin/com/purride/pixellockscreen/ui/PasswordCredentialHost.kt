@@ -16,7 +16,7 @@ import com.purride.pixelui.PixelHostView
 import com.purride.pixelui.SizedBox
 
 /**
- * 密码认证使用的透明像素展示与动作宿主。
+ * 密码认证使用的全屏不透明像素展示与动作宿主。
  *
  * 宿主不创建文本输入框，也不接收密码字符。系统 IME 始终连接原生密码 `EditText`；本宿主只
  * 根据外部提供的长度绘制掩码，并把输入聚焦、IME 切换和紧急入口动作转发给运行时桥。
@@ -381,6 +381,11 @@ public class PasswordCredentialHost(
         currentAppearance = appearance
         /** 当前主题用作开启 GAP 后的熄灭像素底色。 */
         val palette = ProductThemeCatalog.resolve(appearance.themeFamily, appearance.brightness)
+        /** 认证层必须覆盖原生凭据页和锁屏壁纸。 */
+        val surfaceColor = appearance.surfaceColor()
+        setBackgroundColor(surfaceColor.argb)
+        pixelHostView.setBackgroundColor(surfaceColor.argb)
+        pixelHostView.bezelColor = surfaceColor
         pixelHostView.profilePolicy = PixelHostProfilePolicy.AdaptivePixels(
             dotSizePx = appearance.dotSizePx,
             pixelShape = appearance.pixelShape,
@@ -389,7 +394,7 @@ public class PasswordCredentialHost(
         pixelHostView.offPixelColor = if (appearance.pixelGapEnabled) {
             palette.background
         } else {
-            PixelColor.Transparent
+            surfaceColor
         }
         pixelHostView.textRasterizer = appearance.defaultTextRasterizer.fitProductTextWithin(
             maxHeight = CREDENTIAL_FONT_HEIGHT,
