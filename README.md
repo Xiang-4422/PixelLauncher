@@ -1,24 +1,26 @@
 # PixelLauncher
 
-PixelLauncher 是一个 Android 启动器应用，同时内置可复用的像素 UI 引擎。主工程维护四个 Gradle 模块：
+PixelLauncher 是一个 Android 启动器应用，同时内置可复用的像素 UI 引擎。主工程维护五个 Gradle 模块：
 
 <!-- architecture-contract:modules:start -->
 - `:app`：Launcher 产品、页面状态和 Android 应用入口。
 - `:pixel-engine`：像素渲染、组件、动画、路由、Android Host、测试 DSL 与诊断能力。
 - `:showcase`：脱离 Launcher 独立运行的 Android Pixel Engine 展示应用。
 - `:showcase-desktop`：复用展示场景的 JVM/AWT 桌面宿主。
+- `:lockscreen-module`：独立构建、默认惰性的像素锁屏 SystemUI 注入模块。
 <!-- architecture-contract:modules:end -->
 
 <!-- architecture-contract:dependencies:start -->
 ```text
 :app -> :pixel-engine
+:lockscreen-module -> :pixel-engine
 :showcase -> :pixel-engine
 :showcase-desktop --debug classes.jar--> :pixel-engine
 :showcase-desktop --shared scene sources--> :showcase
 ```
 <!-- architecture-contract:dependencies:end -->
 
-两个 Android 应用模块通过 Gradle project 依赖消费引擎。`:showcase-desktop` 不声明 Android project
+三个 Android 应用模块通过 Gradle project 依赖消费引擎。`:showcase-desktop` 不声明 Android project
 依赖：其 `compileKotlin` 先触发 `:pixel-engine:exportDebugClassesJar`（把 debug AAR 内的 classes.jar
 解包到引擎自有的稳定路径 `pixel-engine/build/outputs/desktop-classes/classes.jar`），再消费该导出产物，
 同时从 `:showcase` 共享 `DemoScene.kt` 与 `scenes/**`。
@@ -37,10 +39,12 @@ PixelLauncher 是一个 Android 启动器应用，同时内置可复用的像素
 ./gradlew :app:assembleDebug
 ./gradlew :showcase:assembleDebug
 ./gradlew :showcase-desktop:classes
+./gradlew :lockscreen-module:assembleDebug
 ./gradlew :pixel-engine:testDebugUnitTest
 ```
 
-`./gradlew projects` 应只列出 `:app`、`:pixel-engine`、`:showcase` 和 `:showcase-desktop`。
+`./gradlew projects` 应只列出 `:app`、`:pixel-engine`、`:showcase`、`:showcase-desktop` 和
+`:lockscreen-module`。
 
 ## 运行
 

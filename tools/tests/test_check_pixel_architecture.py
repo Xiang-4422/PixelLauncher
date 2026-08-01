@@ -28,11 +28,11 @@ class PixelArchitectureGovernanceTest(unittest.TestCase):
     """覆盖函数超限、模块漂移、旧模块文本和真实仓库通过状态。"""
 
     def write_architecture_contract(self, root: Path) -> None:
-        """在临时仓库写入当前四模块及依赖图契约。"""
+        """在临时仓库写入当前五模块及依赖图契约。"""
 
         # 临时 settings 使用单次多参数 include，覆盖生产解析器支持的标准写法。
         (root / "settings.gradle.kts").write_text(
-            'include(":app", ":pixel-engine", ":showcase", ":showcase-desktop")\n',
+            'include(":app", ":pixel-engine", ":showcase", ":showcase-desktop", ":lockscreen-module")\n',
             encoding="utf-8",
         )
         # 关键文档共享同一模块清单受控区段。
@@ -146,8 +146,8 @@ class PixelArchitectureGovernanceTest(unittest.TestCase):
             )
             self.assertEqual("pixel-demo", stale_finding["pattern"])
 
-    def test_accepts_current_four_module_contract(self) -> None:
-        """Gradle 清单及关键文档一致声明四模块时必须通过。"""
+    def test_accepts_current_five_module_contract(self) -> None:
+        """Gradle 清单及关键文档一致声明五模块时必须通过。"""
 
         with tempfile.TemporaryDirectory() as directory:
             # 空生产源码使测试只验证模块契约的正向路径；Gradle 声明顺序不应影响结果。
@@ -155,7 +155,7 @@ class PixelArchitectureGovernanceTest(unittest.TestCase):
             (root / "pixel-engine/src/main/kotlin").mkdir(parents=True)
             budget = self.write_budget(root)
             (root / "settings.gradle.kts").write_text(
-                'include(":showcase-desktop", ":showcase", ":pixel-engine", ":app")\n',
+                'include(":lockscreen-module", ":showcase-desktop", ":showcase", ":pixel-engine", ":app")\n',
                 encoding="utf-8",
             )
             # 受控区段外的解释文字可重复引用模块和依赖，不应污染契约解析。
@@ -182,23 +182,24 @@ class PixelArchitectureGovernanceTest(unittest.TestCase):
             /* include(":commented-block")
                /* include(":nested-comment") */
             */
-            include(":pixel-engine", ":showcase", ":showcase-desktop")
+            include(":pixel-engine", ":showcase", ":showcase-desktop", ":lockscreen-module")
         """
 
         modules = MODULE.declared_gradle_modules(settings_text)
         self.assertEqual(MODULE.EXPECTED_GRADLE_MODULES, modules)
 
     def test_rejects_commented_out_gradle_module(self) -> None:
-        """settings 仅在注释中保留桌面模块时必须报告清单漂移。"""
+        """settings 仅在注释中保留锁屏模块时必须报告清单漂移。"""
 
         with tempfile.TemporaryDirectory() as directory:
-            # 完整文档保持不变，桌面模块的 include 被行注释移除。
+            # 完整文档保持不变，锁屏模块的 include 被行注释移除。
             root = Path(directory)
             (root / "pixel-engine/src/main/kotlin").mkdir(parents=True)
             budget = self.write_budget(root)
             (root / "settings.gradle.kts").write_text(
                 'include(":app", ":pixel-engine", ":showcase")\n'
-                '// include(":showcase-desktop")\n'
+                'include(":showcase-desktop")\n'
+                '// include(":lockscreen-module")\n'
                 '/* include(":commented-block") */\n',
                 encoding="utf-8",
             )
@@ -207,20 +208,20 @@ class PixelArchitectureGovernanceTest(unittest.TestCase):
             finding = next(
                 finding for finding in report["findings"] if finding["kind"] == "gradle-module-list"
             )
-            self.assertEqual(":showcase", finding["actual"][-1])
-            self.assertEqual(":showcase-desktop", finding["expected"][-1])
+            self.assertEqual(":showcase-desktop", finding["actual"][-1])
+            self.assertEqual(":lockscreen-module", finding["expected"][-1])
 
     def test_rejects_key_document_module_list_drift(self) -> None:
         """关键架构文档的受控模块区段漏项时必须失败。"""
 
         with tempfile.TemporaryDirectory() as directory:
-            # 项目总览故意从受控区段移除桌面模块。
+            # 项目总览故意从受控区段移除锁屏模块。
             root = Path(directory)
             (root / "pixel-engine/src/main/kotlin").mkdir(parents=True)
             budget = self.write_budget(root)
             overview = root / "docs/项目总览.md"
             overview.write_text(
-                overview.read_text(encoding="utf-8").replace("- `:showcase-desktop`\n", ""),
+                overview.read_text(encoding="utf-8").replace("- `:lockscreen-module`\n", ""),
                 encoding="utf-8",
             )
 
@@ -231,7 +232,7 @@ class PixelArchitectureGovernanceTest(unittest.TestCase):
                 if finding["kind"] == "documented-module-list"
             )
             self.assertEqual("docs/项目总览.md", finding["path"])
-            self.assertNotIn(":showcase-desktop", finding["actual"])
+            self.assertNotIn(":lockscreen-module", finding["actual"])
 
     def test_rejects_missing_or_duplicate_module_contract_marker(self) -> None:
         """关键文档模块区段缺少或重复边界标记时必须失败。"""

@@ -24,4 +24,5 @@ include(":app")
 include(":pixel-engine")
 include(":showcase")
 include(":showcase-desktop")
+include(":lockscreen-module")
  

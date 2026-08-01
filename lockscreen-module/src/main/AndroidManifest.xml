@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      当前 APK 是无入口、无 Hook 的安全脚手架。确认目标 SystemUI 与 LSPosed API 后，
+      才会在独立提交中加入模块入口和静态作用域声明。
+    -->
+    <application
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:description="@string/app_description"
+        android:directBootAware="true"
+        android:fullBackupContent="false"
+        android:icon="@drawable/ic_pixel_lockscreen"
+        android:label="@string/app_name"
+        android:supportsRtl="true" />
+
+</manifest>
