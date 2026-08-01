@@ -67,8 +67,8 @@ internal class PixelPatternSecuritySession(
     /** 绘制全部可见认证内容的像素宿主。 */
     private lateinit var host: PatternCredentialHost
 
-    /** 隐藏并恢复原生图案页直属内容的事务。 */
-    private lateinit var nativeVisibility: NativePatternVisibilityTransaction
+    /** 隐藏并恢复原生图案页直属内容的通用凭据事务。 */
+    private lateinit var nativeVisibility: NativeCredentialVisibilityTransaction
 
     /** 当前尚未完成的唯一系统校验任务。 */
     private var pendingCheck: PendingCredentialCheck? = null
@@ -145,9 +145,9 @@ internal class PixelPatternSecuritySession(
             host = PatternCredentialHost(containerBinding.securityContainer.context, coordinator).apply {
                 translationZ = PIXEL_OVERLAY_TRANSLATION_Z
             }
-            nativeVisibility = NativePatternVisibilityTransaction(
+            nativeVisibility = NativeCredentialVisibilityTransaction(
                 securityContainer = containerBinding.securityContainer,
-                patternView = patternBinding.patternView,
+                credentialView = patternBinding.patternView,
                 pixelHost = host,
             )
             nativeVisibility.prepare()
