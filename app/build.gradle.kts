@@ -98,6 +98,8 @@ android {
 dependencies {
     // Launcher 直接消费唯一的 Pixel Engine SDK 模块。
     implementation(project(":pixel-engine"))
+    // Launcher 与锁屏共享中立产品主题目录，业务语义仍留在应用模块。
+    implementation(project(":pixel-design"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
