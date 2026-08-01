@@ -11,6 +11,7 @@ import com.purride.pixellockscreen.ui.LockscreenSecurityNoticePhase
 import com.purride.pixellockscreen.ui.LockscreenSecurityNoticeUiState
 import com.purride.pixellockscreen.ui.LockscreenMediaUiState
 import com.purride.pixellockscreen.ui.LockscreenNotificationUiState
+import com.purride.pixellockscreen.ui.LockscreenQuickActionUiState
 import com.purride.pixellockscreen.ui.PatternCredentialFeedback
 import com.purride.pixellockscreen.ui.PatternCredentialUiState
 import com.purride.pixellockscreen.ui.PasswordCredentialFeedback
@@ -155,6 +156,16 @@ internal data class LockscreenPreviewConfiguration(
         ),
         notifications = previewNotifications(content),
         media = previewMedia(content),
+        quickActions = listOf(
+            LockscreenQuickActionUiState(
+                key = LockscreenQuickActionUiState.START_KEY,
+                labelText = PREVIEW_START_ACTION,
+            ),
+            LockscreenQuickActionUiState(
+                key = LockscreenQuickActionUiState.END_KEY,
+                labelText = PREVIEW_END_ACTION,
+            ),
+        ),
         ambient = if (displayMode == LockscreenPreviewDisplayMode.AOD) {
             LockscreenAmbientUiState(
                 isAmbient = true,
@@ -341,3 +352,9 @@ private const val PREVIEW_AOD_OFFSET_X = 2
 
 /** AOD 离线预览固定使用的垂直防烧屏偏移。 */
 private const val PREVIEW_AOD_OFFSET_Y = -1
+
+/** 离线预览左侧快捷槽位的稳定名称。 */
+private const val PREVIEW_START_ACTION = "FLASHLIGHT"
+
+/** 离线预览右侧快捷槽位的稳定名称。 */
+private const val PREVIEW_END_ACTION = "CAMERA"

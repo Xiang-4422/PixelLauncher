@@ -24,6 +24,7 @@ class LockscreenPreviewModelTest {
         assertEquals("SATURDAY, AUGUST 1", state.dateText)
         assertEquals(50, state.batteryPercent)
         assertFalse(state.isCharging)
+        assertEquals(listOf("FLASHLIGHT", "CAMERA"), state.quickActions.map { it.labelText })
     }
 
     /** 主题循环必须依次覆盖共享目录的全部八个家族并回到起点。 */
