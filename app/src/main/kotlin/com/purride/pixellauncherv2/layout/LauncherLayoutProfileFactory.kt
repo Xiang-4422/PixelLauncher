@@ -1,15 +1,16 @@
 package com.purride.pixellauncherv2.layout
 
 import com.purride.pixelcore.PixelShape
+import com.purride.pixeldesign.ProductPixelCatalog
 
 /** 根据物理像素尺寸与点距计算 [LauncherLayoutProfile]，并提供可选的点距挡位。 */
 object LauncherLayoutProfileFactory {
 
     /** 未选择点距挡位时使用的默认物理像素点大小。 */
-    const val defaultDotSizePx: Int = 12
+    const val defaultDotSizePx: Int = ProductPixelCatalog.defaultDotSizePx
 
     /** 设置页“像素大小”可切换的全部点距挡位（单位：物理像素）。 */
-    val supportedDotSizePxOptions: List<Int> = listOf(7, 8, 10, 12, 14, 16)
+    val supportedDotSizePxOptions: List<Int> = ProductPixelCatalog.supportedDotSizePxOptions
 
     /**
      * 依据屏幕物理像素尺寸与点距，换算出 [LauncherLayoutProfile]。
