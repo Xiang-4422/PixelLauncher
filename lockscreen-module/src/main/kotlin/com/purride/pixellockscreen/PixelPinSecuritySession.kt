@@ -142,6 +142,8 @@ internal class PixelPinSecuritySession(
             ) { "pin_credential_contract" }
             coordinator = createCoordinator()
             host = PinCredentialHost(containerBinding.securityContainer.context, coordinator).apply {
+                /** 兼容父容器当前或后续切换为 ConstraintLayout 后的约束克隆。 */
+                id = View.generateViewId()
                 translationZ = PIXEL_OVERLAY_TRANSLATION_Z
             }
             nativeVisibility = NativeCredentialVisibilityTransaction(

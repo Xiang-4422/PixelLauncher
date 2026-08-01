@@ -56,7 +56,10 @@ internal class PixelKeyguardSession(
     private val host: LockscreenRootHost = LockscreenRootHost(
         context = binding.keyguardRoot.context,
         contentListener = contentListener,
-    )
+    ).apply {
+        /** ConstraintSet 克隆要求 KeyguardRootView 的每个动态子节点都具有非零 ID。 */
+        id = View.generateViewId()
+    }
 
     /** 系统广播驱动的时间、电量与明暗状态适配器。 */
     private val stateAdapter = AndroidKeyguardStateAdapter(binding.keyguardRoot.context) { state, brightness ->

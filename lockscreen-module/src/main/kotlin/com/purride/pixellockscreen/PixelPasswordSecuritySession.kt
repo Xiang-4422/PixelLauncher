@@ -128,6 +128,8 @@ internal class PixelPasswordSecuritySession(
             )
             coordinator = createCoordinator()
             host = PasswordCredentialHost(containerBinding.securityContainer.context, coordinator).apply {
+                /** 兼容父容器当前或后续切换为 ConstraintLayout 后的约束克隆。 */
+                id = View.generateViewId()
                 translationZ = PIXEL_OVERLAY_TRANSLATION_Z
             }
             nativePresentation = NativePasswordPresentationTransaction(
