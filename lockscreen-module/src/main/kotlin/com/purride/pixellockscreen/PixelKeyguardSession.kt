@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import com.purride.pixeldesign.ProductThemeFamily
 import com.purride.pixellockscreen.ui.LockscreenRootHost
+import com.purride.pixellockscreen.ui.LockscreenContentListener
 
 /**
  * 一次 SystemUI 进程生命周期内的普通像素 Keyguard 挂载与回退会话。
@@ -19,9 +20,6 @@ internal class PixelKeyguardSession(
 ) : ViewTreeObserver.OnPreDrawListener,
     ViewTreeObserver.OnDrawListener,
     View.OnAttachStateChangeListener {
-    /** 真正绘制 Pixel Engine 锁屏的 Android 宿主。 */
-    private val host: LockscreenRootHost = LockscreenRootHost(binding.keyguardRoot.context)
-
     /** 普通原生锁屏节点的可恢复显隐事务。 */
     private val nativeVisibility = NativeKeyguardVisibilityTransaction(binding.shadeWindow)
 
@@ -30,6 +28,30 @@ internal class PixelKeyguardSession(
 
     /** 只读解析原生通知隐私结果和当前媒体播放器的 Titan 2 适配器。 */
     private val contentAdapter = Titan2LockscreenContentAdapter.bind(binding.shadeWindow)
+
+    /** 把像素内容卡最小事件转发到 SystemUI 已安装的原生点击链。 */
+    private val contentListener: LockscreenContentListener = object : LockscreenContentListener {
+        /** 转发当前脱敏键对应的通知点击。 */
+        override fun onNotificationRequested(notificationKey: String) {
+            contentAdapter.performNotificationClick(notificationKey)
+        }
+
+        /** 转发当前媒体会话的播放暂停点击。 */
+        override fun onMediaPlayPauseRequested() {
+            contentAdapter.performMediaPlayPause()
+        }
+
+        /** 任何过期或失效的原生操作目标都要求整页回退。 */
+        override fun onInteractionFailure(throwable: Throwable) {
+            dispose()
+        }
+    }
+
+    /** 真正绘制 Pixel Engine 锁屏并接收内容卡命中的 Android 宿主。 */
+    private val host: LockscreenRootHost = LockscreenRootHost(
+        context = binding.keyguardRoot.context,
+        contentListener = contentListener,
+    )
 
     /** 系统广播驱动的时间、电量与明暗状态适配器。 */
     private val stateAdapter = AndroidKeyguardStateAdapter(binding.keyguardRoot.context) { state, brightness ->

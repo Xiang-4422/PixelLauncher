@@ -5,6 +5,7 @@ import android.app.Notification
 import android.service.notification.StatusBarNotification
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import com.purride.pixellockscreen.ui.LockscreenMediaUiState
 import com.purride.pixellockscreen.ui.LockscreenNotificationUiState
 import java.lang.reflect.Field
@@ -45,6 +46,10 @@ internal class Titan2LockscreenContentAdapter private constructor(
     private val visibleMediaPlayersField: Field,
     /** MediaControlPanel 当前绑定的 MediaData 字段。 */
     private val panelMediaDataField: Field,
+    /** MediaControlPanel 当前绑定的原生媒体视图持有者字段。 */
+    private val panelMediaViewHolderField: Field,
+    /** 媒体视图持有者中的原生播放暂停按钮字段。 */
+    private val mediaPlayPauseField: Field,
     /** MediaData 曲目字段。 */
     private val mediaSongField: Field,
     /** MediaData 艺术家字段。 */
@@ -52,11 +57,48 @@ internal class Titan2LockscreenContentAdapter private constructor(
     /** MediaData 播放状态字段。 */
     private val mediaPlayingField: Field,
 ) {
+    /** 最近一次完整快照中脱敏通知键到原生通知行的映射。 */
+    private var notificationRowsBySafeKey: Map<String, View> = emptyMap()
+
+    /** 最近一次完整快照选中的原生媒体控制面板。 */
+    private var currentMediaPanel: Any? = null
+
     /** 读取一帧通知和媒体摘要；任何合同变化由上层立即触发原生回退。 */
     fun snapshot(): Titan2LockscreenContentSnapshot = Titan2LockscreenContentSnapshot(
         notifications = notificationSnapshot(),
         media = mediaSnapshot(),
     )
+
+    /** 通过 SystemUI 当前通知行已有的点击监听器处理像素通知卡请求。 */
+    fun performNotificationClick(notificationKey: String) {
+        /** 最近一帧与脱敏键完全匹配的原生通知行。 */
+        val row = notificationRowsBySafeKey[notificationKey]
+            ?: error("lockscreen_notification_action_missing")
+        check(notificationRowClass.isInstance(row)) { "lockscreen_notification_action_type" }
+        check(row.visibility == View.VISIBLE && onKeyguardField.getBoolean(row)) {
+            "lockscreen_notification_action_stale"
+        }
+        check(row.isEnabled && row.hasOnClickListeners()) {
+            "lockscreen_notification_action_unavailable"
+        }
+        check(row.performClick()) { "lockscreen_notification_action_rejected" }
+    }
+
+    /** 通过当前 MediaViewHolder 已有的播放暂停按钮处理像素媒体卡请求。 */
+    fun performMediaPlayPause() {
+        /** 最近一帧选中的原生媒体控制面板。 */
+        val panel = currentMediaPanel ?: error("lockscreen_media_action_missing")
+        /** 当前控制面板绑定的原生媒体视图持有者。 */
+        val holder = panelMediaViewHolderField.get(panel)
+            ?: error("lockscreen_media_holder_missing")
+        /** SystemUI 已配置权限、误触和日志策略的原生播放暂停按钮。 */
+        val button = mediaPlayPauseField.get(holder) as? ImageButton
+            ?: error("lockscreen_media_action_type")
+        check(button.visibility == View.VISIBLE && button.isEnabled && button.hasOnClickListeners()) {
+            "lockscreen_media_action_unavailable"
+        }
+        check(button.performClick()) { "lockscreen_media_action_rejected" }
+    }
 
     /** 按原生栈顺序读取最多三条当前 Keyguard 通知。 */
     private fun notificationSnapshot(): List<LockscreenNotificationUiState> {
@@ -64,6 +106,8 @@ internal class Titan2LockscreenContentAdapter private constructor(
         val seenKeys = mutableSetOf<String>()
         /** 当前按原生排序收集的通知摘要。 */
         val result = mutableListOf<LockscreenNotificationUiState>()
+        /** 与本次结果同帧提交的原生通知行映射。 */
+        val rowsBySafeKey = linkedMapOf<String, View>()
         for (index in 0 until notificationStack.childCount) {
             if (result.size >= MAXIMUM_NOTIFICATION_COUNT) {
                 break
@@ -110,7 +154,9 @@ internal class Titan2LockscreenContentAdapter private constructor(
                 titleText = titleText,
                 isRedacted = redacted,
             )
+            rowsBySafeKey[safeKey] = row
         }
+        notificationRowsBySafeKey = rowsBySafeKey
         return result
     }
 
@@ -119,6 +165,7 @@ internal class Titan2LockscreenContentAdapter private constructor(
         /** MediaPlayerData 当前可见播放器映射。 */
         val players = visibleMediaPlayersField.get(null) as? LinkedHashMap<*, *>
             ?: error("lockscreen_media_players")
+        currentMediaPanel = null
         players.values.forEach { panel ->
             if (panel == null) {
                 return@forEach
@@ -130,6 +177,7 @@ internal class Titan2LockscreenContentAdapter private constructor(
             if (title.isBlank()) {
                 return@forEach
             }
+            currentMediaPanel = panel
             return LockscreenMediaUiState(
                 isVisible = true,
                 titleText = title,
@@ -171,6 +219,7 @@ internal class Titan2LockscreenContentAdapter private constructor(
             val playerDataClass = Class.forName(MEDIA_PLAYER_DATA_CLASS, false, classLoader)
             val controlPanelClass = Class.forName(MEDIA_CONTROL_PANEL_CLASS, false, classLoader)
             val mediaDataClass = Class.forName(MEDIA_DATA_CLASS, false, classLoader)
+            val mediaViewHolderClass = Class.forName(MEDIA_VIEW_HOLDER_CLASS, false, classLoader)
             return Titan2LockscreenContentAdapter(
                 notificationStack = stack,
                 notificationRowClass = rowClass,
@@ -201,6 +250,16 @@ internal class Titan2LockscreenContentAdapter private constructor(
                     controlPanelClass,
                     PANEL_MEDIA_DATA_FIELD,
                     mediaDataClass,
+                ),
+                panelMediaViewHolderField = exactField(
+                    controlPanelClass,
+                    PANEL_MEDIA_VIEW_HOLDER_FIELD,
+                    mediaViewHolderClass,
+                ),
+                mediaPlayPauseField = exactField(
+                    mediaViewHolderClass,
+                    MEDIA_PLAY_PAUSE_FIELD,
+                    ImageButton::class.java,
                 ),
                 mediaSongField = exactField(mediaDataClass, MEDIA_SONG_FIELD, CharSequence::class.java),
                 mediaArtistField = exactField(
@@ -251,6 +310,9 @@ internal class Titan2LockscreenContentAdapter private constructor(
         /** Titan 2 媒体数据模型类名。 */
         private const val MEDIA_DATA_CLASS: String =
             "com.android.systemui.media.controls.shared.model.MediaData"
+        /** Titan 2 媒体视图持有者类名。 */
+        private const val MEDIA_VIEW_HOLDER_CLASS: String =
+            "com.android.systemui.media.controls.ui.view.MediaViewHolder"
         /** 通知行持有条目的字段名。 */
         private const val ENTRY_FIELD: String = "mEntry"
         /** 通知行应用名称字段名。 */
@@ -267,6 +329,10 @@ internal class Titan2LockscreenContentAdapter private constructor(
         private const val VISIBLE_MEDIA_PLAYERS_FIELD: String = "visibleMediaPlayers"
         /** 媒体控制面板数据字段名。 */
         private const val PANEL_MEDIA_DATA_FIELD: String = "mMediaData"
+        /** 媒体控制面板视图持有者字段名。 */
+        private const val PANEL_MEDIA_VIEW_HOLDER_FIELD: String = "mMediaViewHolder"
+        /** 媒体视图持有者播放暂停按钮字段名。 */
+        private const val MEDIA_PLAY_PAUSE_FIELD: String = "actionPlayPause"
         /** 媒体曲目字段名。 */
         private const val MEDIA_SONG_FIELD: String = "song"
         /** 媒体艺术家字段名。 */
