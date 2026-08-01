@@ -5,19 +5,19 @@ import java.lang.reflect.Field
 import java.lang.reflect.Method
 
 /**
- * Titan 2 图案认证页原生紧急操作的精确反射桥。
+ * Titan 2 设备凭据页原生紧急操作的精确反射桥。
  *
  * 该桥不复制拨号、通话返回或 Keyguard 上报逻辑，只在原生按钮仍然挂载且可用时调用
  * `performClick()`，让 ROM 自己的 `EmergencyButtonController` 继续处理完整安全流程。
  */
 internal class Titan2EmergencyActionBridge private constructor(
-    /** 当前原生图案认证控制器。 */
-    private val patternController: Any,
+    /** 当前原生设备凭据控制器。 */
+    private val credentialController: Any,
     /** 当前原生紧急按钮控制器。 */
     private val emergencyController: Any,
     /** 当前原生紧急按钮。 */
     private val emergencyButton: Any,
-    /** 从图案控制器读取紧急按钮控制器的字段。 */
+    /** 从凭据控制器继承层级读取紧急按钮控制器的字段。 */
     private val emergencyControllerField: Field,
     /** 从通用 ViewController 读取原生按钮的字段。 */
     private val controllerViewField: Field,
@@ -42,7 +42,7 @@ internal class Titan2EmergencyActionBridge private constructor(
      */
     fun requestEmergencyAction() {
         check(!disposed) { "keyguard_emergency_bridge_disposed" }
-        check(emergencyControllerField.get(patternController) === emergencyController) {
+        check(emergencyControllerField.get(credentialController) === emergencyController) {
             "keyguard_emergency_controller_stale"
         }
         check(controllerViewField.get(emergencyController) === emergencyButton) {
@@ -80,16 +80,30 @@ internal class Titan2EmergencyActionBridge private constructor(
 
     internal companion object {
         /**
-         * 绑定已经执行 `onViewAttached()` 的 Titan 2 图案认证控制器。
+         * 绑定已经执行 `onViewAttached()` 的 Titan 2 设备凭据控制器。
          *
          * 类名、字段类型、按钮状态或公开方法签名不一致时拒绝接管。
          */
         @SuppressLint("BlockedPrivateApi", "PrivateApi")
-        fun bind(patternController: Any, classLoader: ClassLoader): Titan2EmergencyActionBridge {
-            /** Titan 2 图案认证控制器类。 */
-            val patternControllerClass = Class.forName(PATTERN_CONTROLLER_CLASS, false, classLoader)
-            check(patternControllerClass.isInstance(patternController)) {
-                "keyguard_pattern_controller_instance"
+        fun bind(
+            credentialController: Any,
+            credentialMode: Titan2CredentialMode,
+            classLoader: ClassLoader,
+        ): Titan2EmergencyActionBridge {
+            /** 当前凭据模式对应的 Titan 2 控制器类名。 */
+            val controllerClassName = when (credentialMode) {
+                Titan2CredentialMode.PATTERN -> PATTERN_CONTROLLER_CLASS
+                Titan2CredentialMode.PIN -> PIN_CONTROLLER_CLASS
+                Titan2CredentialMode.PASSWORD -> PASSWORD_CONTROLLER_CLASS
+            }
+            /** 当前凭据模式对应的 Titan 2 控制器类。 */
+            val credentialControllerClass = Class.forName(
+                controllerClassName,
+                false,
+                classLoader,
+            )
+            check(credentialControllerClass.isInstance(credentialController)) {
+                "keyguard_credential_controller_instance"
             }
             /** Titan 2 紧急按钮控制器类。 */
             val emergencyControllerClass = Class.forName(
@@ -99,15 +113,15 @@ internal class Titan2EmergencyActionBridge private constructor(
             )
             /** Titan 2 紧急按钮类。 */
             val emergencyButtonClass = Class.forName(EMERGENCY_BUTTON_CLASS, false, classLoader)
-            /** 图案控制器持有的紧急按钮控制器字段。 */
-            val emergencyControllerField = exactField(
-                owner = patternControllerClass,
+            /** 凭据控制器继承层级持有的紧急按钮控制器字段。 */
+            val emergencyControllerField = hierarchyTypedField(
+                owner = credentialControllerClass,
                 name = EMERGENCY_CONTROLLER_FIELD,
                 expectedType = emergencyControllerClass,
             )
             /** 当前紧急按钮控制器。 */
             val emergencyController = requireNotNull(
-                emergencyControllerField.get(patternController),
+                emergencyControllerField.get(credentialController),
             ) { "keyguard_emergency_controller" }
             /** ViewController 继承层级中持有原生按钮的字段。 */
             val controllerViewField = hierarchyField(
@@ -139,7 +153,7 @@ internal class Titan2EmergencyActionBridge private constructor(
             val performClickMethod = exactBooleanMethod(emergencyButtonClass, PERFORM_CLICK_METHOD)
             /** 完成所有反射签名解析后的桥。 */
             val bridge = Titan2EmergencyActionBridge(
-                patternController = patternController,
+                credentialController = credentialController,
                 emergencyController = emergencyController,
                 emergencyButton = emergencyButton,
                 emergencyControllerField = emergencyControllerField,
@@ -170,12 +184,11 @@ internal class Titan2EmergencyActionBridge private constructor(
             }
         }
 
-        /** 按精确名称和类型解析字段。 */
-        private fun exactField(owner: Class<*>, name: String, expectedType: Class<*>): Field {
+        /** 沿父类链按精确名称和类型解析字段。 */
+        private fun hierarchyTypedField(owner: Class<*>, name: String, expectedType: Class<*>): Field {
             /** 目标字段。 */
-            val field = owner.getDeclaredField(name)
+            val field = hierarchyField(owner, name)
             check(field.type == expectedType) { "keyguard_emergency_field_type:$name" }
-            field.isAccessible = true
             return field
         }
 
@@ -222,6 +235,14 @@ internal class Titan2EmergencyActionBridge private constructor(
         private const val PATTERN_CONTROLLER_CLASS: String =
             "com.android.keyguard.KeyguardPatternViewController"
 
+        /** Titan 2 PIN 认证控制器类名。 */
+        private const val PIN_CONTROLLER_CLASS: String =
+            "com.android.keyguard.KeyguardPinViewController"
+
+        /** Titan 2 密码认证控制器类名。 */
+        private const val PASSWORD_CONTROLLER_CLASS: String =
+            "com.android.keyguard.KeyguardPasswordViewController"
+
         /** Titan 2 紧急按钮控制器类名。 */
         private const val EMERGENCY_CONTROLLER_CLASS: String =
             "com.android.keyguard.EmergencyButtonController"
@@ -229,7 +250,7 @@ internal class Titan2EmergencyActionBridge private constructor(
         /** Titan 2 紧急按钮类名。 */
         private const val EMERGENCY_BUTTON_CLASS: String = "com.android.keyguard.EmergencyButton"
 
-        /** 图案控制器中的紧急按钮控制器字段名。 */
+        /** 凭据控制器继承层级中的紧急按钮控制器字段名。 */
         private const val EMERGENCY_CONTROLLER_FIELD: String = "mEmergencyButtonController"
 
         /** SystemUI `ViewController` 中的原生 View 字段名。 */

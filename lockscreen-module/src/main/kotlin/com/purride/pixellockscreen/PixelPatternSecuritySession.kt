@@ -131,7 +131,11 @@ internal class PixelPatternSecuritySession(
                     patternBinding.securityMode,
                 ),
             ) { "pattern_security_callback_mismatch" }
-            emergencyBridge = Titan2EmergencyActionBridge.bind(patternController, classLoader)
+            emergencyBridge = Titan2EmergencyActionBridge.bind(
+                credentialController = patternController,
+                credentialMode = Titan2CredentialMode.PATTERN,
+                classLoader = classLoader,
+            )
             credentialBridge = SystemCredentialBridge(classLoader)
             check(
                 credentialBridge.verifyContract(securityBridge.lockPatternUtils) ==

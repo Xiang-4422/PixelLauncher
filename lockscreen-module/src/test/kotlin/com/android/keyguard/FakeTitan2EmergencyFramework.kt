@@ -47,8 +47,26 @@ class EmergencyButtonController(
     button: EmergencyButton,
 ) : ViewController(button)
 
-/** 测试中模拟 Titan 2 图案认证控制器。 */
-class KeyguardPatternViewController(
-    /** 图案页持有的原生紧急按钮控制器。 */
+/** 测试中模拟 Titan 2 设备凭据控制器公共继承层。 */
+open class FakeCredentialViewController(
+    /** 凭据页持有的原生紧急按钮控制器。 */
     var mEmergencyButtonController: EmergencyButtonController,
 )
+
+/** 测试中模拟 Titan 2 图案认证控制器。 */
+class KeyguardPatternViewController(
+    /** 图案页继承的原生紧急按钮控制器。 */
+    emergencyButtonController: EmergencyButtonController,
+) : FakeCredentialViewController(emergencyButtonController)
+
+/** 测试中模拟 Titan 2 PIN 认证控制器。 */
+class KeyguardPinViewController(
+    /** PIN 页继承的原生紧急按钮控制器。 */
+    emergencyButtonController: EmergencyButtonController,
+) : FakeCredentialViewController(emergencyButtonController)
+
+/** 测试中模拟 Titan 2 密码认证控制器。 */
+class KeyguardPasswordViewController(
+    /** 密码页继承的原生紧急按钮控制器。 */
+    emergencyButtonController: EmergencyButtonController,
+) : FakeCredentialViewController(emergencyButtonController)

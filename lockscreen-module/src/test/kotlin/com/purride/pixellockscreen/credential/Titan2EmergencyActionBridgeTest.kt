@@ -3,6 +3,7 @@ package com.purride.pixellockscreen.credential
 import com.android.keyguard.EmergencyButton
 import com.android.keyguard.EmergencyButtonController
 import com.android.keyguard.KeyguardPatternViewController
+import com.android.keyguard.KeyguardPinViewController
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -16,6 +17,25 @@ class Titan2EmergencyActionBridgeTest {
         val fixture = Fixture()
         /** 绑定后的原生紧急操作桥。 */
         val bridge = fixture.bind()
+
+        bridge.requestEmergencyAction()
+
+        assertEquals(1, fixture.button.clickCount)
+    }
+
+    /** PIN 控制器继承的紧急字段也必须复用同一原生点击链。 */
+    @Test
+    fun pinControllerUsesInheritedNativeButtonClickChain() {
+        /** 完整可用的测试夹具。 */
+        val fixture = Fixture()
+        /** 模拟 Titan 2 PIN 控制器。 */
+        val pinController = KeyguardPinViewController(fixture.emergencyController)
+        /** 绑定后的原生紧急操作桥。 */
+        val bridge = Titan2EmergencyActionBridge.bind(
+            credentialController = pinController,
+            credentialMode = Titan2CredentialMode.PIN,
+            classLoader = javaClass.classLoader!!,
+        )
 
         bridge.requestEmergencyAction()
 
@@ -76,7 +96,7 @@ class Titan2EmergencyActionBridgeTest {
         val button: EmergencyButton = EmergencyButton()
 
         /** 原生紧急按钮控制器。 */
-        private val emergencyController: EmergencyButtonController = EmergencyButtonController(button)
+        val emergencyController: EmergencyButtonController = EmergencyButtonController(button)
 
         /** 原生图案认证控制器。 */
         val patternController: KeyguardPatternViewController = KeyguardPatternViewController(
@@ -85,7 +105,8 @@ class Titan2EmergencyActionBridgeTest {
 
         /** 使用测试类加载器创建精确反射绑定。 */
         fun bind(): Titan2EmergencyActionBridge = Titan2EmergencyActionBridge.bind(
-            patternController = patternController,
+            credentialController = patternController,
+            credentialMode = Titan2CredentialMode.PATTERN,
             classLoader = javaClass.classLoader!!,
         )
     }
