@@ -34,6 +34,26 @@ class PasswordCredentialSceneTest {
         )
     }
 
+    /** 密码状态应覆盖原生输入框的完整长度边界，但拒绝越界值。 */
+    @Test
+    fun stateMatchesNativePasswordLengthBoundary() {
+        assertEquals(
+            500,
+            PasswordCredentialUiState(
+                promptText = "ENTER PASSWORD",
+                inputLength = 500,
+            ).inputLength,
+        )
+        assertTrue(
+            runCatching {
+                PasswordCredentialUiState(
+                    promptText = "ENTER PASSWORD",
+                    inputLength = 501,
+                )
+            }.exceptionOrNull() is IllegalArgumentException,
+        )
+    }
+
     /** 横竖屏的输入、输入法和紧急区域都必须保持独立并位于视口内。 */
     @Test
     fun layoutsContainIndependentActionsWithinViewport() {

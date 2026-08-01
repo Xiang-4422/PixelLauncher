@@ -74,8 +74,8 @@ public data class PasswordCredentialUiState(
             feedback == PasswordCredentialFeedback.ERROR
 
     private companion object {
-        /** 与模块凭据缓冲及 Android 合理输入共同使用的防御性长度上限。 */
-        const val MAXIMUM_PASSWORD_LENGTH: Int = 64
+        /** 与 Titan 2 原生密码输入框 `maxLength` 一致的非敏感长度上限。 */
+        const val MAXIMUM_PASSWORD_LENGTH: Int = 500
     }
 }
 
