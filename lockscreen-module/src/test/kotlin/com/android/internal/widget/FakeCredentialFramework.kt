@@ -10,11 +10,21 @@ class LockPatternUtils {
     /** 最近一次写入截止时间的限流毫秒数。 */
     var deadlineTimeoutMillis: Int? = null
 
+    /** 当前由测试系统保存的单调时钟截止时间。 */
+    var currentDeadline: Long = 0L
+
     /** 模拟系统写入并返回单调时钟锁定截止时间。 */
     fun setLockoutAttemptDeadline(userId: Int, timeoutMillis: Int): Long {
         deadlineUserId = userId
         deadlineTimeoutMillis = timeoutMillis
-        return TEST_ELAPSED_REALTIME + timeoutMillis
+        currentDeadline = TEST_ELAPSED_REALTIME + timeoutMillis
+        return currentDeadline
+    }
+
+    /** 返回当前用户的系统锁定截止时间。 */
+    fun getLockoutAttemptDeadline(userId: Int): Long {
+        check(userId >= 0)
+        return currentDeadline
     }
 
     private companion object {

@@ -50,7 +50,7 @@ internal class Titan2KeyguardSecurityBridge private constructor(
     /** 当前控制器持有的 `LockPatternUtils`。 */
     val lockPatternUtils: Any,
     /** 当前控制器持有的原生安全回调。 */
-    private val securityCallback: Any,
+    internal val securityCallback: Any,
     /** 当前控制器持有的安全模式模型。 */
     private val securityModel: Any,
     /** 当前选择用户读取器。 */
@@ -77,6 +77,8 @@ internal class Titan2KeyguardSecurityBridge private constructor(
     private val userActivityMethod: Method,
     /** 写入系统锁定截止时间的方法。 */
     private val setLockoutDeadlineMethod: Method,
+    /** 读取系统现有锁定截止时间的方法。 */
+    private val getLockoutDeadlineMethod: Method,
 ) {
     /**
      * 通知原生 Keyguard 当前会话收到了用户输入。
@@ -87,6 +89,17 @@ internal class Titan2KeyguardSecurityBridge private constructor(
         onUserInputMethod.invoke(securityCallback)
         userActivityMethod.invoke(securityCallback)
     }
+
+    /** 读取当前用户由 Android 维护的单调时钟锁定截止时间。 */
+    fun currentLockoutDeadline(): Long {
+        check(isCurrentContext()) { "keyguard_lockout_context_stale" }
+        return getLockoutDeadlineMethod.invoke(lockPatternUtils, userId) as? Long
+            ?: error("keyguard_lockout_deadline_read")
+    }
+
+    /** 判断图案控制器是否持有本桥绑定的同一回调和同一原生模式对象。 */
+    fun matchesControllerBinding(callback: Any, securityMode: Any): Boolean =
+        callback === securityCallback && securityMode === nativeSecurityMode
 
     /**
      * 按 ROM 原生顺序提交系统校验结果。
@@ -134,7 +147,7 @@ internal class Titan2KeyguardSecurityBridge private constructor(
     }
 
     /** 检查异步校验完成时仍然属于同一用户和同一设备凭据模式。 */
-    private fun isCurrentContext(): Boolean {
+    fun isCurrentContext(): Boolean {
         /** 回调时的系统选择用户。 */
         val currentUserId = getSelectedUserIdMethod.invoke(selectedUserInteractor) as? Int ?: return false
         if (currentUserId != userId) {
@@ -262,6 +275,11 @@ internal class Titan2KeyguardSecurityBridge private constructor(
                 Int::class.javaPrimitiveType,
                 Int::class.javaPrimitiveType,
             )
+            /** 读取系统现有锁定截止时间的方法。 */
+            val getLockoutDeadlineMethod = lockPatternUtilsClass.getDeclaredMethod(
+                GET_LOCKOUT_DEADLINE_METHOD,
+                Int::class.javaPrimitiveType,
+            )
             return Titan2KeyguardSecurityBridge(
                 controller = controller,
                 lockPatternUtils = lockPatternUtils,
@@ -279,6 +297,7 @@ internal class Titan2KeyguardSecurityBridge private constructor(
                 onUserInputMethod = onUserInputMethod,
                 userActivityMethod = userActivityMethod,
                 setLockoutDeadlineMethod = setLockoutDeadlineMethod,
+                getLockoutDeadlineMethod = getLockoutDeadlineMethod,
             )
         }
 
@@ -388,6 +407,9 @@ internal class Titan2KeyguardSecurityBridge private constructor(
 
         /** 写入锁定截止时间的方法名。 */
         private const val SET_LOCKOUT_DEADLINE_METHOD: String = "setLockoutAttemptDeadline"
+
+        /** 读取系统锁定截止时间的方法名。 */
+        private const val GET_LOCKOUT_DEADLINE_METHOD: String = "getLockoutAttemptDeadline"
 
         /** 图案模式枚举名。 */
         private const val MODE_PATTERN: String = "Pattern"

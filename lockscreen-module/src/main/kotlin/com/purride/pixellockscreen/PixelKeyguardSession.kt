@@ -46,8 +46,21 @@ internal class PixelKeyguardSession(
     /** 像素宿主是否至少完成过一次 Android `draw()`。 */
     private var firstFrameDrawn: Boolean = false
 
+    /** 完整像素凭据页是否正在上层接管可见 UI。 */
+    private var credentialTakeoverActive: Boolean = false
+
     /** 判断现有会话是否仍绑定同一 Keyguard 根视图。 */
     fun isBoundTo(keyguardRoot: ViewGroup): Boolean = !disposed && binding.keyguardRoot === keyguardRoot
+
+    /** 在完整像素凭据页展示期间暂停普通时钟页，但继续隐藏普通原生锁屏内容。 */
+    fun setCredentialTakeoverActive(active: Boolean) {
+        if (disposed || credentialTakeoverActive == active) {
+            return
+        }
+        credentialTakeoverActive = active
+        host.visibility = if (active) View.INVISIBLE else View.VISIBLE
+        binding.shadeWindow.invalidate()
+    }
 
     /**
      * 在不改变原生视图的前提下完成所有前置验证，然后挂载像素宿主。
@@ -85,7 +98,8 @@ internal class PixelKeyguardSession(
     override fun onPreDraw(): Boolean {
         if (disposed) return true
         /** 宿主只有在首帧、继承可见性和物理尺寸都就绪时才允许接管。 */
-        val shouldTakeOver = firstFrameDrawn && isHostEffectivelyVisible()
+        val shouldTakeOver = credentialTakeoverActive ||
+            (firstFrameDrawn && isHostEffectivelyVisible())
         if (shouldTakeOver) {
             nativeVisibility.hide()
         } else {

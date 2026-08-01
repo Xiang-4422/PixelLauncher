@@ -121,6 +121,24 @@ class Titan2KeyguardSecurityBridgeTest {
         assertEquals(1, fixture.callback.userActivityCount)
     }
 
+    /** 运行时必须从 LockPatternUtils 读取当前用户已有的锁定截止时间。 */
+    @Test
+    fun existingLockoutDeadlineComesFromSystem() {
+        /** 当前图案模式测试装配。 */
+        val fixture = Fixture(KeyguardSecurityModel.SecurityMode.Pattern)
+        fixture.lockPatternUtils.currentDeadline = 1_045_000L
+        /** 已绑定的安全桥。 */
+        val bridge = fixture.bind()
+
+        assertEquals(1_045_000L, bridge.currentLockoutDeadline())
+        assertTrue(
+            bridge.matchesControllerBinding(
+                fixture.callback,
+                KeyguardSecurityModel.SecurityMode.Pattern,
+            ),
+        )
+    }
+
     /** 为每个测试提供互不共享的 Titan 2 控制器装配。 */
     private class Fixture(mode: KeyguardSecurityModel.SecurityMode) {
         /** 测试 LockPatternUtils。 */
