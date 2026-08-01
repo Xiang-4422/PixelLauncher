@@ -1,15 +1,21 @@
 package com.purride.pixellockscreen
 
 /**
- * 锁屏模块在完成目标 ROM 侦察前必须遵守的静态安全边界。
+ * 锁定像素锁屏模块的作用域和当前里程碑能力边界。
  *
- * 当前模块不会注册 LSPosed 入口，也不会向 SystemUI 注入任何代码；这些常量只让构建测试
- * 能明确锁定未来的唯一作用域和默认关闭策略。
+ * M4 允许在已识别 Titan 2 SystemUI 中安装只读探测 Hook，但严禁隐藏或覆盖
+ * 原生 Keyguard；完整视觉接管必须在 M5 完成首帧回退机制后单独启用。
  */
 internal object LockscreenModuleContract {
-    /** 未来 LSPosed 模块唯一允许声明的目标包。 */
+    /** Modern Xposed 模块唯一允许声明的目标包。 */
     const val SYSTEM_UI_PACKAGE: String = "com.android.systemui"
 
-    /** 未识别目标 ROM、SystemUI 架构或 LSPosed API 时必须保持关闭。 */
-    const val HOOK_ENABLED_BY_DEFAULT: Boolean = false
+    /** SystemUI 的主进程名，禁止向次要进程安装锁屏 Hook。 */
+    const val SYSTEM_UI_PROCESS: String = "com.android.systemui"
+
+    /** M4 允许在精确命中目标合同后安装只读签名探测。 */
+    const val READ_ONLY_HOOK_ENABLED: Boolean = true
+
+    /** M4 明确保持关闭的视觉接管开关。 */
+    const val VISUAL_TAKEOVER_ENABLED: Boolean = false
 }

@@ -2,19 +2,22 @@ package com.purride.pixellockscreen
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 锁定模块在设备兼容性确认前的最小作用域与默认关闭策略。 */
+/** 锁定 M4 的唯一作用域、只读 Hook 与禁止视觉接管边界。 */
 class LockscreenModuleContractTest {
-    /** 模块只能注入 SystemUI，禁止把系统框架或普通应用扩大进作用域。 */
+    /** 模块只能注入 SystemUI 主进程，禁止扩大到系统框架或普通应用。 */
     @Test
-    fun targetPackageRemainsSystemUiOnly() {
+    fun targetPackageAndProcessRemainSystemUiOnly() {
         assertEquals("com.android.systemui", LockscreenModuleContract.SYSTEM_UI_PACKAGE)
+        assertEquals("com.android.systemui", LockscreenModuleContract.SYSTEM_UI_PROCESS)
     }
 
-    /** 尚未建立 ROM 适配器时，任何构建都不能默认启用 Hook。 */
+    /** M4 可以安装只读探测 Hook，但不能隐藏或覆盖原生 Keyguard。 */
     @Test
-    fun hookRemainsDisabledBeforeReconnaissance() {
-        assertFalse(LockscreenModuleContract.HOOK_ENABLED_BY_DEFAULT)
+    fun milestoneFourOnlyEnablesReadOnlyProbe() {
+        assertTrue(LockscreenModuleContract.READ_ONLY_HOOK_ENABLED)
+        assertFalse(LockscreenModuleContract.VISUAL_TAKEOVER_ENABLED)
     }
 }

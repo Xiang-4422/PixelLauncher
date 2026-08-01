@@ -14,6 +14,7 @@ cameraX = "1.6.1"
 mediapipeTasksVision = "0.10.35"
 metalava = "1.0.0-alpha14"
 mockk = "1.14.11"
+libxposedApi = "102.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -33,6 +34,7 @@ androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycl
 mediapipe-tasks-vision = { group = "com.google.mediapipe", name = "tasks-vision", version.ref = "mediapipeTasksVision" }
 metalava-cli = { group = "com.android.tools.metalava", name = "metalava", version.ref = "metalava" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+libxposed-api = { group = "io.github.libxposed", name = "api", version.ref = "libxposedApi" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

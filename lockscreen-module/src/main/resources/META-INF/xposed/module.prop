@@ -1,0 +1,7 @@
+# Modern Xposed API 102 的最低及目标版本。
+minApiVersion=102
+targetApiVersion=102
+# 作用域固定为 scope.list 中的 SystemUI，禁止用户扩大到其他应用。
+staticScope=true
+# SystemUI 锁屏模块不在应用更新时自动热重载。
+autoHotReload=false

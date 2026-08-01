@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!--
-      当前 APK 是无入口、无 Hook 的安全脚手架。确认目标 SystemUI 与 LSPosed API 后，
-      才会在独立提交中加入模块入口和静态作用域声明。
+      Modern Xposed 入口和静态作用域由 META-INF/xposed 描述，Manifest 不注册
+      Activity、Service、Receiver 或 Provider，避免产生 SystemUI 注入以外的运行入口。
     -->
     <application
         android:allowBackup="false"
