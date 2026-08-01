@@ -36,8 +36,8 @@ public class PinCredentialHost(
     /** 独立于输入禁用状态的透明紧急操作语义节点。 */
     private val emergencyAccessibilityView: View = View(context)
 
-    /** 当前方向使用的固定逻辑布局。 */
-    private var currentLayout: PinCredentialLayout = pinCredentialLayout(isLandscape = false)
+    /** Titan 2 方屏使用的固定逻辑布局。 */
+    private val currentLayout: PinCredentialLayout = pinCredentialLayout()
 
     /** 最近一次非敏感渲染请求。 */
     private var lastRequest: PinCredentialSceneRequest? = null
@@ -104,8 +104,6 @@ public class PinCredentialHost(
         brightness: ProductThemeBrightness,
     ) {
         check(!disposed) { "PinCredentialHost 已释放" }
-        /** 当前物理尺寸解析出的方向。 */
-        val isLandscape = width > 0 && height > 0 && width > height
         if (!state.isInputEnabled) {
             clearPointerState()
         }
@@ -114,7 +112,6 @@ public class PinCredentialHost(
             state = state,
             family = family,
             brightness = brightness,
-            isLandscape = isLandscape,
             pressedKeyId = pressedKeyId,
         )
         if (!shouldSubmitPinCredentialRequest(lastRequest, request)) {
@@ -136,41 +133,21 @@ public class PinCredentialHost(
         requestLayout()
     }
 
-    /** 尺寸变化时同步 Pixel Engine profile、按键几何和场景方向。 */
-    override fun onSizeChanged(width: Int, height: Int, oldWidth: Int, oldHeight: Int) {
-        super.onSizeChanged(width, height, oldWidth, oldHeight)
-        if (disposed || width <= 0 || height <= 0) {
-            return
-        }
-        /** 新方向使用的固定逻辑布局。 */
-        val nextLayout = pinCredentialLayout(isLandscape = width > height)
-        currentLayout = nextLayout
-        configureProfile(nextLayout)
-        /** 保留当前状态和主题，仅切换方向。 */
-        val previous = lastRequest ?: return
-        if (previous.isLandscape != (width > height)) {
-            lastRequest = previous.copy(isLandscape = width > height)
-            submitCurrentScene()
-        }
-    }
-
-    /** 按当前测量方向为所有透明语义节点提供真实物理尺寸。 */
+    /** 按固定方屏布局为所有透明语义节点提供真实物理尺寸。 */
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        /** 当前测量尺寸对应的逻辑布局。 */
-        val layout = pinCredentialLayout(isLandscape = measuredWidth > measuredHeight)
-        layout.keys.forEach { key ->
+        currentLayout.keys.forEach { key ->
             /** 当前按键对应的透明语义节点。 */
             val view = keyAccessibilityViews.getValue(key.id)
             /** 当前按键对应的真实物理边界。 */
-            val bounds = resolveBounds(measuredWidth, measuredHeight, layout, key) ?: return@forEach
+            val bounds = resolveBounds(measuredWidth, measuredHeight, currentLayout, key) ?: return@forEach
             view.measure(
                 MeasureSpec.makeMeasureSpec(bounds.width(), MeasureSpec.EXACTLY),
                 MeasureSpec.makeMeasureSpec(bounds.height(), MeasureSpec.EXACTLY),
             )
         }
         /** 当前紧急入口的真实物理边界。 */
-        val emergencyBounds = resolveEmergencyBounds(measuredWidth, measuredHeight, layout)
+        val emergencyBounds = resolveEmergencyBounds(measuredWidth, measuredHeight, currentLayout)
         if (emergencyBounds != null) {
             emergencyAccessibilityView.measure(
                 MeasureSpec.makeMeasureSpec(emergencyBounds.width(), MeasureSpec.EXACTLY),
@@ -384,7 +361,7 @@ public class PinCredentialHost(
             pixelGapEnabled = false,
         )
 
-    /** 按当前方向配置固定逻辑网格。 */
+    /** 配置 Titan 2 固定方屏逻辑网格。 */
     private fun configureProfile(layout: PinCredentialLayout) {
         pixelHostView.profilePolicy = PixelHostProfilePolicy.AdaptiveLogicalSize(
             logicalWidth = layout.logicalWidth,

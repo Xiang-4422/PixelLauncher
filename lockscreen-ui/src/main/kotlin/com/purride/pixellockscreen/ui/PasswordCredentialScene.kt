@@ -19,8 +19,6 @@ internal data class PasswordCredentialSceneRequest(
     val family: ProductThemeFamily,
     /** 当前主题实际明暗。 */
     val brightness: ProductThemeBrightness,
-    /** 是否使用横向布局。 */
-    val isLandscape: Boolean,
     /** 当前手指按下的公开动作。 */
     val pressedAction: PasswordCredentialAction?,
 )
@@ -29,8 +27,8 @@ internal data class PasswordCredentialSceneRequest(
 internal fun buildPasswordCredentialScene(request: PasswordCredentialSceneRequest): Widget {
     /** 当前请求解析出的共享产品色板。 */
     val palette = ProductThemeCatalog.resolve(request.family, request.brightness)
-    /** 当前方向固定布局。 */
-    val layout = passwordCredentialLayout(request.isLandscape)
+    /** Titan 2 方屏的固定逻辑布局。 */
+    val layout = passwordCredentialLayout()
     /** 系统反馈使用的状态颜色。 */
     val feedbackColor = when (request.state.feedback) {
         PasswordCredentialFeedback.ERROR,
@@ -138,11 +136,7 @@ internal fun buildPasswordCredentialScene(request: PasswordCredentialSceneReques
             passwordActionLabel(
                 action = layout.imeSwitcherAction,
                 visible = request.state.isImeSwitcherVisible,
-                text = if (request.isLandscape) {
-                    request.state.compactImeSwitcherText
-                } else {
-                    request.state.imeSwitcherText
-                },
+                text = request.state.imeSwitcherText,
                 foreground = if (
                     request.pressedAction == PasswordCredentialAction.IME_SWITCHER
                 ) {
@@ -162,11 +156,7 @@ internal fun buildPasswordCredentialScene(request: PasswordCredentialSceneReques
             passwordActionLabel(
                 action = layout.emergencyAction,
                 visible = request.state.isEmergencyAvailable,
-                text = if (request.isLandscape) {
-                    request.state.compactEmergencyText
-                } else {
-                    request.state.emergencyText
-                },
+                text = request.state.emergencyText,
                 foreground = if (request.pressedAction == PasswordCredentialAction.EMERGENCY) {
                     palette.background
                 } else {

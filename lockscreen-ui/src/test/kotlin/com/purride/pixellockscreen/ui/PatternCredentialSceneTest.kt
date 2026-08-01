@@ -37,18 +37,18 @@ class PatternCredentialSceneTest {
         )
     }
 
-    /** 纵屏场景保留透明四角，同时绘制九个节点和有序连接线。 */
+    /** 方屏场景保留透明四角，同时绘制九个节点和有序连接线。 */
     @Test
-    fun portraitSceneDrawsPixelPatternOverTransparentBackground() {
+    fun squareSceneDrawsPixelPatternOverTransparentBackground() {
         /** 当前测试色板。 */
         val palette = ProductThemeCatalog.resolve(
             ProductThemeFamily.ARCADE,
             ProductThemeBrightness.DARK,
         )
         /** 具有 0→4→8 路径的可清零跟踪器。 */
-        val tracker = activeTracker(isLandscape = false, cells = listOf(0, 4, 8))
-        /** 当前方向布局。 */
-        val layout = patternCredentialLayout(isLandscape = false)
+        val tracker = activeTracker(cells = listOf(0, 4, 8))
+        /** 当前方屏布局。 */
+        val layout = patternCredentialLayout()
         /** 离屏像素宿主。 */
         val tester = PixelTester()
         try {
@@ -59,7 +59,6 @@ class PatternCredentialSceneTest {
                             state = state(PatternCredentialFeedback.READY),
                             family = palette.family,
                             brightness = palette.brightness,
-                            isLandscape = false,
                         ),
                         tracker,
                     ),
@@ -81,8 +80,8 @@ class PatternCredentialSceneTest {
     /** SystemUI 隐藏紧急入口时像素场景不得残留警示色按钮。 */
     @Test
     fun hiddenEmergencyActionIsNotDrawn() {
-        /** 当前纵屏布局。 */
-        val layout = patternCredentialLayout(isLandscape = false)
+        /** 当前方屏布局。 */
+        val layout = patternCredentialLayout()
         /** 当前测试色板。 */
         val palette = ProductThemeCatalog.resolve(
             ProductThemeFamily.ARCADE,
@@ -100,7 +99,6 @@ class PatternCredentialSceneTest {
                             ),
                             family = palette.family,
                             brightness = palette.brightness,
-                            isLandscape = false,
                         ),
                         EmptyPatternPath,
                     ),
@@ -116,12 +114,12 @@ class PatternCredentialSceneTest {
         }
     }
 
-    /** 横屏错误和限流状态均应在固定逻辑视口内完成绘制。 */
+    /** 方屏错误和限流状态均应在固定逻辑视口内完成绘制。 */
     @Test
-    fun landscapeFeedbackStatesRenderWithoutClipping() {
+    fun squareFeedbackStatesRenderWithoutClipping() {
         listOf(PatternCredentialFeedback.ERROR, PatternCredentialFeedback.LOCKED_OUT).forEach { feedback ->
-            /** 当前横屏布局。 */
-            val layout = patternCredentialLayout(isLandscape = true)
+            /** 当前方屏布局。 */
+            val layout = patternCredentialLayout()
             /** 当前空路径。 */
             val path = EmptyPatternPath
             /** 离屏像素宿主。 */
@@ -134,7 +132,6 @@ class PatternCredentialSceneTest {
                                 state = state(feedback),
                                 family = ProductThemeFamily.MIDNIGHT,
                                 brightness = ProductThemeBrightness.LIGHT,
-                                isLandscape = true,
                             ),
                             path,
                         ),
@@ -164,9 +161,9 @@ class PatternCredentialSceneTest {
         )
 
     /** 创建一条尚未抬起的测试路径。 */
-    private fun activeTracker(isLandscape: Boolean, cells: List<Int>): PatternGestureTracker {
-        /** 当前方向布局。 */
-        val layout = patternCredentialLayout(isLandscape)
+    private fun activeTracker(cells: List<Int>): PatternGestureTracker {
+        /** 当前方屏布局。 */
+        val layout = patternCredentialLayout()
         /** 仅用于渲染的跟踪器。 */
         val tracker = PatternGestureTracker(
             layout = layout,

@@ -29,17 +29,11 @@ import com.purride.pixelui.Transform
 import com.purride.pixelui.Widget
 import com.purride.pixelui.animation.IntOffset
 
-/** 纵向锁屏使用的固定逻辑宽度。 */
-internal const val LOCKSCREEN_PORTRAIT_WIDTH = 96
+/** Titan 2 锁屏统一使用的方形逻辑宽度。 */
+internal const val LOCKSCREEN_LOGICAL_WIDTH = 144
 
-/** 纵向锁屏使用的固定逻辑高度。 */
-internal const val LOCKSCREEN_PORTRAIT_HEIGHT = 192
-
-/** 横向锁屏使用的固定逻辑宽度。 */
-internal const val LOCKSCREEN_LANDSCAPE_WIDTH = 192
-
-/** 横向锁屏使用的固定逻辑高度。 */
-internal const val LOCKSCREEN_LANDSCAPE_HEIGHT = 96
+/** Titan 2 锁屏统一使用的方形逻辑高度。 */
+internal const val LOCKSCREEN_LOGICAL_HEIGHT = 144
 
 /** 锁屏内容和安全区之间保留的最小逻辑像素留白。 */
 private const val LOCKSCREEN_CONTENT_INSET = 6
@@ -58,8 +52,6 @@ internal data class LockscreenSceneRequest(
     val family: ProductThemeFamily,
     /** 当前主题实际亮度。 */
     val brightness: ProductThemeBrightness,
-    /** 当前宿主是否采用横向布局。 */
-    val isLandscape: Boolean,
     /** 可选的原生通知和媒体操作转发器。 */
     val contentListener: LockscreenContentListener? = null,
 )
@@ -74,10 +66,10 @@ internal fun shouldSubmitLockscreenRequest(
 internal fun buildLockscreenScene(request: LockscreenSceneRequest): Widget {
     /** 当前请求解析出的共享产品色板。 */
     val palette = ProductThemeCatalog.resolve(request.family, request.brightness)
-    /** 横屏降低时间倍率，避免较短安全高度裁切其他状态。 */
-    val timeScale = lockscreenTimeScale(request.isLandscape)
-    /** 横屏将辅助信息保持为单倍字体，纵屏日期使用双倍字体强化层级。 */
-    val dateScale = if (request.isLandscape) 1 else 2
+    /** 方屏使用四倍像素大时钟。 */
+    val timeScale = 4
+    /** 方屏日期保持单倍字体，避免完整日期裁切。 */
+    val dateScale = 1
     /** 交互锁屏或 AOD 对应的完整场景内容。 */
     val sceneContent = if (request.state.ambient.isAmbient) {
         ambientLockscreenContent(request.state, palette, timeScale, dateScale)
@@ -604,9 +596,6 @@ private fun biometricGlyph(
         }
     }
 }
-
-/** 返回当前方向下的大时钟整数像素倍率。 */
-internal fun lockscreenTimeScale(isLandscape: Boolean): Int = if (isLandscape) 3 else 4
 
 /** 组合私有电池图形和百分比文字，不向通用图标目录引入锁屏专用状态。 */
 private fun batteryStatus(state: LockscreenUiState, palette: ProductPalette): Widget {

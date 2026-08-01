@@ -33,8 +33,8 @@ public class PatternCredentialHost(
     /** 不绘制内容、只为 TalkBack 暴露独立紧急操作的透明 Android 节点。 */
     private val emergencyAccessibilityView: View = View(context)
 
-    /** 当前方向的逻辑布局。 */
-    private var currentLayout: PatternCredentialLayout = patternCredentialLayout(isLandscape = false)
+    /** Titan 2 方屏使用的固定逻辑布局。 */
+    private val currentLayout: PatternCredentialLayout = patternCredentialLayout()
 
     /** 最近一次非敏感渲染请求。 */
     private var lastRequest: PatternCredentialSceneRequest? = null
@@ -97,10 +97,8 @@ public class PatternCredentialHost(
         brightness: ProductThemeBrightness,
     ) {
         check(!disposed) { "PatternCredentialHost 已释放" }
-        /** 当前物理尺寸解析出的方向。 */
-        val isLandscape = width > 0 && height > 0 && width > height
         /** 本次完整非敏感请求。 */
-        val request = PatternCredentialSceneRequest(state, family, brightness, isLandscape)
+        val request = PatternCredentialSceneRequest(state, family, brightness)
         if (!state.isInputEnabled) {
             gestureTracker.cancel()
             activePointerId = MotionEvent.INVALID_POINTER_ID
@@ -123,35 +121,14 @@ public class PatternCredentialHost(
         requestLayout()
     }
 
-    /** 尺寸变化时同步 Pixel Engine profile、触摸几何和场景方向。 */
-    override fun onSizeChanged(width: Int, height: Int, oldWidth: Int, oldHeight: Int) {
-        super.onSizeChanged(width, height, oldWidth, oldHeight)
-        if (disposed || width <= 0 || height <= 0) {
-            return
-        }
-        /** 新方向使用的固定逻辑布局。 */
-        val nextLayout = patternCredentialLayout(isLandscape = width > height)
-        currentLayout = nextLayout
-        gestureTracker.updateLayout(nextLayout)
-        configureProfile(nextLayout)
-        /** 保留反馈与主题，仅切换方向。 */
-        val previous = lastRequest ?: return
-        if (previous.isLandscape != (width > height)) {
-            lastRequest = previous.copy(isLandscape = width > height)
-            submitCurrentScene()
-        }
-    }
-
-    /** 按当前测量方向为透明紧急无障碍节点提供真实物理尺寸。 */
+    /** 按固定方屏布局为透明紧急无障碍节点提供真实物理尺寸。 */
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        /** 当前测量尺寸对应的逻辑布局。 */
-        val measuredLayout = patternCredentialLayout(isLandscape = measuredWidth > measuredHeight)
         /** 与像素按钮一致的物理边界。 */
         val emergencyBounds = resolveEmergencyBounds(
             viewWidth = measuredWidth,
             viewHeight = measuredHeight,
-            layout = measuredLayout,
+            layout = currentLayout,
         )
         if (emergencyBounds != null) {
             emergencyAccessibilityView.measure(
@@ -320,7 +297,7 @@ public class PatternCredentialHost(
             pixelGapEnabled = false,
         )
 
-    /** 按当前方向配置固定逻辑网格。 */
+    /** 配置 Titan 2 固定方屏逻辑网格。 */
     private fun configureProfile(layout: PatternCredentialLayout) {
         pixelHostView.profilePolicy = PixelHostProfilePolicy.AdaptiveLogicalSize(
             logicalWidth = layout.logicalWidth,
@@ -334,7 +311,7 @@ public class PatternCredentialHost(
         viewWidth: Int,
         /** Android 宿主物理高度。 */
         viewHeight: Int,
-        /** 当前方向的逻辑布局。 */
+        /** 当前方屏逻辑布局。 */
         layout: PatternCredentialLayout,
     ): Rect? {
         /** 与当前场景逻辑尺寸一致的临时屏幕配置。 */

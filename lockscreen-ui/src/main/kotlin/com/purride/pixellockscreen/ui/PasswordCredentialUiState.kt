@@ -37,14 +37,10 @@ public data class PasswordCredentialUiState(
     public val isImeSwitcherVisible: Boolean = false,
     /** SystemUI 当前是否允许展示并执行原生紧急操作。 */
     public val isEmergencyAvailable: Boolean = true,
-    /** 纵屏输入法切换入口文字。 */
+    /** 方屏输入法切换入口文字。 */
     public val imeSwitcherText: String = "KEYBOARD",
-    /** 横屏输入法切换入口文字。 */
-    public val compactImeSwitcherText: String = "IME",
-    /** 纵屏紧急入口文字。 */
+    /** 方屏紧急入口文字。 */
     public val emergencyText: String = "EMERGENCY",
-    /** 横屏紧急入口文字。 */
-    public val compactEmergencyText: String = "SOS",
     /** Android 无障碍节点朗读的密码输入说明。 */
     public val inputAccessibilityLabel: String = "PASSWORD INPUT",
     /** Android 无障碍节点朗读的输入法切换说明。 */
@@ -58,9 +54,7 @@ public data class PasswordCredentialUiState(
         require(inputLength in 0..MAXIMUM_PASSWORD_LENGTH) { "password_input_length" }
         require(inputHintText.isNotBlank()) { "password_input_hint_blank" }
         require(imeSwitcherText.isNotBlank()) { "password_ime_switcher_text_blank" }
-        require(compactImeSwitcherText.isNotBlank()) { "password_compact_ime_switcher_text_blank" }
         require(emergencyText.isNotBlank()) { "password_emergency_text_blank" }
-        require(compactEmergencyText.isNotBlank()) { "password_compact_emergency_text_blank" }
         require(inputAccessibilityLabel.isNotBlank()) { "password_input_accessibility_blank" }
         require(imeSwitcherAccessibilityLabel.isNotBlank()) {
             "password_ime_switcher_accessibility_blank"

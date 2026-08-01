@@ -54,47 +54,41 @@ class PasswordCredentialSceneTest {
         )
     }
 
-    /** 横竖屏的输入、输入法和紧急区域都必须保持独立并位于视口内。 */
+    /** 方屏的输入、输入法和紧急区域都必须保持独立并位于视口内。 */
     @Test
     fun layoutsContainIndependentActionsWithinViewport() {
-        listOf(false, true).forEach { isLandscape ->
-            /** 当前方向的密码布局。 */
-            val layout = passwordCredentialLayout(isLandscape)
-            /** 当前布局全部动作区域。 */
-            val actions = listOf(
-                layout.inputAction,
-                layout.imeSwitcherAction,
-                layout.emergencyAction,
-            )
-            assertEquals(3, actions.map(PasswordActionSpec::action).distinct().size)
-            actions.forEach { action ->
-                assertTrue(action.left >= 0 && action.top >= 0)
-                assertTrue(action.left + action.width <= layout.logicalWidth)
-                assertTrue(action.top + action.height <= layout.logicalHeight)
-            }
-            assertEquals(
-                PasswordCredentialAction.INPUT,
-                layout.actionAt(
-                    layout.inputAction.left + 1,
-                    layout.inputAction.top + 1,
-                    includeImeSwitcher = true,
-                ),
-            )
-            assertNull(
-                layout.actionAt(
-                    layout.imeSwitcherAction.left + 1,
-                    layout.imeSwitcherAction.top + 1,
-                    includeImeSwitcher = false,
-                ),
-            )
+        /** 当前方屏密码布局。 */
+        val layout = passwordCredentialLayout()
+        /** 当前布局全部动作区域。 */
+        val actions = listOf(layout.inputAction, layout.imeSwitcherAction, layout.emergencyAction)
+        assertEquals(3, actions.map(PasswordActionSpec::action).distinct().size)
+        actions.forEach { action ->
+            assertTrue(action.left >= 0 && action.top >= 0)
+            assertTrue(action.left + action.width <= layout.logicalWidth)
+            assertTrue(action.top + action.height <= layout.logicalHeight)
         }
+        assertEquals(
+            PasswordCredentialAction.INPUT,
+            layout.actionAt(
+                layout.inputAction.left + 1,
+                layout.inputAction.top + 1,
+                includeImeSwitcher = true,
+            ),
+        )
+        assertNull(
+            layout.actionAt(
+                layout.imeSwitcherAction.left + 1,
+                layout.imeSwitcherAction.top + 1,
+                includeImeSwitcher = false,
+            ),
+        )
     }
 
-    /** 纵屏密码长度、焦点高亮和透明四角应同时正确绘制。 */
+    /** 方屏密码长度、焦点高亮和透明四角应同时正确绘制。 */
     @Test
-    fun portraitSceneDrawsLengthAndFocusOverTransparency() {
+    fun squareSceneDrawsLengthAndFocusOverTransparency() {
         /** 当前测试布局。 */
-        val layout = passwordCredentialLayout(isLandscape = false)
+        val layout = passwordCredentialLayout()
         /** 当前测试色板。 */
         val palette = ProductThemeCatalog.resolve(
             ProductThemeFamily.CITRUS,
@@ -115,7 +109,6 @@ class PasswordCredentialSceneTest {
                             ),
                             family = palette.family,
                             brightness = palette.brightness,
-                            isLandscape = false,
                             pressedAction = null,
                         ),
                     ),
@@ -140,8 +133,8 @@ class PasswordCredentialSceneTest {
     /** SystemUI 隐藏紧急入口时密码场景不得绘制对应警示色动作。 */
     @Test
     fun hiddenEmergencyActionIsNotDrawn() {
-        /** 当前纵屏布局。 */
-        val layout = passwordCredentialLayout(isLandscape = false)
+        /** 当前方屏布局。 */
+        val layout = passwordCredentialLayout()
         /** 当前测试色板。 */
         val palette = ProductThemeCatalog.resolve(
             ProductThemeFamily.CITRUS,
@@ -160,7 +153,6 @@ class PasswordCredentialSceneTest {
                             ).copy(isEmergencyAvailable = false),
                             family = palette.family,
                             brightness = palette.brightness,
-                            isLandscape = false,
                             pressedAction = null,
                         ),
                     ),
@@ -176,12 +168,12 @@ class PasswordCredentialSceneTest {
         }
     }
 
-    /** 横屏四种反馈状态都必须在固定逻辑视口内完成绘制。 */
+    /** 方屏四种反馈状态都必须在固定逻辑视口内完成绘制。 */
     @Test
-    fun landscapeFeedbackStatesRenderWithoutClipping() {
+    fun squareFeedbackStatesRenderWithoutClipping() {
         PasswordCredentialFeedback.entries.forEach { feedback ->
-            /** 当前横屏布局。 */
-            val layout = passwordCredentialLayout(isLandscape = true)
+            /** 当前方屏布局。 */
+            val layout = passwordCredentialLayout()
             /** 离屏像素宿主。 */
             val tester = PixelTester()
             try {
@@ -192,7 +184,6 @@ class PasswordCredentialSceneTest {
                                 state = state(feedback, inputLength = 14),
                                 family = ProductThemeFamily.MIDNIGHT,
                                 brightness = ProductThemeBrightness.LIGHT,
-                                isLandscape = true,
                                 pressedAction = PasswordCredentialAction.EMERGENCY,
                             ),
                         ),

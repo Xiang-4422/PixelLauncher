@@ -29,10 +29,8 @@ public data class PatternCredentialUiState(
     public val feedback: PatternCredentialFeedback = PatternCredentialFeedback.READY,
     /** SystemUI 当前是否允许展示并执行原生紧急操作。 */
     public val isEmergencyAvailable: Boolean = true,
-    /** 纵屏像素按钮显示的紧急入口文字。 */
+    /** 方屏像素按钮显示的紧急入口文字。 */
     public val emergencyText: String = "EMERGENCY",
-    /** 横屏紧凑像素按钮显示的紧急入口文字。 */
-    public val compactEmergencyText: String = "SOS",
     /** Android 无障碍节点朗读的完整紧急入口说明。 */
     public val emergencyAccessibilityLabel: String = emergencyText,
 ) {
@@ -40,7 +38,6 @@ public data class PatternCredentialUiState(
     init {
         require(promptText.isNotBlank()) { "pattern_prompt_blank" }
         require(emergencyText.isNotBlank()) { "pattern_emergency_text_blank" }
-        require(compactEmergencyText.isNotBlank()) { "pattern_compact_emergency_text_blank" }
         require(emergencyAccessibilityLabel.isNotBlank()) { "pattern_emergency_accessibility_blank" }
     }
 

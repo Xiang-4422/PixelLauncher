@@ -71,74 +71,37 @@ internal data class PasswordCredentialLayout(
     }
 }
 
-/** 返回当前方向下不会裁切且为系统 IME 预留空间的密码布局。 */
-internal fun passwordCredentialLayout(isLandscape: Boolean): PasswordCredentialLayout =
-    if (isLandscape) {
-        PasswordCredentialLayout(
-            logicalWidth = LOCKSCREEN_LANDSCAPE_WIDTH,
-            logicalHeight = LOCKSCREEN_LANDSCAPE_HEIGHT,
-            promptLeft = 4,
-            promptTop = 5,
-            promptWidth = 70,
-            promptHeight = 14,
-            feedbackLeft = 4,
-            feedbackTop = 23,
-            feedbackWidth = 70,
-            feedbackHeight = 14,
-            inputAction = PasswordActionSpec(
-                PasswordCredentialAction.INPUT,
-                left = 80,
-                top = 6,
-                width = 106,
-                height = 24,
-            ),
-            imeSwitcherAction = PasswordActionSpec(
-                PasswordCredentialAction.IME_SWITCHER,
-                left = 80,
-                top = 40,
-                width = 48,
-                height = 20,
-            ),
-            emergencyAction = PasswordActionSpec(
-                PasswordCredentialAction.EMERGENCY,
-                left = 136,
-                top = 40,
-                width = 50,
-                height = 20,
-            ),
-        )
-    } else {
-        PasswordCredentialLayout(
-            logicalWidth = LOCKSCREEN_PORTRAIT_WIDTH,
-            logicalHeight = LOCKSCREEN_PORTRAIT_HEIGHT,
-            promptLeft = 4,
-            promptTop = 24,
-            promptWidth = 88,
-            promptHeight = 16,
-            feedbackLeft = 4,
-            feedbackTop = 46,
-            feedbackWidth = 88,
-            feedbackHeight = 14,
-            inputAction = PasswordActionSpec(
-                PasswordCredentialAction.INPUT,
-                left = 8,
-                top = 70,
-                width = 80,
-                height = 24,
-            ),
-            imeSwitcherAction = PasswordActionSpec(
-                PasswordCredentialAction.IME_SWITCHER,
-                left = 8,
-                top = 108,
-                width = 36,
-                height = 17,
-            ),
-            emergencyAction = PasswordActionSpec(
-                PasswordCredentialAction.EMERGENCY,
-                left = 50,
-                top = 108,
-                width = 38,
-                height = 17,
-            ),
-        )
-    }
+/** 返回 Titan 2 方屏中不会裁切且为系统 IME 预留空间的密码布局。 */
+internal fun passwordCredentialLayout(): PasswordCredentialLayout = PasswordCredentialLayout(
+    logicalWidth = LOCKSCREEN_LOGICAL_WIDTH,
+    logicalHeight = LOCKSCREEN_LOGICAL_HEIGHT,
+    promptLeft = 4,
+    promptTop = 8,
+    promptWidth = 136,
+    promptHeight = 14,
+    feedbackLeft = 4,
+    feedbackTop = 26,
+    feedbackWidth = 136,
+    feedbackHeight = 12,
+    inputAction = PasswordActionSpec(
+        PasswordCredentialAction.INPUT,
+        left = 8,
+        top = 48,
+        width = 128,
+        height = 24,
+    ),
+    imeSwitcherAction = PasswordActionSpec(
+        PasswordCredentialAction.IME_SWITCHER,
+        left = 8,
+        top = 84,
+        width = 60,
+        height = 20,
+    ),
+    emergencyAction = PasswordActionSpec(
+        PasswordCredentialAction.EMERGENCY,
+        left = 76,
+        top = 84,
+        width = 60,
+        height = 20,
+    ),
+)

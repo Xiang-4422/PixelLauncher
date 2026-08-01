@@ -69,47 +69,25 @@ internal data class PatternCredentialLayout(
     }
 }
 
-/** 返回当前方向下不会裁切的图案认证布局。 */
-internal fun patternCredentialLayout(isLandscape: Boolean): PatternCredentialLayout =
-    if (isLandscape) {
-        PatternCredentialLayout(
-            logicalWidth = LOCKSCREEN_LANDSCAPE_WIDTH,
-            logicalHeight = LOCKSCREEN_LANDSCAPE_HEIGHT,
-            patternLeft = 76,
-            patternTop = 9,
-            promptLeft = 1,
-            promptTop = 18,
-            promptWidth = 74,
-            promptHeight = 24,
-            feedbackLeft = 1,
-            feedbackTop = 52,
-            feedbackWidth = 74,
-            feedbackHeight = 24,
-            emergencyLeft = 158,
-            emergencyTop = 32,
-            emergencyWidth = 32,
-            emergencyHeight = 32,
-        )
-    } else {
-        PatternCredentialLayout(
-            logicalWidth = LOCKSCREEN_PORTRAIT_WIDTH,
-            logicalHeight = LOCKSCREEN_PORTRAIT_HEIGHT,
-            patternLeft = 9,
-            patternTop = 57,
-            promptLeft = 4,
-            promptTop = 26,
-            promptWidth = 88,
-            promptHeight = 20,
-            feedbackLeft = 4,
-            feedbackTop = 143,
-            feedbackWidth = 88,
-            feedbackHeight = 24,
-            emergencyLeft = 13,
-            emergencyTop = 172,
-            emergencyWidth = 70,
-            emergencyHeight = 15,
-        )
-    }
+/** 返回 Titan 2 方屏中不会裁切的图案认证布局。 */
+internal fun patternCredentialLayout(): PatternCredentialLayout = PatternCredentialLayout(
+    logicalWidth = LOCKSCREEN_LOGICAL_WIDTH,
+    logicalHeight = LOCKSCREEN_LOGICAL_HEIGHT,
+    patternLeft = 33,
+    patternTop = 27,
+    promptLeft = 4,
+    promptTop = 3,
+    promptWidth = 136,
+    promptHeight = 18,
+    feedbackLeft = 4,
+    feedbackTop = 108,
+    feedbackWidth = 136,
+    feedbackHeight = 14,
+    emergencyLeft = 37,
+    emergencyTop = 128,
+    emergencyWidth = 70,
+    emergencyHeight = 14,
+)
 
 /** 只允许渲染器按索引读取当前手势路径的内部接口。 */
 internal interface PatternVisualPath {
@@ -126,8 +104,8 @@ internal interface PatternVisualPath {
  * 跟踪器只保存当前按下序列，并在完成或取消的 `finally` 中覆写全部路径槽位。
  */
 internal class PatternGestureTracker(
-    /** 当前方向的逻辑布局。 */
-    private var layout: PatternCredentialLayout,
+    /** 当前方屏逻辑布局。 */
+    private val layout: PatternCredentialLayout,
     /** 首枚格子命中回调。 */
     private val onStarted: () -> Unit,
     /** 新格子命中回调。 */
@@ -157,15 +135,6 @@ internal class PatternGestureTracker(
     /** 当前路径长度。 */
     override val size: Int
         get() = currentSize
-
-    /** 方向变化时更新几何并清除尚未完成的旧坐标手势。 */
-    fun updateLayout(nextLayout: PatternCredentialLayout) {
-        if (layout == nextLayout) {
-            return
-        }
-        cancel()
-        layout = nextLayout
-    }
 
     /** 开始新的指针序列；落点不在格子内时仍允许后续移动进入。 */
     fun start(logicalX: Int, logicalY: Int) {

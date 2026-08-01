@@ -18,8 +18,6 @@ internal data class PinCredentialSceneRequest(
     val family: ProductThemeFamily,
     /** 当前主题实际明暗。 */
     val brightness: ProductThemeBrightness,
-    /** 是否使用横向布局。 */
-    val isLandscape: Boolean,
     /** 当前手指按下的公开按键编号。 */
     val pressedKeyId: Int?,
 )
@@ -28,8 +26,8 @@ internal data class PinCredentialSceneRequest(
 internal fun buildPinCredentialScene(request: PinCredentialSceneRequest): Widget {
     /** 当前请求解析出的共享产品色板。 */
     val palette = ProductThemeCatalog.resolve(request.family, request.brightness)
-    /** 当前方向固定布局。 */
-    val layout = pinCredentialLayout(request.isLandscape)
+    /** Titan 2 方屏的固定逻辑布局。 */
+    val layout = pinCredentialLayout()
     /** 系统反馈使用的状态颜色。 */
     val feedbackColor = when (request.state.feedback) {
         PinCredentialFeedback.ERROR,
@@ -134,11 +132,7 @@ internal fun buildPinCredentialScene(request: PinCredentialSceneRequest): Widget
                     alignment = Alignment.CENTER,
                     child = if (request.state.isEmergencyAvailable) {
                         outlinedLockscreenText(
-                            if (request.isLandscape) {
-                                request.state.compactEmergencyText
-                            } else {
-                                request.state.emergencyText
-                            },
+                            request.state.emergencyText,
                             palette.alert,
                             palette.background,
                             fontScale = 1,

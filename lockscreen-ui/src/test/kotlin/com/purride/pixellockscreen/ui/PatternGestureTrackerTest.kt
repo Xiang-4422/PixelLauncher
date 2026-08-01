@@ -86,31 +86,25 @@ class PatternGestureTrackerTest {
         assertTrue(internalCellsOf(fixture.tracker).all { cell -> cell == -1 })
     }
 
-    /** 方向布局必须保持图案画布完全位于逻辑场景内。 */
+    /** 方屏布局必须保持图案画布完全位于逻辑场景内。 */
     @Test
-    fun portraitAndLandscapeLayoutsStayInsideViewport() {
-        listOf(false, true).forEach { isLandscape ->
-            /** 当前方向布局。 */
-            val layout = patternCredentialLayout(isLandscape)
-            assertTrue(layout.patternLeft >= 0)
-            assertTrue(layout.patternTop >= 0)
-            assertTrue(
-                layout.patternLeft + PatternCredentialLayout.PATTERN_SIZE <= layout.logicalWidth,
-            )
-            assertTrue(
-                layout.patternTop + PatternCredentialLayout.PATTERN_SIZE <= layout.logicalHeight,
-            )
-            assertFalse(layout.promptWidth <= 0 || layout.feedbackWidth <= 0)
-            assertTrue(layout.emergencyLeft >= 0 && layout.emergencyTop >= 0)
-            assertTrue(layout.emergencyLeft + layout.emergencyWidth <= layout.logicalWidth)
-            assertTrue(layout.emergencyTop + layout.emergencyHeight <= layout.logicalHeight)
-            assertTrue(
-                layout.containsEmergency(
-                    layout.emergencyLeft + layout.emergencyWidth / 2,
-                    layout.emergencyTop + layout.emergencyHeight / 2,
-                ),
-            )
-        }
+    fun squareLayoutStaysInsideViewport() {
+        /** 当前方屏布局。 */
+        val layout = patternCredentialLayout()
+        assertTrue(layout.patternLeft >= 0)
+        assertTrue(layout.patternTop >= 0)
+        assertTrue(layout.patternLeft + PatternCredentialLayout.PATTERN_SIZE <= layout.logicalWidth)
+        assertTrue(layout.patternTop + PatternCredentialLayout.PATTERN_SIZE <= layout.logicalHeight)
+        assertFalse(layout.promptWidth <= 0 || layout.feedbackWidth <= 0)
+        assertTrue(layout.emergencyLeft >= 0 && layout.emergencyTop >= 0)
+        assertTrue(layout.emergencyLeft + layout.emergencyWidth <= layout.logicalWidth)
+        assertTrue(layout.emergencyTop + layout.emergencyHeight <= layout.logicalHeight)
+        assertTrue(
+            layout.containsEmergency(
+                layout.emergencyLeft + layout.emergencyWidth / 2,
+                layout.emergencyTop + layout.emergencyHeight / 2,
+            ),
+        )
     }
 
     /** 通过反射读取固定路径数组，避免生产类型暴露调试数据接口。 */
@@ -123,8 +117,8 @@ class PatternGestureTrackerTest {
 
     /** 为纯手势测试记录所有非敏感控制事件。 */
     private class TrackerFixture {
-        /** 纵屏测试布局。 */
-        val layout: PatternCredentialLayout = patternCredentialLayout(isLandscape = false)
+        /** 方屏测试布局。 */
+        val layout: PatternCredentialLayout = patternCredentialLayout()
 
         /** 按顺序记录的测试格子。 */
         val cells: MutableList<Int> = mutableListOf()

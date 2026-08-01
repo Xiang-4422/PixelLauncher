@@ -31,10 +31,8 @@ public data class PinCredentialUiState(
     public val feedback: PinCredentialFeedback = PinCredentialFeedback.READY,
     /** SystemUI 当前是否允许展示并执行原生紧急操作。 */
     public val isEmergencyAvailable: Boolean = true,
-    /** 纵屏紧急入口文字。 */
+    /** 方屏紧急入口文字。 */
     public val emergencyText: String = "EMERGENCY",
-    /** 横屏紧急入口文字。 */
-    public val compactEmergencyText: String = "SOS",
     /** Android 无障碍节点朗读的紧急入口说明。 */
     public val emergencyAccessibilityLabel: String = emergencyText,
 ) {
@@ -43,7 +41,6 @@ public data class PinCredentialUiState(
         require(promptText.isNotBlank()) { "pin_prompt_blank" }
         require(inputLength in 0..MAXIMUM_PIN_LENGTH) { "pin_input_length" }
         require(emergencyText.isNotBlank()) { "pin_emergency_text_blank" }
-        require(compactEmergencyText.isNotBlank()) { "pin_compact_emergency_text_blank" }
         require(emergencyAccessibilityLabel.isNotBlank()) { "pin_emergency_accessibility_blank" }
     }
 

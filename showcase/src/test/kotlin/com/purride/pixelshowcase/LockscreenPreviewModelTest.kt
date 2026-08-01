@@ -45,12 +45,11 @@ class LockscreenPreviewModelTest {
         assertEquals(ProductThemeFamily.entries.last(), cyclePreviewFamily(family, step = -1))
     }
 
-    /** 离线预览只暴露具体日夜亮度，并完整覆盖电量、方向和背景样本。 */
+    /** 离线预览只暴露具体日夜亮度，并完整覆盖电量与背景样本。 */
     @Test
     fun previewOptionsCoverRequiredStaticMatrix() {
         assertEquals(setOf(10, 50, 92), LockscreenPreviewBattery.entries.map { it.percent }.toSet())
         assertEquals(2, ProductThemeBrightness.entries.size)
-        assertEquals(2, LockscreenPreviewOrientation.entries.size)
         assertEquals(4, LockscreenPreviewBackground.entries.size)
         assertEquals(4, LockscreenPreviewScene.entries.size)
         assertEquals(4, PatternCredentialFeedback.entries.size)

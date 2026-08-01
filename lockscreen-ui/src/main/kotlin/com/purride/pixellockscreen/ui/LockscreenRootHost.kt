@@ -56,7 +56,7 @@ public class LockscreenRootHost @JvmOverloads constructor(
             pixelHostView,
             LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT),
         )
-        configureProfile(isLandscape = false)
+        configureProfile()
     }
 
     /**
@@ -70,32 +70,15 @@ public class LockscreenRootHost @JvmOverloads constructor(
         brightness: ProductThemeBrightness,
     ) {
         check(!disposed) { "LockscreenRootHost 已释放" }
-        /** 当前物理尺寸解析出的方向；尚未布局时默认使用纵向。 */
-        val isLandscape = width > 0 && height > 0 && width > height
         /** 本次待提交的完整不可变渲染请求。 */
         val request = LockscreenSceneRequest(
             state = state,
             family = family,
             brightness = brightness,
-            isLandscape = isLandscape,
             contentListener = contentListener,
         )
         if (!shouldSubmitLockscreenRequest(lastRequest, request)) return
         submitRequest(request)
-    }
-
-    /** 物理方向变化时只替换布局方向，不修改调用方提交的展示数据。 */
-    override fun onSizeChanged(width: Int, height: Int, oldWidth: Int, oldHeight: Int) {
-        super.onSizeChanged(width, height, oldWidth, oldHeight)
-        if (disposed || width <= 0 || height <= 0) return
-        /** 新物理尺寸对应的锁屏方向。 */
-        val isLandscape = width > height
-        configureProfile(isLandscape)
-        /** 已有请求在方向变化后以相同状态重新构建。 */
-        val previous = lastRequest ?: return
-        if (previous.isLandscape != isLandscape) {
-            submitRequest(previous.copy(isLandscape = isLandscape))
-        }
     }
 
     /** 仅在运行时提供内容监听器时让像素卡片参与命中，空白区域继续交给原生手势。 */
@@ -113,19 +96,15 @@ public class LockscreenRootHost @JvmOverloads constructor(
 
     /** 把不可变请求交给 PixelHostView，并记录去重基线。 */
     private fun submitRequest(request: LockscreenSceneRequest) {
-        configureProfile(request.isLandscape)
         lastRequest = request
         pixelHostView.setContent { buildLockscreenScene(request) }
     }
 
-    /** 根据方向固定逻辑网格，物理尺寸变化仅影响统一视口缩放。 */
-    private fun configureProfile(isLandscape: Boolean) {
-        /** 当前方向使用的固定逻辑宽高。 */
-        val logicalWidth = if (isLandscape) LOCKSCREEN_LANDSCAPE_WIDTH else LOCKSCREEN_PORTRAIT_WIDTH
-        val logicalHeight = if (isLandscape) LOCKSCREEN_LANDSCAPE_HEIGHT else LOCKSCREEN_PORTRAIT_HEIGHT
+    /** 固定使用 Titan 2 方屏逻辑网格，物理尺寸变化仅影响统一视口缩放。 */
+    private fun configureProfile() {
         pixelHostView.profilePolicy = PixelHostProfilePolicy.AdaptiveLogicalSize(
-            logicalWidth = logicalWidth,
-            logicalHeight = logicalHeight,
+            logicalWidth = LOCKSCREEN_LOGICAL_WIDTH,
+            logicalHeight = LOCKSCREEN_LOGICAL_HEIGHT,
         )
     }
 }

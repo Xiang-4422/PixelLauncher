@@ -37,15 +37,6 @@ internal enum class LockscreenPreviewScene(
     PASSWORD("PASSWORD"),
 }
 
-/** 离线预览支持的画布方向；它只改变预览框比例，不旋转设备。 */
-internal enum class LockscreenPreviewOrientation(
-    /** 控制面板显示的紧凑名称。 */
-    val label: String,
-) {
-    PORTRAIT("PORTRAIT"),
-    LANDSCAPE("LANDSCAPE"),
-}
-
 /** 离线预览用于检查透明叠加可读性的四类固定背景。 */
 internal enum class LockscreenPreviewBackground(
     /** 控制面板显示的紧凑名称。 */
@@ -119,8 +110,6 @@ internal data class LockscreenPreviewConfiguration(
     val securityNoticePhase: LockscreenSecurityNoticePhase = LockscreenSecurityNoticePhase.NONE,
     /** 普通锁屏通知与媒体区域的离线样本。 */
     val content: LockscreenPreviewContent = LockscreenPreviewContent.EMPTY,
-    /** 当前预览框方向。 */
-    val orientation: LockscreenPreviewOrientation = LockscreenPreviewOrientation.PORTRAIT,
     /** 当前透明宿主下方的测试背景。 */
     val background: LockscreenPreviewBackground = LockscreenPreviewBackground.HIGH_CONTRAST,
     /** 图案场景使用的可控系统反馈。 */

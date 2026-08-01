@@ -20,8 +20,6 @@ internal data class PatternCredentialSceneRequest(
     val family: ProductThemeFamily,
     /** 当前主题实际明暗。 */
     val brightness: ProductThemeBrightness,
-    /** 是否使用横向布局。 */
-    val isLandscape: Boolean,
 )
 
 /** 构建图案认证的唯一可见 Widget 树。 */
@@ -31,8 +29,8 @@ internal fun buildPatternCredentialScene(
 ): Widget {
     /** 当前请求解析出的共享产品色板。 */
     val palette = ProductThemeCatalog.resolve(request.family, request.brightness)
-    /** 当前方向的固定逻辑布局。 */
-    val layout = patternCredentialLayout(request.isLandscape)
+    /** Titan 2 方屏的固定逻辑布局。 */
+    val layout = patternCredentialLayout()
     /** 反馈文字使用的状态颜色。 */
     val feedbackColor = when (request.state.feedback) {
         PatternCredentialFeedback.ERROR,
@@ -109,11 +107,7 @@ internal fun buildPatternCredentialScene(
                     alignment = Alignment.CENTER,
                     child = if (request.state.isEmergencyAvailable) {
                         outlinedLockscreenText(
-                            text = if (request.isLandscape) {
-                                request.state.compactEmergencyText
-                            } else {
-                                request.state.emergencyText
-                            },
+                            text = request.state.emergencyText,
                             foreground = palette.alert,
                             backing = palette.background,
                             fontScale = 1,

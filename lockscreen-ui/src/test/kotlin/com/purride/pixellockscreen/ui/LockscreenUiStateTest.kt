@@ -15,7 +15,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 验证静态锁屏状态边界、透明渲染和横竖屏布局规则。 */
+/** 验证静态锁屏状态边界、透明渲染和 Titan 2 方屏布局规则。 */
 class LockscreenUiStateTest {
     /** 电量边界值 0 和 100 均可用，越界值必须立即拒绝。 */
     @Test
@@ -146,14 +146,13 @@ class LockscreenUiStateTest {
                             state = ambientState,
                             family = ProductThemeFamily.CRT,
                             brightness = ProductThemeBrightness.DARK,
-                            isLandscape = false,
                         ),
                     ),
-                    width = LOCKSCREEN_PORTRAIT_WIDTH,
-                    height = LOCKSCREEN_PORTRAIT_HEIGHT,
+                    width = LOCKSCREEN_LOGICAL_WIDTH,
+                    height = LOCKSCREEN_LOGICAL_HEIGHT,
                 ),
-                logicalWidth = LOCKSCREEN_PORTRAIT_WIDTH,
-                logicalHeight = LOCKSCREEN_PORTRAIT_HEIGHT,
+                logicalWidth = LOCKSCREEN_LOGICAL_WIDTH,
+                logicalHeight = LOCKSCREEN_LOGICAL_HEIGHT,
             )
             assertEquals(PixelColor.Transparent, tester.pixelAt(0, 0))
             assertTrue(tester.semanticsNodes().all { node -> node.actions.isEmpty() })
@@ -189,14 +188,13 @@ class LockscreenUiStateTest {
                             state = contentState,
                             family = ProductThemeFamily.ARCADE,
                             brightness = ProductThemeBrightness.DARK,
-                            isLandscape = false,
                         ),
                     ),
-                    width = LOCKSCREEN_PORTRAIT_WIDTH,
-                    height = LOCKSCREEN_PORTRAIT_HEIGHT,
+                    width = LOCKSCREEN_LOGICAL_WIDTH,
+                    height = LOCKSCREEN_LOGICAL_HEIGHT,
                 ),
-                logicalWidth = LOCKSCREEN_PORTRAIT_WIDTH,
-                logicalHeight = LOCKSCREEN_PORTRAIT_HEIGHT,
+                logicalWidth = LOCKSCREEN_LOGICAL_WIDTH,
+                logicalHeight = LOCKSCREEN_LOGICAL_HEIGHT,
             )
             assertEquals(PixelColor.Transparent, tester.pixelAt(0, 0))
         } finally {
@@ -258,15 +256,14 @@ class LockscreenUiStateTest {
                             ),
                             family = ProductThemeFamily.ARCADE,
                             brightness = ProductThemeBrightness.DARK,
-                            isLandscape = false,
                             contentListener = listener,
                         ),
                     ),
-                    width = LOCKSCREEN_PORTRAIT_WIDTH,
-                    height = LOCKSCREEN_PORTRAIT_HEIGHT,
+                    width = LOCKSCREEN_LOGICAL_WIDTH,
+                    height = LOCKSCREEN_LOGICAL_HEIGHT,
                 ),
-                logicalWidth = LOCKSCREEN_PORTRAIT_WIDTH,
-                logicalHeight = LOCKSCREEN_PORTRAIT_HEIGHT,
+                logicalWidth = LOCKSCREEN_LOGICAL_WIDTH,
+                logicalHeight = LOCKSCREEN_LOGICAL_HEIGHT,
             )
             tester.tap(find.byKey("lockscreen-media-action"))
             tester.tap(find.byKey("lockscreen-notification-action-ONE"))
@@ -320,14 +317,13 @@ class LockscreenUiStateTest {
                                     ),
                                     family = ProductThemeFamily.ARCADE,
                                     brightness = ProductThemeBrightness.DARK,
-                                    isLandscape = false,
                                 ),
                             ),
-                            width = LOCKSCREEN_PORTRAIT_WIDTH,
-                            height = LOCKSCREEN_PORTRAIT_HEIGHT,
+                            width = LOCKSCREEN_LOGICAL_WIDTH,
+                            height = LOCKSCREEN_LOGICAL_HEIGHT,
                         ),
-                        logicalWidth = LOCKSCREEN_PORTRAIT_WIDTH,
-                        logicalHeight = LOCKSCREEN_PORTRAIT_HEIGHT,
+                        logicalWidth = LOCKSCREEN_LOGICAL_WIDTH,
+                        logicalHeight = LOCKSCREEN_LOGICAL_HEIGHT,
                     )
                     assertEquals(PixelColor.Transparent, tester.pixelAt(0, 0))
                 } finally {
@@ -362,27 +358,25 @@ class LockscreenUiStateTest {
         )
     }
 
-    /** 大时钟在纵屏使用四倍像素，横屏固定降低为三倍。 */
+    /** Titan 2 方屏必须固定为 144×144 逻辑网格。 */
     @Test
-    fun timeScaleFollowsOrientation() {
-        assertEquals(4, lockscreenTimeScale(isLandscape = false))
-        assertEquals(3, lockscreenTimeScale(isLandscape = true))
+    fun titanTwoUsesSquareLogicalGrid() {
+        assertEquals(144, LOCKSCREEN_LOGICAL_WIDTH)
+        assertEquals(144, LOCKSCREEN_LOGICAL_HEIGHT)
     }
 
-    /** 完全相同的静态输入不得触发重绘，状态或方向变化则必须提交新帧。 */
+    /** 完全相同的静态输入不得触发重绘，实际状态变化必须提交新帧。 */
     @Test
     fun sceneRequestSkipsOnlyIdenticalFrames() {
-        /** 用于建立去重基线的纵屏请求。 */
+        /** 用于建立去重基线的方屏请求。 */
         val previous = LockscreenSceneRequest(
             state = state(),
             family = ProductThemeFamily.ARCADE,
             brightness = ProductThemeBrightness.DARK,
-            isLandscape = false,
         )
 
         assertFalse(shouldSubmitLockscreenRequest(previous, previous.copy()))
         assertTrue(shouldSubmitLockscreenRequest(null, previous))
-        assertTrue(shouldSubmitLockscreenRequest(previous, previous.copy(isLandscape = true)))
         assertTrue(
             shouldSubmitLockscreenRequest(
                 previous,
@@ -393,7 +387,7 @@ class LockscreenUiStateTest {
 
     /** 透明场景必须保留空白角落，同时绘制主题主色和反差描边。 */
     @Test
-    fun portraitSceneKeepsTransparentCornersAndOutlinedInk() {
+    fun squareSceneKeepsTransparentCornersAndOutlinedInk() {
         /** 当前测试使用的共享主题色板。 */
         val palette = ProductThemeCatalog.resolve(
             ProductThemeFamily.ARCADE,
@@ -409,14 +403,13 @@ class LockscreenUiStateTest {
                             state = state(batteryPercent = 50),
                             family = palette.family,
                             brightness = palette.brightness,
-                            isLandscape = false,
                         ),
                     ),
-                    width = LOCKSCREEN_PORTRAIT_WIDTH,
-                    height = LOCKSCREEN_PORTRAIT_HEIGHT,
+                    width = LOCKSCREEN_LOGICAL_WIDTH,
+                    height = LOCKSCREEN_LOGICAL_HEIGHT,
                 ),
-                logicalWidth = LOCKSCREEN_PORTRAIT_WIDTH,
-                logicalHeight = LOCKSCREEN_PORTRAIT_HEIGHT,
+                logicalWidth = LOCKSCREEN_LOGICAL_WIDTH,
+                logicalHeight = LOCKSCREEN_LOGICAL_HEIGHT,
             )
 
             assertEquals(PixelColor.Transparent, tester.pixelAt(0, 0))
@@ -455,14 +448,13 @@ class LockscreenUiStateTest {
                                     ),
                                     family = ProductThemeFamily.CRT,
                                     brightness = ProductThemeBrightness.DARK,
-                                    isLandscape = false,
                                 ),
                             ),
-                            width = LOCKSCREEN_PORTRAIT_WIDTH,
-                            height = LOCKSCREEN_PORTRAIT_HEIGHT,
+                            width = LOCKSCREEN_LOGICAL_WIDTH,
+                            height = LOCKSCREEN_LOGICAL_HEIGHT,
                         ),
-                        logicalWidth = LOCKSCREEN_PORTRAIT_WIDTH,
-                        logicalHeight = LOCKSCREEN_PORTRAIT_HEIGHT,
+                        logicalWidth = LOCKSCREEN_LOGICAL_WIDTH,
+                        logicalHeight = LOCKSCREEN_LOGICAL_HEIGHT,
                     )
                     assertEquals(PixelColor.Transparent, tester.pixelAt(0, 0))
                 } finally {
@@ -471,9 +463,9 @@ class LockscreenUiStateTest {
             }
     }
 
-    /** 横屏、长日期以及关键电量状态都必须完成布局而不生成交互语义。 */
+    /** 方屏、长日期以及关键电量状态都必须完成布局而不生成交互语义。 */
     @Test
-    fun landscapeSceneHandlesLongDateAndBatteryStates() {
+    fun squareSceneHandlesLongDateAndBatteryStates() {
         listOf(0, 1, 50, 100).forEach { batteryPercent ->
             listOf(false, true).forEach { isCharging ->
                 /** 当前电量和充电组合的离屏宿主。 */
@@ -490,14 +482,13 @@ class LockscreenUiStateTest {
                                     ),
                                     family = ProductThemeFamily.MIDNIGHT,
                                     brightness = ProductThemeBrightness.LIGHT,
-                                    isLandscape = true,
                                 ),
                             ),
-                            width = LOCKSCREEN_LANDSCAPE_WIDTH,
-                            height = LOCKSCREEN_LANDSCAPE_HEIGHT,
+                            width = LOCKSCREEN_LOGICAL_WIDTH,
+                            height = LOCKSCREEN_LOGICAL_HEIGHT,
                         ),
-                        logicalWidth = LOCKSCREEN_LANDSCAPE_WIDTH,
-                        logicalHeight = LOCKSCREEN_LANDSCAPE_HEIGHT,
+                        logicalWidth = LOCKSCREEN_LOGICAL_WIDTH,
+                        logicalHeight = LOCKSCREEN_LOGICAL_HEIGHT,
                     )
                     assertEquals(PixelColor.Transparent, tester.pixelAt(0, 0))
                     assertFalse(tester.semanticsNodes().any { node -> node.actions.isNotEmpty() })

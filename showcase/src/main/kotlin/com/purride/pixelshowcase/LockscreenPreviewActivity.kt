@@ -115,7 +115,6 @@ class LockscreenPreviewActivity : AppCompatActivity() {
 
     /** 把当前配置同步到真实锁屏宿主、预览比例和全部控制项。 */
     private fun renderConfiguration() {
-        previewStage.orientation = configuration.orientation
         previewStage.backgroundKind = configuration.background
         previewStage.scene = configuration.scene
         previewStage.lockscreenHost.update(
@@ -356,18 +355,6 @@ class LockscreenPreviewActivity : AppCompatActivity() {
             )
         }
         controlsContainer.addView(
-            optionRow(
-                label = "FRAME",
-                options = LockscreenPreviewOrientation.entries.map { orientation ->
-                    ControlOption(
-                        label = orientation.label,
-                        selected = orientation == configuration.orientation,
-                        onClick = { updateConfiguration { copy(orientation = orientation) } },
-                    )
-                },
-            ),
-        )
-        controlsContainer.addView(
             navigationRow(
                 label = "BACKGROUND",
                 value = configuration.background.label,
@@ -527,14 +514,6 @@ private class LockscreenPreviewStage(context: Context) : ViewGroup(context) {
             updateHostVisibility()
         }
 
-    /** 当前预览比例方向，变化后重新测量两个重合子 View。 */
-    var orientation: LockscreenPreviewOrientation = LockscreenPreviewOrientation.PORTRAIT
-        set(value) {
-            if (field == value) return
-            field = value
-            requestLayout()
-        }
-
     /** 当前透明宿主下方的测试背景类型。 */
     var backgroundKind: LockscreenPreviewBackground = LockscreenPreviewBackground.HIGH_CONTRAST
         set(value) {
@@ -554,33 +533,18 @@ private class LockscreenPreviewStage(context: Context) : ViewGroup(context) {
         updateHostVisibility()
     }
 
-    /** 根据可用区域内切当前横屏或竖屏比例，并精确测量两个重合子 View。 */
+    /** 在可用区域内切 Titan 2 方屏比例，并精确测量全部重合子 View。 */
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         /** 父级提供的最大预览区域宽度。 */
         val availableWidth = MeasureSpec.getSize(widthMeasureSpec)
         /** 父级提供的最大预览区域高度。 */
         val availableHeight = MeasureSpec.getSize(heightMeasureSpec)
-        /** 当前方向的宽高比例基数。 */
-        val ratioWidth = if (orientation == LockscreenPreviewOrientation.PORTRAIT) 9 else 16
-        /** 当前方向的宽高比例基数。 */
-        val ratioHeight = if (orientation == LockscreenPreviewOrientation.PORTRAIT) 16 else 9
-        /** 优先使用全部宽度计算出的候选高度。 */
-        val widthBoundHeight = availableWidth * ratioHeight / ratioWidth
-        /** 最终被测画布宽度。 */
-        val contentWidth: Int
-        /** 最终被测画布高度。 */
-        val contentHeight: Int
-        if (widthBoundHeight <= availableHeight) {
-            contentWidth = availableWidth
-            contentHeight = widthBoundHeight
-        } else {
-            contentHeight = availableHeight
-            contentWidth = availableHeight * ratioWidth / ratioHeight
-        }
+        /** 方屏预览使用父区域长短边中的较小值。 */
+        val contentSize = minOf(availableWidth, availableHeight)
         /** 两个子 View 必须共享完全相同的精确尺寸。 */
-        val childWidthSpec = MeasureSpec.makeMeasureSpec(contentWidth, MeasureSpec.EXACTLY)
+        val childWidthSpec = MeasureSpec.makeMeasureSpec(contentSize, MeasureSpec.EXACTLY)
         /** 两个子 View 必须共享完全相同的精确尺寸。 */
-        val childHeightSpec = MeasureSpec.makeMeasureSpec(contentHeight, MeasureSpec.EXACTLY)
+        val childHeightSpec = MeasureSpec.makeMeasureSpec(contentSize, MeasureSpec.EXACTLY)
         backgroundView.measure(childWidthSpec, childHeightSpec)
         lockscreenHost.measure(childWidthSpec, childHeightSpec)
         patternHost.measure(childWidthSpec, childHeightSpec)

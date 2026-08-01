@@ -71,53 +71,28 @@ internal data class PinCredentialLayout(
             logicalY in emergencyTop until emergencyTop + emergencyHeight
 }
 
-/** 返回当前方向下不会裁切的 PIN 页面布局。 */
-internal fun pinCredentialLayout(isLandscape: Boolean): PinCredentialLayout =
-    if (isLandscape) {
-        PinCredentialLayout(
-            logicalWidth = LOCKSCREEN_LANDSCAPE_WIDTH,
-            logicalHeight = LOCKSCREEN_LANDSCAPE_HEIGHT,
-            promptLeft = 2,
-            promptTop = 12,
-            promptWidth = 68,
-            promptHeight = 16,
-            feedbackLeft = 2,
-            feedbackTop = 34,
-            feedbackWidth = 68,
-            feedbackHeight = 14,
-            indicatorLeft = 2,
-            indicatorTop = 54,
-            indicatorWidth = 68,
-            indicatorHeight = 12,
-            keys = buildPinKeys(left = 76, top = 4, width = 24, height = 18, gapX = 4, gapY = 4),
-            emergencyLeft = 160,
-            emergencyTop = 32,
-            emergencyWidth = 30,
-            emergencyHeight = 32,
-        )
-    } else {
-        PinCredentialLayout(
-            logicalWidth = LOCKSCREEN_PORTRAIT_WIDTH,
-            logicalHeight = LOCKSCREEN_PORTRAIT_HEIGHT,
-            promptLeft = 4,
-            promptTop = 18,
-            promptWidth = 88,
-            promptHeight = 18,
-            feedbackLeft = 4,
-            feedbackTop = 40,
-            feedbackWidth = 88,
-            feedbackHeight = 14,
-            indicatorLeft = 6,
-            indicatorTop = 57,
-            indicatorWidth = 84,
-            indicatorHeight = 10,
-            keys = buildPinKeys(left = 10, top = 72, width = 22, height = 19, gapX = 5, gapY = 5),
-            emergencyLeft = 13,
-            emergencyTop = 172,
-            emergencyWidth = 70,
-            emergencyHeight = 15,
-        )
-    }
+/** 返回 Titan 2 方屏中不会裁切的 PIN 页面布局。 */
+internal fun pinCredentialLayout(): PinCredentialLayout = PinCredentialLayout(
+    logicalWidth = LOCKSCREEN_LOGICAL_WIDTH,
+    logicalHeight = LOCKSCREEN_LOGICAL_HEIGHT,
+    promptLeft = 4,
+    promptTop = 2,
+    promptWidth = 136,
+    promptHeight = 12,
+    feedbackLeft = 4,
+    feedbackTop = 15,
+    feedbackWidth = 136,
+    feedbackHeight = 10,
+    indicatorLeft = 10,
+    indicatorTop = 26,
+    indicatorWidth = 124,
+    indicatorHeight = 8,
+    keys = buildPinKeys(left = 11, top = 36, width = 38, height = 20, gapX = 4, gapY = 3),
+    emergencyLeft = 37,
+    emergencyTop = 128,
+    emergencyWidth = 70,
+    emergencyHeight = 14,
+)
 
 /** 按电话键盘顺序生成 1–9、删除、0、确认四行按键。 */
 private fun buildPinKeys(

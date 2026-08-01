@@ -39,8 +39,8 @@ public class PasswordCredentialHost(
     /** 请求原生紧急操作的透明语义节点。 */
     private val emergencyAccessibilityView: View = View(context)
 
-    /** 当前方向使用的固定逻辑布局。 */
-    private var currentLayout: PasswordCredentialLayout = passwordCredentialLayout(isLandscape = false)
+    /** Titan 2 方屏使用的固定逻辑布局。 */
+    private val currentLayout: PasswordCredentialLayout = passwordCredentialLayout()
 
     /** 最近一次非敏感渲染请求。 */
     private var lastRequest: PasswordCredentialSceneRequest? = null
@@ -111,8 +111,6 @@ public class PasswordCredentialHost(
         brightness: ProductThemeBrightness,
     ) {
         check(!disposed) { "PasswordCredentialHost 已释放" }
-        /** 当前物理尺寸解析出的方向。 */
-        val isLandscape = width > 0 && height > 0 && width > height
         if (!state.isInputEnabled) {
             clearPointerState()
         }
@@ -121,7 +119,6 @@ public class PasswordCredentialHost(
             state = state,
             family = family,
             brightness = brightness,
-            isLandscape = isLandscape,
             pressedAction = pressedAction,
         )
         if (!shouldSubmitPasswordCredentialRequest(lastRequest, request)) {
@@ -152,33 +149,13 @@ public class PasswordCredentialHost(
         requestLayout()
     }
 
-    /** 尺寸变化时同步 Pixel Engine profile、动作几何和场景方向。 */
-    override fun onSizeChanged(width: Int, height: Int, oldWidth: Int, oldHeight: Int) {
-        super.onSizeChanged(width, height, oldWidth, oldHeight)
-        if (disposed || width <= 0 || height <= 0) {
-            return
-        }
-        /** 新方向使用的固定逻辑布局。 */
-        val nextLayout = passwordCredentialLayout(isLandscape = width > height)
-        currentLayout = nextLayout
-        configureProfile(nextLayout)
-        /** 保留当前状态和主题，仅切换方向。 */
-        val previous = lastRequest ?: return
-        if (previous.isLandscape != (width > height)) {
-            lastRequest = previous.copy(isLandscape = width > height)
-            submitCurrentScene()
-        }
-    }
-
-    /** 按当前测量方向为三个透明语义节点提供真实物理尺寸。 */
+    /** 按固定方屏布局为三个透明语义节点提供真实物理尺寸。 */
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        /** 当前测量尺寸对应的逻辑布局。 */
-        val layout = passwordCredentialLayout(isLandscape = measuredWidth > measuredHeight)
-        measureActionView(inputAccessibilityView, layout, layout.inputAction)
-        measureActionView(emergencyAccessibilityView, layout, layout.emergencyAction)
+        measureActionView(inputAccessibilityView, currentLayout, currentLayout.inputAction)
+        measureActionView(emergencyAccessibilityView, currentLayout, currentLayout.emergencyAction)
         if (imeSwitcherAccessibilityView.visibility == View.VISIBLE) {
-            measureActionView(imeSwitcherAccessibilityView, layout, layout.imeSwitcherAction)
+            measureActionView(imeSwitcherAccessibilityView, currentLayout, currentLayout.imeSwitcherAction)
         } else {
             imeSwitcherAccessibilityView.measure(
                 MeasureSpec.makeMeasureSpec(0, MeasureSpec.EXACTLY),
@@ -389,7 +366,7 @@ public class PasswordCredentialHost(
             pixelGapEnabled = false,
         )
 
-    /** 按当前方向配置固定逻辑网格。 */
+    /** 配置 Titan 2 固定方屏逻辑网格。 */
     private fun configureProfile(layout: PasswordCredentialLayout) {
         pixelHostView.profilePolicy = PixelHostProfilePolicy.AdaptiveLogicalSize(
             logicalWidth = layout.logicalWidth,
