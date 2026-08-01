@@ -19,6 +19,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import com.purride.pixeldesign.ProductThemeBrightness
 import com.purride.pixellockscreen.ui.LockscreenRootHost
+import com.purride.pixellockscreen.ui.LockscreenBiometricModality
+import com.purride.pixellockscreen.ui.LockscreenBiometricPhase
 import com.purride.pixellockscreen.ui.PatternCredentialFeedback
 import com.purride.pixellockscreen.ui.PatternCredentialHost
 import com.purride.pixellockscreen.ui.PatternCredentialListener
@@ -206,6 +208,38 @@ class LockscreenPreviewActivity : AppCompatActivity() {
                             updateConfiguration { copy(isCharging = true) }
                         },
                     ),
+                ),
+            )
+            controlsContainer.addView(
+                optionRow(
+                    label = "BIO TYPE",
+                    options = LockscreenBiometricModality.entries.map { modality ->
+                        ControlOption(
+                            label = modality.name,
+                            selected = modality == configuration.biometricModality,
+                            onClick = {
+                                updateConfiguration {
+                                    withBiometricModality(modality)
+                                }
+                            },
+                        )
+                    },
+                ),
+            )
+            controlsContainer.addView(
+                optionRow(
+                    label = "BIO STATE",
+                    options = LockscreenBiometricPhase.entries.map { phase ->
+                        ControlOption(
+                            label = phase.name,
+                            selected = phase == configuration.biometricPhase,
+                            onClick = {
+                                updateConfiguration {
+                                    withBiometricPhase(phase)
+                                }
+                            },
+                        )
+                    },
                 ),
             )
         } else if (configuration.scene == LockscreenPreviewScene.PATTERN) {

@@ -3,6 +3,8 @@ package com.purride.pixelshowcase
 import com.purride.pixeldesign.ProductThemeBrightness
 import com.purride.pixeldesign.ProductThemeFamily
 import com.purride.pixellockscreen.ui.PatternCredentialFeedback
+import com.purride.pixellockscreen.ui.LockscreenBiometricModality
+import com.purride.pixellockscreen.ui.LockscreenBiometricPhase
 import com.purride.pixellockscreen.ui.PasswordCredentialFeedback
 import com.purride.pixellockscreen.ui.PinCredentialFeedback
 import org.junit.Assert.assertEquals
@@ -52,6 +54,29 @@ class LockscreenPreviewModelTest {
         assertEquals(4, PatternCredentialFeedback.entries.size)
         assertEquals(4, PinCredentialFeedback.entries.size)
         assertEquals(4, PasswordCredentialFeedback.entries.size)
+        assertEquals(4, LockscreenBiometricModality.entries.size)
+        assertEquals(7, LockscreenBiometricPhase.entries.size)
+    }
+
+    /** 生物识别预览必须自动维护传感器与认证阶段的合法组合。 */
+    @Test
+    fun biometricPreviewKeepsValidStateCombinations() {
+        /** 从无传感器切换到采集阶段后的合法配置。 */
+        val scanning = LockscreenPreviewConfiguration()
+            .withBiometricPhase(LockscreenBiometricPhase.SCANNING)
+        assertEquals(LockscreenBiometricModality.FINGERPRINT, scanning.biometricModality)
+        assertEquals("SCANNING", scanning.toUiState().biometric.messageText)
+
+        /** 移除传感器后必须回到不可用阶段。 */
+        val unavailable = scanning.withBiometricModality(LockscreenBiometricModality.NONE)
+        assertEquals(LockscreenBiometricPhase.UNAVAILABLE, unavailable.biometricPhase)
+        assertFalse(unavailable.toUiState().biometric.isVisible)
+
+        /** StrongAuth 无需伪造一个已注册传感器。 */
+        val strongAuth = LockscreenPreviewConfiguration()
+            .withBiometricPhase(LockscreenBiometricPhase.STRONG_AUTH_REQUIRED)
+        assertEquals(LockscreenBiometricModality.NONE, strongAuth.biometricModality)
+        assertEquals("USE PIN AFTER RESTART", strongAuth.toUiState().biometric.messageText)
     }
 
     /** 图案预览反馈必须保持固定文字且不包含任何路径数据。 */

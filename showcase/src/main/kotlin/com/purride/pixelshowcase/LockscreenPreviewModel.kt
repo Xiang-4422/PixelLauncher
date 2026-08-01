@@ -3,6 +3,9 @@ package com.purride.pixelshowcase
 import com.purride.pixeldesign.ProductThemeBrightness
 import com.purride.pixeldesign.ProductThemeFamily
 import com.purride.pixellockscreen.ui.LockscreenUiState
+import com.purride.pixellockscreen.ui.LockscreenBiometricModality
+import com.purride.pixellockscreen.ui.LockscreenBiometricPhase
+import com.purride.pixellockscreen.ui.LockscreenBiometricUiState
 import com.purride.pixellockscreen.ui.PatternCredentialFeedback
 import com.purride.pixellockscreen.ui.PatternCredentialUiState
 import com.purride.pixellockscreen.ui.PasswordCredentialFeedback
@@ -70,6 +73,10 @@ internal data class LockscreenPreviewConfiguration(
     val battery: LockscreenPreviewBattery = LockscreenPreviewBattery.MEDIUM,
     /** 当前是否展示充电状态。 */
     val isCharging: Boolean = false,
+    /** 普通锁屏预览使用的生物识别传感器组合。 */
+    val biometricModality: LockscreenBiometricModality = LockscreenBiometricModality.NONE,
+    /** 普通锁屏预览使用的系统生物识别阶段。 */
+    val biometricPhase: LockscreenBiometricPhase = LockscreenBiometricPhase.UNAVAILABLE,
     /** 当前预览框方向。 */
     val orientation: LockscreenPreviewOrientation = LockscreenPreviewOrientation.PORTRAIT,
     /** 当前透明宿主下方的测试背景。 */
@@ -96,6 +103,42 @@ internal data class LockscreenPreviewConfiguration(
         batteryPercent = battery.percent,
         isCharging = isCharging,
         unlockHint = PREVIEW_UNLOCK_HINT,
+        biometric = LockscreenBiometricUiState(
+            modality = biometricModality,
+            phase = biometricPhase,
+            messageText = previewBiometricMessage(biometricPhase),
+        ),
+    )
+
+    /** 选择传感器组合，并自动修复无传感器与活跃采集阶段的矛盾。 */
+    fun withBiometricModality(
+        modality: LockscreenBiometricModality,
+    ): LockscreenPreviewConfiguration = copy(
+        biometricModality = modality,
+        biometricPhase = if (
+            modality == LockscreenBiometricModality.NONE &&
+            biometricPhase != LockscreenBiometricPhase.STRONG_AUTH_REQUIRED
+        ) {
+            LockscreenBiometricPhase.UNAVAILABLE
+        } else {
+            biometricPhase
+        },
+    )
+
+    /** 选择认证阶段，并为需要传感器的阶段自动提供指纹测试样本。 */
+    fun withBiometricPhase(
+        phase: LockscreenBiometricPhase,
+    ): LockscreenPreviewConfiguration = copy(
+        biometricPhase = phase,
+        biometricModality = if (
+            biometricModality == LockscreenBiometricModality.NONE &&
+            phase != LockscreenBiometricPhase.UNAVAILABLE &&
+            phase != LockscreenBiometricPhase.STRONG_AUTH_REQUIRED
+        ) {
+            LockscreenBiometricModality.FINGERPRINT
+        } else {
+            biometricModality
+        },
     )
 
     /** 把可控反馈转换为不包含路径的图案认证状态。 */
@@ -137,6 +180,17 @@ internal data class LockscreenPreviewConfiguration(
         hasInputFocus = passwordHasInputFocus,
         isImeSwitcherVisible = passwordImeSwitcherVisible,
     )
+}
+
+/** 为离线截图提供稳定且不依赖设备语言的生物识别消息。 */
+private fun previewBiometricMessage(phase: LockscreenBiometricPhase): String = when (phase) {
+    LockscreenBiometricPhase.UNAVAILABLE -> ""
+    LockscreenBiometricPhase.READY -> "TOUCH SENSOR"
+    LockscreenBiometricPhase.SCANNING -> "SCANNING"
+    LockscreenBiometricPhase.SUCCESS -> "UNLOCKED"
+    LockscreenBiometricPhase.ERROR -> "NOT RECOGNIZED"
+    LockscreenBiometricPhase.LOCKED_OUT -> "TOO MANY ATTEMPTS"
+    LockscreenBiometricPhase.STRONG_AUTH_REQUIRED -> "USE PIN AFTER RESTART"
 }
 
 /** 按枚举声明顺序循环选择前一个或后一个主题家族。 */
