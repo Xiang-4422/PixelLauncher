@@ -18,7 +18,8 @@ import org.json.JSONObject
 
 /** 持久化外观、字体历史和 UI 行为设置。 */
 class FontSettingsRepository(
-    context: Context,
+    /** Launcher 私有设置与只读外观发布共同使用的应用上下文。 */
+    private val context: Context,
     /**
      * 手势调试帧偏好是否允许生效；Release 构建必须传 false——读取时强制归一化为
      * 关闭且默认关闭，防止无开关可关的调试相机画面（隐私门禁的状态层）。
@@ -103,6 +104,19 @@ class FontSettingsRepository(
             .putString(KEY_THEME_MODE, themeMode.name)
             .putString(KEY_FONT_STATE_JSON, fontStateJson)
             .apply()
+        ProductAppearanceExchange.publish(
+            context = context,
+            appearance = ProductAppearanceExchange.from(
+                AppearanceSettings(
+                    pixelShape = pixelShape,
+                    dotSizePx = safeDotSizePx,
+                    pixelGapEnabled = pixelGapEnabled,
+                    themeFamily = themeFamily,
+                    themeMode = themeMode,
+                    fontSelection = normalizedFontSelection,
+                ),
+            ),
+        )
     }
 
     /** 切回字体家族时恢复该家族上次成功的宽度和字号。 */

@@ -103,6 +103,15 @@
             </intent-filter>
         </service>
 
+        <!-- 仅公开非敏感产品外观；Provider 代码显式拒绝全部写操作。 -->
+        <provider
+            android:name=".app.ProductAppearanceProvider"
+            android:authorities="${applicationId}.appearance"
+            android:directBootAware="true"
+            android:exported="true"
+            android:grantUriPermissions="false"
+            tools:ignore="ExportedContentProvider" />
+
         <receiver
             android:name=".app.SmsDeliverReceiver"
             android:exported="true"
