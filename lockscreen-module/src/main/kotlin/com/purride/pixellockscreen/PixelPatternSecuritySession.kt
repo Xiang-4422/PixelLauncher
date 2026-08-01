@@ -96,6 +96,9 @@ internal class PixelPatternSecuritySession(
     /** 判断现有会话是否仍绑定同一原生图案控制器。 */
     fun isBoundTo(controller: Any): Boolean = !disposed && patternController === controller
 
+    /** 返回像素首帧是否已经正式替代原生图案内容。 */
+    fun isTakeoverActive(): Boolean = !disposed && takeoverActive
+
     /**
      * 在原生 UI 完全可用时解析全部合同、挂载像素宿主并等待首帧。
      *

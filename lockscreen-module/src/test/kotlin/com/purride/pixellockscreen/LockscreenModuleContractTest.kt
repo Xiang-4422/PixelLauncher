@@ -19,6 +19,6 @@ class LockscreenModuleContractTest {
     fun milestoneFiveKeepsCredentialTakeoverDisabled() {
         assertTrue(LockscreenModuleContract.READ_ONLY_HOOK_ENABLED)
         assertTrue(LockscreenModuleContract.VISUAL_TAKEOVER_ENABLED)
-        assertFalse(LockscreenModuleContract.CREDENTIAL_TAKEOVER_ENABLED)
+        assertFalse(LockscreenModuleContract.PATTERN_TAKEOVER_ENABLED)
     }
 }

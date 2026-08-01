@@ -20,6 +20,6 @@ internal object LockscreenModuleContract {
     /** M5 在像素首帧和恢复事务就绪后启用普通锁屏接管。 */
     const val VISUAL_TAKEOVER_ENABLED: Boolean = true
 
-    /** M6 安全桥尚未接入交互宿主，继续禁止隐藏原生 Bouncer 或接收真实输入。 */
-    const val CREDENTIAL_TAKEOVER_ENABLED: Boolean = false
+    /** M6 图案运行时已具备完整回退链，但在单独启用提交前不安装安全页面 Hook。 */
+    const val PATTERN_TAKEOVER_ENABLED: Boolean = false
 }

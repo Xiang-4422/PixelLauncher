@@ -20,6 +20,12 @@ public class PixelLockscreenModule : XposedModule() {
     /** 当前 SystemUI 进程中唯一活跃的像素 Keyguard 会话。 */
     private var activeSession: PixelKeyguardSession? = null
 
+    /** 当前 SystemUI 进程中已挂载的主安全容器控制器。 */
+    private var activeSecurityController: Any? = null
+
+    /** 当前 SystemUI 进程中唯一活跃的像素图案认证会话。 */
+    private var activePatternSession: PixelPatternSecuritySession? = null
+
     /** 记录当前进程并立即脱离非 SystemUI 主进程。 */
     override fun onModuleLoaded(param: XposedModuleInterface.ModuleLoadedParam) {
         /** 框架报告的当前进程名。 */
@@ -81,6 +87,11 @@ public class PixelLockscreenModule : XposedModule() {
                     inspectStartedConfigurator(chain.thisObject)
                     result
                 })
+            if (LockscreenModuleContract.PATTERN_TAKEOVER_ENABLED) {
+                installPatternSecurityHooks(classLoader)
+            } else {
+                log(Log.INFO, LOG_TAG, "pattern_hooks_disabled")
+            }
             log(Log.INFO, LOG_TAG, "probe_hook_installed")
         } catch (throwable: Throwable) {
             log(Log.ERROR, LOG_TAG, "probe_hook_install_failed", throwable)
@@ -132,6 +143,9 @@ public class PixelLockscreenModule : XposedModule() {
         activeSession = newSession
         try {
             newSession.start()
+            newSession.setCredentialTakeoverActive(
+                activePatternSession?.isTakeoverActive() == true,
+            )
             log(Log.INFO, LOG_TAG, "visual_session_started")
         } catch (throwable: Throwable) {
             if (activeSession === newSession) {
@@ -139,6 +153,186 @@ public class PixelLockscreenModule : XposedModule() {
             }
             log(Log.ERROR, LOG_TAG, "visual_session_failed", throwable)
         }
+    }
+
+    /** 安装主安全容器和图案控制器的精确生命周期 Hook。 */
+    @SuppressLint("PrivateApi")
+    private fun installPatternSecurityHooks(classLoader: ClassLoader) {
+        /** Titan 2 主安全容器控制器类。 */
+        val securityControllerClass = Class.forName(
+            SECURITY_CONTAINER_CONTROLLER_CLASS,
+            false,
+            classLoader,
+        )
+        /** Titan 2 图案认证控制器类。 */
+        val patternControllerClass = Class.forName(
+            PATTERN_CONTROLLER_CLASS,
+            false,
+            classLoader,
+        )
+        /** 主安全容器完成挂载的方法。 */
+        val securityAttachedMethod = exactVoidMethod(
+            securityControllerClass,
+            CONTROLLER_VIEW_ATTACHED_METHOD,
+        )
+        /** 主安全容器即将脱离的方法。 */
+        val securityDetachedMethod = exactVoidMethod(
+            securityControllerClass,
+            CONTROLLER_VIEW_DETACHED_METHOD,
+        )
+        /** 图案认证页面恢复的方法。 */
+        val patternResumeMethod = patternControllerClass.getDeclaredMethod(
+            PATTERN_RESUME_METHOD,
+            Int::class.javaPrimitiveType,
+        )
+        check(patternResumeMethod.returnType == Void.TYPE) { "pattern_resume_signature" }
+        /** 图案认证页面暂停的方法。 */
+        val patternPauseMethod = exactVoidMethod(patternControllerClass, PATTERN_PAUSE_METHOD)
+        /** 图案认证页面即将脱离的方法。 */
+        val patternDetachedMethod = exactVoidMethod(
+            patternControllerClass,
+            CONTROLLER_VIEW_DETACHED_METHOD,
+        )
+
+        hook(securityAttachedMethod)
+            .setId(SECURITY_ATTACHED_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                /** 原生挂载完成后才允许保存可用控制器。 */
+                val result = chain.proceed()
+                attachSecurityController(chain.thisObject)
+                result
+            })
+        hook(securityDetachedMethod)
+            .setId(SECURITY_DETACHED_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                /** 原生对象脱离前先恢复像素会话持有的全部视图状态。 */
+                detachSecurityController(chain.thisObject)
+                chain.proceed()
+            })
+        hook(patternResumeMethod)
+            .setId(PATTERN_RESUME_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                /** 原生页面完成恢复和紧急按钮准备后再尝试像素接管。 */
+                val result = chain.proceed()
+                startPatternSession(chain.thisObject, classLoader)
+                result
+            })
+        hook(patternPauseMethod)
+            .setId(PATTERN_PAUSE_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                /** 页面暂停前立即清零输入并恢复原生内容。 */
+                stopPatternSession(chain.thisObject)
+                chain.proceed()
+            })
+        hook(patternDetachedMethod)
+            .setId(PATTERN_DETACHED_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                /** 页面重建前再次执行幂等回退。 */
+                stopPatternSession(chain.thisObject)
+                chain.proceed()
+            })
+        log(Log.INFO, LOG_TAG, "pattern_hooks_installed")
+    }
+
+    /** 保存当前主安全容器；对象替换时先结束旧图案会话。 */
+    private fun attachSecurityController(controller: Any?) {
+        if (controller == null) {
+            log(Log.ERROR, LOG_TAG, "security_controller_missing")
+            return
+        }
+        if (activeSecurityController === controller) {
+            return
+        }
+        activePatternSession?.dispose()
+        activeSecurityController = controller
+        log(Log.INFO, LOG_TAG, "security_controller_attached")
+    }
+
+    /** 主安全容器脱离前结束其图案会话并清除对象引用。 */
+    private fun detachSecurityController(controller: Any?) {
+        if (controller == null || activeSecurityController !== controller) {
+            return
+        }
+        activePatternSession?.dispose()
+        activeSecurityController = null
+        log(Log.INFO, LOG_TAG, "security_controller_detached")
+    }
+
+    /** 在原生图案页完成恢复后幂等创建像素认证会话。 */
+    private fun startPatternSession(patternController: Any?, classLoader: ClassLoader) {
+        if (patternController == null) {
+            log(Log.ERROR, LOG_TAG, "pattern_controller_missing")
+            return
+        }
+        /** 当前已挂载的主安全容器。 */
+        val securityController = activeSecurityController ?: run {
+            log(Log.WARN, LOG_TAG, "pattern_security_controller_unavailable")
+            return
+        }
+        /** 同一原生图案控制器的重复恢复沿用现有会话。 */
+        val previousSession = activePatternSession
+        if (previousSession?.isBoundTo(patternController) == true) {
+            log(Log.INFO, LOG_TAG, "pattern_session_reused")
+            return
+        }
+        previousSession?.dispose()
+        /** 只有通过全部运行时合同才会进入首帧等待的新会话。 */
+        val newSession = PixelPatternSecuritySession(
+            securityController = securityController,
+            patternController = patternController,
+            classLoader = classLoader,
+            onTakeoverChanged = { active ->
+                activeSession?.setCredentialTakeoverActive(active)
+            },
+            onFailure = { failedSession, throwable ->
+                if (activePatternSession === failedSession) {
+                    log(Log.ERROR, LOG_TAG, "pattern_session_runtime_failed", throwable)
+                }
+            },
+            onDisposed = { disposedSession ->
+                if (activePatternSession === disposedSession) {
+                    activePatternSession = null
+                }
+            },
+        )
+        activePatternSession = newSession
+        try {
+            newSession.start()
+            log(Log.INFO, LOG_TAG, "pattern_session_started")
+        } catch (throwable: Throwable) {
+            if (activePatternSession === newSession) {
+                activePatternSession = null
+            }
+            log(Log.ERROR, LOG_TAG, "pattern_session_start_failed", throwable)
+        }
+    }
+
+    /** 只结束绑定指定原生控制器的图案会话。 */
+    private fun stopPatternSession(patternController: Any?) {
+        if (patternController == null) {
+            return
+        }
+        /** 当前可能属于其他新控制器的图案会话。 */
+        val session = activePatternSession ?: return
+        if (session.isBoundTo(patternController)) {
+            session.dispose()
+            log(Log.INFO, LOG_TAG, "pattern_session_stopped")
+        }
+    }
+
+    /** 解析并验证一个控制器声明的无参 void 方法。 */
+    private fun exactVoidMethod(owner: Class<*>, name: String): java.lang.reflect.Method {
+        /** 当前目标控制器方法。 */
+        val method = owner.getDeclaredMethod(name)
+        check(method.parameterCount == 0 && method.returnType == Void.TYPE) {
+            "controller_method_signature:$name"
+        }
+        return method
     }
 
     private companion object {
@@ -154,5 +348,42 @@ public class PixelLockscreenModule : XposedModule() {
 
         /** 支持 Modern Xposed 热更新原子替换的稳定 Hook ID。 */
         const val KEYGUARD_START_HOOK_ID: String = "pixel_lockscreen:keyguard_start_probe"
+
+        /** Titan 2 主安全容器控制器类名。 */
+        const val SECURITY_CONTAINER_CONTROLLER_CLASS: String =
+            "com.android.keyguard.KeyguardSecurityContainerController"
+
+        /** Titan 2 图案认证控制器类名。 */
+        const val PATTERN_CONTROLLER_CLASS: String =
+            "com.android.keyguard.KeyguardPatternViewController"
+
+        /** 控制器视图挂载方法名。 */
+        const val CONTROLLER_VIEW_ATTACHED_METHOD: String = "onViewAttached"
+
+        /** 控制器视图脱离方法名。 */
+        const val CONTROLLER_VIEW_DETACHED_METHOD: String = "onViewDetached"
+
+        /** 图案页面恢复方法名。 */
+        const val PATTERN_RESUME_METHOD: String = "onResume"
+
+        /** 图案页面暂停方法名。 */
+        const val PATTERN_PAUSE_METHOD: String = "onPause"
+
+        /** 主安全容器挂载 Hook ID。 */
+        const val SECURITY_ATTACHED_HOOK_ID: String =
+            "pixel_lockscreen:security_container_attached"
+
+        /** 主安全容器脱离 Hook ID。 */
+        const val SECURITY_DETACHED_HOOK_ID: String =
+            "pixel_lockscreen:security_container_detached"
+
+        /** 图案页面恢复 Hook ID。 */
+        const val PATTERN_RESUME_HOOK_ID: String = "pixel_lockscreen:pattern_resume"
+
+        /** 图案页面暂停 Hook ID。 */
+        const val PATTERN_PAUSE_HOOK_ID: String = "pixel_lockscreen:pattern_pause"
+
+        /** 图案页面脱离 Hook ID。 */
+        const val PATTERN_DETACHED_HOOK_ID: String = "pixel_lockscreen:pattern_detached"
     }
 }
