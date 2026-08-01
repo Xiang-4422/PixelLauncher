@@ -7,9 +7,11 @@ import android.content.IntentFilter
 import android.content.res.Configuration
 import android.os.BatteryManager
 import android.os.Looper
+import android.os.PowerManager
 import android.text.format.DateFormat
 import com.purride.pixeldesign.ProductThemeBrightness
 import com.purride.pixellockscreen.ui.LockscreenUiState
+import com.purride.pixellockscreen.ui.LockscreenAmbientUiState
 import com.purride.pixellockscreen.ui.LockscreenBiometricUiState
 import com.purride.pixellockscreen.ui.LockscreenSecurityNoticeUiState
 import java.text.SimpleDateFormat
@@ -58,6 +60,11 @@ internal class AndroidKeyguardStateAdapter(
     /** 每次完整状态变化时的唯一下游。 */
     private val onStateChanged: (LockscreenUiState, ProductThemeBrightness) -> Unit,
 ) {
+    /** 提供 Android 当前是否允许交互的公开电源状态。 */
+    private val powerManager: PowerManager = requireNotNull(
+        context.getSystemService(PowerManager::class.java),
+    ) { "lockscreen_power_manager" }
+
     /** 最近一次系统电池广播解析结果。 */
     private var batterySnapshot: KeyguardBatterySnapshot = KeyguardBatterySnapshot(0, false)
 
@@ -98,6 +105,8 @@ internal class AndroidKeyguardStateAdapter(
             addAction(Intent.ACTION_LOCALE_CHANGED)
             addAction(Intent.ACTION_CONFIGURATION_CHANGED)
             addAction(Intent.ACTION_BATTERY_CHANGED)
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SCREEN_OFF)
         }
         /** `ACTION_BATTERY_CHANGED` 注册时返回的粘性初始状态。 */
         val initialBatteryIntent = context.registerReceiver(
@@ -175,6 +184,10 @@ internal class AndroidKeyguardStateAdapter(
                 securityNotice = securityNoticeSnapshot,
                 notifications = contentSnapshot.notifications,
                 media = contentSnapshot.media,
+                ambient = lockscreenAmbientUiState(
+                    isInteractive = powerManager.isInteractive,
+                    epochMillis = now.time,
+                ),
             ),
             brightness,
         )
@@ -192,3 +205,40 @@ internal class AndroidKeyguardStateAdapter(
         check(Looper.myLooper() == Looper.getMainLooper()) { "Keyguard state must run on main thread" }
     }
 }
+
+/**
+ * 将系统交互状态和当前分钟转换为无定时器的 AOD 防烧屏状态。
+ *
+ * SystemUI 的分钟广播负责触发重新计算；交互锁屏始终返回零偏移。
+ */
+internal fun lockscreenAmbientUiState(
+    isInteractive: Boolean,
+    epochMillis: Long,
+): LockscreenAmbientUiState {
+    if (isInteractive) {
+        return LockscreenAmbientUiState()
+    }
+    /** 当前 UTC 分钟序号，只用于生成周期性像素偏移。 */
+    val minuteIndex = Math.floorDiv(epochMillis, MILLIS_PER_MINUTE)
+    /** 水平偏移在五个安全位置之间逐分钟循环。 */
+    val horizontalIndex = Math.floorMod(minuteIndex, AMBIENT_BURN_IN_OFFSETS.size.toLong()).toInt()
+    /** 垂直偏移使用较慢且错相的循环，避免沿固定对角线往返。 */
+    val verticalIndex = Math.floorMod(
+        Math.floorDiv(minuteIndex, AMBIENT_BURN_IN_OFFSETS.size.toLong()) + AMBIENT_VERTICAL_PHASE,
+        AMBIENT_BURN_IN_OFFSETS.size.toLong(),
+    ).toInt()
+    return LockscreenAmbientUiState(
+        isAmbient = true,
+        burnInOffsetX = AMBIENT_BURN_IN_OFFSETS[horizontalIndex],
+        burnInOffsetY = AMBIENT_BURN_IN_OFFSETS[verticalIndex],
+    )
+}
+
+/** AOD 内容允许使用的全部逻辑像素偏移。 */
+private val AMBIENT_BURN_IN_OFFSETS: IntArray = intArrayOf(-2, -1, 0, 1, 2)
+
+/** 垂直偏移相对水平偏移使用的固定错相步数。 */
+private const val AMBIENT_VERTICAL_PHASE: Long = 2L
+
+/** 防烧屏位置更新使用的一分钟毫秒数。 */
+private const val MILLIS_PER_MINUTE: Long = 60_000L
