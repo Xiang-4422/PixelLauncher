@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import com.purride.pixellockscreen.ui.LockscreenBiometricModality
 import com.purride.pixellockscreen.ui.LockscreenBiometricPhase
 import com.purride.pixellockscreen.ui.LockscreenBiometricUiState
+import com.purride.pixellockscreen.ui.LockscreenSecurityNoticePhase
+import com.purride.pixellockscreen.ui.LockscreenSecurityNoticeUiState
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 
@@ -33,8 +35,16 @@ internal data class Titan2BiometricSnapshotInput(
     val messageText: String,
 )
 
+/** Titan 2 普通锁屏一次完整的可见安全状态，不包含任何认证秘密。 */
+internal data class Titan2VisibleSecuritySnapshot(
+    /** SystemUI 已维护的生物识别与 StrongAuth 状态。 */
+    val biometric: LockscreenBiometricUiState,
+    /** SystemUI 已决定展示的信任代理或 Extend Unlock 提示。 */
+    val securityNotice: LockscreenSecurityNoticeUiState,
+)
+
 /**
- * 只读复用 Titan 2 `KeyguardUpdateMonitor` 与 `KeyguardIndicationController` 的安全状态适配器。
+ * 只读复用 Titan 2 `KeyguardUpdateMonitor` 与 `KeyguardIndicationController` 的可见安全状态适配器。
  *
  * 适配器不注册传感器回调、不启动或停止认证，也不读取模板、图像、特征、令牌和失败次数。
  * 所有阶段均由 SystemUI 已维护的字段与公开方法在绘制前解析。
@@ -50,6 +60,12 @@ internal class Titan2BiometricStateAdapter private constructor(
     private val biometricMessageField: Field,
     /** 原生后续生物识别消息字段。 */
     private val biometricFollowUpField: Field,
+    /** 原生信任授予提示字段。 */
+    private val trustGrantedField: Field,
+    /** 原生信任代理错误提示字段。 */
+    private val trustAgentErrorField: Field,
+    /** 原生 Extend Unlock 持续提示字段。 */
+    private val persistentUnlockField: Field,
     /** 当前会话人脸锁定字段。 */
     private val faceLockedOutField: Field,
     /** 读取当前 Keyguard 用户的方法。 */
@@ -77,8 +93,8 @@ internal class Titan2BiometricStateAdapter private constructor(
     /** Android 隐藏枚举中的人脸来源对象。 */
     private val faceSource: Any,
 ) {
-    /** 从原生对象读取一帧状态并转换为像素 UI 状态。 */
-    fun snapshot(): LockscreenBiometricUiState {
+    /** 从原生对象读取一帧状态并转换为像素 UI 的完整可见安全快照。 */
+    fun snapshot(): Titan2VisibleSecuritySnapshot {
         check(updateMonitorField.get(indicationController) === updateMonitor) {
             "keyguard_biometric_monitor_stale"
         }
@@ -105,7 +121,8 @@ internal class Titan2BiometricStateAdapter private constructor(
         val primaryMessage = biometricMessageField.get(indicationController) as? CharSequence
         /** SystemUI 当前生物识别后续消息。 */
         val followUpMessage = biometricFollowUpField.get(indicationController) as? CharSequence
-        return resolveTitan2BiometricState(
+        /** 当前帧解析出的生物识别与 StrongAuth 状态。 */
+        val biometric = resolveTitan2BiometricState(
             Titan2BiometricSnapshotInput(
                 fingerprintEnrolled = fingerprintEnrolled,
                 faceEnrolled = faceEnrolled,
@@ -151,6 +168,16 @@ internal class Titan2BiometricStateAdapter private constructor(
                 ),
                 messageText = sanitizeBiometricMessage(primaryMessage, followUpMessage),
             ),
+        )
+        /** 当前帧解析出的信任代理或 Extend Unlock 提示。 */
+        val securityNotice = resolveTitan2SecurityNotice(
+            trustAgentError = trustAgentErrorField.get(indicationController) as? CharSequence,
+            trustGranted = trustGrantedField.get(indicationController) as? CharSequence,
+            persistentUnlock = persistentUnlockField.get(indicationController) as? CharSequence,
+        )
+        return resolveTitan2VisibleSecuritySnapshot(
+            biometric = biometric,
+            securityNotice = securityNotice,
         )
     }
 
@@ -215,6 +242,21 @@ internal class Titan2BiometricStateAdapter private constructor(
                     indicationClass,
                     BIOMETRIC_FOLLOW_UP_FIELD,
                     CharSequence::class.java,
+                ),
+                trustGrantedField = typedField(
+                    indicationClass,
+                    TRUST_GRANTED_FIELD,
+                    CharSequence::class.java,
+                ),
+                trustAgentErrorField = typedField(
+                    indicationClass,
+                    TRUST_AGENT_ERROR_FIELD,
+                    CharSequence::class.java,
+                ),
+                persistentUnlockField = typedField(
+                    indicationClass,
+                    PERSISTENT_UNLOCK_FIELD,
+                    String::class.java,
                 ),
                 faceLockedOutField = typedField(
                     indicationClass,
@@ -349,6 +391,15 @@ internal class Titan2BiometricStateAdapter private constructor(
         /** 原生后续生物识别消息字段名。 */
         private const val BIOMETRIC_FOLLOW_UP_FIELD: String = "mBiometricMessageFollowUp"
 
+        /** 原生信任授予提示字段名。 */
+        private const val TRUST_GRANTED_FIELD: String = "mTrustGrantedIndication"
+
+        /** 原生信任代理错误提示字段名。 */
+        private const val TRUST_AGENT_ERROR_FIELD: String = "mTrustAgentErrorMessage"
+
+        /** 原生 Extend Unlock 持续提示字段名。 */
+        private const val PERSISTENT_UNLOCK_FIELD: String = "mPersistentUnlockMessage"
+
         /** 当前会话人脸锁定字段名。 */
         private const val FACE_LOCKED_OUT_FIELD: String = "mFaceLockedOutThisAuthSession"
 
@@ -381,6 +432,54 @@ internal class Titan2BiometricStateAdapter private constructor(
         /** 当前用户 StrongAuth 位标志读取方法名。 */
         private const val GET_STRONG_AUTH_FLAGS_METHOD: String = "getStrongAuthForUser"
     }
+}
+
+/** StrongAuth 要求必须覆盖可能残留的信任文字，避免向用户表达错误的可解锁状态。 */
+internal fun resolveTitan2VisibleSecuritySnapshot(
+    biometric: LockscreenBiometricUiState,
+    securityNotice: LockscreenSecurityNoticeUiState,
+): Titan2VisibleSecuritySnapshot = Titan2VisibleSecuritySnapshot(
+    biometric = biometric,
+    securityNotice = if (
+        biometric.phase == LockscreenBiometricPhase.STRONG_AUTH_REQUIRED
+    ) {
+        LockscreenSecurityNoticeUiState()
+    } else {
+        securityNotice
+    },
+)
+
+/** 按错误、信任授予、持续解锁的安全优先级解析 SystemUI 可见文字。 */
+internal fun resolveTitan2SecurityNotice(
+    trustAgentError: CharSequence?,
+    trustGranted: CharSequence?,
+    persistentUnlock: CharSequence?,
+): LockscreenSecurityNoticeUiState {
+    /** 信任代理错误应覆盖同帧的成功或持续解锁说明。 */
+    val errorMessage = sanitizeSecurityNoticeMessage(trustAgentError)
+    if (errorMessage.isNotBlank()) {
+        return LockscreenSecurityNoticeUiState(
+            phase = LockscreenSecurityNoticePhase.TRUST_ERROR,
+            messageText = errorMessage,
+        )
+    }
+    /** SystemUI 明确给出的信任授予说明。 */
+    val grantedMessage = sanitizeSecurityNoticeMessage(trustGranted)
+    if (grantedMessage.isNotBlank()) {
+        return LockscreenSecurityNoticeUiState(
+            phase = LockscreenSecurityNoticePhase.TRUSTED,
+            messageText = grantedMessage,
+        )
+    }
+    /** Extend Unlock 在普通信任提示之后使用持久说明。 */
+    val persistentMessage = sanitizeSecurityNoticeMessage(persistentUnlock)
+    if (persistentMessage.isNotBlank()) {
+        return LockscreenSecurityNoticeUiState(
+            phase = LockscreenSecurityNoticePhase.EXTENDED_UNLOCK,
+            messageText = persistentMessage,
+        )
+    }
+    return LockscreenSecurityNoticeUiState()
 }
 
 /** 将原生只读输入按安全优先级转换为单一像素生物识别状态。 */
@@ -456,6 +555,16 @@ internal fun sanitizeBiometricMessage(primary: CharSequence?, followUp: CharSequ
         }
         .replace(BIOMETRIC_WHITESPACE_REGEX, " ")
         .take(MAXIMUM_BIOMETRIC_MESSAGE_LENGTH)
+
+/** 清理 SystemUI 信任文字为有界单行，不改变其安全含义。 */
+internal fun sanitizeSecurityNoticeMessage(message: CharSequence?): String = message
+    ?.toString()
+    ?.replace('\n', ' ')
+    ?.replace('\r', ' ')
+    ?.trim()
+    ?.replace(BIOMETRIC_WHITESPACE_REGEX, " ")
+    ?.take(MAXIMUM_BIOMETRIC_MESSAGE_LENGTH)
+    .orEmpty()
 
 /** 与锁屏 UI 状态边界一致的最大生物识别消息长度。 */
 private const val MAXIMUM_BIOMETRIC_MESSAGE_LENGTH: Int = 160

@@ -2,6 +2,7 @@ package com.purride.pixellockscreen
 
 import com.purride.pixellockscreen.ui.LockscreenBiometricModality
 import com.purride.pixellockscreen.ui.LockscreenBiometricPhase
+import com.purride.pixellockscreen.ui.LockscreenSecurityNoticePhase
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -111,6 +112,60 @@ class Titan2BiometricStateAdapterTest {
         assertEquals(160, message.length)
         assertEquals(false, '\n' in message)
         assertEquals(false, "  " in message)
+    }
+
+    /** 信任错误必须覆盖同帧成功和 Extend Unlock 提示。 */
+    @Test
+    fun trustAgentErrorHasHighestVisibleNoticePriority() {
+        /** 同时存在三类原生文字时解析出的单一提示。 */
+        val state = resolveTitan2SecurityNotice(
+            trustAgentError = "TRUST ERROR",
+            trustGranted = "TRUSTED",
+            persistentUnlock = "EXTEND UNLOCK",
+        )
+        assertEquals(LockscreenSecurityNoticePhase.TRUST_ERROR, state.phase)
+        assertEquals("TRUST ERROR", state.messageText)
+    }
+
+    /** 信任授予、持续解锁和空状态必须分别保持原生语义。 */
+    @Test
+    fun trustNoticeResolverPreservesVisibleSystemMeaning() {
+        assertEquals(
+            LockscreenSecurityNoticePhase.TRUSTED,
+            resolveTitan2SecurityNotice(null, "TRUSTED", "EXTEND UNLOCK").phase,
+        )
+        assertEquals(
+            LockscreenSecurityNoticePhase.EXTENDED_UNLOCK,
+            resolveTitan2SecurityNotice(null, null, "EXTEND UNLOCK").phase,
+        )
+        assertEquals(
+            LockscreenSecurityNoticePhase.NONE,
+            resolveTitan2SecurityNotice(null, "  ", null).phase,
+        )
+    }
+
+    /** 信任文字必须折叠多行空白并限制到 UI 状态允许的长度。 */
+    @Test
+    fun trustNoticeSanitizerProducesBoundedSingleLine() {
+        /** 当前清理后的信任代理文字。 */
+        val message = sanitizeSecurityNoticeMessage("  A\nB  ${"X".repeat(200)}  ")
+        assertEquals(160, message.length)
+        assertEquals(false, '\n' in message)
+        assertEquals(false, "  " in message)
+    }
+
+    /** StrongAuth 必须压制可能残留的信任授予文字。 */
+    @Test
+    fun strongAuthSuppressesStaleTrustNotice() {
+        /** 当前必须使用设备凭据的生物识别状态。 */
+        val biometric = resolveTitan2BiometricState(input(strongAuthFlags = 0x1))
+        /** 当前模拟的残留信任提示。 */
+        val notice = resolveTitan2SecurityNotice(null, "TRUSTED", null)
+        /** 合并安全优先级后的完整可见状态。 */
+        val snapshot = resolveTitan2VisibleSecuritySnapshot(biometric, notice)
+
+        assertEquals(LockscreenBiometricPhase.STRONG_AUTH_REQUIRED, snapshot.biometric.phase)
+        assertEquals(LockscreenSecurityNoticePhase.NONE, snapshot.securityNotice.phase)
     }
 
     /** 构造默认无传感器的只读输入。 */

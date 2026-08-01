@@ -25,7 +25,7 @@ internal class PixelKeyguardSession(
     /** 普通原生锁屏节点的可恢复显隐事务。 */
     private val nativeVisibility = NativeKeyguardVisibilityTransaction(binding.shadeWindow)
 
-    /** 只读解析原生生物识别、StrongAuth 和系统提示的 Titan 2 适配器。 */
+    /** 只读解析生物识别、StrongAuth、信任代理和 Extend Unlock 的 Titan 2 适配器。 */
     private val biometricAdapter = Titan2BiometricStateAdapter.bind(binding.indicationController)
 
     /** 系统广播驱动的时间、电量与明暗状态适配器。 */
@@ -101,7 +101,7 @@ internal class PixelKeyguardSession(
     override fun onPreDraw(): Boolean {
         if (disposed) return true
         runCatching {
-            stateAdapter.updateBiometric(biometricAdapter.snapshot())
+            stateAdapter.updateSecurity(biometricAdapter.snapshot())
             if (disposed) return true
             /** 宿主只有在首帧、继承可见性和物理尺寸都就绪时才允许接管。 */
             val shouldTakeOver = credentialTakeoverActive ||
