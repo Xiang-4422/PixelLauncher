@@ -32,6 +32,9 @@ public class PixelLockscreenModule : XposedModule() {
     /** 当前 SystemUI 进程中唯一活跃的像素密码认证会话。 */
     private var activePasswordSession: PixelPasswordSecuritySession? = null
 
+    /** 当前 SystemUI 进程中唯一活跃的 SIM 或 AntiTheft 像素会话。 */
+    private var activeSpecialPinSession: PixelSpecialPinSecuritySession? = null
+
     /** 记录当前进程并立即脱离非 SystemUI 主进程。 */
     override fun onModuleLoaded(param: XposedModuleInterface.ModuleLoadedParam) {
         /** 框架报告的当前进程名。 */
@@ -96,7 +99,8 @@ public class PixelLockscreenModule : XposedModule() {
             if (
                 LockscreenModuleContract.PATTERN_TAKEOVER_ENABLED ||
                 LockscreenModuleContract.PIN_TAKEOVER_ENABLED ||
-                LockscreenModuleContract.PASSWORD_TAKEOVER_ENABLED
+                LockscreenModuleContract.PASSWORD_TAKEOVER_ENABLED ||
+                LockscreenModuleContract.SPECIAL_PIN_TAKEOVER_ENABLED
             ) {
                 installCredentialSecurityHooks(classLoader)
             } else {
@@ -213,7 +217,119 @@ public class PixelLockscreenModule : XposedModule() {
         } else {
             log(Log.INFO, LOG_TAG, "password_hooks_disabled")
         }
+        if (LockscreenModuleContract.SPECIAL_PIN_TAKEOVER_ENABLED) {
+            installSpecialPinSecurityHooks(classLoader)
+        } else {
+            log(Log.INFO, LOG_TAG, "special_pin_hooks_disabled")
+        }
         log(Log.INFO, LOG_TAG, "credential_container_hooks_installed")
+    }
+
+    /** 安装 Titan 2 MediaTek SIM 与 AntiTheft 最终控制器的精确生命周期 Hook。 */
+    @SuppressLint("PrivateApi")
+    private fun installSpecialPinSecurityHooks(classLoader: ClassLoader) {
+        /** Titan 2 SIM PIN/PUK/ME 最终控制器类。 */
+        val simControllerClass = Class.forName(SIM_CONTROLLER_CLASS, false, classLoader)
+        /** Titan 2 MediaTek AntiTheft 最终控制器类。 */
+        val antiTheftControllerClass = Class.forName(
+            ANTI_THEFT_CONTROLLER_CLASS,
+            false,
+            classLoader,
+        )
+        /** 通用数字控制器父类，用于 AntiTheft 脱离回调。 */
+        val pinBasedControllerClass = Class.forName(
+            PIN_BASED_CONTROLLER_CLASS,
+            false,
+            classLoader,
+        )
+        check(pinBasedControllerClass.isAssignableFrom(simControllerClass)) {
+            "special_sim_controller_parent"
+        }
+        check(pinBasedControllerClass.isAssignableFrom(antiTheftControllerClass)) {
+            "special_antitheft_controller_parent"
+        }
+        /** SIM 控制器自己声明的恢复方法。 */
+        val simResumeMethod = simControllerClass.getDeclaredMethod(
+            CREDENTIAL_RESUME_METHOD,
+            Int::class.javaPrimitiveType,
+        ).apply {
+            check(returnType == Void.TYPE) { "special_sim_resume_signature" }
+        }
+        /** SIM 控制器自己声明的暂停与脱离方法。 */
+        val simPauseMethod = exactVoidMethod(simControllerClass, CREDENTIAL_PAUSE_METHOD)
+        /** SIM 控制器最终脱离回调。 */
+        val simDetachedMethod = exactVoidMethod(
+            simControllerClass,
+            CONTROLLER_VIEW_DETACHED_METHOD,
+        )
+        /** AntiTheft 控制器自己声明的恢复方法。 */
+        val antiTheftResumeMethod = antiTheftControllerClass.getDeclaredMethod(
+            CREDENTIAL_RESUME_METHOD,
+            Int::class.javaPrimitiveType,
+        ).apply {
+            check(returnType == Void.TYPE) { "special_antitheft_resume_signature" }
+        }
+        /** AntiTheft 控制器自己声明的暂停方法。 */
+        val antiTheftPauseMethod = exactVoidMethod(
+            antiTheftControllerClass,
+            CREDENTIAL_PAUSE_METHOD,
+        )
+        /** AntiTheft 使用数字父类声明的脱离回调。 */
+        val pinBasedDetachedMethod = exactVoidMethod(
+            pinBasedControllerClass,
+            CONTROLLER_VIEW_DETACHED_METHOD,
+        )
+
+        hook(simResumeMethod)
+            .setId(SIM_RESUME_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                /** 原生 SIM 状态机和按键监听器恢复后再建立像素会话。 */
+                val result = chain.proceed()
+                startSpecialPinSession(chain.thisObject, classLoader)
+                result
+            })
+        hook(simPauseMethod)
+            .setId(SIM_PAUSE_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                stopSpecialPinSession(chain.thisObject)
+                chain.proceed()
+            })
+        hook(simDetachedMethod)
+            .setId(SIM_DETACHED_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                stopSpecialPinSession(chain.thisObject)
+                chain.proceed()
+            })
+        hook(antiTheftResumeMethod)
+            .setId(ANTI_THEFT_RESUME_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                /** 原生防盗服务绑定和提示准备完成后再建立像素会话。 */
+                val result = chain.proceed()
+                startSpecialPinSession(chain.thisObject, classLoader)
+                result
+            })
+        hook(antiTheftPauseMethod)
+            .setId(ANTI_THEFT_PAUSE_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                stopSpecialPinSession(chain.thisObject)
+                chain.proceed()
+            })
+        hook(pinBasedDetachedMethod)
+            .setId(ANTI_THEFT_DETACHED_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                /** 父类方法服务多个数字页，只处理最终 AntiTheft 实例。 */
+                if (antiTheftControllerClass.isInstance(chain.thisObject)) {
+                    stopSpecialPinSession(chain.thisObject)
+                }
+                chain.proceed()
+            })
+        log(Log.INFO, LOG_TAG, "special_pin_hooks_installed")
     }
 
     /** 安装 Titan 2 图案控制器声明的精确恢复、暂停与脱离 Hook。 */
@@ -489,6 +605,7 @@ public class PixelLockscreenModule : XposedModule() {
         activePatternSession?.dispose()
         activePinSession?.dispose()
         activePasswordSession?.dispose()
+        activeSpecialPinSession?.dispose()
         activeSecurityController = controller
         log(Log.INFO, LOG_TAG, "security_controller_attached")
     }
@@ -501,6 +618,7 @@ public class PixelLockscreenModule : XposedModule() {
         activePatternSession?.dispose()
         activePinSession?.dispose()
         activePasswordSession?.dispose()
+        activeSpecialPinSession?.dispose()
         activeSecurityController = null
         log(Log.INFO, LOG_TAG, "security_controller_detached")
     }
@@ -524,6 +642,7 @@ public class PixelLockscreenModule : XposedModule() {
         }
         activePinSession?.dispose()
         activePasswordSession?.dispose()
+        activeSpecialPinSession?.dispose()
         previousSession?.dispose()
         /** 只有通过全部运行时合同才会进入首帧等待的新会话。 */
         val newSession = PixelPatternSecuritySession(
@@ -588,6 +707,7 @@ public class PixelLockscreenModule : XposedModule() {
         }
         activePatternSession?.dispose()
         activePasswordSession?.dispose()
+        activeSpecialPinSession?.dispose()
         previousSession?.dispose()
         /** 只有通过全部运行时合同才会进入首帧等待的新会话。 */
         val newSession = PixelPinSecuritySession(
@@ -652,6 +772,7 @@ public class PixelLockscreenModule : XposedModule() {
         }
         activePatternSession?.dispose()
         activePinSession?.dispose()
+        activeSpecialPinSession?.dispose()
         previousSession?.dispose()
         /** 只有通过输入连接、IME、回调和回退合同才会等待像素首帧。 */
         val newSession = PixelPasswordSecuritySession(
@@ -694,6 +815,69 @@ public class PixelLockscreenModule : XposedModule() {
         if (session.isBoundTo(passwordController)) {
             session.dispose()
             log(Log.INFO, LOG_TAG, "password_session_stopped")
+        }
+    }
+
+    /** 在原生 SIM 或 AntiTheft 页面恢复后幂等创建像素会话。 */
+    private fun startSpecialPinSession(specialController: Any?, classLoader: ClassLoader) {
+        if (specialController == null) {
+            log(Log.ERROR, LOG_TAG, "special_pin_controller_missing")
+            return
+        }
+        /** 当前已挂载的主安全容器。 */
+        val securityController = activeSecurityController ?: run {
+            log(Log.WARN, LOG_TAG, "special_pin_security_controller_unavailable")
+            return
+        }
+        /** 同一原生特殊控制器的重复恢复沿用现有会话。 */
+        val previousSession = activeSpecialPinSession
+        if (previousSession?.isBoundTo(specialController) == true) {
+            log(Log.INFO, LOG_TAG, "special_pin_session_reused")
+            return
+        }
+        activePatternSession?.dispose()
+        activePinSession?.dispose()
+        activePasswordSession?.dispose()
+        previousSession?.dispose()
+        /** 只有精确控件、原生点击链和恢复事务就绪后才等待像素首帧。 */
+        val newSession = PixelSpecialPinSecuritySession(
+            securityController = securityController,
+            specialController = specialController,
+            classLoader = classLoader,
+            onTakeoverChanged = { refreshCredentialTakeoverState() },
+            onFailure = { failedSession, throwable ->
+                if (activeSpecialPinSession === failedSession) {
+                    log(Log.ERROR, LOG_TAG, "special_pin_session_runtime_failed", throwable)
+                }
+            },
+            onDisposed = { disposedSession ->
+                if (activeSpecialPinSession === disposedSession) {
+                    activeSpecialPinSession = null
+                }
+            },
+        )
+        activeSpecialPinSession = newSession
+        try {
+            newSession.start()
+            log(Log.INFO, LOG_TAG, "special_pin_session_started")
+        } catch (throwable: Throwable) {
+            if (activeSpecialPinSession === newSession) {
+                activeSpecialPinSession = null
+            }
+            log(Log.ERROR, LOG_TAG, "special_pin_session_start_failed", throwable)
+        }
+    }
+
+    /** 只结束绑定指定原生 SIM 或 AntiTheft 控制器的会话。 */
+    private fun stopSpecialPinSession(specialController: Any?) {
+        if (specialController == null) {
+            return
+        }
+        /** 当前可能属于其他新控制器的特殊页会话。 */
+        val session = activeSpecialPinSession ?: return
+        if (session.isBoundTo(specialController)) {
+            session.dispose()
+            log(Log.INFO, LOG_TAG, "special_pin_session_stopped")
         }
     }
 
@@ -745,7 +929,8 @@ public class PixelLockscreenModule : XposedModule() {
         /** 当前是否有任一设备凭据页面已经完成像素首帧接管。 */
         val active = activePatternSession?.isTakeoverActive() == true ||
             activePinSession?.isTakeoverActive() == true ||
-            activePasswordSession?.isTakeoverActive() == true
+            activePasswordSession?.isTakeoverActive() == true ||
+            activeSpecialPinSession?.isTakeoverActive() == true
         activeSession?.setCredentialTakeoverActive(active)
     }
 
@@ -788,6 +973,14 @@ public class PixelLockscreenModule : XposedModule() {
         /** Titan 2 最终密码认证控制器类名。 */
         const val PASSWORD_CONTROLLER_CLASS: String =
             "com.android.keyguard.KeyguardPasswordViewController"
+
+        /** Titan 2 MediaTek SIM PIN/PUK/ME 最终控制器类名。 */
+        const val SIM_CONTROLLER_CLASS: String =
+            "com.mediatek.keyguard.Telephony.KeyguardSimPinPukMeViewController"
+
+        /** Titan 2 MediaTek AntiTheft 最终控制器类名。 */
+        const val ANTI_THEFT_CONTROLLER_CLASS: String =
+            "com.mediatek.keyguard.AntiTheft.KeyguardAntiTheftLockViewController"
 
         /** Titan 2 声明 PIN 恢复逻辑的父控制器类名。 */
         const val PIN_BASED_CONTROLLER_CLASS: String =
@@ -868,5 +1061,24 @@ public class PixelLockscreenModule : XposedModule() {
         /** 密码原生状态重置 Hook ID。 */
         const val PASSWORD_RESET_STATE_HOOK_ID: String =
             "pixel_lockscreen:password_reset_state"
+
+        /** SIM 页面恢复 Hook ID。 */
+        const val SIM_RESUME_HOOK_ID: String = "pixel_lockscreen:sim_resume"
+
+        /** SIM 页面暂停 Hook ID。 */
+        const val SIM_PAUSE_HOOK_ID: String = "pixel_lockscreen:sim_pause"
+
+        /** SIM 页面脱离 Hook ID。 */
+        const val SIM_DETACHED_HOOK_ID: String = "pixel_lockscreen:sim_detached"
+
+        /** AntiTheft 页面恢复 Hook ID。 */
+        const val ANTI_THEFT_RESUME_HOOK_ID: String = "pixel_lockscreen:antitheft_resume"
+
+        /** AntiTheft 页面暂停 Hook ID。 */
+        const val ANTI_THEFT_PAUSE_HOOK_ID: String = "pixel_lockscreen:antitheft_pause"
+
+        /** AntiTheft 页面脱离 Hook ID。 */
+        const val ANTI_THEFT_DETACHED_HOOK_ID: String =
+            "pixel_lockscreen:antitheft_detached"
     }
 }

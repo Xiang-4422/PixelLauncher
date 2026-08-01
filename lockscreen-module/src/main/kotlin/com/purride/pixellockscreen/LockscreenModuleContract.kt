@@ -29,4 +29,7 @@ internal object LockscreenModuleContract {
 
     /** M8 密码输入连接与回退链就绪，但最终批量验收前禁止实际安装 Hook。 */
     const val PASSWORD_TAKEOVER_ENABLED: Boolean = false
+
+    /** M9 SIM/PUK/ME 与 AntiTheft 原生转发链就绪，最终批量验收前保持关闭。 */
+    const val SPECIAL_PIN_TAKEOVER_ENABLED: Boolean = false
 }
