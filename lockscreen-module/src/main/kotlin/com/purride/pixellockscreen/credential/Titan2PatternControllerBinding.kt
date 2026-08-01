@@ -108,3 +108,60 @@ internal data class Titan2PatternControllerBinding(
         private const val MODE_PATTERN: String = "Pattern"
     }
 }
+
+/** Titan 2 主安全容器控制器对应的可覆盖根视图绑定。 */
+internal data class Titan2SecurityContainerViewBinding(
+    /** 原生主安全容器控制器。 */
+    val controller: Any,
+    /** 可安全承载覆盖层的原生 ConstraintLayout 容器。 */
+    val securityContainer: ViewGroup,
+) {
+    internal companion object {
+        /** 按精确控制器、视图类和继承字段解析安全容器。 */
+        @SuppressLint("BlockedPrivateApi", "PrivateApi")
+        fun bind(controller: Any, classLoader: ClassLoader): Titan2SecurityContainerViewBinding {
+            /** Titan 2 主安全容器控制器类。 */
+            val controllerClass = Class.forName(SECURITY_CONTROLLER_CLASS, false, classLoader)
+            check(controllerClass.isInstance(controller)) { "keyguard_security_controller_instance" }
+            /** Titan 2 可覆盖的主安全容器视图类。 */
+            val containerClass = Class.forName(SECURITY_CONTAINER_CLASS, false, classLoader)
+            /** 通用 ViewController 继承层级中的原生 View 字段。 */
+            val viewField = hierarchyField(controllerClass, VIEW_FIELD)
+            /** 当前主安全容器对象。 */
+            val securityContainer = requireNotNull(viewField.get(controller)) {
+                "keyguard_security_container_view"
+            }
+            check(containerClass.isInstance(securityContainer) && securityContainer is ViewGroup) {
+                "keyguard_security_container_view_instance"
+            }
+            return Titan2SecurityContainerViewBinding(controller, securityContainer)
+        }
+
+        /** 沿控制器父类链按精确名称解析字段。 */
+        private fun hierarchyField(owner: Class<*>, name: String): Field {
+            /** 当前待检查的控制器类。 */
+            var current: Class<*>? = owner
+            while (current != null) {
+                /** 当前类中可能存在的目标字段。 */
+                val field = runCatching { current.getDeclaredField(name) }.getOrNull()
+                if (field != null) {
+                    field.isAccessible = true
+                    return field
+                }
+                current = current.superclass
+            }
+            error("keyguard_security_container_field_missing:$name")
+        }
+
+        /** Titan 2 主安全容器控制器类名。 */
+        private const val SECURITY_CONTROLLER_CLASS: String =
+            "com.android.keyguard.KeyguardSecurityContainerController"
+
+        /** Titan 2 主安全容器视图类名。 */
+        private const val SECURITY_CONTAINER_CLASS: String =
+            "com.android.keyguard.KeyguardSecurityContainer"
+
+        /** 通用 ViewController 原生 View 字段名。 */
+        private const val VIEW_FIELD: String = "mView"
+    }
+}

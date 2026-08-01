@@ -19,6 +19,7 @@ import com.purride.pixellockscreen.credential.Titan2CredentialMode
 import com.purride.pixellockscreen.credential.Titan2EmergencyActionBridge
 import com.purride.pixellockscreen.credential.Titan2KeyguardSecurityBridge
 import com.purride.pixellockscreen.credential.Titan2PatternControllerBinding
+import com.purride.pixellockscreen.credential.Titan2SecurityContainerViewBinding
 import com.purride.pixellockscreen.ui.PatternCredentialHost
 import com.purride.pixellockscreen.ui.PatternCredentialUiState
 import kotlin.math.min
@@ -47,6 +48,9 @@ internal class PixelPatternSecuritySession(
     View.OnAttachStateChangeListener {
     /** 当前图案控制器的精确视图、回调与模式绑定。 */
     private lateinit var patternBinding: Titan2PatternControllerBinding
+
+    /** 当前主安全容器控制器对应的可覆盖 ViewGroup。 */
+    private lateinit var containerBinding: Titan2SecurityContainerViewBinding
 
     /** 当前主安全容器的原生回调与 LockPatternUtils 桥。 */
     private lateinit var securityBridge: Titan2KeyguardSecurityBridge
@@ -110,6 +114,13 @@ internal class PixelPatternSecuritySession(
         try {
             patternBinding = Titan2PatternControllerBinding.bind(patternController, classLoader)
             check(patternBinding.patternView.isAttachedToWindow) { "pattern_view_detached" }
+            containerBinding = Titan2SecurityContainerViewBinding.bind(
+                securityController,
+                classLoader,
+            )
+            check(containerBinding.securityContainer.isAttachedToWindow) {
+                "security_container_detached"
+            }
             securityBridge = Titan2KeyguardSecurityBridge.bind(securityController, classLoader)
             check(securityBridge.credentialMode == Titan2CredentialMode.PATTERN) {
                 "pattern_security_mode"
@@ -127,14 +138,18 @@ internal class PixelPatternSecuritySession(
                     CredentialBridgeContractResult.Ready,
             ) { "pattern_credential_contract" }
             coordinator = createCoordinator()
-            host = PatternCredentialHost(patternBinding.patternView.context, coordinator).apply {
+            host = PatternCredentialHost(containerBinding.securityContainer.context, coordinator).apply {
                 translationZ = PIXEL_OVERLAY_TRANSLATION_Z
             }
-            nativeVisibility = NativePatternVisibilityTransaction(patternBinding.patternView, host)
+            nativeVisibility = NativePatternVisibilityTransaction(
+                securityContainer = containerBinding.securityContainer,
+                patternView = patternBinding.patternView,
+                pixelHost = host,
+            )
             nativeVisibility.prepare()
             coordinator.showReady()
             host.addOnAttachStateChangeListener(this)
-            patternBinding.patternView.addView(
+            containerBinding.securityContainer.addView(
                 host,
                 ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -143,7 +158,7 @@ internal class PixelPatternSecuritySession(
             )
             check(nativeVisibility.isStructureValid()) { "pattern_host_attach_structure" }
             host.viewTreeObserver.addOnDrawListener(this)
-            patternBinding.patternView.viewTreeObserver.addOnPreDrawListener(this)
+            containerBinding.securityContainer.viewTreeObserver.addOnPreDrawListener(this)
             started = true
             /** 页面恢复时可能已经存在的系统锁定截止时间。 */
             val initialDeadline = securityBridge.currentLockoutDeadline()
@@ -186,8 +201,8 @@ internal class PixelPatternSecuritySession(
             if (::host.isInitialized && host.viewTreeObserver.isAlive) {
                 host.viewTreeObserver.removeOnDrawListener(this)
             }
-            if (!disposed && ::patternBinding.isInitialized) {
-                patternBinding.patternView.invalidate()
+            if (!disposed && ::containerBinding.isInitialized) {
+                containerBinding.securityContainer.invalidate()
             }
         }
     }
@@ -331,7 +346,7 @@ internal class PixelPatternSecuritySession(
             if (currentView.visibility != View.VISIBLE || currentView.alpha <= MIN_VISIBLE_ALPHA) {
                 return false
             }
-            if (currentView === patternBinding.patternView) {
+            if (currentView === containerBinding.securityContainer) {
                 return currentView.windowVisibility == View.VISIBLE
             }
             currentView = currentView.parent as? View
@@ -378,8 +393,11 @@ internal class PixelPatternSecuritySession(
             takeoverActive = false
             runCatching { onTakeoverChanged(false) }
         }
-        if (::patternBinding.isInitialized && patternBinding.patternView.viewTreeObserver.isAlive) {
-            patternBinding.patternView.viewTreeObserver.removeOnPreDrawListener(this)
+        if (
+            ::containerBinding.isInitialized &&
+            containerBinding.securityContainer.viewTreeObserver.isAlive
+        ) {
+            containerBinding.securityContainer.viewTreeObserver.removeOnPreDrawListener(this)
         }
         if (::host.isInitialized) {
             if (host.viewTreeObserver.isAlive) {
@@ -395,10 +413,10 @@ internal class PixelPatternSecuritySession(
         }
         if (
             ::host.isInitialized &&
-            ::patternBinding.isInitialized &&
-            host.parent === patternBinding.patternView
+            ::containerBinding.isInitialized &&
+            host.parent === containerBinding.securityContainer
         ) {
-            patternBinding.patternView.removeView(host)
+            containerBinding.securityContainer.removeView(host)
         }
         if (::host.isInitialized) {
             runCatching { host.dispose() }
