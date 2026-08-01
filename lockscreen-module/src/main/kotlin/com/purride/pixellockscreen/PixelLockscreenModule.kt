@@ -29,6 +29,9 @@ public class PixelLockscreenModule : XposedModule() {
     /** 当前 SystemUI 进程中唯一活跃的像素 PIN 认证会话。 */
     private var activePinSession: PixelPinSecuritySession? = null
 
+    /** 当前 SystemUI 进程中唯一活跃的像素密码认证会话。 */
+    private var activePasswordSession: PixelPasswordSecuritySession? = null
+
     /** 记录当前进程并立即脱离非 SystemUI 主进程。 */
     override fun onModuleLoaded(param: XposedModuleInterface.ModuleLoadedParam) {
         /** 框架报告的当前进程名。 */
@@ -92,7 +95,8 @@ public class PixelLockscreenModule : XposedModule() {
                 })
             if (
                 LockscreenModuleContract.PATTERN_TAKEOVER_ENABLED ||
-                LockscreenModuleContract.PIN_TAKEOVER_ENABLED
+                LockscreenModuleContract.PIN_TAKEOVER_ENABLED ||
+                LockscreenModuleContract.PASSWORD_TAKEOVER_ENABLED
             ) {
                 installCredentialSecurityHooks(classLoader)
             } else {
@@ -202,6 +206,11 @@ public class PixelLockscreenModule : XposedModule() {
             installPinSecurityHooks(classLoader)
         } else {
             log(Log.INFO, LOG_TAG, "pin_hooks_disabled")
+        }
+        if (LockscreenModuleContract.PASSWORD_TAKEOVER_ENABLED) {
+            installPasswordSecurityHooks(classLoader)
+        } else {
+            log(Log.INFO, LOG_TAG, "password_hooks_disabled")
         }
         log(Log.INFO, LOG_TAG, "credential_container_hooks_installed")
     }
@@ -328,6 +337,145 @@ public class PixelLockscreenModule : XposedModule() {
         log(Log.INFO, LOG_TAG, "pin_hooks_installed")
     }
 
+    /** 安装 Titan 2 密码控制器及字符凭据父类中经过 APK 验证的精确生命周期 Hook。 */
+    @SuppressLint("PrivateApi")
+    private fun installPasswordSecurityHooks(classLoader: ClassLoader) {
+        /** Titan 2 最终密码控制器类。 */
+        val passwordControllerClass = Class.forName(
+            PASSWORD_CONTROLLER_CLASS,
+            false,
+            classLoader,
+        )
+        /** 声明通用字符凭据校验与限流方法的父控制器类。 */
+        val absKeyInputControllerClass = Class.forName(
+            ABS_KEY_INPUT_CONTROLLER_CLASS,
+            false,
+            classLoader,
+        )
+        check(absKeyInputControllerClass.isAssignableFrom(passwordControllerClass)) {
+            "password_abs_controller_parent"
+        }
+        /** 密码控制器自己声明的页面恢复方法。 */
+        val passwordResumeMethod = passwordControllerClass.getDeclaredMethod(
+            CREDENTIAL_RESUME_METHOD,
+            Int::class.javaPrimitiveType,
+        )
+        check(passwordResumeMethod.returnType == Void.TYPE) { "password_resume_signature" }
+        /** 密码控制器自己声明的页面暂停方法。 */
+        val passwordPauseMethod = exactVoidMethod(
+            passwordControllerClass,
+            CREDENTIAL_PAUSE_METHOD,
+        )
+        /** 密码控制器自己声明的脱离方法。 */
+        val passwordDetachedMethod = exactVoidMethod(
+            passwordControllerClass,
+            CONTROLLER_VIEW_DETACHED_METHOD,
+        )
+        /** 密码控制器自己声明的原生状态重置方法。 */
+        val passwordResetStateMethod = exactVoidMethod(
+            passwordControllerClass,
+            PASSWORD_RESET_STATE_METHOD,
+        )
+        /** 字符凭据父类声明的原生校验入口。 */
+        val verifyPasswordMethod = exactVoidMethod(
+            absKeyInputControllerClass,
+            PASSWORD_VERIFY_METHOD,
+        )
+        /** 字符凭据父类声明的认证结果处理方法。 */
+        val passwordCheckedMethod = absKeyInputControllerClass.getDeclaredMethod(
+            PASSWORD_CHECKED_METHOD,
+            Int::class.javaPrimitiveType,
+            Int::class.javaPrimitiveType,
+            Boolean::class.javaPrimitiveType,
+            Boolean::class.javaPrimitiveType,
+        )
+        check(passwordCheckedMethod.returnType == Void.TYPE) {
+            "password_checked_signature"
+        }
+        /** 字符凭据父类声明的系统限流入口。 */
+        val passwordLockoutMethod = absKeyInputControllerClass.getDeclaredMethod(
+            PASSWORD_LOCKOUT_METHOD,
+            Long::class.javaPrimitiveType,
+        )
+        check(passwordLockoutMethod.returnType == Void.TYPE) {
+            "password_lockout_signature"
+        }
+
+        hook(passwordResumeMethod)
+            .setId(PASSWORD_RESUME_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                /** 原生页面完成恢复和 IME 准备后再尝试像素接管。 */
+                val result = chain.proceed()
+                startPasswordSession(chain.thisObject, classLoader)
+                result
+            })
+        hook(passwordPauseMethod)
+            .setId(PASSWORD_PAUSE_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                /** 原生暂停逻辑依赖输入框可见性，必须先完整恢复原生绘制。 */
+                stopPasswordSession(chain.thisObject)
+                chain.proceed()
+            })
+        hook(passwordDetachedMethod)
+            .setId(PASSWORD_DETACHED_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                /** 页面重建前再次执行幂等回退。 */
+                stopPasswordSession(chain.thisObject)
+                chain.proceed()
+            })
+        hook(verifyPasswordMethod)
+            .setId(PASSWORD_VERIFY_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                /** 只通知最终密码控制器会话，原生方法仍持有和提交唯一凭据对象。 */
+                if (passwordControllerClass.isInstance(chain.thisObject)) {
+                    notifyPasswordVerificationStarted(chain.thisObject)
+                }
+                chain.proceed()
+            })
+        hook(passwordCheckedMethod)
+            .setId(PASSWORD_CHECKED_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                /** 先让 SystemUI 完成失败计数、限流或 dismiss，再读取非敏感结果。 */
+                val result = chain.proceed()
+                if (passwordControllerClass.isInstance(chain.thisObject)) {
+                    /** SystemUI 返回的限流毫秒数。 */
+                    val timeoutMillis = chain.getArg(1) as Int
+                    /** SystemUI 返回的密码匹配结果。 */
+                    val matched = chain.getArg(2) as Boolean
+                    notifyPasswordChecked(chain.thisObject, timeoutMillis, matched)
+                }
+                result
+            })
+        hook(passwordLockoutMethod)
+            .setId(PASSWORD_LOCKOUT_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                /** 原生先禁用输入并启动自己的 CountDownTimer，再同步同一截止时间。 */
+                val result = chain.proceed()
+                if (passwordControllerClass.isInstance(chain.thisObject)) {
+                    /** SystemUI 使用的单调时钟锁定截止时间。 */
+                    val deadlineElapsedRealtime = chain.getArg(0) as Long
+                    notifyPasswordLockoutStarted(chain.thisObject, deadlineElapsedRealtime)
+                }
+                result
+            })
+        hook(passwordResetStateMethod)
+            .setId(PASSWORD_RESET_STATE_HOOK_ID)
+            .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+            .intercept(XposedInterface.Hooker { chain ->
+                /** 原生先恢复输入、提示和 IME 条件，再同步非敏感展示状态。 */
+                val result = chain.proceed()
+                notifyPasswordStateReset(chain.thisObject)
+                result
+            })
+        log(Log.INFO, LOG_TAG, "password_hooks_installed")
+    }
+
     /** 保存当前主安全容器；对象替换时先结束全部旧凭据会话。 */
     private fun attachSecurityController(controller: Any?) {
         if (controller == null) {
@@ -339,6 +487,7 @@ public class PixelLockscreenModule : XposedModule() {
         }
         activePatternSession?.dispose()
         activePinSession?.dispose()
+        activePasswordSession?.dispose()
         activeSecurityController = controller
         log(Log.INFO, LOG_TAG, "security_controller_attached")
     }
@@ -350,6 +499,7 @@ public class PixelLockscreenModule : XposedModule() {
         }
         activePatternSession?.dispose()
         activePinSession?.dispose()
+        activePasswordSession?.dispose()
         activeSecurityController = null
         log(Log.INFO, LOG_TAG, "security_controller_detached")
     }
@@ -372,6 +522,7 @@ public class PixelLockscreenModule : XposedModule() {
             return
         }
         activePinSession?.dispose()
+        activePasswordSession?.dispose()
         previousSession?.dispose()
         /** 只有通过全部运行时合同才会进入首帧等待的新会话。 */
         val newSession = PixelPatternSecuritySession(
@@ -435,6 +586,7 @@ public class PixelLockscreenModule : XposedModule() {
             return
         }
         activePatternSession?.dispose()
+        activePasswordSession?.dispose()
         previousSession?.dispose()
         /** 只有通过全部运行时合同才会进入首帧等待的新会话。 */
         val newSession = PixelPinSecuritySession(
@@ -480,11 +632,119 @@ public class PixelLockscreenModule : XposedModule() {
         }
     }
 
+    /** 在原生密码页完成恢复后幂等创建像素展示会话。 */
+    private fun startPasswordSession(passwordController: Any?, classLoader: ClassLoader) {
+        if (passwordController == null) {
+            log(Log.ERROR, LOG_TAG, "password_controller_missing")
+            return
+        }
+        /** 当前已挂载的主安全容器。 */
+        val securityController = activeSecurityController ?: run {
+            log(Log.WARN, LOG_TAG, "password_security_controller_unavailable")
+            return
+        }
+        /** 同一原生密码控制器的重复恢复沿用现有会话。 */
+        val previousSession = activePasswordSession
+        if (previousSession?.isBoundTo(passwordController) == true) {
+            log(Log.INFO, LOG_TAG, "password_session_reused")
+            return
+        }
+        activePatternSession?.dispose()
+        activePinSession?.dispose()
+        previousSession?.dispose()
+        /** 只有通过输入连接、IME、回调和回退合同才会等待像素首帧。 */
+        val newSession = PixelPasswordSecuritySession(
+            securityController = securityController,
+            passwordController = passwordController,
+            classLoader = classLoader,
+            onTakeoverChanged = {
+                refreshCredentialTakeoverState()
+            },
+            onFailure = { failedSession, throwable ->
+                if (activePasswordSession === failedSession) {
+                    log(Log.ERROR, LOG_TAG, "password_session_runtime_failed", throwable)
+                }
+            },
+            onDisposed = { disposedSession ->
+                if (activePasswordSession === disposedSession) {
+                    activePasswordSession = null
+                }
+            },
+        )
+        activePasswordSession = newSession
+        try {
+            newSession.start()
+            log(Log.INFO, LOG_TAG, "password_session_started")
+        } catch (throwable: Throwable) {
+            if (activePasswordSession === newSession) {
+                activePasswordSession = null
+            }
+            log(Log.ERROR, LOG_TAG, "password_session_start_failed", throwable)
+        }
+    }
+
+    /** 只结束绑定指定原生控制器的密码会话。 */
+    private fun stopPasswordSession(passwordController: Any?) {
+        if (passwordController == null) {
+            return
+        }
+        /** 当前可能属于其他新控制器的密码会话。 */
+        val session = activePasswordSession ?: return
+        if (session.isBoundTo(passwordController)) {
+            session.dispose()
+            log(Log.INFO, LOG_TAG, "password_session_stopped")
+        }
+    }
+
+    /** 向当前同源密码会话发送原生校验开始事件。 */
+    private fun notifyPasswordVerificationStarted(passwordController: Any?) {
+        /** 当前可能已因页面切换而释放的密码会话。 */
+        val session = activePasswordSession ?: return
+        if (passwordController != null && session.isBoundTo(passwordController)) {
+            session.onVerificationStarted()
+        }
+    }
+
+    /** 向当前同源密码会话发送原生校验结果。 */
+    private fun notifyPasswordChecked(
+        passwordController: Any?,
+        timeoutMillis: Int,
+        matched: Boolean,
+    ) {
+        /** 当前可能已因成功 dismiss 而释放的密码会话。 */
+        val session = activePasswordSession ?: return
+        if (passwordController != null && session.isBoundTo(passwordController)) {
+            session.onPasswordChecked(timeoutMillis, matched)
+        }
+    }
+
+    /** 向当前同源密码会话发送原生锁定截止时间。 */
+    private fun notifyPasswordLockoutStarted(
+        passwordController: Any?,
+        deadlineElapsedRealtime: Long,
+    ) {
+        /** 当前仍在展示的密码会话。 */
+        val session = activePasswordSession ?: return
+        if (passwordController != null && session.isBoundTo(passwordController)) {
+            session.onLockoutStarted(deadlineElapsedRealtime)
+        }
+    }
+
+    /** 向当前同源密码会话发送原生状态重置事件。 */
+    private fun notifyPasswordStateReset(passwordController: Any?) {
+        /** 当前仍在展示的密码会话。 */
+        val session = activePasswordSession ?: return
+        if (passwordController != null && session.isBoundTo(passwordController)) {
+            session.onNativeStateReset()
+        }
+    }
+
     /** 按所有凭据会话的真实首帧状态统一暂停或恢复普通像素锁屏。 */
     private fun refreshCredentialTakeoverState() {
         /** 当前是否有任一设备凭据页面已经完成像素首帧接管。 */
         val active = activePatternSession?.isTakeoverActive() == true ||
-            activePinSession?.isTakeoverActive() == true
+            activePinSession?.isTakeoverActive() == true ||
+            activePasswordSession?.isTakeoverActive() == true
         activeSession?.setCredentialTakeoverActive(active)
     }
 
@@ -524,6 +784,10 @@ public class PixelLockscreenModule : XposedModule() {
         const val PIN_CONTROLLER_CLASS: String =
             "com.android.keyguard.KeyguardPinViewController"
 
+        /** Titan 2 最终密码认证控制器类名。 */
+        const val PASSWORD_CONTROLLER_CLASS: String =
+            "com.android.keyguard.KeyguardPasswordViewController"
+
         /** Titan 2 声明 PIN 恢复逻辑的父控制器类名。 */
         const val PIN_BASED_CONTROLLER_CLASS: String =
             "com.android.keyguard.KeyguardPinBasedInputViewController"
@@ -543,6 +807,18 @@ public class PixelLockscreenModule : XposedModule() {
 
         /** 设备凭据页面暂停方法名。 */
         const val CREDENTIAL_PAUSE_METHOD: String = "onPause"
+
+        /** 密码控制器原生状态重置方法名。 */
+        const val PASSWORD_RESET_STATE_METHOD: String = "resetState"
+
+        /** 字符凭据父控制器原生校验入口方法名。 */
+        const val PASSWORD_VERIFY_METHOD: String = "verifyPasswordAndUnlock"
+
+        /** 字符凭据父控制器原生校验结果方法名。 */
+        const val PASSWORD_CHECKED_METHOD: String = "onPasswordChecked"
+
+        /** 字符凭据父控制器原生限流入口方法名。 */
+        const val PASSWORD_LOCKOUT_METHOD: String = "handleAttemptLockout"
 
         /** 主安全容器挂载 Hook ID。 */
         const val SECURITY_ATTACHED_HOOK_ID: String =
@@ -569,5 +845,27 @@ public class PixelLockscreenModule : XposedModule() {
 
         /** PIN 页面脱离 Hook ID。 */
         const val PIN_DETACHED_HOOK_ID: String = "pixel_lockscreen:pin_detached"
+
+        /** 密码页面恢复 Hook ID。 */
+        const val PASSWORD_RESUME_HOOK_ID: String = "pixel_lockscreen:password_resume"
+
+        /** 密码页面暂停 Hook ID。 */
+        const val PASSWORD_PAUSE_HOOK_ID: String = "pixel_lockscreen:password_pause"
+
+        /** 密码页面脱离 Hook ID。 */
+        const val PASSWORD_DETACHED_HOOK_ID: String = "pixel_lockscreen:password_detached"
+
+        /** 密码原生校验开始 Hook ID。 */
+        const val PASSWORD_VERIFY_HOOK_ID: String = "pixel_lockscreen:password_verify"
+
+        /** 密码原生校验结果 Hook ID。 */
+        const val PASSWORD_CHECKED_HOOK_ID: String = "pixel_lockscreen:password_checked"
+
+        /** 密码原生限流 Hook ID。 */
+        const val PASSWORD_LOCKOUT_HOOK_ID: String = "pixel_lockscreen:password_lockout"
+
+        /** 密码原生状态重置 Hook ID。 */
+        const val PASSWORD_RESET_STATE_HOOK_ID: String =
+            "pixel_lockscreen:password_reset_state"
     }
 }

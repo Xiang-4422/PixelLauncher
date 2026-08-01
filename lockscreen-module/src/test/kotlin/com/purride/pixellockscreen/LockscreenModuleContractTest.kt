@@ -14,12 +14,13 @@ class LockscreenModuleContractTest {
         assertEquals("com.android.systemui", LockscreenModuleContract.SYSTEM_UI_PROCESS)
     }
 
-    /** 图案接管保持启用，PIN 在生命周期代码完成后仍须等待设备门禁。 */
+    /** 图案接管保持启用，PIN 和密码在代码完成后仍须等待最终批量设备门禁。 */
     @Test
     fun onlyRuntimeVerifiedCredentialTakeoverIsEnabled() {
         assertTrue(LockscreenModuleContract.READ_ONLY_HOOK_ENABLED)
         assertTrue(LockscreenModuleContract.VISUAL_TAKEOVER_ENABLED)
         assertTrue(LockscreenModuleContract.PATTERN_TAKEOVER_ENABLED)
         assertFalse(LockscreenModuleContract.PIN_TAKEOVER_ENABLED)
+        assertFalse(LockscreenModuleContract.PASSWORD_TAKEOVER_ENABLED)
     }
 }
