@@ -106,7 +106,11 @@ internal fun buildLockscreenScene(request: LockscreenSceneRequest): Widget {
                                     key = "lockscreen-date",
                                 ),
                                 batteryStatus(request.state, palette),
-                                biometricStatus(request.state.biometric, palette),
+                                visibleSecurityStatus(
+                                    biometric = request.state.biometric,
+                                    notice = request.state.securityNotice,
+                                    palette = palette,
+                                ),
                             ),
                         ),
                     ),
@@ -121,6 +125,79 @@ internal fun buildLockscreenScene(request: LockscreenSceneRequest): Widget {
             ),
         ),
     )
+}
+
+/** 信任提示存在时优先于生物识别阶段，确保单个安全区域只表达一个系统决策。 */
+private fun visibleSecurityStatus(
+    biometric: LockscreenBiometricUiState,
+    notice: LockscreenSecurityNoticeUiState,
+    palette: ProductPalette,
+): Widget = if (notice.isVisible) {
+    securityNoticeStatus(notice, palette)
+} else {
+    biometricStatus(biometric, palette)
+}
+
+/** 绘制信任代理或 Extend Unlock 的单行像素安全提示。 */
+private fun securityNoticeStatus(
+    state: LockscreenSecurityNoticeUiState,
+    palette: ProductPalette,
+): Widget {
+    /** 信任成功、错误和持续解锁分别使用的可读主题颜色。 */
+    val color = when (state.phase) {
+        LockscreenSecurityNoticePhase.TRUSTED -> palette.primary
+        LockscreenSecurityNoticePhase.TRUST_ERROR -> palette.alert
+        LockscreenSecurityNoticePhase.EXTENDED_UNLOCK -> palette.secondary
+        LockscreenSecurityNoticePhase.NONE -> palette.muted
+    }
+    return Row(
+        mainAxisSize = MainAxisSize.MIN,
+        mainAxisAlignment = MainAxisAlignment.CENTER,
+        crossAxisAlignment = CrossAxisAlignment.CENTER,
+        spacing = 3,
+        children = listOf(
+            securityNoticeGlyph(state.phase, color),
+            outlinedLockscreenText(
+                text = state.messageText,
+                foreground = color,
+                backing = palette.background,
+                fontScale = 1,
+                key = "lockscreen-security-notice-text",
+            ),
+        ),
+        key = "lockscreen-security-notice",
+    )
+}
+
+/** 为信任成功、错误和持续解锁绘制稳定的 9×9 像素图形。 */
+private fun securityNoticeGlyph(
+    phase: LockscreenSecurityNoticePhase,
+    color: PixelColor,
+): Widget = CustomPaint(width = 9, height = 9, key = "lockscreen-security-notice-glyph") {
+    when (phase) {
+        LockscreenSecurityNoticePhase.TRUSTED -> {
+            drawRect(left = 2, top = 4, width = 5, height = 4, color = color)
+            fillRect(left = 5, top = 2, width = 2, height = 2, color = color)
+            fillRect(left = 6, top = 1, width = 2, height = 1, color = color)
+        }
+        LockscreenSecurityNoticePhase.TRUST_ERROR -> {
+            fillRect(left = 1, top = 1, width = 1, height = 1, color = color)
+            fillRect(left = 7, top = 1, width = 1, height = 1, color = color)
+            fillRect(left = 2, top = 2, width = 1, height = 1, color = color)
+            fillRect(left = 6, top = 2, width = 1, height = 1, color = color)
+            fillRect(left = 3, top = 3, width = 3, height = 3, color = color)
+            fillRect(left = 2, top = 6, width = 1, height = 1, color = color)
+            fillRect(left = 6, top = 6, width = 1, height = 1, color = color)
+            fillRect(left = 1, top = 7, width = 1, height = 1, color = color)
+            fillRect(left = 7, top = 7, width = 1, height = 1, color = color)
+        }
+        LockscreenSecurityNoticePhase.EXTENDED_UNLOCK -> {
+            drawRect(left = 1, top = 1, width = 7, height = 7, color = color)
+            fillRect(left = 4, top = 2, width = 1, height = 3, color = color)
+            fillRect(left = 4, top = 4, width = 3, height = 1, color = color)
+        }
+        LockscreenSecurityNoticePhase.NONE -> Unit
+    }
 }
 
 /** 在普通锁屏中绘制系统生物识别阶段；不可用状态保持零尺寸。 */

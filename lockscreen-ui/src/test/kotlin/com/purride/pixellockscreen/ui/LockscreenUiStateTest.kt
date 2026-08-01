@@ -70,6 +70,70 @@ class LockscreenUiStateTest {
         assertTrue(biometric.isVisible)
     }
 
+    /** 信任提示必须保持阶段与单行文字一致。 */
+    @Test
+    fun securityNoticeRejectsInvalidMessages() {
+        assertFails {
+            LockscreenSecurityNoticeUiState(
+                phase = LockscreenSecurityNoticePhase.TRUSTED,
+                messageText = "",
+            )
+        }
+        assertFails {
+            LockscreenSecurityNoticeUiState(
+                phase = LockscreenSecurityNoticePhase.NONE,
+                messageText = "TRUSTED",
+            )
+        }
+        assertFails {
+            LockscreenSecurityNoticeUiState(
+                phase = LockscreenSecurityNoticePhase.TRUST_ERROR,
+                messageText = "A\nB",
+            )
+        }
+    }
+
+    /** 信任提示应优先占用安全区域并覆盖所有可见阶段。 */
+    @Test
+    fun securityNoticePhasesRenderOverBiometricState() {
+        LockscreenSecurityNoticePhase.entries
+            .filterNot { phase -> phase == LockscreenSecurityNoticePhase.NONE }
+            .forEach { phase ->
+                /** 当前信任阶段的离屏像素宿主。 */
+                val tester = PixelTester()
+                try {
+                    tester.pumpWidget(
+                        mediaRoot(
+                            child = buildLockscreenScene(
+                                LockscreenSceneRequest(
+                                    state = state().copy(
+                                        biometric = LockscreenBiometricUiState(
+                                            modality = LockscreenBiometricModality.FINGERPRINT,
+                                            phase = LockscreenBiometricPhase.SCANNING,
+                                        ),
+                                        securityNotice = LockscreenSecurityNoticeUiState(
+                                            phase = phase,
+                                            messageText = "SYSTEM TRUST STATUS",
+                                        ),
+                                    ),
+                                    family = ProductThemeFamily.ARCADE,
+                                    brightness = ProductThemeBrightness.DARK,
+                                    isLandscape = false,
+                                ),
+                            ),
+                            width = LOCKSCREEN_PORTRAIT_WIDTH,
+                            height = LOCKSCREEN_PORTRAIT_HEIGHT,
+                        ),
+                        logicalWidth = LOCKSCREEN_PORTRAIT_WIDTH,
+                        logicalHeight = LOCKSCREEN_PORTRAIT_HEIGHT,
+                    )
+                    assertEquals(PixelColor.Transparent, tester.pixelAt(0, 0))
+                } finally {
+                    tester.dispose()
+                }
+            }
+    }
+
     /** 大时钟在纵屏使用四倍像素，横屏固定降低为三倍。 */
     @Test
     fun timeScaleFollowsOrientation() {
