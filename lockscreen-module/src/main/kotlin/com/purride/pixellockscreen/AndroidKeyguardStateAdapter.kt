@@ -184,6 +184,7 @@ internal class AndroidKeyguardStateAdapter(
                 securityNotice = securityNoticeSnapshot,
                 notifications = contentSnapshot.notifications,
                 media = contentSnapshot.media,
+                quickActions = contentSnapshot.quickActions,
                 ambient = lockscreenAmbientUiState(
                     isInteractive = powerManager.isInteractive,
                     epochMillis = now.time,

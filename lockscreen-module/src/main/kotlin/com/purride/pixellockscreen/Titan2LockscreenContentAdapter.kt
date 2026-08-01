@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import com.purride.pixellockscreen.ui.LockscreenMediaUiState
 import com.purride.pixellockscreen.ui.LockscreenNotificationUiState
+import com.purride.pixellockscreen.ui.LockscreenQuickActionUiState
 import java.lang.reflect.Field
 import java.util.LinkedHashMap
 
@@ -17,6 +18,8 @@ internal data class Titan2LockscreenContentSnapshot(
     val notifications: List<LockscreenNotificationUiState> = emptyList(),
     /** SystemUI 当前可见媒体播放器的摘要。 */
     val media: LockscreenMediaUiState = LockscreenMediaUiState(),
+    /** SystemUI 当前配置且可用的左右快捷槽位。 */
+    val quickActions: List<LockscreenQuickActionUiState> = emptyList(),
 )
 
 /**
@@ -56,6 +59,10 @@ internal class Titan2LockscreenContentAdapter private constructor(
     private val mediaArtistField: Field,
     /** MediaData 播放状态字段。 */
     private val mediaPlayingField: Field,
+    /** 原生左侧快捷操作 View。 */
+    private val startActionView: View,
+    /** 原生右侧快捷操作 View。 */
+    private val endActionView: View,
 ) {
     /** 最近一次完整快照中脱敏通知键到原生通知行的映射。 */
     private var notificationRowsBySafeKey: Map<String, View> = emptyMap()
@@ -63,10 +70,14 @@ internal class Titan2LockscreenContentAdapter private constructor(
     /** 最近一次完整快照选中的原生媒体控制面板。 */
     private var currentMediaPanel: Any? = null
 
+    /** 最近一次快照中槽位键到原生快捷操作 View 的映射。 */
+    private var quickActionViewsByKey: Map<String, View> = emptyMap()
+
     /** 读取一帧通知和媒体摘要；任何合同变化由上层立即触发原生回退。 */
     fun snapshot(): Titan2LockscreenContentSnapshot = Titan2LockscreenContentSnapshot(
         notifications = notificationSnapshot(),
         media = mediaSnapshot(),
+        quickActions = quickActionSnapshot(),
     )
 
     /** 通过 SystemUI 当前通知行已有的点击监听器处理像素通知卡请求。 */
@@ -98,6 +109,18 @@ internal class Titan2LockscreenContentAdapter private constructor(
             "lockscreen_media_action_unavailable"
         }
         check(button.performClick()) { "lockscreen_media_action_rejected" }
+    }
+
+    /** 通过当前槽位原生 View 已安装的点击监听器执行快捷操作。 */
+    fun performQuickAction(actionKey: String) {
+        /** 最近一帧与固定槽位键匹配的原生操作 View。 */
+        val actionView = quickActionViewsByKey[actionKey]
+            ?: error("lockscreen_quick_action_missing")
+        check(actionView.visibility == View.VISIBLE && actionView.isEnabled) {
+            "lockscreen_quick_action_stale"
+        }
+        check(actionView.hasOnClickListeners()) { "lockscreen_quick_action_unavailable" }
+        check(actionView.performClick()) { "lockscreen_quick_action_rejected" }
     }
 
     /** 按原生栈顺序读取最多三条当前 Keyguard 通知。 */
@@ -190,6 +213,34 @@ internal class Titan2LockscreenContentAdapter private constructor(
         return LockscreenMediaUiState()
     }
 
+    /** 读取当前真正可点击且具有系统无障碍名称的左右快捷槽位。 */
+    private fun quickActionSnapshot(): List<LockscreenQuickActionUiState> {
+        /** 当前帧确认可用的槽位映射。 */
+        val availableViews = linkedMapOf<String, View>()
+        /** 当前帧允许进入像素 UI 的快捷操作。 */
+        val actions = listOf(
+            LockscreenQuickActionUiState.START_KEY to startActionView,
+            LockscreenQuickActionUiState.END_KEY to endActionView,
+        ).mapNotNull { (key, actionView) ->
+            if (
+                actionView.visibility != View.VISIBLE ||
+                !actionView.isEnabled ||
+                !actionView.hasOnClickListeners()
+            ) {
+                return@mapNotNull null
+            }
+            /** SystemUI 为当前实际动作提供的无障碍名称。 */
+            val label = sanitizeLockscreenContentText(actionView.contentDescription)
+            if (label.isBlank()) {
+                return@mapNotNull null
+            }
+            availableViews[key] = actionView
+            LockscreenQuickActionUiState(key = key, labelText = label)
+        }
+        quickActionViewsByKey = availableViews
+        return actions
+    }
+
     internal companion object {
         /** 按精确资源、类和字段签名绑定 Titan 2 已启动的遮罩窗口。 */
         @SuppressLint("DiscouragedApi", "BlockedPrivateApi", "PrivateApi")
@@ -220,6 +271,13 @@ internal class Titan2LockscreenContentAdapter private constructor(
             val controlPanelClass = Class.forName(MEDIA_CONTROL_PANEL_CLASS, false, classLoader)
             val mediaDataClass = Class.forName(MEDIA_DATA_CLASS, false, classLoader)
             val mediaViewHolderClass = Class.forName(MEDIA_VIEW_HOLDER_CLASS, false, classLoader)
+            /** 原生底部区域以及必须位于其中的左右快捷 View。 */
+            val bottomArea = requireView(shadeWindow, BOTTOM_AREA_RESOURCE)
+            val startAction = requireView(shadeWindow, START_ACTION_RESOURCE)
+            val endAction = requireView(shadeWindow, END_ACTION_RESOURCE)
+            check(startAction.isDescendantOf(bottomArea) && endAction.isDescendantOf(bottomArea)) {
+                "lockscreen_quick_action_parent"
+            }
             return Titan2LockscreenContentAdapter(
                 notificationStack = stack,
                 notificationRowClass = rowClass,
@@ -272,7 +330,34 @@ internal class Titan2LockscreenContentAdapter private constructor(
                     MEDIA_PLAYING_FIELD,
                     java.lang.Boolean::class.java,
                 ),
+                startActionView = startAction,
+                endActionView = endAction,
             )
+        }
+
+        /** 按精确 SystemUI 资源名解析当前窗口中的必需 View。 */
+        @SuppressLint("DiscouragedApi")
+        private fun requireView(shadeWindow: ViewGroup, resourceName: String): View {
+            /** 当前资源名解析出的 SystemUI ID。 */
+            val resourceId = shadeWindow.resources.getIdentifier(
+                resourceName,
+                "id",
+                LockscreenModuleContract.SYSTEM_UI_PACKAGE,
+            )
+            check(resourceId != 0) { "lockscreen_content_resource:$resourceName" }
+            return shadeWindow.findViewById(resourceId)
+                ?: error("lockscreen_content_view:$resourceName")
+        }
+
+        /** 判断当前 View 是否仍属于预期原生底部区域。 */
+        private fun View.isDescendantOf(ancestor: View): Boolean {
+            /** 当前待检查的 View 或父节点。 */
+            var current: View? = this
+            while (current != null) {
+                if (current === ancestor) return true
+                current = current.parent as? View
+            }
+            return false
         }
 
         /** 解析实例字段并要求精确类型。 */
@@ -333,6 +418,12 @@ internal class Titan2LockscreenContentAdapter private constructor(
         private const val PANEL_MEDIA_VIEW_HOLDER_FIELD: String = "mMediaViewHolder"
         /** 媒体视图持有者播放暂停按钮字段名。 */
         private const val MEDIA_PLAY_PAUSE_FIELD: String = "actionPlayPause"
+        /** Titan 2 原生底部快捷区域资源名。 */
+        private const val BOTTOM_AREA_RESOURCE: String = "keyguard_bottom_area"
+        /** Titan 2 原生左侧快捷槽位资源名。 */
+        private const val START_ACTION_RESOURCE: String = "start_button"
+        /** Titan 2 原生右侧快捷槽位资源名。 */
+        private const val END_ACTION_RESOURCE: String = "end_button"
         /** 媒体曲目字段名。 */
         private const val MEDIA_SONG_FIELD: String = "song"
         /** 媒体艺术家字段名。 */

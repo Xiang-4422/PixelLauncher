@@ -41,6 +41,11 @@ internal class PixelKeyguardSession(
             contentAdapter.performMediaPlayPause()
         }
 
+        /** 转发当前 START 或 END 槽位的原生快捷操作。 */
+        override fun onQuickActionRequested(actionKey: String) {
+            contentAdapter.performQuickAction(actionKey)
+        }
+
         /** 任何过期或失效的原生操作目标都要求整页回退。 */
         override fun onInteractionFailure(throwable: Throwable) {
             dispose()
