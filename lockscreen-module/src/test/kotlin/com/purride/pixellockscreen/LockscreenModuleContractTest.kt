@@ -1,7 +1,6 @@
 package com.purride.pixellockscreen
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -14,13 +13,14 @@ class LockscreenModuleContractTest {
         assertEquals("com.android.systemui", LockscreenModuleContract.SYSTEM_UI_PROCESS)
     }
 
-    /** 图案接管保持启用，PIN 和密码在代码完成后仍须等待最终批量设备门禁。 */
+    /** 候选包必须启用所有已经完成精确合同和原生回退链的安全模式。 */
     @Test
-    fun onlyRuntimeVerifiedCredentialTakeoverIsEnabled() {
+    fun allSupportedCredentialTakeoversAreEnabled() {
         assertTrue(LockscreenModuleContract.READ_ONLY_HOOK_ENABLED)
         assertTrue(LockscreenModuleContract.VISUAL_TAKEOVER_ENABLED)
         assertTrue(LockscreenModuleContract.PATTERN_TAKEOVER_ENABLED)
-        assertFalse(LockscreenModuleContract.PIN_TAKEOVER_ENABLED)
-        assertFalse(LockscreenModuleContract.PASSWORD_TAKEOVER_ENABLED)
+        assertTrue(LockscreenModuleContract.PIN_TAKEOVER_ENABLED)
+        assertTrue(LockscreenModuleContract.PASSWORD_TAKEOVER_ENABLED)
+        assertTrue(LockscreenModuleContract.SPECIAL_PIN_TAKEOVER_ENABLED)
     }
 }

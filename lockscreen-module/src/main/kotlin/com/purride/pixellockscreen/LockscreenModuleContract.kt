@@ -3,10 +3,9 @@ package com.purride.pixellockscreen
 /**
  * 锁定像素锁屏模块的作用域和当前里程碑能力边界。
  *
- * M5 允许在已识别 Titan 2 SystemUI 中挂载普通像素 Keyguard。M6 启用已经完成可清零输入、
- * 系统校验、原生回调、紧急操作、首帧门禁和完整回退事务的图案模式。PIN 生命周期 Hook
- * 已就绪但在最终批量验收前保持关闭；密码运行时也在完成全量门禁前保持关闭，SIM 和其他
- * 特殊安全模式继续使用原生 Bouncer。
+ * 当前候选版只在已识别 Titan 2 SystemUI 中接管普通 Keyguard，以及已经完成首帧门禁、
+ * 原生安全后端转发和可恢复事务的图案、PIN、密码、SIM/PUK/ME 与 AntiTheft 页面。
+ * 未适配的管理员外部安全 Surface 和任一合同失配场景继续保留原生界面。
  */
 internal object LockscreenModuleContract {
     /** Modern Xposed 模块唯一允许声明的目标包。 */
@@ -24,12 +23,12 @@ internal object LockscreenModuleContract {
     /** M6 仅对 Titan 2 已验证的图案模式安装完整认证页面 Hook。 */
     const val PATTERN_TAKEOVER_ENABLED: Boolean = true
 
-    /** M7 PIN 生命周期与回退链就绪，但设备运行时验收前禁止实际安装 Hook。 */
-    const val PIN_TAKEOVER_ENABLED: Boolean = false
+    /** M7 对 Titan 2 精确 PIN 控制器启用像素认证页面 Hook。 */
+    const val PIN_TAKEOVER_ENABLED: Boolean = true
 
-    /** M8 密码输入连接与回退链就绪，但最终批量验收前禁止实际安装 Hook。 */
-    const val PASSWORD_TAKEOVER_ENABLED: Boolean = false
+    /** M8 对 Titan 2 精确密码控制器启用保留原生输入连接的像素页面 Hook。 */
+    const val PASSWORD_TAKEOVER_ENABLED: Boolean = true
 
-    /** M9 SIM/PUK/ME 与 AntiTheft 原生转发链就绪，最终批量验收前保持关闭。 */
-    const val SPECIAL_PIN_TAKEOVER_ENABLED: Boolean = false
+    /** M9 对 Titan 2 SIM/PUK/ME 与 AntiTheft 原生控制器启用像素转发页面 Hook。 */
+    const val SPECIAL_PIN_TAKEOVER_ENABLED: Boolean = true
 }
