@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- SystemUI 注入端只查询 Launcher 的两个已知只读外观 Provider。 -->
+    <queries>
+        <provider android:authorities="com.purride.pixellauncherv2.appearance" />
+        <provider android:authorities="com.purride.pixellauncherv2.debug.appearance" />
+    </queries>
+
     <!--
       Modern Xposed 入口和静态作用域由 META-INF/xposed 描述，Manifest 不注册
       Activity、Service、Receiver 或 Provider，避免产生 SystemUI 注入以外的运行入口。
