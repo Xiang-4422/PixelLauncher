@@ -78,6 +78,8 @@ data class ShowcaseRouteArguments(val route: ShowcaseRoute)
 class ShowcaseAppHost(
     private val hostView: PixelHostView,
     private val director: DemoDirector,
+    /** 打开复用真实静态宿主的 Android 锁屏预览页。 */
+    private val onOpenLockscreenPreview: () -> Unit,
 ) {
     // ── 组件画廊的演示状态 ────────────────────────────────────────────────────
     private var switchOn = true
@@ -317,6 +319,11 @@ class ShowcaseAppHost(
                                         subtitle = "PIXEL SYSTEM SET",
                                         route = ShowcaseRoute.ICONS,
                                     ),
+                                    menuActionTile(
+                                        title = "LOCKSCREEN",
+                                        subtitle = "STATIC HOST PREVIEW",
+                                        onTap = onOpenLockscreenPreview,
+                                    ),
                                     menuTile(
                                         title = "THEME",
                                         subtitle = "5 MACHINE MOODS",
@@ -347,6 +354,19 @@ class ShowcaseAppHost(
             subtitle = Text(subtitle, color = ShowcaseTheme.DIM),
             trailing = Text(">", color = ShowcaseTheme.DIM),
             onTap = { navigate(route) },
+            semanticLabel = title,
+        ),
+    )
+
+    /** 构建不进入 Pixel Navigator、而是交给 Android 宿主打开的首页入口。 */
+    private fun menuActionTile(title: String, subtitle: String, onTap: () -> Unit): Widget = Container(
+        borderColor = ShowcaseTheme.BORDER,
+        padding = EdgeInsets.symmetric(horizontal = 4, vertical = 2),
+        child = ListTile(
+            title = Text(title, color = ShowcaseTheme.TITLE),
+            subtitle = Text(subtitle, color = ShowcaseTheme.DIM),
+            trailing = Text(">", color = ShowcaseTheme.DIM),
+            onTap = onTap,
             semanticLabel = title,
         ),
     )

@@ -73,6 +73,7 @@ EXPECTED_DEPENDENCY_CONTRACT_LINES = (
     ":lockscreen-module -> :lockscreen-ui -> :pixel-design -> :pixel-engine",
     ":app -> :pixel-design -> :pixel-engine",
     ":showcase -> :pixel-engine",
+    ":showcase -> :lockscreen-ui -> :pixel-design -> :pixel-engine",
     ":showcase-desktop --debug classes.jar--> :pixel-engine",
     ":showcase-desktop --shared scene sources--> :showcase",
 )

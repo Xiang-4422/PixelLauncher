@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 离线锁屏预览页的固定工具标题。 -->
+    <string name="lockscreen_preview_title">LOCKSCREEN / OFFLINE PREVIEW</string>
+</resources>

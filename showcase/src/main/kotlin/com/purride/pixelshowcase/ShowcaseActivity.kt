@@ -1,6 +1,7 @@
 package com.purride.pixelshowcase
 
 import android.content.ContentValues
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -29,7 +30,7 @@ import com.purride.pixelshowcase.scenes.TunnelScene
 import com.purride.pixelshowcase.scenes.WaveScene
 
 /**
- * Pixel Engine 演示：一个只依赖 :pixel-engine 的独立应用。
+ * Pixel Engine 演示：常规页面直接消费引擎，锁屏入口复用产品级静态宿主。
  *
  * 全部装配就在眼前这几行——引擎给一块逻辑像素画布（AdaptivePixels 决定颗粒度）
  * 和一个帧循环，七个场景全是纯数学。点按屏幕切换场景，也会自动轮播。
@@ -69,7 +70,13 @@ class ShowcaseActivity : AppCompatActivity() {
             ),
         )
         director.onRecordingFinished = { width, height, frames -> saveRecording(width, height, frames) }
-        appHost = ShowcaseAppHost(hostView = setup.hostView, director = director)
+        appHost = ShowcaseAppHost(
+            hostView = setup.hostView,
+            director = director,
+            onOpenLockscreenPreview = {
+                startActivity(Intent(this, LockscreenPreviewActivity::class.java))
+            },
+        )
         // 首页不跑演示帧循环；进入 DEMOS 页时由 appHost 恢复。
         director.pause()
         onBackPressedDispatcher.addCallback(

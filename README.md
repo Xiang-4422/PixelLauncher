@@ -5,7 +5,7 @@ PixelLauncher 是一个 Android 启动器应用，同时内置可复用的像素
 <!-- architecture-contract:modules:start -->
 - `:app`：Launcher 产品、页面状态和 Android 应用入口。
 - `:pixel-engine`：像素渲染、组件、动画、路由、Android Host、测试 DSL 与诊断能力。
-- `:showcase`：脱离 Launcher 独立运行的 Android Pixel Engine 展示应用。
+- `:showcase`：脱离 Launcher 独立运行的 Android Pixel Engine 与锁屏离线展示应用。
 - `:showcase-desktop`：复用展示场景的 JVM/AWT 桌面宿主。
 - `:lockscreen-module`：独立构建、默认惰性的像素锁屏 SystemUI 注入模块。
 - `:pixel-design`：Launcher 与锁屏共享的产品主题目录。
@@ -18,6 +18,7 @@ PixelLauncher 是一个 Android 启动器应用，同时内置可复用的像素
 :lockscreen-module -> :lockscreen-ui -> :pixel-design -> :pixel-engine
 :app -> :pixel-design -> :pixel-engine
 :showcase -> :pixel-engine
+:showcase -> :lockscreen-ui -> :pixel-design -> :pixel-engine
 :showcase-desktop --debug classes.jar--> :pixel-engine
 :showcase-desktop --shared scene sources--> :showcase
 ```

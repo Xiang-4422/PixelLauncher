@@ -23,8 +23,9 @@ android {
 }
 
 dependencies {
-    // 展示应用只依赖引擎本体：它存在的意义就是证明引擎可以独立使用。
+    // 常规画廊直接展示引擎能力，锁屏入口则复用产品级静态宿主。
     implementation(project(":pixel-engine"))
+    implementation(project(":lockscreen-ui"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     testImplementation(libs.junit)

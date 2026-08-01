@@ -1,0 +1,90 @@
+package com.purride.pixelshowcase
+
+import com.purride.pixeldesign.ProductThemeBrightness
+import com.purride.pixeldesign.ProductThemeFamily
+import com.purride.pixellockscreen.ui.LockscreenUiState
+
+/** 离线预览支持的画布方向；它只改变预览框比例，不旋转设备。 */
+internal enum class LockscreenPreviewOrientation(
+    /** 控制面板显示的紧凑名称。 */
+    val label: String,
+) {
+    PORTRAIT("PORTRAIT"),
+    LANDSCAPE("LANDSCAPE"),
+}
+
+/** 离线预览用于检查透明叠加可读性的四类固定背景。 */
+internal enum class LockscreenPreviewBackground(
+    /** 控制面板显示的紧凑名称。 */
+    val label: String,
+) {
+    LIGHT("LIGHT"),
+    DARK("DARK"),
+    GRAY("GRAY"),
+    HIGH_CONTRAST("CONTRAST"),
+}
+
+/** 锁屏预览覆盖低、中、高三档稳定电量样本。 */
+internal enum class LockscreenPreviewBattery(
+    /** 提交给静态宿主的确定电量百分比。 */
+    val percent: Int,
+) {
+    LOW(10),
+    MEDIUM(50),
+    HIGH(92),
+}
+
+/** Showcase 锁屏页的一次完整、可重复离线预览配置。 */
+internal data class LockscreenPreviewConfiguration(
+    /** 当前主题家族。 */
+    val family: ProductThemeFamily = ProductThemeFamily.MIDNIGHT,
+    /** 当前实际日夜亮度；离线预览不提供 AUTO。 */
+    val brightness: ProductThemeBrightness = ProductThemeBrightness.DARK,
+    /** 当前电量样本。 */
+    val battery: LockscreenPreviewBattery = LockscreenPreviewBattery.MEDIUM,
+    /** 当前是否展示充电状态。 */
+    val isCharging: Boolean = false,
+    /** 当前预览框方向。 */
+    val orientation: LockscreenPreviewOrientation = LockscreenPreviewOrientation.PORTRAIT,
+    /** 当前透明宿主下方的测试背景。 */
+    val background: LockscreenPreviewBackground = LockscreenPreviewBackground.HIGH_CONTRAST,
+) {
+    /** 把预览配置转换为固定时间、固定日期的锁屏展示状态。 */
+    fun toUiState(): LockscreenUiState = LockscreenUiState(
+        timeText = PREVIEW_TIME_TEXT,
+        dateText = PREVIEW_DATE_TEXT,
+        batteryPercent = battery.percent,
+        isCharging = isCharging,
+        unlockHint = PREVIEW_UNLOCK_HINT,
+    )
+}
+
+/** 按枚举声明顺序循环选择前一个或后一个主题家族。 */
+internal fun cyclePreviewFamily(current: ProductThemeFamily, step: Int): ProductThemeFamily {
+    /** 全部主题的稳定声明顺序。 */
+    val families = ProductThemeFamily.entries
+    /** 使用 floorMod 保证向前循环时不会产生负下标。 */
+    val nextIndex = Math.floorMod(current.ordinal + step, families.size)
+    return families[nextIndex]
+}
+
+/** 按枚举声明顺序循环选择前一个或后一个测试背景。 */
+internal fun cyclePreviewBackground(
+    current: LockscreenPreviewBackground,
+    step: Int,
+): LockscreenPreviewBackground {
+    /** 全部背景的稳定声明顺序。 */
+    val backgrounds = LockscreenPreviewBackground.entries
+    /** 使用 floorMod 保证向前循环时不会产生负下标。 */
+    val nextIndex = Math.floorMod(current.ordinal + step, backgrounds.size)
+    return backgrounds[nextIndex]
+}
+
+/** 截图回归使用的固定时间。 */
+private const val PREVIEW_TIME_TEXT = "09:41"
+
+/** 截图回归使用的固定长日期。 */
+private const val PREVIEW_DATE_TEXT = "SATURDAY, AUGUST 1"
+
+/** 首版静态锁屏使用的固定解锁提示。 */
+private const val PREVIEW_UNLOCK_HINT = "SWIPE UP TO UNLOCK"
