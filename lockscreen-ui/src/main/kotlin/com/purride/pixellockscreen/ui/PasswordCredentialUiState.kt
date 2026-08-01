@@ -35,6 +35,8 @@ public data class PasswordCredentialUiState(
     public val inputHintText: String = "TAP TO TYPE",
     /** 当前用户是否具有多个可切换的系统输入法或有效子类型。 */
     public val isImeSwitcherVisible: Boolean = false,
+    /** SystemUI 当前是否允许展示并执行原生紧急操作。 */
+    public val isEmergencyAvailable: Boolean = true,
     /** 纵屏输入法切换入口文字。 */
     public val imeSwitcherText: String = "KEYBOARD",
     /** 横屏输入法切换入口文字。 */

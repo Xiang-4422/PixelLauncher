@@ -76,14 +76,16 @@ internal fun buildPinCredentialScene(request: PinCredentialSceneRequest): Widget
                     }
                 }
                 drawPinIndicator(layout, request.state.inputLength, palette.primary, palette.muted)
-                drawRect(
-                    layout.emergencyLeft,
-                    layout.emergencyTop,
-                    layout.emergencyWidth,
-                    layout.emergencyHeight,
-                    palette.alert,
-                    strokeWidth = 1,
-                )
+                if (request.state.isEmergencyAvailable) {
+                    drawRect(
+                        layout.emergencyLeft,
+                        layout.emergencyTop,
+                        layout.emergencyWidth,
+                        layout.emergencyHeight,
+                        palette.alert,
+                        strokeWidth = 1,
+                    )
+                }
             },
             Positioned(
                 left = layout.promptLeft,
@@ -130,13 +132,21 @@ internal fun buildPinCredentialScene(request: PinCredentialSceneRequest): Widget
                 height = layout.emergencyHeight - 2,
                 child = Container(
                     alignment = Alignment.CENTER,
-                    child = outlinedLockscreenText(
-                        if (request.isLandscape) request.state.compactEmergencyText else request.state.emergencyText,
-                        palette.alert,
-                        palette.background,
-                        fontScale = 1,
-                        key = "pin-credential-emergency",
-                    ),
+                    child = if (request.state.isEmergencyAvailable) {
+                        outlinedLockscreenText(
+                            if (request.isLandscape) {
+                                request.state.compactEmergencyText
+                            } else {
+                                request.state.emergencyText
+                            },
+                            palette.alert,
+                            palette.background,
+                            fontScale = 1,
+                            key = "pin-credential-emergency",
+                        )
+                    } else {
+                        Container(width = 0, height = 0)
+                    },
                 ),
                 key = "pin-credential-emergency-position",
             ),

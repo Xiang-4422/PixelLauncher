@@ -141,6 +141,12 @@ public class PasswordCredentialHost(
             View.GONE
         }
         imeSwitcherAccessibilityView.contentDescription = state.imeSwitcherAccessibilityLabel
+        emergencyAccessibilityView.isEnabled = state.isEmergencyAvailable
+        emergencyAccessibilityView.visibility = if (state.isEmergencyAvailable) {
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
         emergencyAccessibilityView.contentDescription = state.emergencyAccessibilityLabel
         submitCurrentScene()
         requestLayout()
@@ -279,7 +285,11 @@ public class PasswordCredentialHost(
             includeImeSwitcher = state.isImeSwitcherVisible,
         )
         activeAction = action?.takeIf { candidate ->
-            candidate != PasswordCredentialAction.INPUT || state.isInputEnabled
+            when (candidate) {
+                PasswordCredentialAction.INPUT -> state.isInputEnabled
+                PasswordCredentialAction.EMERGENCY -> state.isEmergencyAvailable
+                PasswordCredentialAction.IME_SWITCHER -> true
+            }
         }
         setPressedAction(activeAction)
         parent?.requestDisallowInterceptTouchEvent(activeAction != null)
@@ -331,10 +341,9 @@ public class PasswordCredentialHost(
             logicalX,
             logicalY,
         )
-        PasswordCredentialAction.EMERGENCY -> currentLayout.emergencyAction.contains(
-            logicalX,
-            logicalY,
-        )
+        PasswordCredentialAction.EMERGENCY ->
+            lastRequest?.state?.isEmergencyAvailable == true &&
+                currentLayout.emergencyAction.contains(logicalX, logicalY)
         null -> false
     }
 

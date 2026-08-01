@@ -3,7 +3,9 @@ package com.purride.pixellockscreen.credential
 import com.purride.pixellockscreen.ui.PatternCredentialFeedback
 import com.purride.pixellockscreen.ui.PatternCredentialUiState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** 像素图案运行时协调器的安全输入与状态测试。 */
@@ -69,6 +71,24 @@ class PatternCredentialCoordinatorTest {
         assertEquals(0, fixture.submittedPatterns.size)
     }
 
+    /** SystemUI 动态显隐紧急入口时只更新公开可用性，不改变图案状态。 */
+    @Test
+    fun mirrorsDynamicEmergencyAvailability() {
+        /** 记录协调器输出的测试夹具。 */
+        val fixture = Fixture()
+        fixture.coordinator.showReady()
+        assertTrue(fixture.states.last().isEmergencyAvailable)
+
+        fixture.emergencyAvailable = false
+        fixture.coordinator.refreshEmergencyAvailability()
+        assertFalse(fixture.states.last().isEmergencyAvailable)
+        assertEquals(PatternCredentialFeedback.READY, fixture.states.last().feedback)
+        /** 相同可用性不得产生重复状态。 */
+        val stateCount = fixture.states.size
+        fixture.coordinator.refreshEmergencyAvailability()
+        assertEquals(stateCount, fixture.states.size)
+    }
+
     /** 释放会清零会话并拒绝所有后续输入。 */
     @Test
     fun closedCoordinatorRejectsFutureInput() {
@@ -92,6 +112,9 @@ class PatternCredentialCoordinatorTest {
         /** 原生紧急操作请求次数。 */
         var emergencyCount: Int = 0
 
+        /** SystemUI 当前报告的紧急入口可用性。 */
+        var emergencyAvailable: Boolean = true
+
         /** 提交给模拟系统桥的独占图案。 */
         val submittedPatterns: MutableList<EphemeralCredentialLease.Pattern> = mutableListOf()
 
@@ -103,6 +126,7 @@ class PatternCredentialCoordinatorTest {
             onUserInput = { userInputCount += 1 },
             onCredentialReady = { lease -> submittedPatterns += lease },
             onEmergencyAction = { emergencyCount += 1 },
+            isEmergencyAvailable = { emergencyAvailable },
             onStateChanged = states::add,
             onInteractionFailed = { throwable -> throw throwable },
         )

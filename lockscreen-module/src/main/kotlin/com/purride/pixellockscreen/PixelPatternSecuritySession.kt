@@ -183,6 +183,7 @@ internal class PixelPatternSecuritySession(
         runCatching {
             check(securityBridge.isCurrentContext()) { "pattern_security_context_changed" }
             check(nativeVisibility.isStructureValid()) { "pattern_native_structure_changed" }
+            coordinator.refreshEmergencyAvailability()
             /** 首帧和整条可见父链均有效时才允许真正接管。 */
             val shouldTakeOver = firstFrameDrawn && isHostEffectivelyVisible()
             if (shouldTakeOver) {
@@ -226,6 +227,7 @@ internal class PixelPatternSecuritySession(
         onUserInput = securityBridge::signalUserInput,
         onCredentialReady = ::submitCredential,
         onEmergencyAction = emergencyBridge::requestEmergencyAction,
+        isEmergencyAvailable = emergencyBridge::isAvailable,
         onStateChanged = ::renderState,
         onInteractionFailed = ::fail,
     )

@@ -100,6 +100,7 @@ internal class PixelSpecialPinSecuritySession(
                 mode = specialBinding.mode,
                 actions = specialBinding,
                 onEmergencyAction = emergencyBridge::requestEmergencyAction,
+                isEmergencyAvailable = emergencyBridge::isAvailable,
                 onStateChanged = ::renderState,
                 onInteractionFailed = ::fail,
             )

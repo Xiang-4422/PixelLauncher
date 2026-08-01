@@ -137,6 +137,45 @@ class PasswordCredentialSceneTest {
         }
     }
 
+    /** SystemUI 隐藏紧急入口时密码场景不得绘制对应警示色动作。 */
+    @Test
+    fun hiddenEmergencyActionIsNotDrawn() {
+        /** 当前纵屏布局。 */
+        val layout = passwordCredentialLayout(isLandscape = false)
+        /** 当前测试色板。 */
+        val palette = ProductThemeCatalog.resolve(
+            ProductThemeFamily.CITRUS,
+            ProductThemeBrightness.DARK,
+        )
+        /** 离屏像素宿主。 */
+        val tester = PixelTester()
+        try {
+            tester.pumpWidget(
+                mediaRoot(
+                    buildPasswordCredentialScene(
+                        PasswordCredentialSceneRequest(
+                            state = state(
+                                PasswordCredentialFeedback.READY,
+                                inputLength = 0,
+                            ).copy(isEmergencyAvailable = false),
+                            family = palette.family,
+                            brightness = palette.brightness,
+                            isLandscape = false,
+                            pressedAction = null,
+                        ),
+                    ),
+                    layout,
+                ),
+                logicalWidth = layout.logicalWidth,
+                logicalHeight = layout.logicalHeight,
+            )
+
+            assertFalse(tester.hasPixel(palette.alert))
+        } finally {
+            tester.dispose()
+        }
+    }
+
     /** 横屏四种反馈状态都必须在固定逻辑视口内完成绘制。 */
     @Test
     fun landscapeFeedbackStatesRenderWithoutClipping() {

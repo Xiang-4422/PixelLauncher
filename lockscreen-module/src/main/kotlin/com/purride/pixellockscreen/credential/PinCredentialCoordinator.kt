@@ -18,6 +18,8 @@ internal class PinCredentialCoordinator(
     private val onCredentialReady: (EphemeralCredentialLease.Characters) -> Unit,
     /** 请求 ROM 原生紧急操作的出口。 */
     private val onEmergencyAction: () -> Unit,
+    /** 读取 SystemUI 当前是否允许展示紧急入口。 */
+    private val isEmergencyAvailable: () -> Boolean = { true },
     /** 接收不含数字内容的像素 PIN 状态。 */
     private val onStateChanged: (PinCredentialUiState) -> Unit,
     /** 接收交互异常并要求恢复原生页面的出口。 */
@@ -32,10 +34,29 @@ internal class PinCredentialCoordinator(
     /** 当前是否允许修改或提交 PIN 缓冲。 */
     private var inputEnabled: Boolean = false
 
+    /** 最近一次提交给像素宿主的完整非敏感状态。 */
+    private var lastUiState: PinCredentialUiState? = null
+
     /** 拒绝系统不会接受的自动确认长度。 */
     init {
         require(autoConfirmLength == null || autoConfirmLength in MINIMUM_PIN_LENGTH..MAXIMUM_PIN_LENGTH) {
             "pin_auto_confirm_length"
+        }
+    }
+
+    /** SystemUI 动态显隐紧急按钮时只提交发生变化的新状态。 */
+    fun refreshEmergencyAvailability() {
+        ensureOpen()
+        /** 尚未完成初始状态提交时无需单独刷新。 */
+        val previous = lastUiState ?: return
+        /** 当前原生紧急入口可用性。 */
+        val available = isEmergencyAvailable()
+        if (previous.isEmergencyAvailable == available) {
+            return
+        }
+        previous.copy(isEmergencyAvailable = available).also { next ->
+            lastUiState = next
+            onStateChanged(next)
         }
     }
 
@@ -147,14 +168,16 @@ internal class PinCredentialCoordinator(
 
     /** 构建并提交只包含输入长度和反馈的非敏感状态。 */
     private fun emitState(feedback: PinCredentialFeedback, feedbackText: String) {
-        onStateChanged(
-            PinCredentialUiState(
-                promptText = PROMPT_TEXT,
-                inputLength = inputSession.inputLength,
-                feedbackText = feedbackText,
-                feedback = feedback,
-            ),
-        )
+        PinCredentialUiState(
+            promptText = PROMPT_TEXT,
+            inputLength = inputSession.inputLength,
+            feedbackText = feedbackText,
+            feedback = feedback,
+            isEmergencyAvailable = isEmergencyAvailable(),
+        ).also { state ->
+            lastUiState = state
+            onStateChanged(state)
+        }
     }
 
     /** 拒绝关闭后继续接收数字或异步状态。 */

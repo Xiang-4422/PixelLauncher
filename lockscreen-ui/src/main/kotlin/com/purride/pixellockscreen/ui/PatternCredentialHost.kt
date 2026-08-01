@@ -111,8 +111,15 @@ public class PatternCredentialHost(
         contentDescription = listOf(state.promptText, state.feedbackText)
             .filter(String::isNotBlank)
             .joinToString(separator = ". ")
+        emergencyAccessibilityView.isEnabled = state.isEmergencyAvailable
+        emergencyAccessibilityView.visibility = if (state.isEmergencyAvailable) {
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
         emergencyAccessibilityView.contentDescription = state.emergencyAccessibilityLabel
         submitCurrentScene()
+        requestLayout()
     }
 
     /** 尺寸变化时同步 Pixel Engine profile、触摸几何和场景方向。 */
@@ -226,7 +233,10 @@ public class PatternCredentialHost(
         parent?.requestDisallowInterceptTouchEvent(true)
         /** 当前落点对应的逻辑坐标。 */
         val point = mapToLogical(event.x, event.y) ?: return
-        if (currentLayout.containsEmergency(point.first, point.second)) {
+        if (
+            lastRequest?.state?.isEmergencyAvailable == true &&
+            currentLayout.containsEmergency(point.first, point.second)
+        ) {
             emergencyPointerActive = true
             return
         }
@@ -265,7 +275,11 @@ public class PatternCredentialHost(
         if (emergencyPointerActive) {
             /** 抬起点对应的逻辑坐标。 */
             val point = mapToLogical(event.getX(event.actionIndex), event.getY(event.actionIndex))
-            if (point != null && currentLayout.containsEmergency(point.first, point.second)) {
+            if (
+                lastRequest?.state?.isEmergencyAvailable == true &&
+                point != null &&
+                currentLayout.containsEmergency(point.first, point.second)
+            ) {
                 safelyNotify(listener::onEmergencyRequested)
             }
             emergencyPointerActive = false

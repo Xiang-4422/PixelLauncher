@@ -27,6 +27,8 @@ public data class PatternCredentialUiState(
     public val feedbackText: String = "",
     /** 当前系统校验或限流阶段。 */
     public val feedback: PatternCredentialFeedback = PatternCredentialFeedback.READY,
+    /** SystemUI 当前是否允许展示并执行原生紧急操作。 */
+    public val isEmergencyAvailable: Boolean = true,
     /** 纵屏像素按钮显示的紧急入口文字。 */
     public val emergencyText: String = "EMERGENCY",
     /** 横屏紧凑像素按钮显示的紧急入口文字。 */

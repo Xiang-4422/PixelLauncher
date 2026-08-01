@@ -17,6 +17,8 @@ internal class PatternCredentialCoordinator(
     private val onCredentialReady: (EphemeralCredentialLease.Pattern) -> Unit,
     /** 请求 ROM 原生紧急操作的动作。 */
     private val onEmergencyAction: () -> Unit,
+    /** 读取 SystemUI 当前是否允许展示紧急入口。 */
+    private val isEmergencyAvailable: () -> Boolean = { true },
     /** 接收不含路径的像素认证渲染状态。 */
     private val onStateChanged: (PatternCredentialUiState) -> Unit,
     /** 接收触摸链路异常并要求恢复原生页面的动作。 */
@@ -27,6 +29,25 @@ internal class PatternCredentialCoordinator(
 
     /** 协调器是否已经完成清零并永久关闭。 */
     private var closed: Boolean = false
+
+    /** 最近一次提交给像素宿主的完整非敏感状态。 */
+    private var lastUiState: PatternCredentialUiState? = null
+
+    /** SystemUI 动态显隐紧急按钮时只提交发生变化的新状态。 */
+    fun refreshEmergencyAvailability() {
+        ensureOpen()
+        /** 尚未完成初始状态提交时无需单独刷新。 */
+        val previous = lastUiState ?: return
+        /** 当前原生紧急入口可用性。 */
+        val available = isEmergencyAvailable()
+        if (previous.isEmergencyAvailable == available) {
+            return
+        }
+        previous.copy(isEmergencyAvailable = available).also { next ->
+            lastUiState = next
+            onStateChanged(next)
+        }
+    }
 
     /** 显示可输入的初始状态。 */
     fun showReady() {
@@ -119,13 +140,15 @@ internal class PatternCredentialCoordinator(
 
     /** 构建并提交只包含非敏感提示的认证状态。 */
     private fun emitState(feedback: PatternCredentialFeedback, feedbackText: String) {
-        onStateChanged(
-            PatternCredentialUiState(
-                promptText = PROMPT_TEXT,
-                feedbackText = feedbackText,
-                feedback = feedback,
-            ),
-        )
+        PatternCredentialUiState(
+            promptText = PROMPT_TEXT,
+            feedbackText = feedbackText,
+            feedback = feedback,
+            isEmergencyAvailable = isEmergencyAvailable(),
+        ).also { state ->
+            lastUiState = state
+            onStateChanged(state)
+        }
     }
 
     /** 拒绝关闭后继续接收触摸或异步状态。 */

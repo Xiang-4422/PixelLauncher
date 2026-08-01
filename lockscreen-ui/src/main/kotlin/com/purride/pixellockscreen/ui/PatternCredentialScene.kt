@@ -51,14 +51,16 @@ internal fun buildPatternCredentialScene(
             ) {
                 drawPatternPath(layout, path, palette)
                 drawPatternNodes(layout, path, palette)
-                drawRect(
-                    left = layout.emergencyLeft,
-                    top = layout.emergencyTop,
-                    width = layout.emergencyWidth,
-                    height = layout.emergencyHeight,
-                    color = palette.alert,
-                    strokeWidth = 1,
-                )
+                if (request.state.isEmergencyAvailable) {
+                    drawRect(
+                        left = layout.emergencyLeft,
+                        top = layout.emergencyTop,
+                        width = layout.emergencyWidth,
+                        height = layout.emergencyHeight,
+                        color = palette.alert,
+                        strokeWidth = 1,
+                    )
+                }
             },
             Positioned(
                 left = layout.promptLeft,
@@ -105,17 +107,21 @@ internal fun buildPatternCredentialScene(
                 height = layout.emergencyHeight - 2,
                 child = Container(
                     alignment = Alignment.CENTER,
-                    child = outlinedLockscreenText(
-                        text = if (request.isLandscape) {
-                            request.state.compactEmergencyText
-                        } else {
-                            request.state.emergencyText
-                        },
-                        foreground = palette.alert,
-                        backing = palette.background,
-                        fontScale = 1,
-                        key = "pattern-credential-emergency",
-                    ),
+                    child = if (request.state.isEmergencyAvailable) {
+                        outlinedLockscreenText(
+                            text = if (request.isLandscape) {
+                                request.state.compactEmergencyText
+                            } else {
+                                request.state.emergencyText
+                            },
+                            foreground = palette.alert,
+                            backing = palette.background,
+                            fontScale = 1,
+                            key = "pattern-credential-emergency",
+                        )
+                    } else {
+                        Container(width = 0, height = 0)
+                    },
                 ),
                 key = "pattern-credential-emergency-position",
             ),

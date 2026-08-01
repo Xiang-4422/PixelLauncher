@@ -125,8 +125,15 @@ public class PinCredentialHost(
             .filter(String::isNotBlank)
             .joinToString(separator = ". ")
         keyAccessibilityViews.values.forEach { view -> view.isEnabled = state.isInputEnabled }
+        emergencyAccessibilityView.isEnabled = state.isEmergencyAvailable
+        emergencyAccessibilityView.visibility = if (state.isEmergencyAvailable) {
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
         emergencyAccessibilityView.contentDescription = state.emergencyAccessibilityLabel
         submitCurrentScene()
+        requestLayout()
     }
 
     /** 尺寸变化时同步 Pixel Engine profile、按键几何和场景方向。 */
@@ -281,7 +288,8 @@ public class PinCredentialHost(
         /** 当前状态是否允许键盘输入。 */
         val inputEnabled = lastRequest?.state?.isInputEnabled == true
         activeKeyId = when {
-            currentLayout.containsEmergency(point.first, point.second) -> EMERGENCY_KEY_ID
+            lastRequest?.state?.isEmergencyAvailable == true &&
+                currentLayout.containsEmergency(point.first, point.second) -> EMERGENCY_KEY_ID
             inputEnabled -> key?.id
             else -> null
         }
@@ -328,7 +336,8 @@ public class PinCredentialHost(
 
     /** 判断指定动作编号是否包含当前逻辑坐标。 */
     private fun containsAction(keyId: Int?, logicalX: Int, logicalY: Int): Boolean = when (keyId) {
-        EMERGENCY_KEY_ID -> currentLayout.containsEmergency(logicalX, logicalY)
+        EMERGENCY_KEY_ID -> lastRequest?.state?.isEmergencyAvailable == true &&
+            currentLayout.containsEmergency(logicalX, logicalY)
         null -> false
         else -> currentLayout.keys.firstOrNull { key -> key.id == keyId }
             ?.contains(logicalX, logicalY) == true

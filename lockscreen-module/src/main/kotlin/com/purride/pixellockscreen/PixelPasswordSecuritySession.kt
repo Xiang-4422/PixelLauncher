@@ -178,6 +178,7 @@ internal class PixelPasswordSecuritySession(
             check(nativePresentation.isStructureValid()) { "password_native_structure_changed" }
             coordinator.onNativeFocusChanged(passwordBinding.hasInputFocus())
             coordinator.onImeSwitcherVisibilityChanged(passwordBinding.isImeSwitcherVisible())
+            coordinator.refreshEmergencyAvailability()
             /** 首帧和整条可见父链均有效时才允许真正接管。 */
             val shouldTakeOver = firstFrameDrawn && isHostEffectivelyVisible()
             if (shouldTakeOver) {
@@ -305,6 +306,7 @@ internal class PixelPasswordSecuritySession(
         onInputRequestedAction = passwordBinding::requestInput,
         onImeSwitcherRequestedAction = passwordBinding::requestImeSwitcher,
         onEmergencyAction = emergencyBridge::requestEmergencyAction,
+        isEmergencyAvailable = emergencyBridge::isAvailable,
         onStateChanged = ::renderState,
         onInteractionFailed = ::fail,
     )

@@ -5,7 +5,9 @@ import com.android.keyguard.EmergencyButtonController
 import com.android.keyguard.KeyguardPatternViewController
 import com.android.keyguard.KeyguardPinViewController
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** Titan 2 原生紧急操作桥的失效关闭测试。 */
@@ -42,24 +44,44 @@ class Titan2EmergencyActionBridgeTest {
         assertEquals(1, fixture.button.clickCount)
     }
 
-    /** 缺失监听器、不可见、禁用或未挂载按钮均不得进入接管。 */
+    /** 未挂载或缺失监听器属于结构失效，绑定阶段必须拒绝接管。 */
     @Test
-    fun bindRejectsUnavailableNativeButton() {
-        /** 每种不可用状态的配置动作。 */
-        val unavailableStates: List<(EmergencyButton) -> Unit> = listOf(
+    fun bindRejectsInvalidNativeButtonStructure() {
+        /** 每种结构失效状态的配置动作。 */
+        val invalidStates: List<(EmergencyButton) -> Unit> = listOf(
             { button -> button.attachedToWindow = false },
-            { button -> button.enabled = false },
-            { button -> button.visibilityState = 8 },
             { button -> button.clickListenerPresent = false },
         )
 
-        unavailableStates.forEach { configure ->
-            /** 当前不可用状态使用的独立夹具。 */
+        invalidStates.forEach { configure ->
+            /** 当前结构失效状态使用的独立夹具。 */
             val fixture = Fixture()
             configure(fixture.button)
             assertThrows(IllegalStateException::class.java) { fixture.bind() }
             assertEquals(0, fixture.button.clickCount)
         }
+    }
+
+    /** SystemUI 暂时隐藏或禁用紧急入口时允许页面接管，但不得绘制或执行入口。 */
+    @Test
+    fun dynamicAvailabilityDoesNotInvalidateBinding() {
+        /** 初始隐藏的原生按钮夹具。 */
+        val fixture = Fixture().also { current -> current.button.visibilityState = 8 }
+        /** 隐藏状态下仍可保持结构绑定的桥。 */
+        val bridge = fixture.bind()
+
+        assertFalse(bridge.isAvailable())
+        assertThrows(IllegalStateException::class.java) { bridge.requestEmergencyAction() }
+        assertEquals(0, fixture.button.clickCount)
+
+        fixture.button.visibilityState = 0
+        fixture.button.enabled = true
+        assertTrue(bridge.isAvailable())
+        bridge.requestEmergencyAction()
+        assertEquals(1, fixture.button.clickCount)
+
+        fixture.button.enabled = false
+        assertFalse(bridge.isAvailable())
     }
 
     /** 控制器替换原生紧急对象后旧桥必须拒绝点击。 */

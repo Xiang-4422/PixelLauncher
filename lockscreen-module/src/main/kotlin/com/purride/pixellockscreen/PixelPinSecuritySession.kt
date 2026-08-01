@@ -182,6 +182,7 @@ internal class PixelPinSecuritySession(
         runCatching {
             check(securityBridge.isCurrentContext()) { "pin_security_context_changed" }
             check(nativeVisibility.isStructureValid()) { "pin_native_structure_changed" }
+            coordinator.refreshEmergencyAvailability()
             /** 首帧和整条可见父链均有效时才允许真正接管。 */
             val shouldTakeOver = firstFrameDrawn && isHostEffectivelyVisible()
             if (shouldTakeOver) {
@@ -226,6 +227,7 @@ internal class PixelPinSecuritySession(
         onUserInput = securityBridge::signalUserInput,
         onCredentialReady = ::submitCredential,
         onEmergencyAction = emergencyBridge::requestEmergencyAction,
+        isEmergencyAvailable = emergencyBridge::isAvailable,
         onStateChanged = ::renderState,
         onInteractionFailed = ::fail,
     )

@@ -78,6 +78,44 @@ class PatternCredentialSceneTest {
         }
     }
 
+    /** SystemUI 隐藏紧急入口时像素场景不得残留警示色按钮。 */
+    @Test
+    fun hiddenEmergencyActionIsNotDrawn() {
+        /** 当前纵屏布局。 */
+        val layout = patternCredentialLayout(isLandscape = false)
+        /** 当前测试色板。 */
+        val palette = ProductThemeCatalog.resolve(
+            ProductThemeFamily.ARCADE,
+            ProductThemeBrightness.DARK,
+        )
+        /** 离屏像素宿主。 */
+        val tester = PixelTester()
+        try {
+            tester.pumpWidget(
+                mediaRoot(
+                    buildPatternCredentialScene(
+                        PatternCredentialSceneRequest(
+                            state = state(PatternCredentialFeedback.READY).copy(
+                                isEmergencyAvailable = false,
+                            ),
+                            family = palette.family,
+                            brightness = palette.brightness,
+                            isLandscape = false,
+                        ),
+                        EmptyPatternPath,
+                    ),
+                    layout,
+                ),
+                logicalWidth = layout.logicalWidth,
+                logicalHeight = layout.logicalHeight,
+            )
+
+            assertFalse(tester.hasPixel(palette.alert))
+        } finally {
+            tester.dispose()
+        }
+    }
+
     /** 横屏错误和限流状态均应在固定逻辑视口内完成绘制。 */
     @Test
     fun landscapeFeedbackStatesRenderWithoutClipping() {

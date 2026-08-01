@@ -29,6 +29,8 @@ public data class PinCredentialUiState(
     public val feedbackText: String = "",
     /** 当前系统校验阶段。 */
     public val feedback: PinCredentialFeedback = PinCredentialFeedback.READY,
+    /** SystemUI 当前是否允许展示并执行原生紧急操作。 */
+    public val isEmergencyAvailable: Boolean = true,
     /** 纵屏紧急入口文字。 */
     public val emergencyText: String = "EMERGENCY",
     /** 横屏紧急入口文字。 */

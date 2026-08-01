@@ -17,6 +17,8 @@ internal class PasswordCredentialCoordinator(
     private val onImeSwitcherRequestedAction: () -> Unit,
     /** 请求原生紧急按钮点击链。 */
     private val onEmergencyAction: () -> Unit,
+    /** 读取 SystemUI 当前是否允许展示紧急入口。 */
+    private val isEmergencyAvailable: () -> Boolean = { true },
     /** 输出最新非敏感密码界面状态。 */
     private val onStateChanged: (PasswordCredentialUiState) -> Unit,
     /** 任一公开动作异常时触发原生回退。 */
@@ -39,6 +41,25 @@ internal class PasswordCredentialCoordinator(
 
     /** 协调器是否已经结束。 */
     private var closed: Boolean = false
+
+    /** 最近一次提交给像素宿主的完整非敏感状态。 */
+    private var lastUiState: PasswordCredentialUiState? = null
+
+    /** SystemUI 动态显隐紧急按钮时只提交发生变化的新状态。 */
+    fun refreshEmergencyAvailability() {
+        checkOpen()
+        /** 尚未完成初始状态提交时无需单独刷新。 */
+        val previous = lastUiState ?: return
+        /** 当前原生紧急入口可用性。 */
+        val available = isEmergencyAvailable()
+        if (previous.isEmergencyAvailable == available) {
+            return
+        }
+        previous.copy(isEmergencyAvailable = available).also { next ->
+            lastUiState = next
+            onStateChanged(next)
+        }
+    }
 
     /** 使用原生输入连接的当前状态初始化像素密码页面。 */
     fun showInitial(length: Int, focused: Boolean, imeVisible: Boolean) {
@@ -138,16 +159,18 @@ internal class PasswordCredentialCoordinator(
 
     /** 输出不包含任何密码字符的完整界面状态。 */
     private fun emitState() {
-        onStateChanged(
-            PasswordCredentialUiState(
-                promptText = PROMPT_TEXT,
-                inputLength = inputLength,
-                feedbackText = feedbackText,
-                feedback = feedback,
-                hasInputFocus = hasInputFocus,
-                isImeSwitcherVisible = imeSwitcherVisible,
-            ),
-        )
+        PasswordCredentialUiState(
+            promptText = PROMPT_TEXT,
+            inputLength = inputLength,
+            feedbackText = feedbackText,
+            feedback = feedback,
+            hasInputFocus = hasInputFocus,
+            isImeSwitcherVisible = imeSwitcherVisible,
+            isEmergencyAvailable = isEmergencyAvailable(),
+        ).also { state ->
+            lastUiState = state
+            onStateChanged(state)
+        }
     }
 
     /** 在协调器有效期内执行公开动作，并把异常统一交给回退链。 */

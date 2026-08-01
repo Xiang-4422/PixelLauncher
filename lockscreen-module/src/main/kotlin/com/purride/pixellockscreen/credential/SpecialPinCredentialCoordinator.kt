@@ -15,6 +15,8 @@ internal class SpecialPinCredentialCoordinator(
     private val actions: Titan2SpecialPinActions,
     /** 请求 ROM 原生紧急入口的动作。 */
     private val onEmergencyAction: () -> Unit,
+    /** 读取 SystemUI 当前是否允许展示紧急入口。 */
+    private val isEmergencyAvailable: () -> Boolean = { true },
     /** 接收不含凭据内容的像素状态。 */
     private val onStateChanged: (PinCredentialUiState) -> Unit,
     /** 接收交互异常并要求恢复原生页面的出口。 */
@@ -26,7 +28,11 @@ internal class SpecialPinCredentialCoordinator(
     /** 从原生页面读取并提交当前脱敏状态。 */
     fun refresh() {
         ensureOpen()
-        onStateChanged(specialPinUiState(mode, actions.snapshot()))
+        onStateChanged(
+            specialPinUiState(mode, actions.snapshot()).copy(
+                isEmergencyAvailable = isEmergencyAvailable(),
+            ),
+        )
     }
 
     /** 立即把一个数字交给原生按键并刷新掩码长度。 */

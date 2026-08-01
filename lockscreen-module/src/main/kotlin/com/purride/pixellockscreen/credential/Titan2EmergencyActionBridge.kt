@@ -36,11 +36,31 @@ internal class Titan2EmergencyActionBridge private constructor(
     private var disposed: Boolean = false
 
     /**
+     * 返回 SystemUI 当前是否允许展示紧急入口。
+     *
+     * 控制器或按钮身份变化、按钮脱离窗口以及监听器丢失属于结构失效，会抛出异常要求上层
+     * 回退；启用和可见状态属于 SystemUI 的动态安全决策，只返回不可用。
+     */
+    fun isAvailable(): Boolean {
+        requireValidBinding()
+        return readBoolean(isEnabledMethod, "keyguard_emergency_disabled") &&
+            readInt(getVisibilityMethod, "keyguard_emergency_visibility") == VIEW_VISIBLE
+    }
+
+    /**
      * 请求当前原生按钮执行一次紧急操作。
      *
      * 任一绑定对象或可用状态发生变化都会抛出异常，由上层立即恢复原生 Bouncer。
      */
     fun requestEmergencyAction() {
+        check(isAvailable()) { "keyguard_emergency_unavailable" }
+        check(readBoolean(performClickMethod, "keyguard_emergency_click")) {
+            "keyguard_emergency_click_rejected"
+        }
+    }
+
+    /** 验证桥仍指向已挂载且保留原生点击链的同一组 SystemUI 对象。 */
+    private fun requireValidBinding() {
         check(!disposed) { "keyguard_emergency_bridge_disposed" }
         check(emergencyControllerField.get(credentialController) === emergencyController) {
             "keyguard_emergency_controller_stale"
@@ -51,17 +71,8 @@ internal class Titan2EmergencyActionBridge private constructor(
         check(readBoolean(isAttachedToWindowMethod, "keyguard_emergency_detached")) {
             "keyguard_emergency_detached"
         }
-        check(readBoolean(isEnabledMethod, "keyguard_emergency_disabled")) {
-            "keyguard_emergency_disabled"
-        }
-        check(readInt(getVisibilityMethod, "keyguard_emergency_visibility") == VIEW_VISIBLE) {
-            "keyguard_emergency_hidden"
-        }
         check(readBoolean(hasOnClickListenersMethod, "keyguard_emergency_listener")) {
             "keyguard_emergency_listener_missing"
-        }
-        check(readBoolean(performClickMethod, "keyguard_emergency_click")) {
-            "keyguard_emergency_click_rejected"
         }
     }
 
@@ -82,7 +93,7 @@ internal class Titan2EmergencyActionBridge private constructor(
         /**
          * 绑定已经执行 `onViewAttached()` 的 Titan 2 设备凭据控制器。
          *
-         * 类名、字段类型、按钮状态或公开方法签名不一致时拒绝接管。
+         * 类名、字段类型、对象身份或公开方法签名不一致时拒绝接管；动态显隐由渲染状态同步。
          */
         @SuppressLint("BlockedPrivateApi", "PrivateApi")
         fun bind(
@@ -185,24 +196,8 @@ internal class Titan2EmergencyActionBridge private constructor(
                 hasOnClickListenersMethod = hasOnClickListenersMethod,
                 performClickMethod = performClickMethod,
             )
-            bridge.requireAvailable()
+            bridge.requireValidBinding()
             return bridge
-        }
-
-        /** 绑定时验证原生按钮已经完成挂载和点击监听器安装。 */
-        private fun Titan2EmergencyActionBridge.requireAvailable() {
-            check(readBoolean(isAttachedToWindowMethod, "keyguard_emergency_detached")) {
-                "keyguard_emergency_detached"
-            }
-            check(readBoolean(isEnabledMethod, "keyguard_emergency_disabled")) {
-                "keyguard_emergency_disabled"
-            }
-            check(readInt(getVisibilityMethod, "keyguard_emergency_visibility") == VIEW_VISIBLE) {
-                "keyguard_emergency_hidden"
-            }
-            check(readBoolean(hasOnClickListenersMethod, "keyguard_emergency_listener")) {
-                "keyguard_emergency_listener_missing"
-            }
         }
 
         /** 沿父类链按精确名称和类型解析字段。 */

@@ -70,12 +70,14 @@ internal fun buildPasswordCredentialScene(request: PasswordCredentialSceneReques
                         fillColor = palette.secondary,
                     )
                 }
-                drawActionFrame(
-                    action = layout.emergencyAction,
-                    color = palette.alert,
-                    pressed = request.pressedAction == PasswordCredentialAction.EMERGENCY,
-                    fillColor = palette.alert,
-                )
+                if (request.state.isEmergencyAvailable) {
+                    drawActionFrame(
+                        action = layout.emergencyAction,
+                        color = palette.alert,
+                        pressed = request.pressedAction == PasswordCredentialAction.EMERGENCY,
+                        fillColor = palette.alert,
+                    )
+                }
             },
             Positioned(
                 left = layout.promptLeft,
@@ -159,7 +161,7 @@ internal fun buildPasswordCredentialScene(request: PasswordCredentialSceneReques
             ),
             passwordActionLabel(
                 action = layout.emergencyAction,
-                visible = true,
+                visible = request.state.isEmergencyAvailable,
                 text = if (request.isLandscape) {
                     request.state.compactEmergencyText
                 } else {
