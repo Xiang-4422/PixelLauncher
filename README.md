@@ -68,6 +68,9 @@ Android Studio 直接选择 `app` 配置即可编译和运行。
 adb shell am start -n com.purride.pixelshowcase/.ShowcaseActivity
 ```
 
+Showcase 首页的 `LOCKSCREEN` 入口使用固定离线状态预览真实锁屏宿主，可切换八个主题、日夜模式、
+电量/充电状态、横竖画布和四类透明叠加测试背景；当前阶段无需连接目标设备。
+
 桌面展示宿主使用本机 JVM/AWT，可执行：
 
 ```bash
