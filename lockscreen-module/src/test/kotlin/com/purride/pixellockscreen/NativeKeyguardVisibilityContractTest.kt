@@ -19,6 +19,19 @@ class NativeKeyguardVisibilityContractTest {
             ),
             NativeKeyguardVisibilityTransaction.NATIVE_VIEW_RESOURCE_NAMES.toSet(),
         )
+        assertEquals(
+            setOf(
+                "keyguard_status_view",
+                "keyguard_header",
+                "keyguard_bottom_area",
+                "shared_notification_container",
+            ),
+            NativeKeyguardVisibilityTransaction.REQUIRED_NATIVE_VIEW_RESOURCE_NAMES.toSet(),
+        )
+        assertEquals(
+            setOf("device_entry_icon_view"),
+            NativeKeyguardVisibilityTransaction.OPTIONAL_NATIVE_VIEW_RESOURCE_NAMES.toSet(),
+        )
     }
 
     /** M6 之前任何目标都不得包含 Bouncer、security、SIM 或紧急关键字。 */
