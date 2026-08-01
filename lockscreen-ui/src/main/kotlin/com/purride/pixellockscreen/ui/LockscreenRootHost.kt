@@ -81,9 +81,14 @@ public class LockscreenRootHost @JvmOverloads constructor(
         submitRequest(request)
     }
 
-    /** 仅在运行时提供内容监听器时让像素卡片参与命中，空白区域继续交给原生手势。 */
+    /**
+     * 普通锁屏不拦截任何触摸，保证窗口级宿主下方的 SystemUI 上滑与认证手势始终可用。
+     *
+     * 当前阶段暂停普通页卡片直点；等原生手势仲裁桥具备精确命中与取消转发后再恢复，不能为了
+     * 通知或快捷按钮牺牲设备的基础解锁能力。
+     */
     override fun dispatchTouchEvent(event: MotionEvent): Boolean =
-        if (contentListener == null) false else super.dispatchTouchEvent(event)
+        if (ordinaryLockscreenTouchPassesThrough()) false else super.dispatchTouchEvent(event)
 
     /** 幂等释放 Pixel Engine 运行时和子 View，释放后宿主不可再次使用。 */
     public fun dispose() {
@@ -108,3 +113,6 @@ public class LockscreenRootHost @JvmOverloads constructor(
         )
     }
 }
+
+/** 返回普通锁屏是否把完整触摸序列交给下层 SystemUI；基础解锁链必须始终优先。 */
+internal fun ordinaryLockscreenTouchPassesThrough(): Boolean = true

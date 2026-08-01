@@ -17,6 +17,12 @@ import org.junit.Test
 
 /** 验证静态锁屏状态边界、透明渲染和 Titan 2 方屏布局规则。 */
 class LockscreenUiStateTest {
+    /** 即使运行时存在内容卡监听器，普通锁屏也必须把完整触摸序列交给 SystemUI。 */
+    @Test
+    fun ordinaryLockscreenNeverConsumesUnlockGesture() {
+        assertTrue(ordinaryLockscreenTouchPassesThrough())
+    }
+
     /** 电量边界值 0 和 100 均可用，越界值必须立即拒绝。 */
     @Test
     fun batteryPercentAcceptsOnlyClosedPercentageRange() {
